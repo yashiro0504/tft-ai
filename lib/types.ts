@@ -130,6 +130,35 @@ export interface ContestAnalysis {
   summary?: string
 }
 
+// ── 증강 메타 분석 (Phase 3: 메타 데이터 파이프라인) ──
+
+export interface AugmentMetaDetail {
+  name: string
+  /** 해당 패치 평균 등수 (낮을수록 좋음) */
+  avgPlacement?: number
+  top4Rate?: number
+  /** 픽률 (0~1) */
+  pickRate?: number
+  sampleSize?: number
+  /** 평균 등수 기반 티어 (S/A/B/C/D) */
+  tier?: string
+  /** baseline(4.5) 대비 개선도 (양수=좋음) */
+  deltaVsBaseline?: number
+}
+
+export interface AugmentAnalysis {
+  /** 메타 통계가 실제로 매칭된 증강이 하나라도 있는지 */
+  hasMeta: boolean
+  /** 샘플(검증 전) 데이터 여부 — true면 실측 통계로 단정 금지 */
+  sample: boolean
+  patch?: string
+  source?: string
+  baselineAvgPlacement?: number
+  details: AugmentMetaDetail[]
+  /** 증강 선택 종합 점수 0~100 (메타 있을 때만 산출) */
+  augmentScore?: number
+}
+
 export interface SlimMatchData {
   matchId: string
   setNumber?: number
@@ -146,6 +175,7 @@ export interface SlimMatchData {
   units: SlimMatchUnit[]
   lobbyParticipants?: LobbyParticipant[] // 로비 8명 전체 순위
   contestedInfo?: ContestAnalysis
+  augmentAnalysis?: AugmentAnalysis
 }
 
 // 소환사 프로필 요약 카드 정보

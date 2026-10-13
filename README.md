@@ -61,3 +61,43 @@ GEMINI_API_KEY=
 2. [Vercel](https://vercel.com)에 로그인 후 `Add New Project`에서 `tft-ai` 저장소를 Import합니다.
 3. Environment Variables(환경 변수)에 `RIOT_API_KEY`와 `DEEPSEEK_API_KEY`를 등록합니다.
 4. `Deploy`를 클릭하면 즉시 전 세계에 서비스되는 웹앱으로 배포됩니다!
+
+---
+
+## 🧭 최신 아키텍처 (경기별 분석 + 접지 코칭)
+
+### API 엔드포인트
+| 엔드포인트 | 역할 | LLM 호출 |
+|---|---|---|
+| `POST /api/tft/search` | 소환사 프로필 + 최근 매치 리스트 | ❌ |
+| `POST /api/tft/match` | **특정 경기(matchId) 1개 정밀 분석 (matchId 캐시)** | ✅ |
+| `POST /api/tft/overview` | 로드된 여러 경기 종합 분석 | ✅ |
+
+### 접지(Grounding) 원칙
+- **계산은 코드, 해설만 AI**: 기물 경합(`lib/contest.ts`), 증강 메타 대조(`lib/meta.ts`)는 코드가 수치로 산출합니다.
+- LLM은 **제공된 수치만** 근거로 서술하며, 제공되지 않은 메타/증강 통계는 "단정 불가"로 답합니다.
+
+### 🧮 경합 강도 (0~100)
+```
+기물 weight = 코스트 × 성급민감도(1성1.4/2성1.0/3성0.5) × (1 + (상대수-1)×0.3)
+시너지 weight = 활성단계 × 그 시너지 상대 수
+contestScore = 100 × raw / (raw + 25)   → 등급: 빈집/보통/경합/심각
+```
+
+---
+
+## 📊 증강 메타 데이터 (파이프라인)
+
+Riot 공식 API는 **집계 통계(증강 승률/평균등수)를 제공하지 않습니다.** 따라서 자체 집계합니다.
+
+- 데이터 파일: `lib/metaStats.json`
+- 현재 상태: **`sample: true` (샘플/검증 전)** → UI에 `샘플` 태그 표시, LLM도 "단정 금지"로 처리
+- 실측 데이터 생성:
+  ```bash
+  RIOT_API_KEY=RGAPI-xxxx node scripts/buildMetaStats.js "닉네임#KR1" "닉네임2#KR1" ...
+  ```
+  → `lib/metaStats.json` 을 `sample: false, source: "riot-sample"` 로 덮어씁니다.
+  → 실행 시 UI/LLM이 실측 통계를 인용하게 됩니다.
+- ⚠️ 증강 키 표기는 `lib/summarize.ts` 의 `cleanName()` 결과와 일치해야 합니다(스크립트가 동일 규칙 사용).
+- ⚠️ Riot 개발 키는 24시간마다 만료되며, 표본이 많을수록 통계가 안정적입니다.
+

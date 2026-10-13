@@ -1,6 +1,7 @@
 import { SlimMatchData, LobbyParticipant } from './types'
 import { DDRAGON_VERSION } from './constants'
 import { analyzeContest } from './contest'
+import { analyzeAugments } from './meta'
 
 /**
  * API 키가 없거나 체험(데모) 모드일 때 사용하는 시뮬레이션 데이터.
@@ -211,11 +212,12 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
     },
   ]
 
-  // 데모도 실제와 동일한 결정론적 경합 분석 엔진 사용 (강도/등급/상세 포함)
+  // 데모도 실제와 동일한 결정론적 분석 엔진 사용 (경합 + 증강 메타)
   for (const m of matches) {
     if (m.lobbyParticipants) {
       m.contestedInfo = analyzeContest(m.units, m.traits, m.lobbyParticipants.filter((p) => !p.isUser))
     }
+    m.augmentAnalysis = analyzeAugments(m.augments)
   }
 
   return matches

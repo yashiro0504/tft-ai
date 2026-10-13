@@ -1,6 +1,7 @@
 import { RawTFTMatch, SlimMatchData, SlimMatchTrait, SlimMatchUnit, LobbyParticipant } from './types'
 import { translateChampion, translateItem, translateTrait } from './constants'
 import { analyzeContest } from './contest'
+import { analyzeAugments } from './meta'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -84,6 +85,7 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
   const activeTraits = processParticipantTraits(participant.traits)
   const units = processParticipantUnits(participant.units)
   const augments = (participant.augments || []).map(cleanName)
+  const augmentAnalysis = analyzeAugments(augments)
 
   // 로비 8명 전체 순위 정보 (롤체지지/OP.GG 아코디언)
   const lobbyParticipants: LobbyParticipant[] = participants
@@ -132,6 +134,7 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
     units,
     lobbyParticipants,
     contestedInfo,
+    augmentAnalysis,
   }
 }
 
@@ -146,7 +149,17 @@ export function serializeMatchesForLLM(matches: SlimMatchData[]): string {
           return `${u.name}${stars} ${items}`.trim()
         })
         .join(' | ')
-      const augStr = m.augments.join(', ') || '없음'
+      const augStr = m.augments.length
+        ? m.augments
+            .map((name) => {
+              const d = m.augmentAnalysis?.details.find((x) => x.name === name)
+              if (d && typeof d.avgPlacement === 'number') {
+                return `${name}(평균 ${d.avgPlacement}등·${d.tier}${m.augmentAnalysis?.sample ? '·샘플' : ''})`
+              }
+              return name
+            })
+            .join(', ')
+        : '없음'
       const setStr = m.setNumber ? `시즌 ${m.setNumber}` : '현재 시즌'
 
       const twoStarPlus = m.units.filter((u) => (u.tier || 1) >= 2).length

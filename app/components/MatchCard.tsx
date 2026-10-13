@@ -142,15 +142,43 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {match.augments.length > 0 && (
                 <div className="flex items-center gap-1">
-                  {match.augments.map((aug, i) => (
+                  {match.augments.map((aug, i) => {
+                    const d = match.augmentAnalysis?.details.find((x) => x.name === aug)
+                    const tierColor =
+                      d?.tier === 'S'
+                        ? 'border-amber-400 text-amber-300'
+                        : d?.tier === 'A'
+                        ? 'border-emerald-400 text-emerald-300'
+                        : d?.tier === 'B'
+                        ? 'border-cyan-400 text-cyan-300'
+                        : d?.tier === 'C'
+                        ? 'border-slate-500 text-slate-300'
+                        : d?.tier === 'D'
+                        ? 'border-rose-500 text-rose-300'
+                        : 'border-slate-700 text-slate-300'
+                    const title =
+                      d && typeof d.avgPlacement === 'number'
+                        ? `${aug} · 평균 ${d.avgPlacement}등 (${d.tier})${match.augmentAnalysis?.sample ? ' · 샘플(검증 전)' : ''}`
+                        : aug
+                    return (
+                      <span
+                        key={i}
+                        title={title}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800/90 border text-[11px] max-w-[140px] ${tierColor}`}
+                      >
+                        {d?.tier && <span className="font-black shrink-0">{d.tier}</span>}
+                        <span className="truncate">{aug}</span>
+                      </span>
+                    )
+                  })}
+                  {match.augmentAnalysis?.sample && (
                     <span
-                      key={i}
-                      title={aug}
-                      className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700 text-slate-300 text-[11px] truncate max-w-[120px]"
+                      title="검증 전 샘플 메타 통계입니다"
+                      className="text-[10px] text-amber-400/80 border border-amber-800/50 rounded px-1.5 py-0.5 shrink-0"
                     >
-                      {aug}
+                      샘플
                     </span>
-                  ))}
+                  )}
                 </div>
               )}
 

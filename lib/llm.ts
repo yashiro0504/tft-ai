@@ -95,14 +95,21 @@ export async function generateMetaCoachFeedback(
     ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
     : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
 
+  // 증강 메타 통계 제공 여부에 따라 접지 안내를 동적으로 구성
+  const metaDetail = matches.find((m) => m.augmentAnalysis?.hasMeta)?.augmentAnalysis
+  const metaNote = metaDetail
+    ? metaDetail.sample
+      ? `※ 이번 요청에는 증강 메타 통계가 '샘플(검증 전)'로 제공되었다. 참고용으로만 언급하고, 실측 통계인 것처럼 단정하지 마라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'})`
+      : `※ 이번 요청에는 증강 메타 통계(평균 등수/티어)가 제공되었다. 증강 선택 평가에 이 수치를 직접 인용하라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'}, baseline 평균등수 ${metaDetail.baselineAvgPlacement ?? 4.5})`
+    : `※ 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다. 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.`
+
   const prompt = `소환사명: ${gameName}
 ${modeContext}
 
 [제공된 사실 데이터 — 아래 수치만 근거로 사용하라]
 ${matchSerialized}
 
-※ 참고: 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다.
-   따라서 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.
+${metaNote}
    모든 서술은 위 데이터의 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 직접 인용해 작성하라.
 
 위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 정밀 분석하여, 로비 기물 경합 기반 대깨/유연성 판단과 데이터 기반 종합 수행 점수, 구체적 실력 개선 포인트를 포함한 JSON 형식의 전문 코칭 리포트를 작성하라.`
