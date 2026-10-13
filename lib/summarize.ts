@@ -44,7 +44,7 @@ function processParticipantUnits(units: any[]): SlimMatchUnit[] {
     .sort((a, b) => b.tier - a.tier || (b.itemNames?.length || 0) - (a.itemNames?.length || 0))
     .map((u) => {
       const champ = translateChampion(u.character_id)
-      const translatedItems = (u.itemNames || []).map(translateItem)
+      const translatedItems = ((u.itemNames as string[]) || []).map(translateItem)
       return {
         id: u.character_id,
         name: champ.name,

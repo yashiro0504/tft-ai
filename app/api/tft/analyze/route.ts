@@ -4,6 +4,7 @@ import { extractSlimMatchData } from '@/lib/summarize'
 import { generateMetaCoachFeedback } from '@/lib/llm'
 import { SlimMatchData, TFTAnalysisResponse, SummonerProfile, LobbyParticipant } from '@/lib/types'
 import { DDRAGON_VERSION } from '@/lib/constants'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 function createDemoLobby(userPlacement: number, userName: string): LobbyParticipant[] {
   const sampleOpponents = [
@@ -230,17 +231,47 @@ function calculateProfileStats(matches: SlimMatchData[], gameName: string, tagLi
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    let { gameName, tagLine, mode = 'single', isDemo = false } = body
+    // 0. 레이트 리미팅 (IP 기준, 60초당 20회) — 남용으로 인한 Riot/DeepSeek 쿼터 소진 방지
+    const ip = getClientIp(req.headers)
+    const limited = rateLimit(`analyze:${ip}`, 20, 60_000)
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { success: false, error: `요청이 너무 많습니다. ${limited.retryAfterSec}초 후 다시 시도해주세요.` },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfterSec) } }
+      )
+    }
+
+    // 1. 요청 본문 파싱 및 입력 검증
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ success: false, error: '요청 본문(JSON) 형식이 올바르지 않습니다.' }, { status: 400 })
+    }
+
+    const raw = (body ?? {}) as Record<string, unknown>
+    let gameName = typeof raw.gameName === 'string' ? raw.gameName.trim() : ''
+    let tagLine = typeof raw.tagLine === 'string' ? raw.tagLine.trim() : ''
+    const mode: 'single' | 'multi' = raw.mode === 'multi' ? 'multi' : 'single'
+    const isDemo = raw.isDemo === true
 
     if (!gameName) {
       return NextResponse.json({ success: false, error: '소환사 닉네임을 입력해주세요.' }, { status: 400 })
     }
 
+    // "이름#태그" 형태로 입력된 경우 분리
     if (gameName.includes('#')) {
-      const parts = gameName.split('#')
-      gameName = parts[0].trim()
-      tagLine = parts[1].trim()
+      const [namePart, tagPart] = gameName.split('#')
+      gameName = (namePart || '').trim()
+      tagLine = (tagPart || '').trim() || tagLine
+    }
+
+    // 길이 제한 (과도한 입력/남용 방지)
+    if (gameName.length > 32) {
+      return NextResponse.json({ success: false, error: '소환사 닉네임은 32자 이내로 입력해주세요.' }, { status: 400 })
+    }
+    if (tagLine.length > 10) {
+      return NextResponse.json({ success: false, error: '태그는 10자 이내로 입력해주세요.' }, { status: 400 })
     }
 
     if (!tagLine) {
@@ -328,13 +359,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(result)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('TFT Analyze API Error:', err)
     if (err instanceof RiotApiError) {
       return NextResponse.json({ success: false, error: err.message }, { status: err.statusCode })
     }
+    // 내부 오류 메시지(스택/공급자 응답 등)는 클라이언트에 노출하지 않습니다.
     return NextResponse.json(
-      { success: false, error: err.message || '매치 분석 중 예기치 못한 오류가 발생했습니다.' },
+      { success: false, error: '매치 분석 중 예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' },
       { status: 500 }
     )
   }

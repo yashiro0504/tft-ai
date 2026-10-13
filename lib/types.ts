@@ -22,6 +22,8 @@ export interface RawTFTTrait {
 
 export interface RawTFTParticipant {
   puuid: string
+  riotIdGameName?: string
+  riotIdTagline?: string
   placement: number
   level: number
   last_round: number
