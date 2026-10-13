@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info,
+  AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info, Database,
 } from 'lucide-react'
 import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
@@ -22,10 +22,16 @@ interface MatchCardProps {
  */
 export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: MatchCardProps) {
   const [isOpenLobby, setIsOpenLobby] = useState(false)
+  const [isOpenEvidence, setIsOpenEvidence] = useState(false)
   const [feedback, setFeedback] = useState<MetaCoachFeedback | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [wasCached, setWasCached] = useState(false)
+
+  // 접지 근거 표시용 계산 지표 (LLM에 제공되는 값과 동일)
+  const twoStarPlus = match.units.filter((u) => (u.tier || 1) >= 2).length
+  const threeStar = match.units.filter((u) => u.tier === 3).length
+  const totalItems = match.units.reduce((s, u) => s + (u.items?.length || 0), 0)
 
   const isWin = match.placement === 1
   const isTop4 = match.placement <= 4 && !isWin
@@ -334,6 +340,16 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                 {isOpenLobby ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsOpenEvidence(!isOpenEvidence)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition cursor-pointer border border-slate-700/60"
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>{isOpenEvidence ? '접지 근거 접기' : '접지 근거 보기'}</span>
+              {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
           </div>
         </div>
 
@@ -420,6 +436,110 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* 접지 근거 패널 (AI에 제공된 계산 데이터) */}
+      {isOpenEvidence && (
+        <div className="bg-slate-950/95 border-t border-slate-800 p-4 md:p-5 space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-xs uppercase tracking-wider">
+            <Database className="w-4 h-4 text-cyan-400" />
+            <span>접지 근거 · AI에 제공된 계산 데이터</span>
+          </div>
+
+          {/* 1) 계산 지표 */}
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 mb-1.5">📊 계산 지표 (코드 산출)</p>
+            <div className="flex flex-wrap gap-1.5 text-[11px]">
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">2성+ 기물 <b className="text-cyan-300">{twoStarPlus}개</b></span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">3성 <b className="text-amber-300">{threeStar}개</b></span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">총 장착아이템 <b className="text-cyan-300">{totalItems}개</b></span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">잔여 골드 <b className="text-emerald-300">{match.goldLeft}G</b></span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">탈락 라운드 <b className="text-slate-200">{match.lastRound}</b></span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">최종 레벨 <b className="text-slate-200">Lv.{match.level}</b></span>
+            </div>
+          </div>
+
+          {/* 2) 로비 경합 분석 */}
+          {match.contestedInfo && (
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1.5">⚔️ 로비 경합 분석</p>
+              <div className="flex flex-wrap gap-1.5 text-[11px] mb-2">
+                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">경합 강도 <b className="text-rose-300">{match.contestedInfo.contestScore ?? '-'}/100</b></span>
+                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">등급 <b className="text-amber-300">{match.contestedInfo.level ?? '-'}</b></span>
+                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">겹친 상대 <b className="text-slate-200">{match.contestedInfo.opponentCount}명</b></span>
+              </div>
+
+              {!!match.contestedInfo.unitDetails?.length && (
+                <div className="space-y-1 mb-2">
+                  {match.contestedInfo.unitDetails.map((d, i) => (
+                    <div key={i} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-slate-900/70 border border-slate-800">
+                      <span className="text-slate-200">{d.name} <span className="text-slate-500">· {d.cost}코 · 나 {d.myTier}성</span></span>
+                      <span className="text-slate-400">상대 <b className="text-rose-300">{d.opponentCount}명</b> · 가중 <b className="text-cyan-300">{d.weight}</b></span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!!match.contestedInfo.traitDetails?.length && (
+                <div className="space-y-1 mb-2">
+                  {match.contestedInfo.traitDetails.map((d, i) => (
+                    <div key={i} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-slate-900/70 border border-slate-800">
+                      <span className="text-slate-200">{d.name} <span className="text-slate-500">· {d.myTier}단계</span></span>
+                      <span className="text-slate-400">상대 <b className="text-rose-300">{d.opponentCount}명</b> · 가중 <b className="text-cyan-300">{d.weight}</b></span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {match.contestedInfo.summary && (
+                <p className="text-[11px] text-slate-400 leading-relaxed">{match.contestedInfo.summary}</p>
+              )}
+            </div>
+          )}
+
+          {/* 3) 증강 메타 대조 */}
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 mb-1.5 flex items-center gap-1.5">
+              🎲 증강 메타 대조
+              {match.augmentAnalysis?.sample && (
+                <span className="text-amber-400/80 border border-amber-800/50 rounded px-1.5 py-0.5">샘플(검증 전)</span>
+              )}
+            </p>
+            {match.augmentAnalysis?.hasMeta ? (
+              <>
+                <div className="flex flex-wrap gap-1.5 text-[11px] mb-2">
+                  <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">증강 점수 <b className="text-cyan-300">{match.augmentAnalysis.augmentScore ?? '-'}/100</b></span>
+                  <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">출처 <b className="text-slate-200">{match.augmentAnalysis.source ?? '-'}</b></span>
+                  <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">패치 <b className="text-slate-200">{match.augmentAnalysis.patch ?? '-'}</b></span>
+                  <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">baseline <b className="text-slate-200">{match.augmentAnalysis.baselineAvgPlacement ?? 4.5}등</b></span>
+                </div>
+                <div className="space-y-1">
+                  {match.augmentAnalysis.details.map((d, i) => (
+                    <div key={i} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-slate-900/70 border border-slate-800">
+                      <span className="text-slate-200">{d.name}</span>
+                      <span className="text-slate-400">
+                        {typeof d.avgPlacement === 'number' ? (
+                          <>
+                            <b className="text-slate-200">평균 {d.avgPlacement}등</b> · <b className="text-amber-300">{d.tier}</b>
+                            {typeof d.pickRate === 'number' ? ` · 픽률 ${Math.round(d.pickRate * 100)}%` : ''}
+                          </>
+                        ) : (
+                          '메타 데이터 없음'
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-[11px] text-slate-500">증강 메타 통계가 없습니다. (scripts/buildMetaStats.js 로 생성)</p>
+            )}
+          </div>
+
+          <p className="text-[10px] text-slate-500 border-t border-slate-800 pt-2">
+            ※ 위 수치가 코드로 계산되어 AI 프롬프트에 ‘제공된 사실 데이터’로 전달됩니다. AI는 이 범위 밖은 단정하지 않습니다.
+          </p>
         </div>
       )}
 
