@@ -1,5 +1,6 @@
 import { RawTFTMatch, SlimMatchData, SlimMatchTrait, SlimMatchUnit, LobbyParticipant } from './types'
 import { translateChampion, translateItem, translateTrait } from './constants'
+import { analyzeContest } from './contest'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -100,41 +101,12 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
       isUser: p.puuid === userPuuid,
     }))
 
-  // 로비 내 타 유저들과의 기물/시너지 겹침(대깨/경합 여부) 분석
-  const opponents = participants.filter((p) => p.puuid !== userPuuid)
-  const myTopTraits = activeTraits.slice(0, 2).map((t) => t.name)
-  const myTopUnits = units.slice(0, 3).map((u) => u.name)
-
-  const contestedTraitsSet = new Set<string>()
-  const contestedUnitsSet = new Set<string>()
-  let opponentCount = 0
-
-  for (const opp of opponents) {
-    let hasContest = false
-    const oppTraits = (opp.traits || []).filter((t: any) => t.tier_current > 0).map((t: any) => translateTrait(t.name).name)
-    const oppUnits = (opp.units || []).map((u: any) => translateChampion(u.character_id).name)
-
-    for (const t of myTopTraits) {
-      if (oppTraits.includes(t)) {
-        contestedTraitsSet.add(t)
-        hasContest = true
-      }
-    }
-    for (const u of myTopUnits) {
-      if (oppUnits.includes(u)) {
-        contestedUnitsSet.add(u)
-        hasContest = true
-      }
-    }
-    if (hasContest) opponentCount++
-  }
-
-  const contestedInfo = {
-    isContested: contestedTraitsSet.size > 0 || contestedUnitsSet.size > 0,
-    contestedTraits: Array.from(contestedTraitsSet),
-    contestedUnits: Array.from(contestedUnitsSet),
-    opponentCount,
-  }
+  // 로비 경합 분석 (코스트/성급/시너지 가중) — lib/contest.ts
+  const contestedInfo = analyzeContest(
+    units,
+    activeTraits,
+    lobbyParticipants.filter((p) => !p.isUser)
+  )
 
   const queueMap: Record<number, string> = {
     1100: '랭크 게임',
@@ -177,9 +149,28 @@ export function serializeMatchesForLLM(matches: SlimMatchData[]): string {
       const augStr = m.augments.join(', ') || '없음'
       const setStr = m.setNumber ? `시즌 ${m.setNumber}` : '현재 시즌'
       
-      const contestStr = m.contestedInfo?.isContested
-        ? `⚠️ 경합 발생: 로비 내 ${m.contestedInfo.opponentCount}명의 유저와 메인 시너지(${m.contestedInfo.contestedTraits.join(', ') || '동일 시너지'}) / 핵심 기물(${m.contestedInfo.contestedUnits.join(', ') || '동일 기물'}) 겹침 (대깨 여부 판단 요망)`
-        : `✅ 빈집 성공: 로비 내 핵심 시너지 겹침 유저 거의 없음 (유연한 빈집 진입)`
+      const ci = m.contestedInfo
+      const contestStr = !ci
+        ? '경합 정보 없음'
+        : ci.isContested
+        ? [
+            `⚠️ 경합 ${ci.level ?? ''} (강도 ${ci.contestScore ?? '?'}/100, 로비 ${ci.opponentCount}명 겹침)`,
+            ci.unitDetails?.length
+              ? `기물: ${ci.unitDetails
+                  .slice(0, 3)
+                  .map((d) => `${d.name}(${d.cost}코·나 ${d.myTier}성·상대 ${d.opponentCount}명)`)
+                  .join(', ')}`
+              : '',
+            ci.traitDetails?.length
+              ? `시너지: ${ci.traitDetails
+                  .slice(0, 3)
+                  .map((d) => `${d.name}(${d.myTier}단계·상대 ${d.opponentCount}명)`)
+                  .join(', ')}`
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' | ')
+        : `✅ 빈집 성공 (강도 ${ci.contestScore ?? 0}/100, 겹침 거의 없음)`
 
       return `[매치 ${idx + 1} - ${setStr}]
 - 최종 등수: ${m.placement}등 (${m.placement <= 4 ? '순방/승리' : '하위권/탈락'})

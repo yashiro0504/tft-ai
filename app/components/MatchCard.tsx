@@ -157,14 +157,26 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {match.contestedInfo && (
                 <div>
                   {match.contestedInfo.isContested ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800/80 text-rose-300 text-[11px] font-semibold">
+                    <span
+                      title={match.contestedInfo.summary}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800/80 text-rose-300 text-[11px] font-semibold"
+                    >
                       <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
-                      <span>로비 {match.contestedInfo.opponentCount}명 경합 ({match.contestedInfo.contestedTraits[0] || '기물'})</span>
+                      <span>
+                        경합 {match.contestedInfo.level ?? ''} · 로비 {match.contestedInfo.opponentCount}명 겹침
+                        {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
+                      </span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/80 text-emerald-300 text-[11px] font-semibold">
+                    <span
+                      title={match.contestedInfo.summary}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/80 text-emerald-300 text-[11px] font-semibold"
+                    >
                       <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                      <span>빈집 선점</span>
+                      <span>
+                        빈집 선점
+                        {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
+                      </span>
                     </span>
                   )}
                 </div>

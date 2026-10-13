@@ -87,6 +87,49 @@ export interface LobbyParticipant {
   isUser: boolean
 }
 
+// ── 로비 경합 분석 (Phase 2: 코스트/성급/시너지 가중) ──
+
+export type ContestLevel = '빈집' | '보통' | '경합' | '심각'
+
+export interface UnitContestDetail {
+  unitId: string
+  name: string
+  /** 코스트(1~5). SlimMatchUnit.rarity 가 실제 코스트 */
+  cost: number
+  /** 내 성급 (1~3) */
+  myTier: number
+  /** 나와 같은 기물을 기용한 상대 수 */
+  opponentCount: number
+  /** 경합 위험 가중치 (코스트 × 성급 민감도 × 빈도) */
+  weight: number
+}
+
+export interface TraitContestDetail {
+  name: string
+  /** 내 시너지 활성 단계 */
+  myTier: number
+  /** 내 시너지 기물 수 */
+  myCount: number
+  /** 나와 같은 시너지를 활성한 상대 수 */
+  opponentCount: number
+  weight: number
+}
+
+export interface ContestAnalysis {
+  isContested: boolean
+  /** 경합 강도 0~100 (0=빈집, 100=최악). analyzeContest()가 항상 채움 */
+  contestScore?: number
+  level?: ContestLevel
+  /** 코어 기물 또는 상위 시너지를 공유한 상대 수 */
+  opponentCount: number
+  contestedUnits: string[]
+  contestedTraits: string[]
+  unitDetails?: UnitContestDetail[]
+  traitDetails?: TraitContestDetail[]
+  /** 규칙 기반 요약 텍스트 (LLM 없이도 표시 가능) */
+  summary?: string
+}
+
 export interface SlimMatchData {
   matchId: string
   setNumber?: number
@@ -102,12 +145,7 @@ export interface SlimMatchData {
   traits: SlimMatchTrait[]
   units: SlimMatchUnit[]
   lobbyParticipants?: LobbyParticipant[] // 로비 8명 전체 순위
-  contestedInfo?: {
-    isContested: boolean
-    contestedUnits: string[]
-    contestedTraits: string[]
-    opponentCount: number
-  }
+  contestedInfo?: ContestAnalysis
 }
 
 // 소환사 프로필 요약 카드 정보
