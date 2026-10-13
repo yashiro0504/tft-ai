@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAccountByRiotId, getTftMatchIds, getTftMatchDetail, getSummonerByPuuid, RiotApiError } from '@/lib/riot'
-import { extractSlimMatchData } from '@/lib/summarize'
-import { generateMetaCoachFeedback } from '@/lib/llm'
-import { SlimMatchData, TFTAnalysisResponse, SummonerProfile, LobbyParticipant } from '@/lib/types'
-import { DDRAGON_VERSION } from '@/lib/constants'
-import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { SlimMatchData, LobbyParticipant } from './types'
+import { DDRAGON_VERSION } from './constants'
 
-function createDemoLobby(userPlacement: number, userName: string): LobbyParticipant[] {
+/**
+ * API 키가 없거나 체험(데모) 모드일 때 사용하는 시뮬레이션 데이터.
+ * (기존 app/api/tft/analyze/route.ts 에서 분리)
+ */
+
+export function createDemoLobby(userPlacement: number, userName: string): LobbyParticipant[] {
   const sampleOpponents = [
     { name: '태아나보니이명훈', level: 9, lastRound: '6-4', dmg: 142, traits: ['선봉대', '암살자'], units: ['갱플랭크', '노틸러스', '트위스티드 페이트'] },
     { name: '김호석', level: 9, lastRound: '6-2', dmg: 128, traits: ['빌지워터', '난동꾼'], units: ['미스 포츈', '일라오이', '그레이브즈'] },
@@ -45,8 +45,8 @@ function createDemoLobby(userPlacement: number, userName: string): LobbyParticip
         level: opp.level,
         lastRound: opp.lastRound,
         damageToPlayers: opp.dmg,
-        traits: opp.traits.map(t => ({ name: t, tier: 2, count: 4 })),
-        units: opp.units.map(u => ({
+        traits: opp.traits.map((t) => ({ name: t, tier: 2, count: 4 })),
+        units: opp.units.map((u) => ({
           id: `TFT_${u}`,
           name: u,
           tier: rank <= 3 ? 2 : 1,
@@ -62,7 +62,7 @@ function createDemoLobby(userPlacement: number, userName: string): LobbyParticip
   return lobby
 }
 
-function getDemoMatches(gameName: string): SlimMatchData[] {
+export function getDemoMatches(gameName: string): SlimMatchData[] {
   return [
     {
       matchId: 'KR_DEMO_001',
@@ -211,163 +211,3 @@ function getDemoMatches(gameName: string): SlimMatchData[] {
   ]
 }
 
-function calculateProfileStats(matches: SlimMatchData[], gameName: string, tagLine: string, level = 100, iconId = 7193): SummonerProfile {
-  const total = matches.length || 1
-  const avgPlacement = Math.round((matches.reduce((acc, m) => acc + m.placement, 0) / total) * 10) / 10
-  const winCount = matches.filter(m => m.placement === 1).length
-  const top4Count = matches.filter(m => m.placement <= 4).length
-
-  return {
-    gameName,
-    tagLine,
-    summonerLevel: level,
-    profileIconUrl: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`,
-    avgPlacement,
-    winRate: Math.round((winCount / total) * 100),
-    top4Rate: Math.round((top4Count / total) * 100),
-    totalGames: total,
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    // 0. 레이트 리미팅 (IP 기준, 60초당 20회) — 남용으로 인한 Riot/DeepSeek 쿼터 소진 방지
-    const ip = getClientIp(req.headers)
-    const limited = rateLimit(`analyze:${ip}`, 20, 60_000)
-    if (!limited.allowed) {
-      return NextResponse.json(
-        { success: false, error: `요청이 너무 많습니다. ${limited.retryAfterSec}초 후 다시 시도해주세요.` },
-        { status: 429, headers: { 'Retry-After': String(limited.retryAfterSec) } }
-      )
-    }
-
-    // 1. 요청 본문 파싱 및 입력 검증
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return NextResponse.json({ success: false, error: '요청 본문(JSON) 형식이 올바르지 않습니다.' }, { status: 400 })
-    }
-
-    const raw = (body ?? {}) as Record<string, unknown>
-    let gameName = typeof raw.gameName === 'string' ? raw.gameName.trim() : ''
-    let tagLine = typeof raw.tagLine === 'string' ? raw.tagLine.trim() : ''
-    const mode: 'single' | 'multi' = raw.mode === 'multi' ? 'multi' : 'single'
-    const isDemo = raw.isDemo === true
-
-    if (!gameName) {
-      return NextResponse.json({ success: false, error: '소환사 닉네임을 입력해주세요.' }, { status: 400 })
-    }
-
-    // "이름#태그" 형태로 입력된 경우 분리
-    if (gameName.includes('#')) {
-      const [namePart, tagPart] = gameName.split('#')
-      gameName = (namePart || '').trim()
-      tagLine = (tagPart || '').trim() || tagLine
-    }
-
-    // 길이 제한 (과도한 입력/남용 방지)
-    if (gameName.length > 32) {
-      return NextResponse.json({ success: false, error: '소환사 닉네임은 32자 이내로 입력해주세요.' }, { status: 400 })
-    }
-    if (tagLine.length > 10) {
-      return NextResponse.json({ success: false, error: '태그는 10자 이내로 입력해주세요.' }, { status: 400 })
-    }
-
-    if (!tagLine) {
-      tagLine = 'KR1'
-    }
-
-    const count = mode === 'multi' ? 5 : 1
-    const hasApiKey = Boolean(process.env.RIOT_API_KEY)
-
-    if (isDemo || !hasApiKey) {
-      const allDemos = getDemoMatches(gameName)
-      const targetMatches = mode === 'multi' ? allDemos : allDemos.slice(0, 1)
-      const feedback = await generateMetaCoachFeedback(gameName, targetMatches, mode)
-      const summonerProfile = calculateProfileStats(targetMatches, gameName, tagLine, 120, 7193)
-
-      const response: TFTAnalysisResponse = {
-        success: true,
-        gameName,
-        tagLine,
-        puuid: 'DEMO_PUUID_' + Date.now(),
-        mode,
-        matches: targetMatches,
-        feedback,
-        summonerProfile,
-        isDemo: !hasApiKey || isDemo,
-      }
-      return NextResponse.json(response)
-    }
-
-    // 1. Riot Account 조회 (PUUID)
-    const account = await getAccountByRiotId(gameName, tagLine)
-
-    // 2. 소환사 기본 정보 (프로필 아이콘, 레벨) 조회
-    const summonerInfo = await getSummonerByPuuid(account.puuid)
-
-    // 3. 최근 TFT 매치 ID 목록 (1판 또는 5판)
-    const matchIds = await getTftMatchIds(account.puuid, count)
-
-    if (!matchIds || matchIds.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `소환사 '${account.gameName}#${account.tagLine}'의 최근 TFT 매치 기록을 찾을 수 없습니다.`,
-        },
-        { status: 404 }
-      )
-    }
-
-    // 4. 매치 세부 데이터 병렬 조회 및 정제 (로비 8명 전체 순위 포함)
-    const matchDetails = await Promise.all(
-      matchIds.map(async (id) => {
-        try {
-          const rawMatch = await getTftMatchDetail(id)
-          return extractSlimMatchData(rawMatch, account.puuid)
-        } catch (err) {
-          console.error(`Failed to fetch match detail ${id}:`, err)
-          return null
-        }
-      })
-    )
-
-    const validMatches = matchDetails.filter((m): m is SlimMatchData => m !== null)
-
-    if (validMatches.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'TFT 매치 세부 정보를 불러오지 못했습니다.' },
-        { status: 500 }
-      )
-    }
-
-    // 5. LLM 전문 메타 분석 코칭
-    const feedback = await generateMetaCoachFeedback(account.gameName, validMatches, mode)
-    const summonerProfile = calculateProfileStats(validMatches, account.gameName, account.tagLine, summonerInfo.summonerLevel, summonerInfo.profileIconId)
-
-    const result: TFTAnalysisResponse = {
-      success: true,
-      gameName: account.gameName,
-      tagLine: account.tagLine,
-      puuid: account.puuid,
-      mode,
-      matches: validMatches,
-      feedback,
-      summonerProfile,
-      isDemo: false,
-    }
-
-    return NextResponse.json(result)
-  } catch (err: unknown) {
-    console.error('TFT Analyze API Error:', err)
-    if (err instanceof RiotApiError) {
-      return NextResponse.json({ success: false, error: err.message }, { status: err.statusCode })
-    }
-    // 내부 오류 메시지(스택/공급자 응답 등)는 클라이언트에 노출하지 않습니다.
-    return NextResponse.json(
-      { success: false, error: '매치 분석 중 예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' },
-      { status: 500 }
-    )
-  }
-}

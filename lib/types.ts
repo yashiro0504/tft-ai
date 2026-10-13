@@ -151,3 +151,41 @@ export interface TFTAnalysisResponse {
   isDemo?: boolean
   error?: string
 }
+
+// ── Phase 1: 아이디 검색 → 경기별 분석 API 응답 타입 ──
+
+/** POST /api/tft/search 응답: 프로필 + 최근 매치 리스트 (AI 분석 없음) */
+export interface TftSearchResponse {
+  success: boolean
+  gameName: string
+  tagLine: string
+  puuid: string
+  summonerProfile?: SummonerProfile
+  matches: SlimMatchData[]
+  isDemo?: boolean
+  error?: string
+}
+
+/** POST /api/tft/match 응답: 특정 경기 1개 정밀 AI 분석 (matchId 캐시) */
+export interface TftMatchAnalysisResponse {
+  success: boolean
+  matchId: string
+  match?: SlimMatchData
+  feedback?: MetaCoachFeedback
+  cached?: boolean
+  error?: string
+}
+
+/** POST /api/tft/overview 응답: 로드된 여러 경기 종합 AI 분석 */
+export interface TftOverviewResponse {
+  success: boolean
+  gameName: string
+  tagLine: string
+  puuid?: string
+  mode: 'single' | 'multi'
+  matchCount: number
+  feedback?: MetaCoachFeedback
+  summonerProfile?: SummonerProfile
+  isDemo?: boolean
+  error?: string
+}
