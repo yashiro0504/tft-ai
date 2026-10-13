@@ -7,6 +7,7 @@ import {
   TraitContestDetail,
   UnitContestDetail,
 } from './types'
+import { CONTEST_CONFIG, starSensitivity, levelFromScore } from './contestConfig'
 
 /**
  * 로비 경합(대깨 vs 유연성) 결정론적 분석 엔진.
@@ -18,19 +19,12 @@ import {
  *    여기서는 결과 시점의 경합 상태(겹침 강도)를 정량화한다.
  */
 
-/** 코어 기물 판정: 2성 이상이거나 아이템을 1개 이상 보유한 기물 */
+/** 코어 기물 판정 (임계값은 contestConfig.json) */
 function isCoreUnit(u: SlimMatchUnit): boolean {
-  return (u.tier || 1) >= 2 || (u.items?.length || 0) > 0
-}
-
-/**
- * 내 성급에 따른 경합 민감도.
- * 아직 2성 미완성(1성)일 때 경합이 가장 치명적이고, 3성 완성 시 민감도는 낮다.
- */
-function starSensitivity(tier: number): number {
-  if (tier <= 1) return 1.4
-  if (tier === 2) return 1.0
-  return 0.5
+  return (
+    (u.tier || 1) >= CONTEST_CONFIG.coreUnitMinTier ||
+    (u.items?.length || 0) >= CONTEST_CONFIG.coreUnitMinItems
+  )
 }
 
 function round1(n: number): number {
@@ -64,7 +58,7 @@ export function analyzeContest(
       for (const set of oppUnitSets) if (sharesUnitWith(set, u)) opponentCount++
 
       const cost = u.rarity || 3
-      const weight = round1(cost * starSensitivity(u.tier) * (1 + Math.max(opponentCount - 1, 0) * 0.3))
+      const weight = round1(cost * starSensitivity(u.tier) * (1 + Math.max(opponentCount - 1, 0) * CONTEST_CONFIG.frequencyStep))
 
       return { unitId: u.id, name: u.name, cost, myTier: u.tier, opponentCount, weight }
     })
@@ -78,7 +72,7 @@ export function analyzeContest(
       let opponentCount = 0
       for (const set of oppTraitSets) if (set.has(t.name)) opponentCount++
 
-      const weight = round1(t.tier * opponentCount)
+      const weight = round1(t.tier * opponentCount * CONTEST_CONFIG.traitTierWeight)
       return { name: t.name, myTier: t.tier, myCount: t.count, opponentCount, weight }
     })
     .filter((d) => d.opponentCount > 0)
@@ -96,10 +90,9 @@ export function analyzeContest(
   const unitScore = unitDetails.reduce((s, d) => s + d.weight, 0)
   const traitScore = traitDetails.reduce((s, d) => s + d.weight, 0)
   const raw = unitScore + traitScore
-  const contestScore = Math.min(100, Math.round((100 * raw) / (raw + 25)))
+  const contestScore = Math.min(100, Math.round((100 * raw) / (raw + CONTEST_CONFIG.saturationK)))
 
-  const level: ContestLevel =
-    contestScore < 15 ? '빈집' : contestScore < 40 ? '보통' : contestScore < 65 ? '경합' : '심각'
+  const level: ContestLevel = levelFromScore(contestScore)
 
   const isContested = unitDetails.length > 0 || traitDetails.length > 0
   const contestedUnits = unitDetails.map((d) => d.name)

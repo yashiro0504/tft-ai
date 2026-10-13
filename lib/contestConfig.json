@@ -1,0 +1,10 @@
+{
+  "_comment": "경합 분석 튜닝 파라미터. 앱(lib/contestConfig.ts)과 스크립트(scripts/*.js)가 공용으로 사용합니다. scripts/tuneContest.js 로 실측 데이터 기반 재보정 가능.",
+  "starSensitivity": { "1": 1.4, "2": 1.0, "3": 0.5, "default": 1.0 },
+  "frequencyStep": 0.3,
+  "traitTierWeight": 1.0,
+  "saturationK": 25,
+  "thresholds": { "binzip": 15, "boTong": 40, "gyeonghap": 65 },
+  "coreUnitMinTier": 2,
+  "coreUnitMinItems": 1
+}

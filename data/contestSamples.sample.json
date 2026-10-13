@@ -1,0 +1,3615 @@
+{
+  "source": "synthetic-demo",
+  "sample": true,
+  "generatedAt": "2026-10-13T08:24:48.663Z",
+  "patch": "synthetic",
+  "samples": [
+    {
+      "matchId": "SYN_0",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_1",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_2",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_3",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_4",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_5",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_6",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_7",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_8",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_9",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_10",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_11",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_12",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_13",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_14",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_15",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_16",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_17",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_18",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_19",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_20",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_21",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_22",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_23",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_24",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_25",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_26",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_27",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_28",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_29",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_30",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_31",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_32",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_33",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_34",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_35",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_36",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_37",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_38",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_39",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_40",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_41",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_42",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_43",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_44",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_45",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_46",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_47",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_48",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_49",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_50",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_51",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_52",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_53",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_54",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_55",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_56",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_57",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_58",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_59",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_60",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_61",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_62",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_63",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_64",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_65",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_66",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_67",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_68",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_69",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_70",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_71",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_72",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_73",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_74",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_75",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_76",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_77",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_78",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_79",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_80",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_81",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_82",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_83",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_84",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_85",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_86",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_87",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_88",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_89",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_90",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_91",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_92",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_93",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_94",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_95",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_96",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_97",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_98",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_99",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_100",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_101",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_102",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_103",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_104",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 4,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_105",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_106",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_107",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_108",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_109",
+      "placement": 8,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 2,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_110",
+      "placement": 1,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "tier": 2,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_111",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 5,
+          "tier": 1,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_112",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_113",
+      "placement": 3,
+      "units": [
+        {
+          "cost": 5,
+          "tier": 3,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 3,
+          "tier": 3,
+          "opp": 3
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_114",
+      "placement": 5,
+      "units": [
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 2
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "tier": 3,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_115",
+      "placement": 2,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 1
+        },
+        {
+          "cost": 2,
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_116",
+      "placement": 7,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 2,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 1
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_117",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 4,
+          "tier": 2,
+          "opp": 0
+        },
+        {
+          "cost": 3,
+          "tier": 1,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 2,
+          "opp": 0
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_118",
+      "placement": 6,
+      "units": [
+        {
+          "cost": 2,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 3
+        },
+        {
+          "cost": 1,
+          "tier": 2,
+          "opp": 2
+        },
+        {
+          "cost": 1,
+          "tier": 3,
+          "opp": 0
+        }
+      ],
+      "traits": [
+        {
+          "tier": 3,
+          "opp": 1
+        }
+      ]
+    },
+    {
+      "matchId": "SYN_119",
+      "placement": 4,
+      "units": [
+        {
+          "cost": 3,
+          "tier": 2,
+          "opp": 1
+        },
+        {
+          "cost": 1,
+          "tier": 1,
+          "opp": 1
+        }
+      ],
+      "traits": [
+        {
+          "tier": 1,
+          "opp": 2
+        },
+        {
+          "tier": 2,
+          "opp": 3
+        },
+        {
+          "tier": 1,
+          "opp": 2
+        }
+      ]
+    }
+  ]
+}

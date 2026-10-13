@@ -101,3 +101,38 @@ Riot 공식 API는 **집계 통계(증강 승률/평균등수)를 제공하지 �
 - ⚠️ 증강 키 표기는 `lib/summarize.ts` 의 `cleanName()` 결과와 일치해야 합니다(스크립트가 동일 규칙 사용).
 - ⚠️ Riot 개발 키는 24시간마다 만료되며, 표본이 많을수록 통계가 안정적입니다.
 
+---
+
+## 🎛️ 경합 임계값/가중치 튜닝
+
+경합 분석의 모든 파라미터는 `lib/contestConfig.json` 한 곳에서 관리됩니다 (앱·스크립트 공용).
+
+```json
+{
+  "starSensitivity": { "1": 1.4, "2": 1.0, "3": 0.5 },
+  "frequencyStep": 0.3,
+  "traitTierWeight": 1.0,
+  "saturationK": 25,
+  "thresholds": { "binzip": 15, "boTong": 40, "gyeonghap": 65 }
+}
+```
+
+### 실측 데이터로 재보정
+```bash
+# 1) 표본 수집 (참가자별 경합 특징 + 등수)
+RIOT_API_KEY=RGAPI-xxxx node scripts/collectContestSamples.js "닉네임#KR1" "닉네임2#KR1" ...
+
+# 2) 그리드서치로 가중치/임계값 재산출 (미리보기)
+node scripts/tuneContest.js data/contestSamples.json
+
+# 3) 결과 반영 (실측 데이터일 때만)
+node scripts/tuneContest.js data/contestSamples.json --write
+```
+
+- 튜닝 목표: **경합 raw 점수 ↔ 나쁜 등수(양의) 상관(Spearman) 최대화**
+- `saturationK`: 중앙 raw → score≈50 이 되도록 자동 산출
+- 등급 임계값: 점수 분포의 **분위수(40/65/85%)** 로 자동 산출
+- ⛔ 안전장치: `sample:true`(검증 전/합성) 데이터로는 `--write` 가 거부됩니다. 강제하려면 `--force`.
+- 하네스 검증용 합성 데이터: `node scripts/genSyntheticSamples.js` → `data/contestSamples.sample.json`
+
+

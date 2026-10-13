@@ -29,3 +29,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tuning data outputs (실측 수집 데이터; 샘플은 커밋함)
+/data/contestSamples.json
