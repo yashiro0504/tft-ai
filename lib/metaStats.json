@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "patch": "16.17",
+  "source": "sample-seed",
+  "sample": true,
+  "generatedAt": "2026-10-13T00:00:00.000Z",
+  "baselineAvgPlacement": 4.5,
+  "_comment": "⚠️ 샘플(검증 전) 데이터입니다. 실제 통계는 scripts/buildMetaStats.js 로 Riot 매치 표본을 집계해 생성하세요. sample=true 인 동안 UI/LLM 모두 '단정 금지'로 처리됩니다.",
+  "augments": {
+    "보석 연꽃 II": { "avgPlacement": 3.95, "top4Rate": 0.61, "pickRate": 0.18, "sampleSize": 15400 },
+    "아이템 숙련": { "avgPlacement": 4.35, "top4Rate": 0.49, "pickRate": 0.12, "sampleSize": 9800 },
+    "판도라의 아이템": { "avgPlacement": 4.12, "top4Rate": 0.57, "pickRate": 0.15, "sampleSize": 12300 },
+    "사이버네틱 통신": { "avgPlacement": 4.05, "top4Rate": 0.58, "pickRate": 0.14, "sampleSize": 10100 },
+    "골드 티켓": { "avgPlacement": 4.1, "top4Rate": 0.55, "pickRate": 0.11, "sampleSize": 8700 },
+    "최후의 저항": { "avgPlacement": 4.55, "top4Rate": 0.44, "pickRate": 0.1, "sampleSize": 7200 },
+    "쇼핑몰 죽돌이": { "avgPlacement": 4.6, "top4Rate": 0.43, "pickRate": 0.09, "sampleSize": 6400 },
+    "이중 공중보급": { "avgPlacement": 4.3, "top4Rate": 0.51, "pickRate": 0.13, "sampleSize": 9100 },
+    "돈벼락": { "avgPlacement": 4.75, "top4Rate": 0.4, "pickRate": 0.08, "sampleSize": 5600 },
+    "보물 사냥꾼": { "avgPlacement": 4.25, "top4Rate": 0.52, "pickRate": 0.12, "sampleSize": 8300 },
+    "초월": { "avgPlacement": 3.85, "top4Rate": 0.63, "pickRate": 0.16, "sampleSize": 11200 },
+    "휴대용 대장간": { "avgPlacement": 4.4, "top4Rate": 0.48, "pickRate": 0.1, "sampleSize": 7700 },
+    "신병": { "avgPlacement": 4.62, "top4Rate": 0.43, "pickRate": 0.09, "sampleSize": 6100 },
+    "살인술사": { "avgPlacement": 4.15, "top4Rate": 0.55, "pickRate": 0.13, "sampleSize": 8900 },
+    "적응형 방어": { "avgPlacement": 4.28, "top4Rate": 0.51, "pickRate": 0.12, "sampleSize": 8000 }
+  }
+}

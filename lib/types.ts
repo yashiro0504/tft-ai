@@ -22,6 +22,8 @@ export interface RawTFTTrait {
 
 export interface RawTFTParticipant {
   puuid: string
+  riotIdGameName?: string
+  riotIdTagline?: string
   placement: number
   level: number
   last_round: number
@@ -85,6 +87,78 @@ export interface LobbyParticipant {
   isUser: boolean
 }
 
+// ── 로비 경합 분석 (Phase 2: 코스트/성급/시너지 가중) ──
+
+export type ContestLevel = '빈집' | '보통' | '경합' | '심각'
+
+export interface UnitContestDetail {
+  unitId: string
+  name: string
+  /** 코스트(1~5). SlimMatchUnit.rarity 가 실제 코스트 */
+  cost: number
+  /** 내 성급 (1~3) */
+  myTier: number
+  /** 나와 같은 기물을 기용한 상대 수 */
+  opponentCount: number
+  /** 경합 위험 가중치 (코스트 × 성급 민감도 × 빈도) */
+  weight: number
+}
+
+export interface TraitContestDetail {
+  name: string
+  /** 내 시너지 활성 단계 */
+  myTier: number
+  /** 내 시너지 기물 수 */
+  myCount: number
+  /** 나와 같은 시너지를 활성한 상대 수 */
+  opponentCount: number
+  weight: number
+}
+
+export interface ContestAnalysis {
+  isContested: boolean
+  /** 경합 강도 0~100 (0=빈집, 100=최악). analyzeContest()가 항상 채움 */
+  contestScore?: number
+  level?: ContestLevel
+  /** 코어 기물 또는 상위 시너지를 공유한 상대 수 */
+  opponentCount: number
+  contestedUnits: string[]
+  contestedTraits: string[]
+  unitDetails?: UnitContestDetail[]
+  traitDetails?: TraitContestDetail[]
+  /** 규칙 기반 요약 텍스트 (LLM 없이도 표시 가능) */
+  summary?: string
+}
+
+// ── 증강 메타 분석 (Phase 3: 메타 데이터 파이프라인) ──
+
+export interface AugmentMetaDetail {
+  name: string
+  /** 해당 패치 평균 등수 (낮을수록 좋음) */
+  avgPlacement?: number
+  top4Rate?: number
+  /** 픽률 (0~1) */
+  pickRate?: number
+  sampleSize?: number
+  /** 평균 등수 기반 티어 (S/A/B/C/D) */
+  tier?: string
+  /** baseline(4.5) 대비 개선도 (양수=좋음) */
+  deltaVsBaseline?: number
+}
+
+export interface AugmentAnalysis {
+  /** 메타 통계가 실제로 매칭된 증강이 하나라도 있는지 */
+  hasMeta: boolean
+  /** 샘플(검증 전) 데이터 여부 — true면 실측 통계로 단정 금지 */
+  sample: boolean
+  patch?: string
+  source?: string
+  baselineAvgPlacement?: number
+  details: AugmentMetaDetail[]
+  /** 증강 선택 종합 점수 0~100 (메타 있을 때만 산출) */
+  augmentScore?: number
+}
+
 export interface SlimMatchData {
   matchId: string
   setNumber?: number
@@ -100,12 +174,8 @@ export interface SlimMatchData {
   traits: SlimMatchTrait[]
   units: SlimMatchUnit[]
   lobbyParticipants?: LobbyParticipant[] // 로비 8명 전체 순위
-  contestedInfo?: {
-    isContested: boolean
-    contestedUnits: string[]
-    contestedTraits: string[]
-    opponentCount: number
-  }
+  contestedInfo?: ContestAnalysis
+  augmentAnalysis?: AugmentAnalysis
 }
 
 // 소환사 프로필 요약 카드 정보
@@ -145,6 +215,44 @@ export interface TFTAnalysisResponse {
   mode: 'single' | 'multi'
   matches: SlimMatchData[]
   feedback: MetaCoachFeedback
+  summonerProfile?: SummonerProfile
+  isDemo?: boolean
+  error?: string
+}
+
+// ── Phase 1: 아이디 검색 → 경기별 분석 API 응답 타입 ──
+
+/** POST /api/tft/search 응답: 프로필 + 최근 매치 리스트 (AI 분석 없음) */
+export interface TftSearchResponse {
+  success: boolean
+  gameName: string
+  tagLine: string
+  puuid: string
+  summonerProfile?: SummonerProfile
+  matches: SlimMatchData[]
+  isDemo?: boolean
+  error?: string
+}
+
+/** POST /api/tft/match 응답: 특정 경기 1개 정밀 AI 분석 (matchId 캐시) */
+export interface TftMatchAnalysisResponse {
+  success: boolean
+  matchId: string
+  match?: SlimMatchData
+  feedback?: MetaCoachFeedback
+  cached?: boolean
+  error?: string
+}
+
+/** POST /api/tft/overview 응답: 로드된 여러 경기 종합 AI 분석 */
+export interface TftOverviewResponse {
+  success: boolean
+  gameName: string
+  tagLine: string
+  puuid?: string
+  mode: 'single' | 'multi'
+  matchCount: number
+  feedback?: MetaCoachFeedback
   summonerProfile?: SummonerProfile
   isDemo?: boolean
   error?: string

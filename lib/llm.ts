@@ -6,15 +6,23 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 
 const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 프로팀 전력분석관이자 챌린저 티어의 전문 전략 코치다.
-유저의 요청에 따라 "단순 팩폭이 아닌, 현재 메타와의 부합 여부, 로비 타 유저들과의 기물 겹침 대비 대깨/유연성(피봇) 판단, 그리고 구체적인 실전 개선점"을 체계적으로 코칭하라.
+유저의 요청에 따라 "단순 팩폭이 아닌, 로비 타 유저들과의 기물 겹침 대비 대깨/유연성(피봇) 판단과 구체적인 실전 개선점"을 체계적으로 코칭하라.
+
+★★★ 최우선 원칙: 데이터 접지(Grounding) ★★★
+- 너의 TFT 메타 '기억'은 학습 시점 기준이라 현재 패치에 대해 신뢰할 수 없다. 오직 프롬프트에 '제공된 수치/사실'만을 근거로 분석하라.
+- 제공되지 않은 메타 티어리스트, 증강 승률/픽률, 아이템 통계, 패치 변경점을 절대 지어내지 마라.
+- 증강체 분석과 '메타 적합도'는 제공된 데이터로 추론 가능한 범위에서만 서술하고, 근거가 약하면 반드시 "메타 통계가 제공되지 않아 단정 불가"라고 솔직히 밝혀라.
+- 모든 단정에는 근거가 된 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 함께 제시하라.
+- 제공된 데이터에 등장하지 않은 증강/시너지/기물 이름을 새로 만들어내지 마라.
 
 ⚠️ 분석 및 코칭 필수 원칙:
+0. [데이터 접지 어조]: 과장된 단정 대신, 제공된 수치를 직접 인용하는 분석가 어조를 유지하라.
 1. [로비 경쟁 & 대깨 vs 유연성 판단 (핵심)]:
    - 각 매치 데이터의 '로비 경쟁 현황'을 정밀 분석하라.
    - 로비에 같은 시너지/기물을 간 유저가 1~2명 이상 경합 중인데도 덱을 꺾지 않고 밀어붙여 공멸했는가? (대깨 고집형 판단)
    - 아니면 겹치지 않는 빈집을 영리하게 찾아가 유연하게 순방했는가? (유연성/피봇 판단)
    - 유저의 플레이 성향(대깨 고집 vs 빈집 유연)과 '유연성 점수(0~100점)'를 산출하라. (100점에 가까울수록 유연한 피봇 장인, 낮을수록 겹쳐도 대깨 치는 성향)
-2. [메타 적합도 평가 (0~100점)]: 선택한 덱과 증강체가 현재 시즌 정석 1티어 덱 빌드업과 얼마나 부합했는지 객관적으로 평가하라.
+2. [수행 적합도 점수 (0~100점)]: 제공된 데이터(등수, 경합 강도/등급, 2성작 완성도, 아이템 배분, 골드/라운드)만으로 '종합 수행 점수'를 산출하라. 이는 메타 지식이 아니라 이 판의 데이터 기반 점수다. (증강 티어 등 메타 정보는 제공되지 않았으므로 그 영향을 단정하지 마라.)
 3. [아이템 최적화 (BIS)]: 메인 딜러/메인 탱커 3신기 완성도 및 아이템 배분 밸런스를 짚어라.
 4. [앞/뒷라인 밸런스 & 2성작]: 탱커진의 두께와 2성작 완성도를 분석하라.
 5. [운영 템포 & 경제성]: 탈락 라운드 및 남은 골드를 보고 리롤과 렙업 타이밍을 지적하라.
@@ -84,16 +92,27 @@ export async function generateMetaCoachFeedback(
 ): Promise<MetaCoachFeedback> {
   const matchSerialized = serializeMatchesForLLM(matches)
   const modeContext = mode === 'single'
-    ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 내 8명 중 경쟁자들과의 기물 겹침, 대깨 판단 및 구체적 승패 요인을 심층 해부하라.'
-    : `분석 모드: [최근 ${matches.length}경기 종합 메타 분석] - 5경기의 덱 다양성, 기물 겹침 발생 시 대처 패턴, 전반적인 메타 적응도와 고착화된 버릇을 종합 진단하라.`
+    ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
+    : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
+
+  // 증강 메타 통계 제공 여부에 따라 접지 안내를 동적으로 구성
+  const metaDetail = matches.find((m) => m.augmentAnalysis?.hasMeta)?.augmentAnalysis
+  const metaNote = metaDetail
+    ? metaDetail.sample
+      ? `※ 이번 요청에는 증강 메타 통계가 '샘플(검증 전)'로 제공되었다. 참고용으로만 언급하고, 실측 통계인 것처럼 단정하지 마라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'})`
+      : `※ 이번 요청에는 증강 메타 통계(평균 등수/티어)가 제공되었다. 증강 선택 평가에 이 수치를 직접 인용하라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'}, baseline 평균등수 ${metaDetail.baselineAvgPlacement ?? 4.5})`
+    : `※ 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다. 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.`
 
   const prompt = `소환사명: ${gameName}
 ${modeContext}
 
-경기 상세 데이터:
+[제공된 사실 데이터 — 아래 수치만 근거로 사용하라]
 ${matchSerialized}
 
-위 유저의 경기 데이터를 정밀 분석하여, 메타 적합도 평가와 로비 기물 경합 기반 대깨/유연성 판단, 구체적 실력 개선 포인트를 포함한 JSON 형식의 전문 코칭 리포트를 작성해라.`
+${metaNote}
+   모든 서술은 위 데이터의 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 직접 인용해 작성하라.
+
+위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 정밀 분석하여, 로비 기물 경합 기반 대깨/유연성 판단과 데이터 기반 종합 수행 점수, 구체적 실력 개선 포인트를 포함한 JSON 형식의 전문 코칭 리포트를 작성하라.`
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용
   if (DEEPSEEK_API_KEY) {
@@ -195,10 +214,17 @@ function generateFallbackMetaFeedback(
   const latest = matches[0] || { placement: 6, level: 8, lastRound: '5-1', goldLeft: 24, units: [], traits: [] }
   const avgPlacement = matches.reduce((acc, m) => acc + m.placement, 0) / (matches.length || 1)
 
-  // 겹침 여부에 따른 유연성 점수
-  const anyContested = matches.some((m) => m.contestedInfo?.isContested)
-  const flexibility = anyContested ? 38 : 78
-  const playstyle = flexibility < 50 ? '고집형 대깨 성향' : '빈집 탐색 유연형'
+  // 겹침/경합 강도에 따른 유연성 점수 (경합 강도가 높을수록 유연성 낮음)
+  const contestScores = matches
+    .map((m) => m.contestedInfo?.contestScore)
+    .filter((n): n is number => typeof n === 'number')
+  const avgContest = contestScores.length
+    ? contestScores.reduce((a, b) => a + b, 0) / contestScores.length
+    : matches.some((m) => m.contestedInfo?.isContested)
+    ? 50
+    : 15
+  const flexibility = Math.round(Math.min(Math.max(100 - avgContest, 10), 95))
+  const playstyle = flexibility < 45 ? '고집형 대깨 성향' : flexibility > 70 ? '빈집 탐색 유연형' : '하이브리드 템포형'
 
   let score = Math.round(100 - (avgPlacement - 1) * 12)
   score = Math.min(Math.max(score, 35), 98)
