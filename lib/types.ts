@@ -31,7 +31,7 @@ export interface RawTFTParticipant {
   gold_left: number
   players_eliminated: number
   total_damage_to_players: number
-  augments: string[]
+  augments?: string[]
   traits: RawTFTTrait[]
   units: RawTFTUnit[]
 }

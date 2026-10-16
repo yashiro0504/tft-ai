@@ -144,7 +144,7 @@ async function main() {
         continue
       }
       await sleep(SLEEP_MS)
-      if (match?.info?.game_version) patch = match.info.game_version.split(' ')[0] || patch
+      if (match?.info?.tft_set_number) patch = `set${match.info.tft_set_number}`
       samples.push(...extractSamples(match))
     }
     console.log(`✔ ${seed}: 누적 매치 ${seen.size}건 / 표본 ${samples.length}건`)

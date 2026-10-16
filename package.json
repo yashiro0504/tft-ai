@@ -12,6 +12,7 @@
     "collect:contest": "node scripts/collectContestSamples.js",
     "collect:all": "node scripts/buildMetaStats.js && node scripts/collectContestSamples.js",
     "collect:check": "node scripts/collectContestSamples.js --check",
+    "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"
   },
   "engines": {

@@ -138,7 +138,7 @@ async function main() {
       }
       await sleep(SLEEP_MS)
 
-      if (match?.info?.game_version) patch = match.info.game_version.split(' ')[0] || patch
+      if (match?.info?.tft_set_number) patch = `set${match.info.tft_set_number}`
 
       for (const p of match?.info?.participants || []) {
         for (const raw of p.augments || []) {
@@ -174,6 +174,13 @@ async function main() {
     generatedAt: new Date().toISOString(),
     baselineAvgPlacement: 4.5,
     augments,
+  }
+
+  if (Object.keys(augments).length === 0) {
+    console.warn('⚠️ 수집된 증강 통계가 0개입니다. 기존 lib/metaStats.json 을 유지합니다.')
+    console.warn('   참고: Riot TFT match-v1 은 현재 셋(18) 매치의 참가자에서 augment 데이터를 반환하지 않습니다.')
+    console.warn('   (→ 증강 메타는 구 셋 데이터 또는 Riot 업데이트 이후에만 수집됩니다. 경합 통계는 정상 수집됩니다.)')
+    return
   }
 
   const outPath = path.join(__dirname, '..', 'lib', 'metaStats.json')
