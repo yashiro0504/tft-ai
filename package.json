@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "collect:meta": "node scripts/buildMetaStats.js",
     "collect:contest": "node scripts/collectContestSamples.js",
+    "collect:all": "node scripts/buildMetaStats.js && node scripts/collectContestSamples.js",
+    "collect:check": "node scripts/collectContestSamples.js --check",
     "tune:contest": "node scripts/tuneContest.js"
   },
   "engines": {

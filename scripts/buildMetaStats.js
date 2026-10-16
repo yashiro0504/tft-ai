@@ -19,8 +19,12 @@
 const fs = require('fs')
 const path = require('path')
 
+const { loadEnv, getSeeds, printKeyHelp } = require('./_env')
+loadEnv()
+
 const RIOT_API_KEY = process.env.RIOT_API_KEY || ''
 const REGION = process.env.RIOT_REGION || 'asia' // account / match 라우팅 리전
+const CHECK_ONLY = process.argv.includes('--check')
 const MATCHES_PER_SEED = Number(process.env.MATCHES_PER_SEED || 20)
 const SLEEP_MS = Number(process.env.SLEEP_MS || 1200)
 const MIN_SAMPLE = Number(process.env.MIN_SAMPLE || 20)
@@ -35,6 +39,9 @@ async function riotGet(url) {
       console.warn(`  429 rate limit → ${ra}s 대기`)
       await sleep((ra + 1) * 1000)
       continue
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`Riot API ${res.status}: 키가 만료되었거나 무효합니다 (개발 키는 24시간마다 만료)`)
     }
     if (!res.ok) throw new Error(`Riot API ${res.status} ${res.statusText} :: ${url}`)
     return res.json()
@@ -66,13 +73,32 @@ function cleanName(id) {
 
 async function main() {
   if (!RIOT_API_KEY) {
-    console.error('RIOT_API_KEY 환경변수가 필요합니다.')
-    process.exit(1)
+    printKeyHelp()
+    process.exitCode = 1
+    return
   }
-  const seeds = process.argv.slice(2)
+  const seeds = getSeeds()
   if (seeds.length === 0) {
-    console.error('사용법: node scripts/buildMetaStats.js "닉네임#KR1" [닉네임2#KR1 ...]')
-    process.exit(1)
+    console.error('사용법: SEEDS="닉네임#KR1,닉네임2#KR1" node scripts/buildMetaStats.js')
+    console.error('   또는: node scripts/buildMetaStats.js "닉네임#KR1" "닉네임2#KR1"')
+    process.exitCode = 1
+    return
+  }
+
+  // 0) 키 유효성 사전 점검
+  try {
+    const [g, t = 'KR1'] = seeds[0].split('#')
+    const acc = await getAccount(g, t)
+    console.log(`✅ 키 확인 OK — 샘플 계정: ${acc.gameName}#${acc.tagLine}`)
+    if (CHECK_ONLY) {
+      console.log('(--check 모드: 수집 없이 종료)')
+      return
+    }
+  } catch (e) {
+    console.error(`❌ 키/계정 확인 실패: ${e.message}`)
+    printKeyHelp()
+    process.exitCode = 1
+    return
   }
 
   const aug = {} // name -> { sum, count, top4 }

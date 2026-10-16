@@ -101,6 +101,9 @@ Riot 공식 API는 **집계 통계(증강 승률/평균등수)를 제공하지 �
 - ⚠️ 증강 키 표기는 `lib/summarize.ts` 의 `cleanName()` 결과와 일치해야 합니다(스크립트가 동일 규칙 사용).
 - ⚠️ Riot 개발 키는 24시간마다 만료되며, 표본이 많을수록 통계가 안정적입니다.
 
+> 📖 **실측 데이터 수집·튜닝 상세 가이드 → [docs/DATA_PIPELINE.md](docs/DATA_PIPELINE.md)**
+> (`.env.local` 자동 로드, `npm run collect:check` 키 점검, PowerShell/CMD 사용법 포함)
+
 ---
 
 ## 🎛️ 경합 임계값/가중치 튜닝
