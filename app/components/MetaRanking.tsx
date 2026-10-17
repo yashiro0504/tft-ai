@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Crown,
   Info,
+  Layers,
   Link2,
   Package,
   RefreshCw,
@@ -17,15 +18,17 @@ import {
 import type {
   MetaChampRanking,
   MetaCompRanking,
+  MetaDeckRanking,
   MetaItemRanking,
   MetaTraitRanking,
   TftMetaResponse,
 } from '@/lib/types'
 
-type MetaTab = 'comps' | 'champions' | 'traits' | 'items'
+type MetaTab = 'decks' | 'comps' | 'champions' | 'traits' | 'items'
 
 const TABS: { id: MetaTab; label: string; icon: typeof Crown }[] = [
-  { id: 'comps', label: '조합', icon: Swords },
+  { id: 'decks', label: '덱', icon: Layers },
+  { id: 'comps', label: 'BIS', icon: Swords },
   { id: 'champions', label: '기물', icon: Crown },
   { id: 'traits', label: '시너지', icon: Link2 },
   { id: 'items', label: '아이템', icon: Package },
@@ -104,13 +107,19 @@ function filterRows<T>(rows: T[], q: string, pick: (row: T) => string): T[] {
   return rows.filter((row) => pick(row).toLowerCase().includes(q))
 }
 
-function sortMeta<T extends { avgPlacement: number; sampleSize: number; top4Rate: number; threeStarRate?: number }>(
-  list: T[],
-  sortBy: 'avg' | 'sample' | 'threeStar' | 'top4'
-): T[] {
+function sortMeta<
+  T extends {
+    avgPlacement: number
+    sampleSize: number
+    top4Rate: number
+    threeStarRate?: number
+    cost?: number
+  }
+>(list: T[], sortBy: 'avg' | 'sample' | 'threeStar' | 'top4' | 'cost'): T[] {
   return [...list].sort((a, b) => {
     if (sortBy === 'sample') return b.sampleSize - a.sampleSize
     if (sortBy === 'top4') return b.top4Rate - a.top4Rate
+    if (sortBy === 'cost') return (b.cost ?? 0) - (a.cost ?? 0)
     if (sortBy === 'threeStar') return (b.threeStarRate ?? 0) - (a.threeStarRate ?? 0)
     return a.avgPlacement - b.avgPlacement
   })
@@ -550,6 +559,130 @@ function CompCard({
   )
 }
 
+/** 유닛 코스트별 테두리 색 */
+const COST_BORDER: Record<number, string> = {
+  1: 'border-slate-500/50',
+  2: 'border-emerald-500/50',
+  3: 'border-sky-500/50',
+  4: 'border-violet-500/60',
+  5: 'border-amber-400/70',
+}
+
+/** 메타 덱 카드 — 실제 보드 구성(유닛·성급·아이템·시너지) */
+function DeckCard({
+  r,
+  onSelectUnit,
+}: {
+  r: MetaDeckRanking
+  onSelectUnit: (key: string) => void
+}) {
+  const tier = (r.tier === '-' ? 'C' : r.tier) as Tier
+  const s = TIER_STYLE[tier]
+  return (
+    <div className="rounded-2xl border border-line/10 bg-gradient-to-br from-elev/10 to-transparent p-3.5 transition hover:border-line/20 hover:bg-elev/10">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`rounded border px-1 py-0.5 text-[10px] font-black leading-none ${s.text} ${s.border} ${s.bg}`}
+            >
+              {r.tier}
+            </span>
+            <p className="truncate text-[15px] font-extrabold text-ink">{r.name}</p>
+          </div>
+          <p className="mt-1 truncate text-[11px] text-muted">
+            {r.units.length}유닛 · {r.unitCost}코
+            {r.gold ? ` · ${r.gold}골드` : ''} · 실측 커버리지 {Math.round(r.coverage * 100)}%
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className={`font-mono text-lg font-black leading-none ${r.avgPlacement != null ? s.text : 'text-muted'}`}>
+            {r.avgPlacement != null ? r.avgPlacement.toFixed(2) : '—'}
+          </p>
+          <p className="mt-1 text-[10px] text-muted">
+            {r.sampleSize > 0 ? `${r.sampleSize.toLocaleString()}판` : '표본 없음'}
+          </p>
+        </div>
+      </div>
+
+      {/* 보드 구성 */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {r.units.map((u) => {
+          const carry = r.carryKey === u.key
+          return (
+            <button
+              key={`${u.key}-${u.name}`}
+              type="button"
+              onClick={() => onSelectUnit(u.key)}
+              title={`${u.name} ${u.star}성${u.stat ? ` · 평균 ${u.stat.avgPlacement.toFixed(2)}` : ''}${
+                u.items.length ? ` · ${u.items.map((i) => i.name).join(', ')}` : ''
+              }`}
+              className="w-[52px] shrink-0 cursor-pointer text-center"
+            >
+              <div className="relative mx-auto h-12 w-12">
+                <img
+                  src={u.imgUrl}
+                  alt={u.name}
+                  className={`h-12 w-12 rounded-lg border-2 bg-sunken/70 object-cover ${
+                    carry ? 'border-amber-400/80' : COST_BORDER[u.cost || 1] || 'border-line/20'
+                  }`}
+                  onError={(e) => {
+                    ;(e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+                <span className="absolute -right-1 -top-1 rounded bg-panel/95 px-0.5 text-[9px] font-black leading-tight text-amber-300">
+                  {u.star}★
+                </span>
+                {u.items.length > 0 ? (
+                  <div className="absolute -bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5">
+                    {u.items.map((it) => (
+                      <img
+                        key={it.key}
+                        src={it.iconUrl}
+                        alt={it.name}
+                        className="h-3.5 w-3.5 rounded-sm border border-black/50 bg-sunken object-cover"
+                        onError={(e) => {
+                          ;(e.target as HTMLElement).style.display = 'none'
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <p className="mt-2 truncate text-[10px] font-bold text-ink-soft">{u.name}</p>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* 시너지 */}
+      {r.traits.length > 0 ? (
+        <div className="mt-2.5 flex flex-wrap gap-1">
+          {r.traits.map((t) => (
+            <span
+              key={t.key}
+              className="inline-flex items-center gap-0.5 rounded-full border border-line/10 bg-elev/5 py-0.5 pl-0.5 pr-1.5 text-[10px] font-bold text-muted"
+            >
+              {t.iconUrl ? (
+                <img
+                  src={t.iconUrl}
+                  alt={t.name}
+                  className="h-3.5 w-3.5 object-contain"
+                  onError={(e) => {
+                    ;(e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+              ) : null}
+              <span className="text-ink-soft">{t.name}</span>
+              <span className="text-cyan-300">{t.count}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-line/10 bg-elev/5 px-2.5 py-2">
@@ -786,7 +919,7 @@ function DetailDrawer({
 }
 
 export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
-  const [tab, setTab] = useState<MetaTab>('comps')
+  const [tab, setTab] = useState<MetaTab>('decks')
   const [data, setData] = useState<TftMetaResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -797,7 +930,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
   const [costFilter, setCostFilter] = useState<'all' | number>('all')
   const [tierFilter, setTierFilter] = useState<'all' | Tier>('all')
   const [minSample, setMinSample] = useState(0)
-  const [sortBy, setSortBy] = useState<'avg' | 'sample' | 'threeStar' | 'top4'>('avg')
+  const [sortBy, setSortBy] = useState<'avg' | 'sample' | 'threeStar' | 'top4' | 'cost'>('avg')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
@@ -838,6 +971,27 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const decks = useMemo(() => {
+    let list = filterRows(
+      data?.decks ?? [],
+      q,
+      (r) =>
+        `${r.name} ${r.units.map((u) => u.name).join(' ')} ${r.traits.map((t) => t.name).join(' ')}`
+    )
+    if (minSample > 0) list = list.filter((r) => (r.sampleSize || 0) >= minSample)
+    if (tierFilter !== 'all') list = list.filter((r) => r.tier === tierFilter)
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'sample') return (b.sampleSize || 0) - (a.sampleSize || 0)
+      if (sortBy === 'top4') return (b.top4Rate ?? 0) - (a.top4Rate ?? 0)
+      if (sortBy === 'cost' || sortBy === 'threeStar') return b.unitCost - a.unitCost
+      if (a.avgPlacement == null && b.avgPlacement == null) return b.unitCost - a.unitCost
+      if (a.avgPlacement == null) return 1
+      if (b.avgPlacement == null) return -1
+      return a.avgPlacement - b.avgPlacement
+    })
+  }, [data, q, minSample, tierFilter, sortBy])
+
   const comps = useMemo(() => {
     let list = filterRows(
       data?.comps ?? [],
@@ -875,7 +1029,9 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
   const hasMeta = Boolean(data?.hasMeta)
   const totalCount =
-    tab === 'comps'
+    tab === 'decks'
+      ? decks.length
+      : tab === 'comps'
       ? comps.length
       : tab === 'champions'
       ? champions.length
@@ -883,22 +1039,42 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
       ? traits.length
       : items.length
   const needsMore = totalCount > (tab === 'champions' ? 20 : 12)
-  const limit = showAll ? 999 : tab === 'comps' ? 9 : tab === 'champions' ? 6 : 12
+  const limit = showAll ? 999 : tab === 'decks' ? 8 : tab === 'comps' ? 9 : tab === 'champions' ? 6 : 12
 
-  /** 상단 포디움 — 조합 탭에서는 조합 TOP3, 그 외 기물 TOP3 */
+  /** 상단 포디움 — 탭에 따라 덱/조합/기물 TOP3 */
   const podiumRows: MetaChampRanking[] = useMemo(() => {
-    if (tab !== 'comps') return data?.champions ?? []
-    return (data?.comps ?? []).slice(0, 3).map((c) => ({
-      key: c.key,
-      name: c.name,
-      imgUrl: c.imgUrl,
-      avgPlacement: c.avgPlacement,
-      top4Rate: c.top4Rate,
-      sampleSize: c.sampleSize,
-      avgTier: c.avgTier,
-      threeStarRate: c.threeStarRate,
-      cost: c.cost,
-    }))
+    if (tab === 'decks') {
+      return (data?.decks ?? [])
+        .filter((d) => d.avgPlacement != null)
+        .slice(0, 3)
+        .map((d) => {
+          const carry = d.units.find((u) => u.key === d.carryKey) || d.units[0]
+          return {
+            key: d.id,
+            name: d.name,
+            imgUrl: carry?.imgUrl || '',
+            avgPlacement: d.avgPlacement as number,
+            top4Rate: d.top4Rate ?? 0,
+            sampleSize: d.sampleSize,
+            avgTier: 0,
+            threeStarRate: 0,
+          }
+        })
+    }
+    if (tab === 'comps') {
+      return (data?.comps ?? []).slice(0, 3).map((c) => ({
+        key: c.key,
+        name: c.name,
+        imgUrl: c.imgUrl,
+        avgPlacement: c.avgPlacement,
+        top4Rate: c.top4Rate,
+        sampleSize: c.sampleSize,
+        avgTier: c.avgTier,
+        threeStarRate: c.threeStarRate,
+        cost: c.cost,
+      }))
+    }
+    return data?.champions ?? []
   }, [data, tab])
 
   /** 탭 전환 (모바일 하단 네비/데스크톱 탭 공용) */
@@ -912,7 +1088,10 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
   return (
     <div className="space-y-3 animate-fade-up">
-      <Podium rows={podiumRows} title={tab === 'comps' ? 'TOP 3 메타 조합' : 'TOP 3 기물'} />
+      <Podium
+        rows={podiumRows}
+        title={tab === 'decks' ? 'TOP 3 메타 덱' : tab === 'comps' ? 'TOP 3 메타 조합' : 'TOP 3 기물'}
+      />
       <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <KpiCard
           icon={CalendarDays}
@@ -942,10 +1121,10 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
           tone="violet"
         />
         <KpiCard
-          icon={Link2}
-          label="메타 조합"
-          value={data ? data.comps.length : '—'}
-          sub="기물 + BIS 세트"
+          icon={Layers}
+          label="메타 덱"
+          value={data ? data.decks.length : '—'}
+          sub={data?.deckMeta?.patch ? `롤체지지 v${data.deckMeta.patch}` : '보드 조합'}
           tone="emerald"
         />
       </div>
@@ -1045,13 +1224,16 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
           <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">정렬</span>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'avg' | 'sample' | 'threeStar' | 'top4')}
+            onChange={(e) =>
+              setSortBy(e.target.value as 'avg' | 'sample' | 'threeStar' | 'top4' | 'cost')
+            }
             className="cursor-pointer rounded-lg border border-line/10 bg-sunken/60 px-2 py-1 text-[11px] font-bold text-ink-soft focus:border-cyan-400/50 focus:outline-none"
           >
             <option value="avg">평균등수</option>
             <option value="sample">표본</option>
             <option value="threeStar">3성률</option>
             <option value="top4">TOP4</option>
+            <option value="cost">코스트</option>
           </select>
         </label>
 
@@ -1122,6 +1304,25 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
       {!isLoading && !error && hasMeta && (
         <>
+          {tab === 'decks' && (
+            <div className="grid gap-2.5 lg:grid-cols-2">
+              {decks.slice(0, limit).map((r) => (
+                <DeckCard
+                  key={r.id}
+                  r={r}
+                  onSelectUnit={(key) => setSelected({ type: 'champion', key })}
+                />
+              ))}
+              {decks.length === 0 && (
+                <p className="col-span-full py-10 text-center text-xs text-muted">
+                  {data && data.decks.length === 0
+                    ? '덱 데이터가 없습니다. npm run collect:decks 로 생성하세요.'
+                    : '검색 결과가 없습니다.'}
+                </p>
+              )}
+            </div>
+          )}
+
           {tab === 'comps' && (
             <div className="grid gap-2.5 md:grid-cols-2">
               {comps.slice(0, limit).map((r) => (
@@ -1216,6 +1417,14 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
             {data?.prevGeneratedAt ? ` · 변동 기준 ${data.prevGeneratedAt.slice(0, 10)}` : ''} · 표본
             10판 미만 항목은 노이즈가 있을 수 있습니다.
           </p>
+
+          {data?.deckMeta ? (
+            <p className="text-center text-[12px] text-subtle">
+              덱 구성 출처: {data.deckMeta.source}
+              {data.deckMeta.patch ? ` (v${data.deckMeta.patch})` : ''} · 기물 통계 매칭{' '}
+              {data.deckMeta.unitMatchRate}% · 덱 평균등수는 우리 표본 가중 평균입니다.
+            </p>
+          ) : null}
         </>
       )}
 

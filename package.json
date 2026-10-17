@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "collect:meta": "node scripts/buildMetaStats.js",
     "collect:ladder": "node scripts/buildMetaStatsLadder.js",
+    "collect:decks": "node scripts/buildDeckComps.js",
     "meta:deltas": "node scripts/attachMetaDeltas.js",
     "eval:reports": "node scripts/evalReports.js",
     "eval:capture": "node scripts/captureEvalFixtures.js",

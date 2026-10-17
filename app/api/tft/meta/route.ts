@@ -8,6 +8,7 @@ import {
   getCompSets,
 } from '@/lib/meta'
 import { translateChampion, translateTrait, translateItem, getChampionCost } from '@/lib/constants'
+import { getDeckViews, getDeckMetaInfo } from '@/lib/decks'
 import { cacheGet, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { rateLimitGuard, handleApiError } from '@/lib/apiUtils'
 import type {
@@ -17,6 +18,7 @@ import type {
   MetaItemRanking,
   MetaComboRanking,
   MetaCompRanking,
+  MetaDeckRanking,
 } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -149,6 +151,31 @@ export async function GET(req: NextRequest) {
         })
       : []
 
+    // 메타 덱(보드 조합): 롤체지지 추천 덱 + 실측 통계 결합
+    const deckViews = getDeckViews()
+    const decks: MetaDeckRanking[] = deckViews.map((d) => ({
+      id: d.id,
+      name: d.name,
+      gold: d.gold,
+      unitCost: d.unitCost,
+      traits: d.traits,
+      units: d.units.map((u) => ({
+        key: u.matchedKey ?? u.lolchessKey,
+        name: u.name,
+        cost: u.cost,
+        star: u.star,
+        imgUrl: u.imgUrl,
+        items: u.items,
+        stat: u.stat,
+      })),
+      avgPlacement: d.avgPlacement,
+      top4Rate: d.top4Rate,
+      coverage: d.coverage,
+      sampleSize: d.sampleSize,
+      tier: d.tier,
+      carryKey: d.carryKey,
+    }))
+
     const response: TftMetaResponse = {
       success: true,
       hasMeta,
@@ -162,6 +189,8 @@ export async function GET(req: NextRequest) {
       items,
       combos,
       comps,
+      decks,
+      deckMeta: getDeckMetaInfo(),
     }
 
     cacheSet(cacheKey, response, CACHE_TTL.SEARCH)

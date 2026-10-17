@@ -404,6 +404,33 @@ export interface MetaCompRanking {
   }[]
 }
 
+/** 메타 덱(보드 조합) — 롤체지지 추천 덱 + 우리 실측 통계 결합 */
+export interface MetaDeckRanking {
+  id: string
+  name: string
+  /** 덱 총 골드(업그레이드 포함, 사이트 표기) */
+  gold: number | null
+  /** 유닛 코스트 합 */
+  unitCost: number
+  traits: { key: string; name: string; iconUrl: string; count: number }[]
+  units: {
+    key: string
+    name: string
+    cost: number | null
+    star: number
+    imgUrl: string
+    items: { key: string; name: string; iconUrl: string }[]
+    stat?: { avgPlacement: number; top4Rate: number; sampleSize: number }
+  }[]
+  avgPlacement: number | null
+  top4Rate: number | null
+  /** 실측 통계가 존재하는 기물 비율 0~1 */
+  coverage: number
+  sampleSize: number
+  tier: string
+  carryKey: string | null
+}
+
 export interface TftMetaResponse {
   success: boolean
   /** 실측 수집 메타인가 (false면 아직 수집 안 됨) */
@@ -421,5 +448,14 @@ export interface TftMetaResponse {
   combos: MetaComboRanking[]
   /** 메타 조합 (기물 + BIS 아이템 세트) */
   comps: MetaCompRanking[]
+  /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) */
+  decks: MetaDeckRanking[]
+  deckMeta?: {
+    generatedAt: string
+    source: string
+    patch: string | null
+    deckCount: number
+    unitMatchRate: number
+  }
   error?: string
 }
