@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site'
 import './globals.css'
 
 export const viewport: Viewport = {
@@ -8,14 +9,28 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
+    template: '%s | TFT LAB',
+  },
   description:
     'TFT 시즌 18 실측 매치 표본 기반 메타 랭킹(기물·시너지·아이템·BIS 조합)과 경기별 AI 전략 코칭을 제공하는 롤체 분석 사이트',
   keywords: ['TFT', '롤토체스', '전략적팀전투', '롤체 메타', 'TFT 티어표', 'TFT 조합', 'AI 코치', '덱 빌드업'],
+  alternates: { canonical: '/' },
+  robots: { index: true, follow: true },
   openGraph: {
     title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
-    description: '실측 매치 표본 기반 TFT 메타 티어표와 경기별 AI 전략 코칭',
+    description: SITE_DESCRIPTION,
     type: 'website',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: 'ko_KR',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
+    description: '실측 매치 표본 기반 TFT 메타 티어표와 경기별 AI 전략 코칭',
   },
 }
 

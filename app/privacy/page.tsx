@@ -1,0 +1,143 @@
+import type { Metadata } from 'next'
+import { LegalList, LegalPageShell, LegalSection } from '@/app/components/LegalPageShell'
+import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME, SITE_URL } from '@/lib/site'
+
+export const metadata: Metadata = {
+  title: '개인정보처리방침',
+  description: `${SITE_NAME} 개인정보처리방침`,
+  alternates: { canonical: `${SITE_URL}/privacy` },
+  robots: { index: true, follow: true },
+}
+
+export default function PrivacyPage() {
+  return (
+    <LegalPageShell title="개인정보처리방침">
+      <LegalSection title="1. 총칙">
+        <p>
+          {OPERATOR_NAME}(이하 &ldquo;운영자&rdquo;)는 {SITE_NAME}(이하 &ldquo;서비스&rdquo;) 이용자의 개인정보를
+          관련 법령에 따라 안전하게 처리합니다. 본 방침은 서비스가 어떤 정보를 수집하고 어떻게 이용·보관·파기하는지
+          설명합니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. 수집하는 정보">
+        <LegalList
+          items={[
+            '이용자가 입력한 Riot ID(게임명 및 태그). 로그인 계정은 수집하지 않습니다.',
+            '서비스 이용 과정에서 자동 생성되는 정보: IP 주소, 브라우저/기기 정보(User-Agent), 요청 시각, 접속 기록',
+            '브라우저 로컬 저장소(localStorage)에 저장되는 테마 설정값(다크/라이트)',
+          ]}
+        />
+        <p className="text-xs text-subtle">
+          서비스는 비밀번호, 주민등록번호, 결제 정보, 위치 정보 등 민감정보를 수집하지 않습니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. 이용 목적">
+        <LegalList
+          items={[
+            'Riot ID를 이용한 전적·메타 데이터 조회 및 AI 분석 리포트 생성',
+            '서비스 오류 대응, 성능 모니터링, 비정상 트래픽(남용) 방지',
+            '이용자 문의 응대 및 분쟁 처리',
+          ]}
+        />
+      </LegalSection>
+
+      <LegalSection title="4. 보관 기간 및 파기">
+        <LegalList
+          items={[
+            '검색 결과 캐시: 최대 60초',
+            'Riot 계정 식별 정보(PUUID) 캐시: 최대 24시간',
+            '소환사 레벨/아이콘 캐시: 최대 6시간',
+            '정규화된 매치 데이터 캐시: 최대 30일 (불변 경기 데이터)',
+            'AI 분석 리포트 캐시: 최대 24시간',
+            '접속 기록 및 오류 로그: 호스팅 사업자의 보관 정책에 따르며, 운영 목적 달성 시 지체 없이 파기',
+          ]}
+        />
+        <p>
+          보관 기간이 지나거나 처리 목적이 달성된 정보는 복구할 수 없는 방법으로 파기합니다. 다만 법령에서
+          보존을 요구하는 경우 해당 기간 동안 보관합니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. 제3자 제공 및 처리 위탁">
+        <p>
+          서비스는 원활한 기능 제공을 위해 아래 외부 서비스를 이용하며, 이 과정에서 최소한의 정보가 국외로
+          이전될 수 있습니다.
+        </p>
+        <LegalList
+          items={[
+            'Riot Games API — Riot ID/PUUID 기반 전적 조회 (서비스 제공을 위한 필수 처리)',
+            'DeepSeek — AI 분석 프롬프트 생성 (경기 요약 데이터 및 소환사명 포함, 분석 결과 생성 목적)',
+            'Google Gemini — DeepSeek 실패 시 대체 분석 (선택적, 동일 목적)',
+            'Vercel — 웹 호스팅 및 접속 로그 처리',
+            'Upstash — 캐시 저장 (설정된 경우에 한함)',
+          ]}
+        />
+        <p className="text-xs text-subtle">
+          각 사업자의 소재지 및 개인정보 처리방침은 해당 사업자의 공식 문서를 참고하시기 바랍니다.
+          운영자는 위 목적 외로 정보를 제3자에게 판매하거나 제공하지 않습니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. 쿠키 및 로컬 저장소">
+        <p>
+          서비스는 광고·추적 목적의 쿠키를 사용하지 않습니다. 테마 설정을 유지하기 위해 브라우저
+          localStorage에 값 하나를 저장하며, 브라우저 설정에서 언제든지 삭제할 수 있습니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="7. 이용자의 권리">
+        <p>
+          이용자는 자신의 정보에 대한 열람·정정·삭제·처리 정지를 요청할 수 있습니다. 계정 기반 서비스가
+          아니므로 Riot ID를 함께 알려주시면 캐시 및 관련 기록을 확인 후 처리합니다.
+        </p>
+        <LegalList
+          items={[
+            <>
+              문의 이메일:{' '}
+              <a className="underline hover:text-ink" href={`mailto:${CONTACT_EMAIL}`}>
+                {CONTACT_EMAIL}
+              </a>
+            </>,
+            '요청 접수 후 영업일 기준 7일 이내에 처리 결과를 회신합니다.',
+          ]}
+        />
+      </LegalSection>
+
+      <LegalSection title="8. 아동의 개인정보">
+        <p>
+          만 14세 미만 아동이 서비스를 이용하려는 경우 법정대리인의 동의가 필요합니다. 운영자는 만 14세 미만
+          아동의 개인정보를 알면서 수집하지 않으며, 확인되는 즉시 파기합니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="9. 안전성 확보 조치">
+        <LegalList
+          items={[
+            '전송 구간 암호화(HTTPS) 적용',
+            '외부 API 키를 서버 환경변수로만 보관하고 클라이언트에 노출하지 않음',
+            '요청 빈도 제한 및 비정상 트래픽 모니터링',
+            '보관 기간이 짧은 캐시 정책을 통한 최소 수집',
+          ]}
+        />
+      </LegalSection>
+
+      <LegalSection title="10. 방침의 변경">
+        <p>
+          본 방침이 변경되는 경우 시행 7일 전부터 서비스 내에 공지합니다. 중요한 변경이 있는 경우에는
+          별도의 방법으로 안내할 수 있습니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="11. 문의처">
+        <p>
+          개인정보 관련 문의: {OPERATOR_NAME} ·{' '}
+          <a className="underline hover:text-ink" href={`mailto:${CONTACT_EMAIL}`}>
+            {CONTACT_EMAIL}
+          </a>
+        </p>
+      </LegalSection>
+    </LegalPageShell>
+  )
+}

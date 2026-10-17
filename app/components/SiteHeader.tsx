@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { BarChart3, Bot, Moon, Sun, Trophy } from 'lucide-react'
 
 export type SiteTab = 'meta' | 'coach'
@@ -93,6 +94,18 @@ export function SiteHeader({
             )
           })}
           <ThemeToggle />
+          <Link
+            href="/terms"
+            className="ml-1 hidden rounded-lg px-2 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink lg:inline-block"
+          >
+            약관
+          </Link>
+          <Link
+            href="/privacy"
+            className="hidden rounded-lg px-2 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink lg:inline-block"
+          >
+            개인정보
+          </Link>
         </nav>
       </div>
     </header>
