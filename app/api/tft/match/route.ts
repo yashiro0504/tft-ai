@@ -3,7 +3,9 @@ import { getTftMatchDetail, getAccountByRiotId } from '@/lib/riot'
 import { extractSlimMatchData } from '@/lib/summarize'
 import { getDemoMatches } from '@/lib/demo'
 import { generateMetaCoachFeedback } from '@/lib/llm'
-import { cacheGet, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
+import { COACH_PROMPT_VERSION } from '@/lib/llm'
 import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { SlimMatchData, TftMatchAnalysisResponse } from '@/lib/types'
 
@@ -16,6 +18,7 @@ export const dynamic = 'force-dynamic'
  * - 실데이터: puuid(권장, 검색 응답에서 획득) 또는 gameName/tagLine 으로 계정 조회.
  */
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
   try {
     const limited = rateLimitGuard(req, 'match', 30, 60_000)
     if (limited) return limited
@@ -33,10 +36,19 @@ export async function POST(req: NextRequest) {
     let puuid = typeof raw.puuid === 'string' ? raw.puuid.trim() : ''
     const gameNameInput = typeof raw.gameName === 'string' ? raw.gameName.trim() : ''
 
-    const cacheKey = `match:${matchId}:${puuid}:${gameNameInput}:${mode}`
-    const cached = cacheGet<TftMatchAnalysisResponse>(cacheKey)
+    // 프롬프트 버전을 키에 포함: 프롬프트를 바꾸면 자동으로 새 분석을 생성한다.
+    const subject = puuid || gameNameInput.toLowerCase() || 'anon'
+    const cacheKey = `analysis:${matchId}:${subject}:${mode}:${COACH_PROMPT_VERSION}`
+    const cached = await cacheGetWithSource<TftMatchAnalysisResponse>(cacheKey)
     if (cached) {
-      return NextResponse.json({ ...cached, cached: true })
+      incrMetric('llm.cache_hit.match_analysis')
+      logEvent('info', 'api_match', {
+        ms: elapsedMs(startedAt),
+        cacheSource: cached.source,
+        matchId,
+        mode,
+      })
+      return NextResponse.json({ ...cached.value, cached: true })
     }
 
     const hasApiKey = Boolean(process.env.RIOT_API_KEY)
@@ -74,9 +86,17 @@ export async function POST(req: NextRequest) {
       cached: false,
     }
 
-    cacheSet(cacheKey, response, CACHE_TTL.MATCH)
+    await cacheSet(cacheKey, response, CACHE_TTL.MATCH)
+    logEvent('info', 'api_match', {
+      ms: elapsedMs(startedAt),
+      cacheSource: 'miss',
+      matchId,
+      mode,
+      isDemo,
+    })
     return NextResponse.json(response)
   } catch (err) {
+    logEvent('error', 'api_match_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'match')
   }
 }

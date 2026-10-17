@@ -12,9 +12,66 @@ import { translateChampion, translateItem, translateTrait } from './constants'
 import { validateFeedbackGrounding } from './grounding'
 import { computeScoreBreakdown } from './scoring'
 import { buildCoachingPlan } from './coaching'
+import { errorFields, incrMetric, logEvent } from './observability'
+
+/** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
+export const COACH_PROMPT_VERSION = '2026-10-18.1'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+
+function numEnv(name: string, fallback: number): number {
+  const parsed = Number(process.env[name])
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const LLM_TIMEOUT_MS = Math.floor(numEnv('LLM_TIMEOUT_MS', 45_000))
+/** 대략적 단가(USD / 1M tokens). 과금 변동 시 env 로 보정한다. */
+const DEEPSEEK_PRICE_INPUT_PER_M = numEnv('DEEPSEEK_PRICE_INPUT_PER_M', 0.27)
+const DEEPSEEK_PRICE_OUTPUT_PER_M = numEnv('DEEPSEEK_PRICE_OUTPUT_PER_M', 1.1)
+const GEMINI_PRICE_INPUT_PER_M = numEnv('GEMINI_PRICE_INPUT_PER_M', 0.3)
+const GEMINI_PRICE_OUTPUT_PER_M = numEnv('GEMINI_PRICE_OUTPUT_PER_M', 2.5)
+
+/** LLM 호출 비용을 카운터/로그로 남긴다 (마이크로 USD 정수로 누적 → 정밀도 손실 방지). */
+function recordLlmUsage(
+  provider: 'deepseek' | 'gemini',
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  inputPricePerM: number,
+  outputPricePerM: number
+): void {
+  const usd = (inputTokens / 1_000_000) * inputPricePerM + (outputTokens / 1_000_000) * outputPricePerM
+  incrMetric(`llm.call.${provider}`)
+  if (inputTokens > 0) incrMetric('llm.tokens.input', inputTokens)
+  if (outputTokens > 0) incrMetric('llm.tokens.output', outputTokens)
+  incrMetric('llm.cost_usd_micros', Math.round(usd * 1_000_000))
+  logEvent('info', 'llm_call', {
+    provider,
+    model,
+    inputTokens,
+    outputTokens,
+    estimatedUsd: Number(usd.toFixed(6)),
+  })
+}
+
+/** Promise 에 타임아웃을 건다 (SDK가 자체 시그널을 지원하지 않을 때 사용). */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} 응답 시간 초과 (${timeoutMs}ms)`)), timeoutMs)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(err)
+      }
+    )
+  })
+}
 
 const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강사다. 모든 리포트를 "한 편의 강의"로 만든다.
 목표: 점수 나열이나 팩폭이 아니라, 유저가 다음 판에서 바로 쓸 수 있는 **원리 + 판단 기준 + 연습 과제**를 남긴다.
@@ -84,31 +141,59 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
  * DeepSeek API 호출 (deepseek-chat)
  */
 async function callDeepSeek(prompt: string): Promise<string> {
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: SYSTEM_INSTRUCTION },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.2,
-      max_tokens: 3400,
-      response_format: { type: 'json_object' },
-    }),
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
 
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`DeepSeek API 오류 (${response.status}): ${errText}`)
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: SYSTEM_INSTRUCTION },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 3400,
+        response_format: { type: 'json_object' },
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      incrMetric(`llm.http_${response.status}`)
+      throw new Error(`DeepSeek API 오류 (${response.status}): ${errText.slice(0, 300)}`)
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>
+      usage?: { prompt_tokens?: number; completion_tokens?: number }
+    }
+
+    recordLlmUsage(
+      'deepseek',
+      'deepseek-chat',
+      data.usage?.prompt_tokens || 0,
+      data.usage?.completion_tokens || 0,
+      DEEPSEEK_PRICE_INPUT_PER_M,
+      DEEPSEEK_PRICE_OUTPUT_PER_M
+    )
+
+    return data.choices?.[0]?.message?.content || ''
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      incrMetric('llm.timeout')
+      throw new Error(`DeepSeek 응답 시간 초과 (${LLM_TIMEOUT_MS}ms)`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
   }
-
-  const data = await response.json()
-  return data.choices?.[0]?.message?.content || ''
 }
 
 /**
@@ -265,29 +350,45 @@ ${planFacts}
       const parsed = parseJsonFeedback(text)
       if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
-      console.error('DeepSeek API Error, falling back:', err)
+      incrMetric('llm.fallback.deepseek_error')
+      logEvent('warn', 'llm_provider_failed', { provider: 'deepseek', model: 'deepseek-chat', ...errorFields(err) })
     }
   }
 
-  // 2. Gemini API 키가 있는 경우 사용
+  // 2. Gemini API 키가 있는 경우 사용 (GEMINI_MODEL 로 모델 지정)
   if (GEMINI_API_KEY) {
     try {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: GEMINI_MODEL,
         systemInstruction: SYSTEM_INSTRUCTION,
+        generationConfig: { temperature: 0.2, maxOutputTokens: 3400 },
       })
 
-      const result = await model.generateContent(prompt)
+      const result = await withTimeout(model.generateContent(prompt), LLM_TIMEOUT_MS, 'Gemini')
+      const usage = result.response.usageMetadata as
+        | { promptTokenCount?: number; candidatesTokenCount?: number }
+        | undefined
+      recordLlmUsage(
+        'gemini',
+        GEMINI_MODEL,
+        usage?.promptTokenCount || 0,
+        usage?.candidatesTokenCount || 0,
+        GEMINI_PRICE_INPUT_PER_M,
+        GEMINI_PRICE_OUTPUT_PER_M
+      )
+
       const text = result.response.text()
       const parsed = parseJsonFeedback(text)
       if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
-      console.error('Gemini API Error, falling back:', err)
+      incrMetric('llm.fallback.gemini_error')
+      logEvent('warn', 'llm_provider_failed', { provider: 'gemini', model: GEMINI_MODEL, ...errorFields(err) })
     }
   }
 
   // 3. 지능형 메타 코칭 폴백
+  incrMetric('llm.fallback')
   return finalize(generateFallbackMetaFeedback(gameName, matches), true)
 }
 

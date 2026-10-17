@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateMetaCoachFeedback } from '@/lib/llm'
-import { cacheGet, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
+import { COACH_PROMPT_VERSION } from '@/lib/llm'
 import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { MAX_MATCH_LIMIT } from '@/lib/tftService'
 import { SlimMatchData, TftOverviewResponse } from '@/lib/types'
@@ -13,6 +15,7 @@ export const dynamic = 'force-dynamic'
  * (검색 시 클라이언트가 보유한 데이터를 재사용 → Riot 재호출 없음)
  */
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
   try {
     const limited = rateLimitGuard(req, 'overview', 10, 60_000)
     if (limited) return limited
@@ -41,10 +44,19 @@ export async function POST(req: NextRequest) {
     const nocache = raw.nocache === true && process.env.NODE_ENV !== 'production'
     const ids = matches.map((m) => m.matchId).join(',')
 
-    const cacheKey = `overview:${gameName}#${tagLine}:${mode}:${ids}`
+    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${COACH_PROMPT_VERSION}:${ids}`
     if (!nocache) {
-      const cached = cacheGet<TftOverviewResponse>(cacheKey)
-      if (cached) return NextResponse.json(cached)
+      const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
+      if (cached) {
+        incrMetric('llm.cache_hit.overview')
+        logEvent('info', 'api_overview', {
+          ms: elapsedMs(startedAt),
+          cacheSource: cached.source,
+          mode,
+          matchCount: matches.length,
+        })
+        return NextResponse.json(cached.value)
+      }
     }
 
     const feedback = await generateMetaCoachFeedback(gameName, matches, mode)
@@ -58,9 +70,16 @@ export async function POST(req: NextRequest) {
       feedback,
     }
 
-    if (!nocache) cacheSet(cacheKey, response, CACHE_TTL.OVERVIEW)
+    if (!nocache) await cacheSet(cacheKey, response, CACHE_TTL.OVERVIEW)
+    logEvent('info', 'api_overview', {
+      ms: elapsedMs(startedAt),
+      cacheSource: nocache ? 'bypass' : 'miss',
+      mode,
+      matchCount: matches.length,
+    })
     return NextResponse.json(response)
   } catch (err) {
+    logEvent('error', 'api_overview_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'overview')
   }
 }

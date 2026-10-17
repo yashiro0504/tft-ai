@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadSummonerData, DEFAULT_MATCH_LIMIT } from '@/lib/tftService'
 import { calculateProfileStats } from '@/lib/profile'
-import { cacheGet, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { TftSearchResponse } from '@/lib/types'
 
@@ -13,6 +14,7 @@ export const dynamic = 'force-dynamic'
  * 경기별 상세/코칭은 POST /api/tft/match 로 개별 요청한다.
  */
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
   try {
     const limited = rateLimitGuard(req, 'search', 30, 60_000)
     if (limited) return limited
@@ -27,9 +29,17 @@ export async function POST(req: NextRequest) {
     const limit = typeof raw.limit === 'number' ? raw.limit : DEFAULT_MATCH_LIMIT
     const isDemo = raw.isDemo === true
 
-    const cacheKey = `search:${gameName}#${tagLine}:${limit}:${isDemo}`
-    const cached = cacheGet<TftSearchResponse>(cacheKey)
-    if (cached) return NextResponse.json(cached)
+    // 키 정규화: 대소문자/공백 차이로 캐시가 갈라지지 않도록 한다.
+    const cacheKey = `search:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${limit}:${isDemo}`
+    const cached = await cacheGetWithSource<TftSearchResponse>(cacheKey)
+    if (cached) {
+      logEvent('info', 'api_search', {
+        ms: elapsedMs(startedAt),
+        cacheSource: cached.source,
+        isDemo,
+      })
+      return NextResponse.json(cached.value)
+    }
 
     const data = await loadSummonerData(gameName, tagLine, limit, isDemo)
     const summonerProfile = calculateProfileStats(
@@ -50,9 +60,16 @@ export async function POST(req: NextRequest) {
       isDemo: data.isDemo,
     }
 
-    cacheSet(cacheKey, response, CACHE_TTL.SEARCH)
+    await cacheSet(cacheKey, response, CACHE_TTL.SEARCH)
+    logEvent('info', 'api_search', {
+      ms: elapsedMs(startedAt),
+      cacheSource: 'miss',
+      isDemo: data.isDemo,
+      matches: data.matches.length,
+    })
     return NextResponse.json(response)
   } catch (err) {
+    logEvent('error', 'api_search_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'search')
   }
 }

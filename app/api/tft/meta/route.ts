@@ -9,7 +9,8 @@ import {
 } from '@/lib/meta'
 import { translateChampion, translateTrait, translateItem, getChampionCost } from '@/lib/constants'
 import { getDeckViews, getDeckMetaInfo } from '@/lib/decks'
-import { cacheGet, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
+import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { rateLimitGuard, handleApiError } from '@/lib/apiUtils'
 import type {
   TftMetaResponse,
@@ -24,6 +25,28 @@ import type {
 export const dynamic = 'force-dynamic'
 
 /**
+ * 이 엔드포인트는 빌드 타임 JSON(lib/metaStats.json, lib/decksData.json)만 읽어
+ * 응답을 만든다. 따라서 CDN 캐시가 안전하다.
+ * - s-maxage=300: 5분간 엣지 캐시 (Riot/LLM 호출 없음, 순수 정적 데이터)
+ * - stale-while-revalidate=3600: 만료 후 최대 1시간은 낡은 응답을 즉시 주고 백그라운드 갱신
+ * - 인메모리 memo: 웜 인스턴스에서 JSON 재가공 비용까지 제거
+ */
+const META_MEMO_TTL_MS = (() => {
+  const parsed = Number(process.env.META_MEMO_TTL_MS)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 5 * 60_000
+})()
+
+const META_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
+} as const
+
+let metaMemo: { value: TftMetaResponse; expiresAt: number } | null = null
+
+function metaJson(payload: TftMetaResponse): NextResponse {
+  return NextResponse.json(payload, { headers: META_CACHE_HEADERS })
+}
+
+/**
  * GET /api/tft/meta
  * lib/metaStats.json 의 실측 수집 메타(챔피언/시너지/아이템/조합)를
  * 한글 이름 + 이미지로 번역해 랭킹 형태로 반환한다.
@@ -31,13 +54,26 @@ export const dynamic = 'force-dynamic'
  * NOTE: 증강은 Riot 세트18 미제공으로 비어 있을 수 있다(hasAugmentMeta).
  */
 export async function GET(req: NextRequest) {
+  const startedAt = Date.now()
   try {
     const limited = rateLimitGuard(req, 'meta', 60, 60_000)
     if (limited) return limited
 
+    const now = Date.now()
+    if (metaMemo && metaMemo.expiresAt > now) {
+      incrMetric('cache.hit.meta_memo')
+      logEvent('info', 'api_meta', { ms: elapsedMs(startedAt), cacheSource: 'memo' })
+      return metaJson(metaMemo.value)
+    }
+
     const cacheKey = 'meta:rankings'
-    const cached = cacheGet<TftMetaResponse>(cacheKey)
-    if (cached) return NextResponse.json(cached)
+    const cached = await cacheGetWithSource<TftMetaResponse>(cacheKey)
+    if (cached) {
+      incrMetric(`cache.hit.meta_${cached.source}`)
+      metaMemo = { value: cached.value, expiresAt: now + META_MEMO_TTL_MS }
+      logEvent('info', 'api_meta', { ms: elapsedMs(startedAt), cacheSource: cached.source })
+      return metaJson(cached.value)
+    }
 
     const info = getMetaSectionInfo()
     const hasMeta = !info.sample && info.hasMeta
@@ -194,9 +230,17 @@ export async function GET(req: NextRequest) {
       deckMeta: getDeckMetaInfo(),
     }
 
-    cacheSet(cacheKey, response, CACHE_TTL.SEARCH)
-    return NextResponse.json(response)
+    await cacheSet(cacheKey, response, CACHE_TTL.SEARCH)
+    metaMemo = { value: response, expiresAt: Date.now() + META_MEMO_TTL_MS }
+    logEvent('info', 'api_meta', {
+      ms: elapsedMs(startedAt),
+      cacheSource: 'miss',
+      champions: champions.length,
+      decks: decks.length,
+    })
+    return metaJson(response)
   } catch (err) {
+    logEvent('error', 'api_meta_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'meta')
   }
 }

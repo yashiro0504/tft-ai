@@ -1,11 +1,17 @@
 import { getAccountByRiotId, getTftMatchIds, getTftMatchDetail, getSummonerByPuuid, RiotApiError } from './riot'
+import { cacheGet, cacheSet, CACHE_TTL } from './cache'
+import { errorFields, incrMetric, logEvent } from './observability'
 import { extractSlimMatchData } from './summarize'
 import { getDemoMatches } from './demo'
-import { SlimMatchData } from './types'
+import { RiotAccount, SlimMatchData } from './types'
 
 /** 한 번에 로드 가능한 최대 매치 수 */
 export const MAX_MATCH_LIMIT = 20
 export const DEFAULT_MATCH_LIMIT = 10
+
+const REGION = process.env.RIOT_REGION || 'asia'
+const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
+
 
 export interface LoadedSummonerData {
   gameName: string
@@ -43,29 +49,63 @@ export async function loadSummonerData(
     }
   }
 
-  // 1. Riot Account 조회 (PUUID)
-  const account = await getAccountByRiotId(gameName, tagLine)
+  // 1. Riot Account 조회 (PUUID) — 계정 식별자는 거의 불변 → 24h 캐시
+  const accountKey = `account:${REGION}:${gameName.toLowerCase()}#${tagLine.toUpperCase()}`
+  let account = await cacheGet<RiotAccount>(accountKey)
+  if (account) {
+    incrMetric('riot.cache_hit.account')
+  } else {
+    account = await getAccountByRiotId(gameName, tagLine, REGION)
+    await cacheSet(accountKey, account, CACHE_TTL.ACCOUNT)
+  }
+  const acct = account
 
-  // 2. 소환사 기본 정보 (프로필 아이콘, 레벨)
-  const summonerInfo = await getSummonerByPuuid(account.puuid)
+  // 2. 소환사 기본 정보(아이콘/레벨) — 6h 캐시
+  const summonerKey = `summoner:${PLATFORM}:${acct.puuid}`
+  let summonerInfo = await cacheGet<{ profileIconId: number; summonerLevel: number }>(summonerKey)
+  if (summonerInfo) {
+    incrMetric('riot.cache_hit.summoner')
+  } else {
+    summonerInfo = await getSummonerByPuuid(acct.puuid, PLATFORM)
+    await cacheSet(summonerKey, summonerInfo, CACHE_TTL.SUMMONER)
+  }
 
-  // 3. 최근 TFT 매치 ID 목록
-  const matchIds = await getTftMatchIds(account.puuid, normalizedLimit)
-  if (!matchIds || matchIds.length === 0) {
+  // 3. 최근 TFT 매치 ID 목록 — 새 경기 반영을 위해 짧게 캐시
+  const matchIdsKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}`
+  let matchIds = await cacheGet<string[]>(matchIdsKey)
+  if (matchIds) {
+    incrMetric('riot.cache_hit.match_ids')
+  } else {
+    matchIds = await getTftMatchIds(acct.puuid, normalizedLimit, REGION)
+    if (matchIds.length > 0) await cacheSet(matchIdsKey, matchIds, CACHE_TTL.MATCH_IDS)
+  }
+
+  if (matchIds.length === 0) {
     throw new RiotApiError(
-      `소환사 '${account.gameName}#${account.tagLine}'의 최근 TFT 매치 기록을 찾을 수 없습니다.`,
+      `소환사 '${acct.gameName}#${acct.tagLine}'의 최근 TFT 매치 기록을 찾을 수 없습니다.`,
       404
     )
   }
 
-  // 4. 매치 세부 데이터 병렬 조회 및 정제
+  // 4. 매치 세부 데이터 — 불변 데이터이므로 (matchId + puuid) 기준 장기 캐시.
+  //    캐시 히트 시 Riot 호출이 0회가 되어, 웜 상태 검색은 사실상 account/summoner/matchIds 만 소모한다.
   const matchDetails = await Promise.all(
     matchIds.map(async (id) => {
+      const matchKey = `match:${REGION}:${id}:${acct.puuid}`
+      const cachedMatch = await cacheGet<SlimMatchData>(matchKey)
+      if (cachedMatch) {
+        incrMetric('riot.cache_hit.match_detail')
+        return cachedMatch
+      }
+
       try {
-        const rawMatch = await getTftMatchDetail(id)
-        return extractSlimMatchData(rawMatch, account.puuid)
+        const rawMatch = await getTftMatchDetail(id, REGION)
+        const slim = extractSlimMatchData(rawMatch, acct.puuid)
+        await cacheSet(matchKey, slim, CACHE_TTL.IMMUTABLE)
+        return slim
       } catch (err) {
-        console.error(`Failed to fetch match detail ${id}:`, err)
+        incrMetric('riot.match_detail_failed')
+        logEvent('warn', 'match_detail_failed', { matchId: id, ...errorFields(err) })
         return null
       }
     })
@@ -77,9 +117,9 @@ export async function loadSummonerData(
   }
 
   return {
-    gameName: account.gameName,
-    tagLine: account.tagLine,
-    puuid: account.puuid,
+    gameName: acct.gameName,
+    tagLine: acct.tagLine,
+    puuid: acct.puuid,
     summonerLevel: summonerInfo.summonerLevel,
     profileIconId: summonerInfo.profileIconId,
     matches,
