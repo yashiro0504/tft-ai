@@ -378,6 +378,32 @@ export interface MetaComboRanking {
   sampleSize: number
 }
 
+/** 메타 조합 (기물 + BIS 아이템 세트) */
+export interface MetaCompRanking {
+  /** 기물 수집 키 (예: 'Lux18_Base') */
+  key: string
+  name: string
+  imgUrl: string
+  cost?: number
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  avgTier: number
+  threeStarRate: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+  /** 성적 순 BIS 아이템 (최대 3개) */
+  items: {
+    key: string
+    name: string
+    iconUrl: string
+    avgPlacement: number
+    top4Rate: number
+    sampleSize: number
+  }[]
+}
+
 export interface TftMetaResponse {
   success: boolean
   /** 실측 수집 메타인가 (false면 아직 수집 안 됨) */
@@ -393,5 +419,7 @@ export interface TftMetaResponse {
   traits: MetaTraitRanking[]
   items: MetaItemRanking[]
   combos: MetaComboRanking[]
+  /** 메타 조합 (기물 + BIS 아이템 세트) */
+  comps: MetaCompRanking[]
   error?: string
 }

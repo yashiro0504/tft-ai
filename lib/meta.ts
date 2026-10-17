@@ -266,3 +266,78 @@ export function getComboRankings(minGames = 3): ItemRankingStat[] {
     }))
     .sort((a, b) => a.avgPlacement - b.avgPlacement)
 }
+
+export interface CompSetItem {
+  /** 원본 조합 키 (`기물|아이템`) */
+  key: string
+  itemKey: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+}
+
+export interface CompSetStat {
+  champKey: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  avgTier?: number
+  threeStarRate?: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+  /** BIS 아이템 세트 (성적 순) */
+  items: CompSetItem[]
+}
+
+/**
+ * 기물별 BIS 조합 세트 — 메타 "조합" 뷰의 원천 데이터.
+ *
+ * COMBOS(`기물|아이템`)를 기물 기준으로 묶어, 표본이 충분한 아이템 중
+ * 평균등수가 가장 낮은(강한) 순으로 최대 maxItems 개를 뽑는다.
+ * 기물 자체 성적(CHAMPS)을 기준으로 정렬해 "조합 티어"로 사용한다.
+ */
+export function getCompSets(maxItems = 3, minGames = 3): CompSetStat[] {
+  const byChamp = new Map<string, CompSetItem[]>()
+
+  for (const [key, s] of Object.entries(COMBOS)) {
+    if (typeof s?.avgPlacement !== 'number') continue
+    if ((s.sampleSize || 0) < minGames) continue
+    const sep = key.indexOf('|')
+    if (sep <= 0) continue
+    const champKey = key.slice(0, sep)
+    const itemKey = key.slice(sep + 1)
+    if (!itemKey) continue
+
+    const list = byChamp.get(champKey) || []
+    list.push({
+      key,
+      itemKey,
+      avgPlacement: s.avgPlacement,
+      top4Rate: s.top4Rate ?? 0,
+      sampleSize: s.sampleSize || 0,
+    })
+    byChamp.set(champKey, list)
+  }
+
+  const comps: CompSetStat[] = []
+  for (const [champKey, list] of byChamp) {
+    const champ = CHAMPS[champKey]
+    if (!champ || typeof champ.avgPlacement !== 'number') continue
+    const items = [...list].sort((a, b) => a.avgPlacement - b.avgPlacement).slice(0, maxItems)
+    comps.push({
+      champKey,
+      avgPlacement: champ.avgPlacement,
+      top4Rate: champ.top4Rate ?? 0,
+      sampleSize: champ.sampleSize || 0,
+      avgTier: champ.avgTier,
+      threeStarRate: champ.threeStarRate,
+      prevRank: champ.prevRank,
+      rankDelta: champ.rankDelta,
+      avgDelta: champ.avgDelta,
+      items,
+    })
+  }
+
+  return comps.sort((a, b) => a.avgPlacement - b.avgPlacement)
+}

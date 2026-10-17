@@ -16,19 +16,19 @@ import {
 } from 'lucide-react'
 import type {
   MetaChampRanking,
-  MetaComboRanking,
+  MetaCompRanking,
   MetaItemRanking,
   MetaTraitRanking,
   TftMetaResponse,
 } from '@/lib/types'
 
-type MetaTab = 'champions' | 'traits' | 'items' | 'combos'
+type MetaTab = 'comps' | 'champions' | 'traits' | 'items'
 
 const TABS: { id: MetaTab; label: string; icon: typeof Crown }[] = [
+  { id: 'comps', label: '조합', icon: Swords },
   { id: 'champions', label: '기물', icon: Crown },
-  { id: 'traits', label: '시너지', icon: Swords },
+  { id: 'traits', label: '시너지', icon: Link2 },
   { id: 'items', label: '아이템', icon: Package },
-  { id: 'combos', label: 'BIS 조합', icon: Link2 },
 ]
 
 type ItemClass = 'all' | 'normal' | 'radiant' | 'artifact' | 'emblem' | 'special'
@@ -268,11 +268,18 @@ const MEDAL = [
   'from-amber-600 to-orange-700',
 ]
 
-function Podium({ rows }: { rows: MetaChampRanking[] }) {
+function Podium({ rows, title }: { rows: MetaChampRanking[]; title?: string }) {
   const top = rows.slice(0, 3)
   if (top.length === 0) return null
   return (
-    <div className="grid gap-2.5 sm:grid-cols-3">
+    <div className="space-y-1.5">
+      {title ? (
+        <div className="flex items-center justify-between px-0.5">
+          <h2 className="text-[13px] font-black text-ink">{title}</h2>
+          <span className="text-[11px] text-muted">평균등수 기준</span>
+        </div>
+      ) : null}
+      <div className="grid gap-2.5 sm:grid-cols-3">
       {top.map((r, i) => (
         <div
           key={r.key}
@@ -322,6 +329,7 @@ function Podium({ rows }: { rows: MetaChampRanking[] }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   )
 }
@@ -457,46 +465,86 @@ function ItemCard({
   )
 }
 
-function ComboCard({ r }: { r: MetaComboRanking }) {
+/** 메타 조합 카드 — 기물 + BIS 아이템 세트 */
+function CompCard({
+  r,
+  onSelect,
+}: {
+  r: MetaCompRanking
+  onSelect: (r: MetaCompRanking) => void
+}) {
   const t = tierOf(r.avgPlacement)
   return (
-    <div className="rounded-xl border border-line/10 bg-elev/5 p-3 transition hover:border-line/10 hover:bg-elev/5">
-      <div className="flex items-start gap-2">
-        <div className="flex items-center gap-1.5">
-          {r.champImgUrl ? (
+    <div
+      role="button"
+      tabIndex={0}
+      title={`${r.name} 조합 상세 보기`}
+      onClick={() => onSelect(r)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(r)
+        }
+      }}
+      className="cursor-pointer rounded-2xl border border-line/10 bg-gradient-to-br from-elev/10 to-transparent p-3.5 transition hover:border-line/20 hover:bg-elev/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/60"
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br p-[1.5px] ${TIER_STYLE[t].ring}`}
+        >
+          {r.imgUrl ? (
             <img
-              src={r.champImgUrl}
-              alt={r.champName}
-              className="h-10 w-10 rounded-lg border border-line/10 bg-sunken/70 object-cover"
-              onError={(e) => {
-                ;(e.target as HTMLElement).style.display = 'none'
-              }}
-            />
-          ) : null}
-          <span className="text-[11px] font-black text-subtle">+</span>
-          {r.itemIconUrl ? (
-            <img
-              src={r.itemIconUrl}
-              alt={r.itemName}
-              className="h-8 w-8 rounded-md border border-amber-500/20 bg-sunken/70 object-cover"
+              src={r.imgUrl}
+              alt={r.name}
+              className="h-full w-full rounded-[10px] bg-sunken/70 object-cover"
               onError={(e) => {
                 ;(e.target as HTMLElement).style.display = 'none'
               }}
             />
           ) : null}
         </div>
-        <div className="ml-auto">
-          <AvgPill avg={r.avgPlacement} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className={`text-[11px] font-black ${TIER_STYLE[t].text}`}>{t}</span>
+            <p className="truncate text-[15px] font-extrabold text-ink">{r.name}</p>
+            <DeltaBadge delta={r.rankDelta} avgDelta={r.avgDelta} />
+          </div>
+          <p className="truncate text-[12px] text-muted">
+            {r.cost ? <span className="text-subtle">{r.cost}코 · </span> : null}
+            {r.sampleSize}판 · TOP4 {Math.round(r.top4Rate * 100)}%
+          </p>
         </div>
+        <AvgPill avg={r.avgPlacement} />
       </div>
-      <p className="mt-2 truncate text-[13px] font-extrabold text-ink">
-        {r.champName} <span className="text-muted">×</span> {r.itemName}
-      </p>
-      <div className="mt-1.5 flex items-center gap-2">
-        <div className="flex-1">
-          <StatBar rate={r.top4Rate} tier={t} />
-        </div>
-        <span className="text-[11px] text-muted">{r.sampleSize}판</span>
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">BIS</span>
+        {r.items.length === 0 ? (
+          <span className="text-[11px] text-muted">아이템 표본 부족</span>
+        ) : null}
+        {r.items.map((it) => (
+          <span
+            key={it.key}
+            title={`${it.name} · 평균 ${it.avgPlacement.toFixed(2)} (${it.sampleSize}판)`}
+            className="inline-flex max-w-[9.5rem] items-center gap-1 rounded-lg border border-line/10 bg-elev/5 py-1 pl-1 pr-1.5"
+          >
+            {it.iconUrl ? (
+              <img
+                src={it.iconUrl}
+                alt={it.name}
+                className="h-5 w-5 shrink-0 rounded border border-amber-500/20 object-cover"
+                onError={(e) => {
+                  ;(e.target as HTMLElement).style.display = 'none'
+                }}
+              />
+            ) : null}
+            <span className="truncate text-[11px] font-bold text-ink-soft">{it.name}</span>
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-2.5">
+        <StatBar rate={r.top4Rate} tier={t} />
       </div>
     </div>
   )
@@ -738,7 +786,7 @@ function DetailDrawer({
 }
 
 export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
-  const [tab, setTab] = useState<MetaTab>('champions')
+  const [tab, setTab] = useState<MetaTab>('comps')
   const [data, setData] = useState<TftMetaResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -790,6 +838,18 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const comps = useMemo(() => {
+    let list = filterRows(
+      data?.comps ?? [],
+      q,
+      (r) => `${r.name} ${r.key} ${r.items.map((i) => i.name).join(' ')}`
+    )
+    if (costFilter !== 'all') list = list.filter((r) => (r.cost ?? 0) === costFilter)
+    if (minSample > 0) list = list.filter((r) => r.sampleSize >= minSample)
+    if (tierFilter !== 'all') list = list.filter((r) => tierOf(r.avgPlacement) === tierFilter)
+    return sortMeta(list, sortBy)
+  }, [data, q, costFilter, minSample, tierFilter, sortBy])
+
   const champions = useMemo(() => {
     let list = filterRows(data?.champions ?? [], q, (r) => `${r.name} ${r.key}`)
     if (costFilter !== 'all') list = list.filter((r) => (r.cost ?? 0) === costFilter)
@@ -812,24 +872,34 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
     if (tierFilter !== 'all') list = list.filter((r) => tierOf(r.avgPlacement) === tierFilter)
     return sortMeta(list, sortBy)
   }, [data, q, itemClass, minSample, tierFilter, sortBy])
-  const combos = useMemo(() => {
-    let list = filterRows(data?.combos ?? [], q, (r) => `${r.champName} ${r.itemName} ${r.key}`)
-    if (minSample > 0) list = list.filter((r) => r.sampleSize >= minSample)
-    if (tierFilter !== 'all') list = list.filter((r) => tierOf(r.avgPlacement) === tierFilter)
-    return sortMeta(list, sortBy)
-  }, [data, q, minSample, tierFilter, sortBy])
 
   const hasMeta = Boolean(data?.hasMeta)
   const totalCount =
-    tab === 'champions'
+    tab === 'comps'
+      ? comps.length
+      : tab === 'champions'
       ? champions.length
       : tab === 'traits'
       ? traits.length
-      : tab === 'items'
-      ? items.length
-      : combos.length
+      : items.length
   const needsMore = totalCount > (tab === 'champions' ? 20 : 12)
-  const limit = showAll ? 999 : tab === 'champions' ? 6 : 12
+  const limit = showAll ? 999 : tab === 'comps' ? 9 : tab === 'champions' ? 6 : 12
+
+  /** 상단 포디움 — 조합 탭에서는 조합 TOP3, 그 외 기물 TOP3 */
+  const podiumRows: MetaChampRanking[] = useMemo(() => {
+    if (tab !== 'comps') return data?.champions ?? []
+    return (data?.comps ?? []).slice(0, 3).map((c) => ({
+      key: c.key,
+      name: c.name,
+      imgUrl: c.imgUrl,
+      avgPlacement: c.avgPlacement,
+      top4Rate: c.top4Rate,
+      sampleSize: c.sampleSize,
+      avgTier: c.avgTier,
+      threeStarRate: c.threeStarRate,
+      cost: c.cost,
+    }))
+  }, [data, tab])
 
   /** 탭 전환 (모바일 하단 네비/데스크톱 탭 공용) */
   const selectTab = (next: MetaTab) => {
@@ -842,7 +912,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
   return (
     <div className="space-y-3 animate-fade-up">
-      <Podium rows={data?.champions ?? []} />
+      <Podium rows={podiumRows} title={tab === 'comps' ? 'TOP 3 메타 조합' : 'TOP 3 기물'} />
       <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <KpiCard
           icon={CalendarDays}
@@ -873,9 +943,9 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
         />
         <KpiCard
           icon={Link2}
-          label="BIS 조합"
-          value={data ? data.combos.length : '—'}
-          sub="기물 × 아이템"
+          label="메타 조합"
+          value={data ? data.comps.length : '—'}
+          sub="기물 + BIS 세트"
           tone="emerald"
         />
       </div>
@@ -933,7 +1003,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
       {/* 필터/정렬: 모바일에서는 한 줄 가로 스크롤 */}
       <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">
         <div className="flex min-w-max items-center gap-x-3 md:min-w-0 md:flex-wrap">
-        {tab === 'champions' && (
+        {(tab === 'champions' || tab === 'comps') && (
           <div className="flex items-center gap-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">코스트</span>
             <Chip active={costFilter === 'all'} onClick={() => setCostFilter('all')}>
@@ -1052,6 +1122,23 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
       {!isLoading && !error && hasMeta && (
         <>
+          {tab === 'comps' && (
+            <div className="grid gap-2.5 md:grid-cols-2">
+              {comps.slice(0, limit).map((r) => (
+                <CompCard
+                  key={r.key}
+                  r={r}
+                  onSelect={(x) => setSelected({ type: 'champion', key: x.key })}
+                />
+              ))}
+              {comps.length === 0 && (
+                <p className="col-span-full py-10 text-center text-xs text-muted">
+                  검색 결과가 없습니다.
+                </p>
+              )}
+            </div>
+          )}
+
           {tab === 'champions' && (
             <div className="overflow-hidden rounded-2xl border border-line/10 bg-panel/95 shadow-2xl shadow-black/30">
               {TIER_ORDER.map((tier) => {
@@ -1101,19 +1188,6 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
                 />
               ))}
               {items.length === 0 && (
-                <p className="col-span-full py-10 text-center text-xs text-muted">
-                  검색 결과가 없습니다.
-                </p>
-              )}
-            </div>
-          )}
-
-          {tab === 'combos' && (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {combos.slice(0, limit).map((r) => (
-                <ComboCard key={r.key} r={r} />
-              ))}
-              {combos.length === 0 && (
                 <p className="col-span-full py-10 text-center text-xs text-muted">
                   검색 결과가 없습니다.
                 </p>
