@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-17T13:57:05.154Z",
+ "generatedAt": "2026-10-17T14:32:14.436Z",
  "source": "lolchess.gg 추천 메타 덱",
  "sourceUrl": "https://lolchess.gg/meta?hl=ko",
  "patch": "18.4b",
@@ -56,6 +56,7 @@
      "name": "카직스",
      "cost": 3,
      "star": 3,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
      "matchedKey": "KhaZix",
      "traits": [
@@ -84,6 +85,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 3,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -113,6 +115,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 3,
+     "index": 8,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -143,6 +146,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 13,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -153,6 +157,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -167,6 +172,7 @@
      "name": "오른",
      "cost": 1,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -180,6 +186,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -209,6 +216,7 @@
      "name": "알룬",
      "cost": 5,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
      "matchedKey": "Alune",
      "traits": [
@@ -223,6 +231,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -236,6 +245,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 24,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -293,6 +303,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -317,6 +328,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 3,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -331,6 +343,7 @@
      "name": "티모",
      "cost": 2,
      "star": 3,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
      "matchedKey": "Teemo",
      "traits": [
@@ -344,6 +357,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -357,6 +371,7 @@
      "name": "아지르",
      "cost": 3,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
      "matchedKey": "Azir",
      "traits": [
@@ -387,6 +402,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -416,6 +432,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -429,6 +446,7 @@
      "name": "베이가",
      "cost": 1,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
      "matchedKey": "Veigar",
      "traits": [
@@ -484,6 +502,7 @@
      "name": "돌거북",
      "cost": 3,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
      "matchedKey": "Krug",
      "traits": [
@@ -513,6 +532,7 @@
      "name": "장로 드래곤",
      "cost": 5,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
      "matchedKey": "ElderDragon",
      "traits": [
@@ -542,6 +562,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -556,6 +577,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 15,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -569,6 +591,7 @@
      "name": "덩굴정령",
      "cost": 4,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
      "matchedKey": "Brambleback",
      "traits": [
@@ -582,6 +605,7 @@
      "name": "어스름늑대",
      "cost": 2,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
      "matchedKey": "Murkwolf",
      "traits": [
@@ -595,6 +619,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -609,6 +634,7 @@
      "name": "조약돌",
      "cost": 1,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
      "matchedKey": "Sentry",
      "traits": [
@@ -685,6 +711,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -710,6 +737,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -739,6 +767,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -753,6 +782,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -766,6 +796,7 @@
      "name": "니달리",
      "cost": 4,
      "star": 2,
+     "index": 14,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
      "matchedKey": "Nidalee18_AP",
      "traits": [
@@ -795,6 +826,7 @@
      "name": "아펠리오스",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
      "matchedKey": "Aphelios",
      "traits": [
@@ -824,6 +856,7 @@
      "name": "코그모",
      "cost": 3,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
      "matchedKey": "KogMaw18_AD",
      "traits": [
@@ -838,6 +871,7 @@
      "name": "바루스",
      "cost": 1,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
      "matchedKey": "Varus",
      "traits": [
@@ -886,6 +920,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -899,6 +934,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -913,6 +949,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -926,6 +963,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -955,6 +993,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -974,6 +1013,7 @@
      "name": "장로 드래곤",
      "cost": 5,
      "star": 2,
+     "index": 11,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
      "matchedKey": "ElderDragon",
      "traits": [
@@ -1003,6 +1043,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -1015,6 +1056,7 @@
      "name": "드레이븐",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
      "matchedKey": "Draven",
      "traits": [
@@ -1079,6 +1121,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 1,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -1089,6 +1132,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -1102,6 +1146,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -1115,6 +1160,7 @@
      "name": "알리스타",
      "cost": 2,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
      "matchedKey": "Alistar",
      "traits": [
@@ -1128,6 +1174,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -1157,6 +1204,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -1176,6 +1224,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 11,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -1196,6 +1245,7 @@
      "name": "드레이븐",
      "cost": 5,
      "star": 2,
+     "index": 20,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
      "matchedKey": "Draven",
      "traits": [
@@ -1219,6 +1269,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -1231,6 +1282,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 24,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -1241,6 +1293,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -1311,6 +1364,7 @@
      "name": "오른",
      "cost": 1,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -1340,6 +1394,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 10,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -1350,6 +1405,7 @@
      "name": "르블랑",
      "cost": 2,
      "star": 3,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
      "matchedKey": "LeBlanc",
      "traits": [
@@ -1363,6 +1419,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 18,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -1373,6 +1430,7 @@
      "name": "베이가",
      "cost": 1,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
      "matchedKey": "Veigar",
      "traits": [
@@ -1403,6 +1461,7 @@
      "name": "카시오페아",
      "cost": 3,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
      "matchedKey": "Cassiopeia",
      "traits": [
@@ -1416,6 +1475,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -1430,6 +1490,7 @@
      "name": "알리스타",
      "cost": 2,
      "star": 3,
+     "index": 24,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
      "matchedKey": "Alistar",
      "traits": [
@@ -1443,6 +1504,7 @@
      "name": "렉사이",
      "cost": 1,
      "star": 3,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
      "matchedKey": "RekSai",
      "traits": [
@@ -1503,6 +1565,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -1532,6 +1595,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 15,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -1545,6 +1609,7 @@
      "name": "돌거북",
      "cost": 3,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
      "matchedKey": "Krug",
      "traits": [
@@ -1558,6 +1623,7 @@
      "name": "모르가나",
      "cost": 4,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
      "matchedKey": "Morgana",
      "traits": [
@@ -1587,6 +1653,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -1607,6 +1674,7 @@
      "name": "카르마",
      "cost": 1,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
      "matchedKey": "Karma",
      "traits": [
@@ -1620,6 +1688,7 @@
      "name": "아리",
      "cost": 4,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
      "matchedKey": "Ahri",
      "traits": [
@@ -1649,6 +1718,7 @@
      "name": "조약돌",
      "cost": 1,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
      "matchedKey": "Sentry",
      "traits": [
@@ -1703,6 +1773,7 @@
      "name": "릴리아",
      "cost": 4,
      "star": 2,
+     "index": 0,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
      "matchedKey": "Lillia",
      "traits": [
@@ -1716,6 +1787,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -1730,6 +1802,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -1759,6 +1832,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -1773,6 +1847,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -1787,6 +1862,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 11,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -1801,6 +1877,7 @@
      "name": "럭스 (달빛)",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lux_1783676806-Lux.jpg",
      "matchedKey": null,
      "traits": [
@@ -1830,6 +1907,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -1842,6 +1920,7 @@
      "name": "알룬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
      "matchedKey": "Alune",
      "traits": [
@@ -1913,6 +1992,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -1926,6 +2006,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -1955,6 +2036,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -1968,6 +2050,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -1982,6 +2065,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 11,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -2001,6 +2085,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -2015,6 +2100,7 @@
      "name": "럭스 (달빛)",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lux_1783676806-Lux.jpg",
      "matchedKey": null,
      "traits": [
@@ -2044,6 +2130,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -2056,6 +2143,7 @@
      "name": "알룬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
      "matchedKey": "Alune",
      "traits": [
@@ -2127,6 +2215,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -2157,6 +2246,7 @@
      "name": "엘리스",
      "cost": 2,
      "star": 3,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Elise.png",
      "matchedKey": "Elise",
      "traits": [
@@ -2186,6 +2276,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -2199,6 +2290,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -2213,6 +2305,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 11,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -2226,6 +2319,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -2240,6 +2334,7 @@
      "name": "모르가나",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
      "matchedKey": "Morgana",
      "traits": [
@@ -2269,6 +2364,7 @@
      "name": "알룬",
      "cost": 5,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
      "matchedKey": "Alune",
      "traits": [
@@ -2283,6 +2379,7 @@
      "name": "카시오페아",
      "cost": 3,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
      "matchedKey": "Cassiopeia",
      "traits": [
@@ -2359,6 +2456,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 3,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -2388,6 +2486,7 @@
      "name": "레오나",
      "cost": 1,
      "star": 3,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
      "matchedKey": "Leona",
      "traits": [
@@ -2401,6 +2500,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -2415,6 +2515,7 @@
      "name": "쉔",
      "cost": 2,
      "star": 3,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
      "matchedKey": "Shen",
      "traits": [
@@ -2428,6 +2529,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -2441,6 +2543,7 @@
      "name": "바루스",
      "cost": 1,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
      "matchedKey": "Varus",
      "traits": [
@@ -2454,6 +2557,7 @@
      "name": "아펠리오스",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
      "matchedKey": "Aphelios",
      "traits": [
@@ -2483,6 +2587,7 @@
      "name": "케일",
      "cost": 2,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
      "matchedKey": "Kayle",
      "traits": [
@@ -2559,6 +2664,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -2588,6 +2694,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -2613,6 +2720,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -2627,6 +2735,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -2640,6 +2749,7 @@
      "name": "덩굴정령",
      "cost": 4,
      "star": 2,
+     "index": 14,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
      "matchedKey": "Brambleback",
      "traits": [
@@ -2669,6 +2779,7 @@
      "name": "모르가나",
      "cost": 4,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
      "matchedKey": "Morgana",
      "traits": [
@@ -2698,6 +2809,7 @@
      "name": "아펠리오스",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
      "matchedKey": "Aphelios",
      "traits": [
@@ -2727,6 +2839,7 @@
      "name": "어미 부리",
      "cost": 3,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
      "matchedKey": "CrimsonRaptor",
      "traits": [
@@ -2747,6 +2860,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -2789,6 +2903,7 @@
      "name": "레오나",
      "cost": 1,
      "star": 2,
+     "index": 0,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
      "matchedKey": "Leona",
      "traits": [
@@ -2802,6 +2917,7 @@
      "name": "오른",
      "cost": 1,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -2815,6 +2931,7 @@
      "name": "쉔",
      "cost": 2,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
      "matchedKey": "Shen",
      "traits": [
@@ -2828,6 +2945,7 @@
      "name": "릴리아",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
      "matchedKey": "Lillia",
      "traits": [
@@ -2841,6 +2959,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 3,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -2871,6 +2990,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 3,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -2900,6 +3020,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -2913,6 +3034,7 @@
      "name": "카시오페아",
      "cost": 3,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
      "matchedKey": "Cassiopeia",
      "traits": [
@@ -2983,6 +3105,7 @@
      "name": "오른",
      "cost": 1,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -3012,6 +3135,7 @@
      "name": "바루스",
      "cost": 1,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
      "matchedKey": "Varus",
      "traits": [
@@ -3041,6 +3165,7 @@
      "name": "카밀",
      "cost": 1,
      "star": 3,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
      "matchedKey": "Camille",
      "traits": [
@@ -3070,6 +3195,7 @@
      "name": "아칼리",
      "cost": 1,
      "star": 3,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
      "matchedKey": "Akali_AD",
      "traits": [
@@ -3100,6 +3226,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -3113,6 +3240,7 @@
      "name": "레오나",
      "cost": 1,
      "star": 3,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
      "matchedKey": "Leona",
      "traits": [
@@ -3126,6 +3254,7 @@
      "name": "케일",
      "cost": 2,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
      "matchedKey": "Kayle",
      "traits": [
@@ -3186,6 +3315,7 @@
      "name": "말파이트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
      "matchedKey": "Malphite",
      "traits": [
@@ -3215,6 +3345,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -3234,6 +3365,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -3248,6 +3380,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -3261,6 +3394,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 2,
+     "index": 19,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -3275,6 +3409,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -3304,6 +3439,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -3333,6 +3469,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -3346,6 +3483,7 @@
      "name": "아지르",
      "cost": 3,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
      "matchedKey": "Azir",
      "traits": [
@@ -3407,6 +3545,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -3431,6 +3570,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -3445,6 +3585,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -3458,6 +3599,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 13,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -3468,6 +3610,7 @@
      "name": "오른",
      "cost": 1,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -3481,6 +3624,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -3495,6 +3639,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -3524,6 +3669,7 @@
      "name": "아리",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
      "matchedKey": "Ahri",
      "traits": [
@@ -3553,6 +3699,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -3582,6 +3729,7 @@
      "name": "유나라",
      "cost": 2,
      "star": 2,
+     "index": 24,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
      "matchedKey": "Yunara",
      "traits": [
@@ -3595,6 +3743,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 27,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -3640,6 +3789,7 @@
      "name": "오른",
      "cost": 1,
      "star": 2,
+     "index": 0,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -3653,6 +3803,7 @@
      "name": "알리스타",
      "cost": 2,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
      "matchedKey": "Alistar",
      "traits": [
@@ -3666,6 +3817,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -3679,6 +3831,7 @@
      "name": "깊은숲 수호자",
      "cost": 0,
      "star": 1,
+     "index": 3,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/DeepwoodProtector_1785316572-DeepwoodProtector.png",
      "matchedKey": null,
      "traits": [],
@@ -3689,6 +3842,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -3718,6 +3872,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 5,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -3728,6 +3883,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -3758,6 +3914,7 @@
      "name": "자야",
      "cost": 1,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
      "matchedKey": "Xayah",
      "traits": [
@@ -3772,6 +3929,7 @@
      "name": "르블랑",
      "cost": 2,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
      "matchedKey": "LeBlanc",
      "traits": [
@@ -3785,6 +3943,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 23,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -3795,6 +3954,7 @@
      "name": "소라카",
      "cost": 4,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
      "matchedKey": "Soraka",
      "traits": [
@@ -3824,6 +3984,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -3894,6 +4055,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 2,
+     "index": 0,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -3908,6 +4070,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -3921,6 +4084,7 @@
      "name": "바위 게",
      "cost": 2,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
      "matchedKey": "Scuttlecrab",
      "traits": [
@@ -3934,6 +4098,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -3953,6 +4118,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -3966,6 +4132,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -3995,6 +4162,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -4019,6 +4187,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -4048,6 +4217,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -4118,6 +4288,7 @@
      "name": "돌거북",
      "cost": 3,
      "star": 3,
+     "index": 1,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
      "matchedKey": "Krug",
      "traits": [
@@ -4131,6 +4302,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -4144,6 +4316,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -4158,6 +4331,7 @@
      "name": "렝가",
      "cost": 3,
      "star": 3,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rengar.png",
      "matchedKey": "Rengar",
      "traits": [
@@ -4186,6 +4360,7 @@
      "name": "바이",
      "cost": 3,
      "star": 3,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -4215,6 +4390,7 @@
      "name": "니달리",
      "cost": 4,
      "star": 2,
+     "index": 7,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
      "matchedKey": "Nidalee18_AP",
      "traits": [
@@ -4244,6 +4420,7 @@
      "name": "마스터 이",
      "cost": 3,
      "star": 3,
+     "index": 13,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/MasterYi.png",
      "matchedKey": "MasterYi_AD",
      "traits": [
@@ -4320,6 +4497,7 @@
      "name": "바이",
      "cost": 3,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -4344,6 +4522,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -4357,6 +4536,7 @@
      "name": "카직스",
      "cost": 3,
      "star": 3,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
      "matchedKey": "KhaZix",
      "traits": [
@@ -4369,6 +4549,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -4383,6 +4564,7 @@
      "name": "렉사이",
      "cost": 1,
      "star": 2,
+     "index": 19,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
      "matchedKey": "RekSai",
      "traits": [
@@ -4396,6 +4578,7 @@
      "name": "아지르",
      "cost": 3,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
      "matchedKey": "Azir",
      "traits": [
@@ -4426,6 +4609,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -4450,6 +4634,7 @@
      "name": "유나라",
      "cost": 2,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
      "matchedKey": "Yunara",
      "traits": [
@@ -4510,6 +4695,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -4539,6 +4725,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 3,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -4553,6 +4740,7 @@
      "name": "레오나",
      "cost": 1,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
      "matchedKey": "Leona",
      "traits": [
@@ -4566,6 +4754,7 @@
      "name": "유나라",
      "cost": 2,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
      "matchedKey": "Yunara",
      "traits": [
@@ -4595,6 +4784,7 @@
      "name": "르블랑",
      "cost": 2,
      "star": 3,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
      "matchedKey": "LeBlanc",
      "traits": [
@@ -4624,6 +4814,7 @@
      "name": "카르마",
      "cost": 1,
      "star": 3,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
      "matchedKey": "Karma",
      "traits": [
@@ -4637,6 +4828,7 @@
      "name": "케일",
      "cost": 2,
      "star": 2,
+     "index": 24,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
      "matchedKey": "Kayle",
      "traits": [
@@ -4650,6 +4842,7 @@
      "name": "아지르",
      "cost": 3,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
      "matchedKey": "Azir",
      "traits": [
@@ -4699,6 +4892,7 @@
      "name": "말파이트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
      "matchedKey": "Malphite",
      "traits": [
@@ -4728,6 +4922,7 @@
      "name": "워윅",
      "cost": 2,
      "star": 3,
+     "index": 14,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Warwick.png",
      "matchedKey": "Warwick",
      "traits": [
@@ -4757,6 +4952,7 @@
      "name": "덩굴정령",
      "cost": 4,
      "star": 2,
+     "index": 15,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
      "matchedKey": "Brambleback",
      "traits": [
@@ -4770,6 +4966,7 @@
      "name": "어스름늑대",
      "cost": 2,
      "star": 3,
+     "index": 16,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
      "matchedKey": "Murkwolf",
      "traits": [
@@ -4799,6 +4996,7 @@
      "name": "돌거북",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
      "matchedKey": "Krug",
      "traits": [
@@ -4812,6 +5010,7 @@
      "name": "렉사이",
      "cost": 1,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
      "matchedKey": "RekSai",
      "traits": [
@@ -4825,6 +5024,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 19,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -4839,6 +5039,7 @@
      "name": "아지르",
      "cost": 3,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
      "matchedKey": "Azir",
      "traits": [
@@ -4904,6 +5105,7 @@
      "name": "바위 게",
      "cost": 2,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
      "matchedKey": "Scuttlecrab",
      "traits": [
@@ -4933,6 +5135,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 3,
+     "index": 15,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -4946,6 +5149,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -4960,6 +5164,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -4973,6 +5178,7 @@
      "name": "케이틀린",
      "cost": 2,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Caitlyn.png",
      "matchedKey": "Caitlyn",
      "traits": [
@@ -4997,6 +5203,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -5026,6 +5233,7 @@
      "name": "트리스타나",
      "cost": 3,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
      "matchedKey": "Tristana",
      "traits": [
@@ -5040,6 +5248,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -5100,6 +5309,7 @@
      "name": "말파이트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
      "matchedKey": "Malphite",
      "traits": [
@@ -5129,6 +5339,7 @@
      "name": "니달리",
      "cost": 4,
      "star": 2,
+     "index": 14,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
      "matchedKey": "Nidalee18_AP",
      "traits": [
@@ -5158,6 +5369,7 @@
      "name": "렉사이",
      "cost": 1,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
      "matchedKey": "RekSai",
      "traits": [
@@ -5171,6 +5383,7 @@
      "name": "돌거북",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
      "matchedKey": "Krug",
      "traits": [
@@ -5184,6 +5397,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -5198,6 +5412,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -5227,6 +5442,7 @@
      "name": "코그모",
      "cost": 3,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
      "matchedKey": "KogMaw18_AD",
      "traits": [
@@ -5241,6 +5457,7 @@
      "name": "불타는 묘목",
      "cost": 1,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_cinderling/tft18_cinderling_square.png",
      "matchedKey": "Cinderling",
      "traits": [
@@ -5254,6 +5471,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -5314,6 +5532,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 0,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -5324,6 +5543,7 @@
      "name": "레오나",
      "cost": 1,
      "star": 3,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
      "matchedKey": "Leona",
      "traits": [
@@ -5337,6 +5557,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 3,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -5351,6 +5572,7 @@
      "name": "세주아니",
      "cost": 2,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
      "matchedKey": "Sejuani",
      "traits": [
@@ -5364,6 +5586,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -5377,6 +5600,7 @@
      "name": "오른",
      "cost": 1,
      "star": 3,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
      "matchedKey": "Ornn",
      "traits": [
@@ -5406,6 +5630,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 24,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -5416,6 +5641,7 @@
      "name": "아펠리오스",
      "cost": 4,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
      "matchedKey": "Aphelios",
      "traits": [
@@ -5429,6 +5655,7 @@
      "name": "자야",
      "cost": 1,
      "star": 3,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
      "matchedKey": "Xayah",
      "traits": [
@@ -5459,6 +5686,7 @@
      "name": "케일",
      "cost": 2,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
      "matchedKey": "Kayle",
      "traits": [
@@ -5529,6 +5757,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -5542,6 +5771,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -5555,6 +5785,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -5584,6 +5815,7 @@
      "name": "아무무",
      "cost": 4,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
      "matchedKey": "Amumu",
      "traits": [
@@ -5597,6 +5829,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -5611,6 +5844,7 @@
      "name": "케넨",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
      "matchedKey": "Kennen",
      "traits": [
@@ -5624,6 +5858,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -5653,6 +5888,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -5682,6 +5918,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -5735,6 +5972,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -5748,6 +5986,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -5761,6 +6000,7 @@
      "name": "감시자",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
      "matchedKey": "Sentinel",
      "traits": [
@@ -5775,6 +6015,7 @@
      "name": "마오카이",
      "cost": 5,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
      "matchedKey": "Maokai",
      "traits": [
@@ -5804,6 +6045,7 @@
      "name": "장로 드래곤",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
      "matchedKey": "ElderDragon",
      "traits": [
@@ -5833,6 +6075,7 @@
      "name": "아이번",
      "cost": 5,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
      "matchedKey": "Ivern",
      "traits": [
@@ -5845,6 +6088,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -5874,6 +6118,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -5950,6 +6195,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -5963,6 +6209,7 @@
      "name": "릴리아",
      "cost": 4,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
      "matchedKey": "Lillia",
      "traits": [
@@ -5976,6 +6223,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -5990,6 +6238,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -6019,6 +6268,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 10,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -6039,6 +6289,7 @@
      "name": "트리스타나",
      "cost": 3,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
      "matchedKey": "Tristana",
      "traits": [
@@ -6053,6 +6304,7 @@
      "name": "아리",
      "cost": 4,
      "star": 2,
+     "index": 25,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
      "matchedKey": "Ahri",
      "traits": [
@@ -6082,6 +6334,7 @@
      "name": "알룬",
      "cost": 5,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
      "matchedKey": "Alune",
      "traits": [
@@ -6112,6 +6365,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -6188,6 +6442,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -6212,6 +6467,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -6225,6 +6481,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -6239,6 +6496,7 @@
      "name": "요릭",
      "cost": 1,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
      "matchedKey": "Yorick",
      "traits": [
@@ -6253,6 +6511,7 @@
      "name": "아리",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
      "matchedKey": "Ahri",
      "traits": [
@@ -6282,6 +6541,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -6311,6 +6571,7 @@
      "name": "자이라",
      "cost": 4,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
      "matchedKey": "Zyra",
      "traits": [
@@ -6324,6 +6585,7 @@
      "name": "카르마",
      "cost": 1,
      "star": 2,
+     "index": 24,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
      "matchedKey": "Karma",
      "traits": [
@@ -6337,6 +6599,7 @@
      "name": "애쉬",
      "cost": 5,
      "star": 2,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
      "matchedKey": "Ashe",
      "traits": [
@@ -6401,6 +6664,7 @@
      "name": "헤카림",
      "cost": 3,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
      "matchedKey": "Hecarim",
      "traits": [
@@ -6430,6 +6694,7 @@
      "name": "돌껍질 나무",
      "cost": 0,
      "star": 1,
+     "index": 13,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
      "matchedKey": null,
      "traits": [],
@@ -6440,6 +6705,7 @@
      "name": "렝가",
      "cost": 3,
      "star": 3,
+     "index": 15,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rengar.png",
      "matchedKey": "Rengar",
      "traits": [
@@ -6468,6 +6734,7 @@
      "name": "카직스",
      "cost": 3,
      "star": 3,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
      "matchedKey": "KhaZix",
      "traits": [
@@ -6496,6 +6763,7 @@
      "name": "다이애나",
      "cost": 3,
      "star": 2,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
      "matchedKey": "Diana",
      "traits": [
@@ -6510,6 +6778,7 @@
      "name": "아펠리오스",
      "cost": 4,
      "star": 2,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
      "matchedKey": "Aphelios",
      "traits": [
@@ -6534,6 +6803,7 @@
      "name": "이즈리얼",
      "cost": 4,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
      "matchedKey": "Ezreal",
      "traits": [
@@ -6547,6 +6817,7 @@
      "name": "르블랑",
      "cost": 2,
      "star": 2,
+     "index": 23,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
      "matchedKey": "LeBlanc",
      "traits": [
@@ -6560,6 +6831,7 @@
      "name": "생명꽃",
      "cost": 0,
      "star": 1,
+     "index": 24,
      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
      "matchedKey": null,
      "traits": [],
@@ -6611,6 +6883,7 @@
      "name": "렉사이",
      "cost": 1,
      "star": 3,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
      "matchedKey": "RekSai",
      "traits": [
@@ -6635,6 +6908,7 @@
      "name": "나르",
      "cost": 5,
      "star": 2,
+     "index": 9,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
      "matchedKey": "Gnar",
      "traits": [
@@ -6655,6 +6929,7 @@
      "name": "세트",
      "cost": 4,
      "star": 2,
+     "index": 15,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
      "matchedKey": "Sett",
      "traits": [
@@ -6668,6 +6943,7 @@
      "name": "피들스틱",
      "cost": 3,
      "star": 2,
+     "index": 16,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
      "matchedKey": "Fiddlesticks",
      "traits": [
@@ -6682,6 +6958,7 @@
      "name": "코부코",
      "cost": 1,
      "star": 3,
+     "index": 17,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
      "matchedKey": "Kobuko",
      "traits": [
@@ -6695,6 +6972,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 2,
+     "index": 18,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -6708,6 +6986,7 @@
      "name": "베이가",
      "cost": 1,
      "star": 3,
+     "index": 21,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
      "matchedKey": "Veigar",
      "traits": [
@@ -6738,6 +7017,7 @@
      "name": "티모",
      "cost": 2,
      "star": 2,
+     "index": 22,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
      "matchedKey": "Teemo",
      "traits": [
@@ -6814,6 +7094,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -6828,6 +7109,7 @@
      "name": "타릭",
      "cost": 5,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
      "matchedKey": "Taric",
      "traits": [
@@ -6841,6 +7123,7 @@
      "name": "릴리아",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
      "matchedKey": "Lillia",
      "traits": [
@@ -6854,6 +7137,7 @@
      "name": "바이",
      "cost": 3,
      "star": 3,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -6883,6 +7167,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 3,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -6912,6 +7197,7 @@
      "name": "렝가",
      "cost": 3,
      "star": 3,
+     "index": 20,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rengar.png",
      "matchedKey": "Rengar",
      "traits": [
@@ -6940,6 +7226,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -6953,6 +7240,7 @@
      "name": "트리스타나",
      "cost": 3,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
      "matchedKey": "Tristana",
      "traits": [
@@ -7030,6 +7318,7 @@
      "name": "코부코",
      "cost": 1,
      "star": 2,
+     "index": 1,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
      "matchedKey": "Kobuko",
      "traits": [
@@ -7043,6 +7332,7 @@
      "name": "라칸",
      "cost": 1,
      "star": 2,
+     "index": 2,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
      "matchedKey": "Rakan",
      "traits": [
@@ -7057,6 +7347,7 @@
      "name": "릴리아",
      "cost": 4,
      "star": 2,
+     "index": 3,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
      "matchedKey": "Lillia",
      "traits": [
@@ -7070,6 +7361,7 @@
      "name": "바이",
      "cost": 3,
      "star": 2,
+     "index": 4,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
      "matchedKey": "Vi",
      "traits": [
@@ -7083,6 +7375,7 @@
      "name": "람머스",
      "cost": 3,
      "star": 3,
+     "index": 5,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
      "matchedKey": "Rammus",
      "traits": [
@@ -7112,6 +7405,7 @@
      "name": "시비르",
      "cost": 4,
      "star": 2,
+     "index": 26,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
      "matchedKey": "Sivir",
      "traits": [
@@ -7141,6 +7435,7 @@
      "name": "트리스타나",
      "cost": 3,
      "star": 3,
+     "index": 27,
      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
      "matchedKey": "Tristana",
      "traits": [

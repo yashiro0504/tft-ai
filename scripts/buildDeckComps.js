@@ -140,7 +140,12 @@ async function main() {
       if (!s?.champion) continue
       const prev = unitMap.get(s.champion)
       if (!prev) {
-        unitMap.set(s.champion, { champion: s.champion, star: s.star || 1, items: s.items || [] })
+        unitMap.set(s.champion, {
+          champion: s.champion,
+          star: s.star || 1,
+          items: s.items || [],
+          index: typeof s.index === 'number' ? s.index : null,
+        })
       } else {
         prev.star = Math.max(prev.star, s.star || 1)
         if ((prev.items || []).length === 0 && (s.items || []).length) prev.items = s.items
@@ -169,6 +174,7 @@ async function main() {
         name: ref?.name || u.champion,
         cost: ref?.cost?.[0] ?? null,
         star: u.star,
+        index: u.index,
         imgUrl: oursHit?.imgUrl || ref?.imageUrl || '',
         matchedKey: oursHit?.key || null,
         traits: (ref?.traits || []).slice(),

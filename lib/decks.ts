@@ -18,6 +18,8 @@ interface RawUnit {
   name: string
   cost: number | null
   star: number
+  /** 보드 슬롯 인덱스 (0~27, 4행×7열) */
+  index: number | null
   imgUrl: string
   matchedKey: string | null
   traits: string[]

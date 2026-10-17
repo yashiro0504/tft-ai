@@ -164,6 +164,7 @@ export async function GET(req: NextRequest) {
         name: u.name,
         cost: u.cost,
         star: u.star,
+        index: u.index,
         imgUrl: u.imgUrl,
         items: u.items,
         stat: u.stat,

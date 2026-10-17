@@ -559,7 +559,162 @@ function CompCard({
   )
 }
 
-/** 유닛 코스트별 테두리 색 */
+/** 헥스 모양 clip-path (TFT 4×7 보드) */
+const HEX_CLIP = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)'
+
+/** 코스트별 헥스 테두리 색 */
+const COST_HEX: Record<number, string> = {
+  1: '#64748b',
+  2: '#10b981',
+  3: '#0ea5e9',
+  4: '#8b5cf6',
+  5: '#f59e0b',
+}
+
+/** 유닛 헥스 (보드 칸) */
+function HexUnit({
+  u,
+  hex,
+  carry,
+  onClick,
+}: {
+  u: MetaDeckRanking['units'][number]
+  hex: number
+  carry: boolean
+  onClick: () => void
+}) {
+  const ring = carry ? '#fbbf24' : COST_HEX[u.cost || 1] || '#64748b'
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      title={`${u.name} ${u.star}성${u.stat ? ` · 평균 ${u.stat.avgPlacement.toFixed(2)} (${u.stat.sampleSize}판)` : ''}${
+        u.items.length ? `\n${u.items.map((i) => i.name).join(', ')}` : ''
+      }`}
+      className="absolute inset-0 cursor-pointer transition hover:z-10 hover:scale-[1.06]"
+      style={{ height: hex * 1.14 }}
+    >
+      <div className="absolute inset-0" style={{ clipPath: HEX_CLIP, background: ring }}>
+        {u.imgUrl ? (
+          <img
+            src={u.imgUrl}
+            alt={u.name}
+            className="absolute inset-[2px] h-[calc(100%-4px)] w-[calc(100%-4px)] bg-sunken object-cover"
+            style={{ clipPath: HEX_CLIP }}
+            onError={(e) => {
+              ;(e.target as HTMLElement).style.display = 'none'
+            }}
+          />
+        ) : null}
+      </div>
+      <span className="absolute right-0 top-0 rounded bg-black/80 px-0.5 text-[9px] font-black leading-tight text-amber-300">
+        {u.star}★
+      </span>
+      {u.items.length > 0 ? (
+        <div className="absolute -bottom-1.5 left-1/2 flex -translate-x-1/2 gap-[1px]">
+          {u.items.map((it) => (
+            <img
+              key={it.key}
+              src={it.iconUrl}
+              alt={it.name}
+              className="h-3.5 w-3.5 rounded-[2px] border border-black/60 bg-sunken object-cover"
+              onError={(e) => {
+                ;(e.target as HTMLElement).style.display = 'none'
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
+    </button>
+  )
+}
+
+/** TFT 보드 배치 (4행 × 7열 헥스, 위쪽이 전방) */
+function DeckBoard({
+  deck,
+  hex = 44,
+  onSelectUnit,
+}: {
+  deck: MetaDeckRanking
+  hex?: number
+  onSelectUnit: (key: string) => void
+}) {
+  const cellMap = new Map<number, MetaDeckRanking['units'][number]>()
+  const bench: MetaDeckRanking['units'] = []
+  for (const u of deck.units) {
+    if (u.index != null && u.index >= 0 && u.index < 28) cellMap.set(u.index, u)
+    else bench.push(u)
+  }
+
+  return (
+    <div>
+      <div className="mx-auto" style={{ width: hex * 7 + hex / 2 + 2 }}>
+        {[0, 1, 2, 3].map((row) => (
+          <div
+            key={row}
+            className="flex"
+            style={{
+              marginLeft: row % 2 === 1 ? hex / 2 : 0,
+              marginTop: row === 0 ? 0 : -hex * 0.22,
+            }}
+          >
+            {Array.from({ length: 7 }).map((_, col) => {
+              const idx = row * 7 + col
+              const u = cellMap.get(idx)
+              return (
+                <div key={col} className="relative" style={{ width: hex, height: hex * 1.14 }}>
+                  <div
+                    className="absolute inset-[1px] bg-elev/5 ring-1 ring-inset ring-line/10"
+                    style={{ clipPath: HEX_CLIP }}
+                  />
+                  {u ? (
+                    <HexUnit
+                      u={u}
+                      hex={hex}
+                      carry={deck.carryKey === u.key}
+                      onClick={() => onSelectUnit(u.key)}
+                    />
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      {bench.length > 0 ? (
+        <div className="mt-3">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-subtle">벤치</p>
+          <div className="flex flex-wrap gap-1.5">
+            {bench.map((u) => (
+              <button
+                key={`${u.key}-${u.name}`}
+                type="button"
+                onClick={() => onSelectUnit(u.key)}
+                className="relative h-11 w-11 cursor-pointer overflow-hidden rounded-lg border border-line/15 bg-sunken"
+                title={u.name}
+              >
+                {u.imgUrl ? <img src={u.imgUrl} alt={u.name} className="h-full w-full object-cover" /> : null}
+                <span className="absolute right-0 top-0 bg-black/80 px-0.5 text-[9px] font-black text-amber-300">
+                  {u.star}★
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-2 flex items-center justify-between text-[10px] text-subtle">
+        <span>↑ 전방 (상대 진영)</span>
+        <span>↓ 후방</span>
+      </div>
+    </div>
+  )
+}
+
 const COST_BORDER: Record<number, string> = {
   1: 'border-slate-500/50',
   2: 'border-emerald-500/50',
@@ -571,15 +726,29 @@ const COST_BORDER: Record<number, string> = {
 /** 메타 덱 카드 — 실제 보드 구성(유닛·성급·아이템·시너지) */
 function DeckCard({
   r,
+  onOpen,
   onSelectUnit,
 }: {
   r: MetaDeckRanking
+  onOpen: () => void
   onSelectUnit: (key: string) => void
 }) {
   const tier = (r.tier === '-' ? 'C' : r.tier) as Tier
   const s = TIER_STYLE[tier]
   return (
-    <div className="rounded-2xl border border-line/10 bg-gradient-to-br from-elev/10 to-transparent p-3.5 transition hover:border-line/20 hover:bg-elev/10">
+    <div
+      role="button"
+      tabIndex={0}
+      title={`${r.name} — 보드 배치 보기`}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen()
+        }
+      }}
+      className="cursor-pointer rounded-2xl border border-line/10 bg-gradient-to-br from-elev/10 to-transparent p-3.5 transition hover:border-line/20 hover:bg-elev/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/60"
+    >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -679,6 +848,210 @@ function DeckCard({
           ))}
         </div>
       ) : null}
+
+      <div className="mt-2 flex items-center justify-end gap-1 text-[10px] font-bold text-cyan-300">
+        보드 배치 보기 <span aria-hidden="true">›</span>
+      </div>
+    </div>
+  )
+}
+
+/** 덱 상세 — 보드 배치 모달 */
+function DeckDrawer({
+  deck,
+  onClose,
+  onSelectUnit,
+}: {
+  deck: MetaDeckRanking | null
+  onClose: () => void
+  onSelectUnit: (key: string) => void
+}) {
+  useEffect(() => {
+    if (!deck) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [deck, onClose])
+
+  if (!deck) return null
+  const tier = (deck.tier === '-' ? 'C' : deck.tier) as Tier
+  const s = TIER_STYLE[tier]
+
+  const sortedUnits = [...deck.units].sort((a, b) => {
+    if (a.key === deck.carryKey) return -1
+    if (b.key === deck.carryKey) return 1
+    return (b.cost || 0) - (a.cost || 0)
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <div
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${deck.name} 보드`}
+        className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-line/10 bg-panel/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
+      >
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`rounded border px-1.5 py-0.5 text-[11px] font-black leading-none ${s.text} ${s.border} ${s.bg}`}
+              >
+                {deck.tier}
+              </span>
+              <h3 className="truncate text-lg font-black text-ink">{deck.name}</h3>
+            </div>
+            <p className="mt-1 text-[11px] text-muted">
+              {deck.units.length}유닛 · {deck.unitCost}코
+              {deck.gold ? ` · ${deck.gold}골드` : ''} · 실측 커버리지{' '}
+              {Math.round(deck.coverage * 100)}%
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="shrink-0 cursor-pointer rounded-lg border border-line/10 px-2.5 py-1 text-xs font-bold text-muted transition hover:bg-elev/5"
+          >
+            닫기
+          </button>
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <StatBox
+            label="실측 평균등수"
+            value={deck.avgPlacement != null ? deck.avgPlacement.toFixed(2) : '—'}
+          />
+          <StatBox
+            label="TOP4"
+            value={deck.top4Rate != null ? `${Math.round(deck.top4Rate * 100)}%` : '—'}
+          />
+          <StatBox label="표본" value={`${deck.sampleSize.toLocaleString()}판`} />
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-black text-ink">보드 배치</p>
+            <span className="text-[10px] text-subtle">테두리 색 = 코스트 · 금색 = 캐리</span>
+          </div>
+          <div className="rounded-2xl border border-line/10 bg-sunken/40 p-3">
+            <DeckBoard deck={deck} onSelectUnit={onSelectUnit} />
+          </div>
+        </div>
+
+        {deck.traits.length > 0 ? (
+          <div className="mt-4">
+            <p className="mb-2 text-sm font-black text-ink">시너지</p>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              {deck.traits.map((t) => (
+                <div
+                  key={t.key}
+                  className="flex items-center gap-1.5 rounded-lg border border-line/10 bg-elev/5 px-2 py-1.5"
+                >
+                  {t.iconUrl ? (
+                    <img
+                      src={t.iconUrl}
+                      alt={t.name}
+                      className="h-5 w-5 shrink-0 object-contain"
+                      onError={(e) => {
+                        ;(e.target as HTMLElement).style.display = 'none'
+                      }}
+                    />
+                  ) : null}
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-bold text-ink-soft">
+                    {t.name}
+                  </span>
+                  <span className="font-mono text-[12px] font-black text-cyan-300">{t.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-4">
+          <p className="mb-2 text-sm font-black text-ink">기물 · 아이템</p>
+          <div className="space-y-1.5">
+            {sortedUnits.map((u) => {
+              const carry = u.key === deck.carryKey
+              return (
+                <div
+                  key={`${u.key}-${u.name}`}
+                  className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${
+                    carry ? 'border-amber-400/40 bg-amber-500/5' : 'border-line/10 bg-elev/5'
+                  }`}
+                >
+                  {u.imgUrl ? (
+                    <img
+                      src={u.imgUrl}
+                      alt={u.name}
+                      className="h-8 w-8 shrink-0 rounded-md border border-line/10 bg-sunken object-cover"
+                      onError={(e) => {
+                        ;(e.target as HTMLElement).style.display = 'none'
+                      }}
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-bold text-ink">
+                      {u.name} <span className="text-amber-300">{u.star}★</span>
+                      {u.cost ? <span className="text-subtle"> · {u.cost}코</span> : null}
+                      {carry ? (
+                        <span className="ml-1 rounded bg-amber-500/20 px-1 text-[9px] font-black text-amber-300">
+                          캐리
+                        </span>
+                      ) : null}
+                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                      {u.items.length === 0 ? (
+                        <span className="text-[10px] text-subtle">아이템 없음</span>
+                      ) : (
+                        u.items.map((it) => (
+                          <span
+                            key={it.key}
+                            className="inline-flex items-center gap-1 rounded bg-elev/10 px-1 py-0.5 text-[10px] text-muted"
+                          >
+                            {it.iconUrl ? (
+                              <img
+                                src={it.iconUrl}
+                                alt={it.name}
+                                className="h-3.5 w-3.5 rounded-sm object-cover"
+                                onError={(e) => {
+                                  ;(e.target as HTMLElement).style.display = 'none'
+                                }}
+                              />
+                            ) : null}
+                            {it.name}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  {u.stat ? (
+                    <div className="shrink-0 text-right">
+                      <p className="font-mono text-[13px] font-black text-ink">
+                        {u.stat.avgPlacement.toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-muted">{u.stat.sampleSize}판</p>
+                    </div>
+                  ) : (
+                    <span className="shrink-0 text-[10px] text-subtle">표본 없음</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <p className="mt-3 text-[11px] leading-relaxed text-subtle">
+          덱 구성 출처: 롤체지지 · 평균등수는 각 기물의 실측 표본 가중 평균입니다.
+        </p>
+      </div>
     </div>
   )
 }
@@ -927,6 +1300,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
   const [showAll, setShowAll] = useState(false)
   const [itemClass, setItemClass] = useState<ItemClass>('all')
   const [selected, setSelected] = useState<{ type: 'champion' | 'item'; key: string } | null>(null)
+  const [selectedDeck, setSelectedDeck] = useState<string | null>(null)
   const [costFilter, setCostFilter] = useState<'all' | number>('all')
   const [tierFilter, setTierFilter] = useState<'all' | Tier>('all')
   const [minSample, setMinSample] = useState(0)
@@ -1310,6 +1684,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
                 <DeckCard
                   key={r.id}
                   r={r}
+                  onOpen={() => setSelectedDeck(r.id)}
                   onSelectUnit={(key) => setSelected({ type: 'champion', key })}
                 />
               ))}
@@ -1429,6 +1804,12 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
       )}
 
       <DetailDrawer selected={selected} data={data} onClose={() => setSelected(null)} />
+
+      <DeckDrawer
+        deck={data?.decks.find((d) => d.id === selectedDeck) ?? null}
+        onClose={() => setSelectedDeck(null)}
+        onSelectUnit={(key) => setSelected({ type: 'champion', key })}
+      />
 
       {/* 모바일 하단 탭 */}
       <MobileBottomNav tab={tab} onTab={selectTab} onOpenCoach={onOpenCoach} />
