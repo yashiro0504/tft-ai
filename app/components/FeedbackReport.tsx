@@ -2,8 +2,9 @@
 
 import {
   Award, Users, Swords, Shield, TrendingUp, Lightbulb, CheckCircle2, Zap, Sparkles,
+  GraduationCap, BookOpen, Target, ClipboardCheck, ArrowRight, Gauge,
 } from 'lucide-react'
-import type { MetaCoachFeedback } from '@/lib/types'
+import type { CoachingAxis, MetaCoachFeedback } from '@/lib/types'
 
 interface FeedbackReportProps {
   feedback: MetaCoachFeedback
@@ -13,6 +14,137 @@ interface FeedbackReportProps {
   matchCount?: number
   /** 인라인(경기 카드 내부) 렌더링 시 여백 축소 */
   compact?: boolean
+}
+
+/** 6축 진단 바 */
+function AxisRow({ axis, isFocus }: { axis: CoachingAxis; isFocus: boolean }) {
+  const color =
+    axis.score >= 80
+      ? 'bg-emerald-500'
+      : axis.score >= 65
+      ? 'bg-cyan-500'
+      : axis.score >= 50
+      ? 'bg-amber-500'
+      : 'bg-rose-500'
+  const text =
+    axis.score >= 80
+      ? 'text-emerald-300'
+      : axis.score >= 65
+      ? 'text-cyan-300'
+      : axis.score >= 50
+      ? 'text-amber-300'
+      : 'text-rose-300'
+  return (
+    <div
+      className={`rounded-xl border px-3 py-2.5 ${
+        isFocus ? 'border-amber-500/40 bg-amber-500/5' : 'border-line/10 bg-elev/5'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span className="truncate text-[13px] font-bold text-ink">{axis.label}</span>
+        {isFocus ? (
+          <span className="shrink-0 rounded bg-amber-500/20 px-1 text-[9px] font-black text-amber-300">
+            이번 주제
+          </span>
+        ) : null}
+        <span className={`ml-auto shrink-0 font-mono text-[13px] font-black ${text}`}>{axis.score}</span>
+      </div>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-elev/10">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${axis.score}%` }} />
+      </div>
+      <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+        {axis.verdict || axis.lesson}
+      </p>
+      <p className="mt-0.5 text-[10px] text-subtle">{axis.detail}</p>
+    </div>
+  )
+}
+
+/** 강의형 코칭 블록 (개념 → 근거 → 대안 → 연습) */
+function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
+  const lec = feedback.lecture
+  const plan = feedback.plan
+  if (!lec) return null
+
+  return (
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 via-panel to-panel p-5 shadow-xl md:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">
+          <GraduationCap className="h-4 w-4" />
+          <span>오늘의 강의</span>
+          {plan ? (
+            <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] tracking-normal">
+              {plan.focusLabel}
+            </span>
+          ) : null}
+        </div>
+        <h3 className="relative mt-2 text-lg font-black leading-snug text-ink md:text-xl">
+          {lec.topic}
+        </h3>
+
+        <div className="relative mt-4 space-y-3">
+          <div className="rounded-xl border border-line/10 bg-sunken/60 p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+              <BookOpen className="h-3.5 w-3.5" /> 개념 · 원리
+            </p>
+            <p className="text-[14px] leading-relaxed text-ink-soft">{lec.concept}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{lec.why}</p>
+          </div>
+
+          <div className="rounded-xl border border-line/10 bg-sunken/60 p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-300">
+              <Gauge className="h-3.5 w-3.5" /> 이 데이터에서의 근거
+            </p>
+            <p className="text-[14px] leading-relaxed text-ink-soft">{lec.evidence}</p>
+          </div>
+
+          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+              <ArrowRight className="h-3.5 w-3.5" /> 그 순간의 더 나은 선택
+            </p>
+            <p className="text-[14px] leading-relaxed text-ink-soft">{lec.alternative}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+            <Target className="h-3.5 w-3.5" /> 다음 3판 연습 과제
+          </p>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-emerald-100">{lec.drill}</p>
+        </div>
+
+        <div className="rounded-2xl border border-line/10 bg-panel/90 p-4">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted">
+            <ClipboardCheck className="h-3.5 w-3.5" /> 실전 체크리스트
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {lec.checklist.map((c, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-soft">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {plan ? (
+        <div className="rounded-2xl border border-line/10 bg-panel/90 p-4">
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-black text-ink">
+            <Gauge className="h-4 w-4 text-cyan-400" /> 6축 진단 (코드 산출)
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {plan.axes.map((a) => (
+              <AxisRow key={a.key} axis={a} isFocus={a.key === plan.focus} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 /**
@@ -173,13 +305,16 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
         </div>
       )}
 
-      {/* 로비 기물 경합 & 대깨/유연성 진단 */}
-      <div className="bg-panel/90 border border-line/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-[15px] uppercase tracking-wider mb-3">
-          <Users className="w-5 h-5 text-cyan-400" />
-          <span>로비 타 유저 기물 경합 & 대깨·유연성(피봇) 진단</span>
+      {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
+      <LectureBlock feedback={feedback} />
+
+      {/* 로비 수렴도 (6축 중 1개 — 보조 지표) */}
+      <div className="rounded-2xl border border-line/10 bg-panel/90 p-5 shadow-xl md:p-6">
+        <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-cyan-300">
+          <Users className="h-4 w-4 text-cyan-400" />
+          <span>로비 수렴도 (보조 지표)</span>
         </div>
-        <div className="p-4 rounded-xl bg-sunken/70 border border-line/10 text-[15px] md:text-lg leading-relaxed text-ink-soft">
+        <div className="rounded-xl border border-line/10 bg-sunken/70 p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
           {feedback.contestAnalysis}
         </div>
       </div>

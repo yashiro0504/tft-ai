@@ -242,6 +242,57 @@ export interface ScoreBreakdown {
   version: string
 }
 
+/** 강의형 코칭 축 */
+export type CoachingAxisKey =
+  | 'economy'
+  | 'itemization'
+  | 'tempo'
+  | 'completion'
+  | 'synergy'
+  | 'contest'
+
+export interface CoachingAxis {
+  key: CoachingAxisKey
+  label: string
+  /** 0~100 (코드 산출) */
+  score: number
+  detail: string
+  /** 이 축에서 배울 개념 한 줄 */
+  lesson: string
+  /** LLM 한 줄 진단 */
+  verdict?: string
+}
+
+/** 코드가 결정한 이번 리포트의 강의 계획 */
+export interface CoachingPlan {
+  focus: CoachingAxisKey
+  focusLabel: string
+  /** 강의 주제 (예: "레벨업 타이밍 강의 — 언제 6·7·8·9를 찍어야 하는가") */
+  topic: string
+  axes: CoachingAxis[]
+  /** 강의 기본 개념 문장 */
+  drillTemplate: string
+  matchCount: number
+}
+
+/** LLM이 작성하는 강의 본문 */
+export interface CoachLecture {
+  /** 강의 제목 (코드가 정한 topic 을 그대로 사용) */
+  topic: string
+  /** 개념 정의/원리 (2~3문장) */
+  concept: string
+  /** 왜 중요한가 (1~2문장) */
+  why: string
+  /** 이 데이터에서의 근거 (수치 인용 필수) */
+  evidence: string
+  /** 그 순간의 더 나은 선택 (행동 + 타이밍) */
+  alternative: string
+  /** 다음 3판 연습 과제 */
+  drill: string
+  /** 실전 체크리스트 3~5개 */
+  checklist: string[]
+}
+
 // 전문 메타 코칭 응답 결과
 export interface MetaCoachFeedback {
   mode: 'single' | 'multi'
@@ -256,6 +307,10 @@ export interface MetaCoachFeedback {
   economyAnalysis: string
   improvements: string[]
   actionPlan: string[]
+  /** 강의형 코칭 (코드가 주제 선택, LLM이 본문 작성) */
+  lecture?: CoachLecture
+  /** 6축 진단 + 강의 계획 (코드 산출) */
+  plan?: CoachingPlan
   /** LLM 서술의 수치 근거 검증 결과 */
   grounding?: GroundingReport
   /** LLM 미사용(규칙 기반 폴백) 여부 */

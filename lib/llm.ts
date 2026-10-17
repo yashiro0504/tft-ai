@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance } from './types'
+import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan } from './types'
 import { serializeMatchesForLLM } from './summarize'
 import {
   getChampionRankings,
@@ -11,58 +11,73 @@ import {
 import { translateChampion, translateItem, translateTrait } from './constants'
 import { validateFeedbackGrounding } from './grounding'
 import { computeScoreBreakdown } from './scoring'
+import { buildCoachingPlan } from './coaching'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 
-const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 프로팀 전력분석관이자 챌린저 티어의 전문 전략 코치다.
-유저의 요청에 따라 "단순 팩폭이 아닌, 로비 타 유저들과의 기물 겹침 대비 대깨/유연성(피봇) 판단과 구체적인 실전 개선점"을 체계적으로 코칭하라.
+const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강사다. 모든 리포트를 "한 편의 강의"로 만든다.
+목표: 점수 나열이나 팩폭이 아니라, 유저가 다음 판에서 바로 쓸 수 있는 **원리 + 판단 기준 + 연습 과제**를 남긴다.
 
-★★★ 최우선 원칙: 데이터 접지(Grounding) ★★★
-- 너의 TFT 메타 '기억'은 학습 시점 기준이라 현재 패치에 대해 신뢰할 수 없다. 오직 프롬프트에 '제공된 수치/사실'만을 근거로 분석하라.
-- 제공되지 않은 메타 티어리스트, 증강 승률/픽률, 아이템 통계, 패치 변경점을 절대 지어내지 마라.
-- 증강체 분석과 '메타 적합도'는 제공된 데이터로 추론 가능한 범위에서만 서술하고, 근거가 약하면 반드시 "메타 통계가 제공되지 않아 단정 불가"라고 솔직히 밝혀라.
-- 모든 단정에는 근거가 된 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 함께 제시하라.
-- 제공된 데이터에 등장하지 않은 증강/시너지/기물 이름을 새로 만들어내지 마라.
-- [메타 통계 인용] 프롬프트의 [메타 실측 통계] 블록에 있는 수치만 인용할 수 있다. 블록에 없는 기물/아이템/시너지의 평균등수·표본·픽률은 만들어내지 마라. 표본(n)이 작으면 "표본이 적어 참고용"이라고 밝혀라.
-- [수치 표기] 인용하는 모든 수치는 제공된 표기 그대로 써라. (예: 평균등수 3.44, 표본 n=21, 경합 강도 62/100) 근사치를 새로 계산해 반올림 값을 지어내지 마라.
-- [경합 지표 주의] 로비 겹침(경합 강도)은 '로비 수렴도'로 서술하라. 실측 데이터상 경합과 최종 성적의 상관은 약하거나 역방향이므로, "겹쳐서(대깨) 졌다"는 식의 인과 단정을 금지한다. (겹침은 '상황 정보'이지 '패배 원인'으로 단정하지 말 것)
+★★★ 이번 강의 주제는 코드가 이미 결정했다 ★★★
+- 프롬프트의 [이번 강의 주제]와 [6축 진단]을 그대로 사용한다. 임의로 다른 주제를 만들지 마라.
+- '경합(로비 수렴도)'은 6개 축 중 하나일 뿐이다. 주제가 경합일 때만 본문 중심에 두고, 그 외에는 axes 항목의 한 줄로만 다뤄라.
+- "겹쳐서(대깨) 졌다"는 인과 단정 금지. 겹침은 조건이고, 판단(비틀었는가)만 평가하라.
 
-⚠️ 분석 및 코칭 필수 원칙:
-0. [데이터 접지 어조]: 과장된 단정 대신, 제공된 수치를 직접 인용하는 분석가 어조를 유지하라.
-1. [로비 경쟁 & 대깨 vs 유연성 판단 (핵심)]:
-   - 각 매치 데이터의 '로비 경쟁 현황'을 정밀 분석하라.
-   - 로비에 같은 시너지/기물을 간 유저가 1~2명 이상 경합 중인데도 덱을 꺾지 않고 밀어붙여 공멸했는가? (대깨 고집형 판단)
-   - 아니면 겹치지 않는 빈집을 영리하게 찾아가 유연하게 순방했는가? (유연성/피봇 판단)
-   - 유저의 플레이 성향(대깨 고집 vs 빈집 유연)과 '유연성 점수(0~100점)'를 산출하라. (100점에 가까울수록 유연한 피봇 장인, 낮을수록 겹쳐도 대깨 치는 성향)
-2. [수행 적합도 점수 (0~100점)]: 제공된 데이터(등수, 경합 강도/등급, 2성작 완성도, 아이템 배분, 골드/라운드)만으로 '종합 수행 점수'를 산출하라. 이는 메타 지식이 아니라 이 판의 데이터 기반 점수다. (증강 티어 등 메타 정보는 제공되지 않았으므로 그 영향을 단정하지 마라.)
-3. [아이템 최적화 (BIS)]: 메인 딜러/메인 탱커 3신기 완성도 및 아이템 배분 밸런스를 짚어라.
-4. [앞/뒷라인 밸런스 & 2성작]: 탱커진의 두께와 2성작 완성도를 분석하라.
-5. [운영 템포 & 경제성]: 탈락 라운드 및 남은 골드를 보고 리롤과 렙업 타이밍을 지적하라.
-6. [개선 포인트 & 액션 플랜]: "다음에 동일한 기물/아이템/경합 상황이 발생했을 때 구체적으로 어떻게 피봇하거나 템을 완성해야 하는지" 실행 가능한 지침을 제시하라.
-7. [어조]: 신뢰감 있는 전문 프로 분석관의 명확한 경어체.
+[강의 본문 구성 — 반드시 이 순서]
+1) concept: 이번 주제의 개념/원리를 일반화해 정의 (2~3문장, 특정 판에 매몰되지 않게)
+2) why: 그 원리가 왜 이기는지 인과 설명 (1~2문장)
+3) evidence: 이 유저 데이터에서 원리가 어긋난 지점 (제공된 수치 최소 2개 직접 인용)
+4) alternative: 그 순간의 더 나은 선택 (행동 + 타이밍 + 판단 기준 수치)
+5) drill: 다음 3판 동안 지킬 연습 과제 1개 (측정 가능하게, 예: "4-1에 8레벨 도달 시 골드 30 이상 유지")
+6) checklist: 실전 체크리스트 3~5개 (짧은 명령문, 중복 금지)
 
-반드시 아래와 같은 유효한 JSON 형식으로만 응답하라. 마크다운 코드블록(\`\`\`json ... \`\`\`)으로 감싸도 좋다:
+[진단 6축]
+- 코드가 계산한 axes 점수를 그대로 쓴다. 점수를 새로 만들지 마라.
+- 각 축에 verdict(한 줄 진단, 25자 내외)를 붙인다. 축끼리 문장이 겹치면 안 된다.
+- contestAnalysis/itemAnalysis/synergyAnalysis/economyAnalysis 는 각 축 해설이며, 강의 본문(lecture)과 문장을 복사하지 마라.
+
+★★★ 데이터 접지(Grounding) ★★★
+- TFT 메타 '기억'은 현재 패치와 다를 수 있다. 오직 프롬프트에 '제공된 수치/사실'만 근거로 쓴다.
+- 제공되지 않은 메타 티어리스트·증강 승률·패치 내용을 지어내지 마라. 근거가 없으면 "메타 통계 미제공으로 단정 불가"라고 밝혀라.
+- [메타 실측 통계] 블록에 있는 수치만 인용 가능. 표본(n)이 작으면 "표본이 적어 참고용"이라고 밝혀라.
+- 인용 수치는 표기 그대로 쓴다(예: 평균등수 3.44, 표본 n=21, 골드 42, 5-2 탈락). 새로 계산한 근사치를 만들지 마라.
+- metaScore/metaTier 는 코드 산출값을 그대로 반환한다.
+
+[문체]
+- 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
+- 같은 문장 구조 반복 금지. overview는 서로 다른 축 3개를 한 줄씩 요약.
+
+반드시 아래 JSON 형식으로만 응답하라(마크다운 코드블록 허용):
 {
   "metaScore": 75,
   "metaTier": "B+",
   "flexibilityScore": 40,
-  "playstyle": "고집형 대깨 빌드업 성향",
-  "overview": "종합 메타 적합도 및 덱 빌드업에 대한 핵심 요약 총평 (2~3문장)",
-  "contestAnalysis": "로비 타 유저들과의 기물/시너지 겹침 분석 및 대깨 vs 유연성(피봇)에 대한 날카로운 진단 (3~4문장)",
-  "itemAnalysis": "메인 캐리 및 메인 탱커의 3신기(BIS) 완성도와 아이템 배분 적절성 분석",
-  "synergyAnalysis": "시너지 효율성 및 앞라인(탱커)과 뒷라인(딜러) 간의 진형 밸런스 분석",
-  "economyAnalysis": "탈락 라운드 대비 골드 운용 및 레벨업/리롤 타이밍의 적합성 분석",
-  "improvements": [
-    "구체적 개선점 1: 기물 경합 시 피봇 타이밍 및 대체 기물 기용",
-    "구체적 개선점 2: 아이템 제작 순서 및 장착 대상 관련",
-    "구체적 개선점 3: 라운드별 레벨업 및 골드 소모 타이밍 관련"
+  "playstyle": "성향 한 줄",
+  "overview": "서로 다른 축 3개를 각각 한 문장으로 요약 (3문장)",
+  "lecture": {
+    "topic": "<[이번 강의 주제] 그대로>",
+    "concept": "개념/원리 정의 2~3문장",
+    "why": "왜 중요한가 1~2문장",
+    "evidence": "이 데이터 근거 (수치 2개 이상 인용)",
+    "alternative": "그 순간의 더 나은 선택 (행동+타이밍)",
+    "drill": "다음 3판 연습 과제 1개",
+    "checklist": ["체크1", "체크2", "체크3"]
+  },
+  "axes": [
+    { "key": "economy", "verdict": "한 줄 진단" },
+    { "key": "itemization", "verdict": "한 줄 진단" },
+    { "key": "tempo", "verdict": "한 줄 진단" },
+    { "key": "completion", "verdict": "한 줄 진단" },
+    { "key": "synergy", "verdict": "한 줄 진단" },
+    { "key": "contest", "verdict": "한 줄 진단" }
   ],
-  "actionPlan": [
-    "실전 가이드 1: 초반 정찰 후 겹쳤을 때의 대처 시나리오",
-    "실전 가이드 2: 코어 기물 2성작 및 리롤 기준",
-    "실전 가이드 3: 후반 덱 전환 및 배치 요령"
-  ]
+  "contestAnalysis": "로비 수렴도 1~2문장",
+  "itemAnalysis": "아이템 설계 해설",
+  "synergyAnalysis": "시너지 설계 해설",
+  "economyAnalysis": "경제/템포 해설",
+  "improvements": ["개선점 1", "개선점 2", "개선점 3"],
+  "actionPlan": ["실전 가이드 1", "실전 가이드 2", "실전 가이드 3"]
 }`
 
 /**
@@ -82,7 +97,7 @@ async function callDeepSeek(prompt: string): Promise<string> {
         { role: 'user', content: prompt },
       ],
       temperature: 0.2,
-      max_tokens: 2500,
+      max_tokens: 3400,
       response_format: { type: 'json_object' },
     }),
   })
@@ -175,6 +190,20 @@ export async function generateMetaCoachFeedback(
         '※ metaScore/metaTier 는 반드시 위 코드 산출값을 그대로 반환하라. 점수 해설은 위 구성요소 수치를 근거로 작성하라.',
       ].join('\n')
     : '[코드 산출 점수]\n※ 산출 불가 (경기 데이터 없음)'
+
+  // 강의 계획: 가장 약한 축을 코드가 결정 (LLM이 주제를 바꾸지 못하게 고정)
+  const plan = buildCoachingPlan(matches)
+  const planFacts = [
+    '[이번 강의 주제 — 코드가 결정, 변경 금지]',
+    `- 주제: ${plan.topic}`,
+    `- 초점 축: ${plan.focusLabel} (${plan.focus})`,
+    `- 기본 개념 문장(참고): ${plan.drillTemplate}`,
+    '',
+    '[6축 진단 — 코드 산출 점수, 그대로 사용]',
+    ...plan.axes.map((a) => `- ${a.key}(${a.label}): ${a.score}/100 · ${a.detail}`),
+    '※ axes 배열에는 위 6개 key 를 모두 넣고, score/점수는 위 코드 값을 그대로 인용하라.',
+    '※ 초점 축이 contest 가 아니라면 로비 경합은 axes 의 한 줄 + contestAnalysis 로만 다루고, lecture 주제로 삼지 마라.',
+  ].join('\n')
   const modeContext = mode === 'single'
     ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
     : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
@@ -199,27 +228,42 @@ ${metaFacts}
 
 ${scoreFacts}
 
-   모든 서술은 위 데이터의 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 직접 인용해 작성하라.
+${planFacts}
 
-위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 정밀 분석하여, 로비 기물 경합 기반 대깨/유연성 판단과 데이터 기반 종합 수행 점수, 구체적 실력 개선 포인트를 포함한 JSON 형식의 전문 코칭 리포트를 작성하라.`
+   모든 서술은 위 데이터의 수치(골드, 레벨, 탈락 라운드, 2성 수, 아이템 수, 로비 수렴도)를 직접 인용해 작성하라.
 
-  // LLM 응답에 코드 기반 '점수/근거 검증/출처'를 붙인다.
-  const finalize = (fb: MetaCoachFeedback, isFallback = false): MetaCoachFeedback => ({
-    ...fb,
-    metaScore: scoring ? scoring.total : fb.metaScore,
-    metaTier: scoring ? scoring.tier : fb.metaTier,
-    isFallback,
-    provenance,
-    scoreBreakdown: scoring ?? undefined,
-    grounding: validateFeedbackGrounding(fb, prompt),
-  })
+위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 분석하되, [이번 강의 주제]를 중심으로 "원리 → 데이터 근거 → 더 나은 선택 → 연습 과제"가 이어지는 강의형 JSON 리포트를 작성하라.
+6축(경제·아이템·템포·완성도·시너지·수렴도)을 모두 진단하되, 주제가 아닌 축은 한 줄로만 다뤄 분량을 분산시켜라.`
+
+  // LLM 응답에 코드 기반 '점수/근거 검증/출처/강의계획'을 붙인다.
+  const finalize = (
+    fb: MetaCoachFeedback,
+    isFallback = false,
+    axisVerdicts?: Partial<Record<CoachingAxisKey, string>>
+  ): MetaCoachFeedback => {
+    const planWithVerdicts: CoachingPlan = {
+      ...plan,
+      axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
+    }
+    return {
+      ...fb,
+      metaScore: scoring ? scoring.total : fb.metaScore,
+      metaTier: scoring ? scoring.tier : fb.metaTier,
+      isFallback,
+      provenance,
+      scoreBreakdown: scoring ?? undefined,
+      plan: planWithVerdicts,
+      lecture: normalizeLecture(fb.lecture, planWithVerdicts, fb),
+      grounding: validateFeedbackGrounding(fb, prompt),
+    }
+  }
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용
   if (DEEPSEEK_API_KEY) {
     try {
       const text = await callDeepSeek(prompt)
       const parsed = parseJsonFeedback(text)
-      if (parsed) return finalize(parsed)
+      if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
       console.error('DeepSeek API Error, falling back:', err)
     }
@@ -237,7 +281,7 @@ ${scoreFacts}
       const result = await model.generateContent(prompt)
       const text = result.response.text()
       const parsed = parseJsonFeedback(text)
-      if (parsed) return finalize(parsed)
+      if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
       console.error('Gemini API Error, falling back:', err)
     }
@@ -248,9 +292,50 @@ ${scoreFacts}
 }
 
 /**
+ * 강의 본문 정규화 (LLM 누락 시 코드가 채움)
+ */
+const AXIS_KEYS: CoachingAxisKey[] = ['economy', 'itemization', 'tempo', 'completion', 'synergy', 'contest']
+
+function defaultChecklist(plan: CoachingPlan): string[] {
+  return [
+    `${plan.focusLabel} 지표를 매 라운드 시작 전에 한 번 확인`,
+    '결정 전 5초: 지금 쓰는 골드/아이템이 3라운드 뒤에도 유효한가',
+    '판 종료 후 잔여 골드·탈락 라운드 기록해 추세 확인',
+  ]
+}
+
+function normalizeLecture(
+  lecture: CoachLecture | undefined,
+  plan: CoachingPlan,
+  fb: MetaCoachFeedback
+): CoachLecture {
+  const focus = plan.axes.find((a) => a.key === plan.focus)
+  const checklist = (lecture?.checklist || []).map((s) => String(s).trim()).filter(Boolean)
+  const merged = checklist.length >= 3 ? checklist : [...checklist, ...defaultChecklist(plan)]
+  return {
+    topic: lecture?.topic?.trim() || plan.topic,
+    concept: lecture?.concept?.trim() || plan.drillTemplate,
+    why:
+      lecture?.why?.trim() ||
+      `이 축의 점수는 ${focus?.score ?? 0}/100 입니다. ${focus?.detail ?? ''} — 이 지표는 보드 강도와 직결되므로 다음 판에서 가장 먼저 손봐야 할 지점입니다.`,
+    evidence: lecture?.evidence?.trim() || fb.overview || focus?.detail || '',
+    alternative:
+      lecture?.alternative?.trim() ||
+      (fb.actionPlan && fb.actionPlan[0]) ||
+      '다음 판에는 같은 라운드에서 한 번 더 멈춰 판단해 보세요.',
+    drill:
+      lecture?.drill?.trim() ||
+      `다음 3판은 ${plan.focusLabel} 하나만 의식하세요. ${plan.drillTemplate}`,
+    checklist: [...new Set(merged)].slice(0, 5),
+  }
+}
+
+/**
  * LLM의 JSON 응답을 MetaCoachFeedback 인터페이스로 파싱
  */
-function parseJsonFeedback(rawText: string): MetaCoachFeedback | null {
+function parseJsonFeedback(
+  rawText: string
+): { feedback: MetaCoachFeedback; axisVerdicts: Partial<Record<CoachingAxisKey, string>> } | null {
   try {
     let cleanJson = rawText.trim()
     const jsonMatch = cleanJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
@@ -270,7 +355,33 @@ function parseJsonFeedback(rawText: string): MetaCoachFeedback | null {
       const playstyle = obj.playstyle || (flexibility < 45 ? '대깨 고집형 빌드업' : flexibility > 70 ? '빈집 탐색 유연형' : '하이브리드 템포형')
       const llmScore = typeof obj.metaScore === 'number' ? Math.min(Math.max(obj.metaScore, 0), 100) : 0
 
-      return {
+      // 강의 본문 (없으면 finalize 에서 코드가 채움)
+      const rawLecture = obj.lecture && typeof obj.lecture === 'object' ? obj.lecture : null
+      const lecture: CoachLecture | undefined = rawLecture
+        ? {
+            topic: typeof rawLecture.topic === 'string' ? rawLecture.topic : '',
+            concept: typeof rawLecture.concept === 'string' ? rawLecture.concept : '',
+            why: typeof rawLecture.why === 'string' ? rawLecture.why : '',
+            evidence: typeof rawLecture.evidence === 'string' ? rawLecture.evidence : '',
+            alternative: typeof rawLecture.alternative === 'string' ? rawLecture.alternative : '',
+            drill: typeof rawLecture.drill === 'string' ? rawLecture.drill : '',
+            checklist: Array.isArray(rawLecture.checklist)
+              ? rawLecture.checklist.filter((s: unknown): s is string => typeof s === 'string')
+              : [],
+          }
+        : undefined
+
+      // 6축 한 줄 진단
+      const axisVerdicts: Partial<Record<CoachingAxisKey, string>> = {}
+      if (Array.isArray(obj.axes)) {
+        for (const a of obj.axes) {
+          const key = String(a?.key || '') as CoachingAxisKey
+          const verdict = typeof a?.verdict === 'string' ? a.verdict.trim() : ''
+          if (verdict && AXIS_KEYS.includes(key)) axisVerdicts[key] = verdict
+        }
+      }
+
+      const feedback: MetaCoachFeedback = {
         mode: (obj.mode as 'single' | 'multi') || 'single',
         metaScore: llmScore,
         metaTier: obj.metaTier || calculateTier(llmScore),
@@ -287,8 +398,10 @@ function parseJsonFeedback(rawText: string): MetaCoachFeedback | null {
         actionPlan: Array.isArray(obj.actionPlan) && obj.actionPlan.length > 0
           ? obj.actionPlan
           : ['초반 2-1~3-2 구간 피 관리를 위한 연승/연패 확실한 노선 선택', '4-1 라운드 7레벨 핵심 딜러 2성작 완료 후 레벨업', '증강체 선택 시 덱의 부족한 앞라인/뒷라인 밸런스를 보완하는 옵션 선택'],
+        lecture,
         fullMarkdown: rawText,
       }
+      return { feedback, axisVerdicts }
     }
   } catch (e) {
     console.error('Failed to parse JSON feedback from LLM:', e)

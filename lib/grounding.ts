@@ -56,6 +56,12 @@ export function validateFeedbackGrounding(
     feedback.itemAnalysis,
     feedback.synergyAnalysis,
     feedback.economyAnalysis,
+    feedback.lecture?.concept,
+    feedback.lecture?.why,
+    feedback.lecture?.evidence,
+    feedback.lecture?.alternative,
+    feedback.lecture?.drill,
+    ...(feedback.lecture?.checklist || []),
     ...(feedback.improvements || []),
     ...(feedback.actionPlan || []),
   ]
