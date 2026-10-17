@@ -38,29 +38,32 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   // 롤체지지 / OP.GG 테마 색상 정의
   const containerTheme = isWin
-    ? 'border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-500/10 via-panel/95 to-panel border-amber-500/30'
+    ? 'border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-500/10 via-panel to-panel border-amber-500/30 shadow-lg shadow-amber-950/20'
     : isTop4
-    ? 'border-l-4 border-l-emerald-400 bg-gradient-to-r from-emerald-500/10 via-panel/95 to-panel border-emerald-500/30'
-    : 'border-l-4 border-l-slate-600 bg-gradient-to-r from-sunken/80 via-panel/95 to-panel border-line/10'
+    ? 'border-l-4 border-l-emerald-400 bg-gradient-to-r from-emerald-500/10 via-panel to-panel border-emerald-500/30 shadow-lg shadow-emerald-950/20'
+    : 'border-l-4 border-l-slate-600 bg-gradient-to-r from-sunken/80 via-panel to-panel border-line/10'
 
   const placementBadgeTheme = isWin
-    ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-500/30'
+    ? 'border-2 border-amber-400/80 bg-gradient-to-br from-amber-500/30 to-orange-500/20 text-amber-300 font-black shadow-lg shadow-amber-500/20'
     : isTop4
-    ? 'bg-emerald-500 text-ink font-bold shadow-lg shadow-emerald-500/20'
-    : 'bg-slate-800 text-muted font-semibold'
+    ? 'border-2 border-emerald-400/80 bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-300 font-black shadow-lg shadow-emerald-500/20'
+    : 'border border-slate-600/50 bg-slate-800/80 text-muted font-bold'
 
-  const costBorder: Record<number, string> = {
-    5: 'border-amber-400',
-    4: 'border-purple-400',
-    3: 'border-blue-400',
-    2: 'border-emerald-500',
-    1: 'border-slate-600',
+  const costStyle: Record<
+    number,
+    { border: string; glow: string; text: string }
+  > = {
+    5: { border: 'border-amber-400', glow: 'shadow-[0_0_10px_rgba(251,191,36,0.4)]', text: 'text-amber-300' },
+    4: { border: 'border-purple-400', glow: 'shadow-[0_0_8px_rgba(168,85,247,0.3)]', text: 'text-purple-300' },
+    3: { border: 'border-blue-400', glow: 'shadow-[0_0_8px_rgba(59,130,246,0.25)]', text: 'text-blue-300' },
+    2: { border: 'border-emerald-500', glow: 'shadow-[0_0_6px_rgba(16,185,129,0.2)]', text: 'text-emerald-300' },
+    1: { border: 'border-slate-600', glow: '', text: 'text-slate-400' },
   }
 
   const getTraitBadge = (tier: number) => {
-    if (tier >= 3) return 'bg-amber-950/80 border-amber-400 text-amber-300 font-bold'
-    if (tier === 2) return 'bg-slate-800/80 border-slate-300 text-ink-soft font-semibold'
-    return 'bg-amber-950/40 border-amber-700/60 text-amber-400'
+    if (tier >= 3) return 'bg-amber-950/60 border-amber-400/60 text-amber-300 font-black shadow-[0_0_6px_rgba(251,191,36,0.2)]'
+    if (tier === 2) return 'bg-cyan-950/60 border-cyan-400/50 text-cyan-300 font-bold'
+    return 'bg-slate-800/70 border-slate-600/60 text-slate-200'
   }
 
   const handleAnalyze = async () => {
@@ -217,32 +220,17 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               )}
             </div>
           </div>
-          {/* 3. 우측: 챔피언 아바타 이미지 + 3성 골드 별 + 아이템 아이콘 */}
-          <div className="flex flex-wrap items-end gap-2.5 w-full lg:w-auto shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-line/10">
+          {/* 3. 우측: 챔피언 아바타 이미지 + 3성 골드 별 + 아이템 아이콘 (LOLCHESS 스타일) */}
+          <div className="flex flex-wrap items-end gap-2 w-full lg:w-auto shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-line/10">
             {match.units.map((unit, i) => {
               const cost = unit.rarity || 3
-              const borderClass = costBorder[cost] || costBorder[3]
+              const info = costStyle[cost] || costStyle[3]
 
               return (
-                <div key={i} className="flex flex-col items-center group relative">
-                  {/* 성급 별 표시 */}
-                  <div className="h-4 flex items-center justify-center">
-                    {unit.tier === 3 ? (
-                      <span className="text-amber-400 font-black text-xs drop-shadow-[0_0_4px_rgba(245,158,11,0.9)] tracking-tight">
-                        ★★★
-                      </span>
-                    ) : unit.tier === 2 ? (
-                      <span className="text-muted font-bold text-[11px] tracking-tight">
-                        ★★
-                      </span>
-                    ) : (
-                      <span className="text-subtle text-[10px]">★</span>
-                    )}
-                  </div>
-
-                  {/* 챔피언 아바타 박스 (이미지 + 텍스트 백업) */}
+                <div key={i} className="flex flex-col items-center group/unit relative">
+                  {/* 챔피언 아바타 박스 (이미지 + 테두리 + 성급 뱃지) */}
                   <div
-                    className={`w-12 h-12 rounded-xl border-2 overflow-hidden relative shadow-md bg-panel/90 transition-transform group-hover:scale-105 flex items-center justify-center ${borderClass}`}
+                    className={`relative h-12 w-12 rounded-xl border-2 overflow-hidden shadow-md bg-sunken/80 transition-transform group-hover/unit:scale-105 flex items-center justify-center ${info.border} ${info.glow}`}
                   >
                     {unit.imgUrl ? (
                       <img
@@ -254,31 +242,38 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                         }}
                       />
                     ) : null}
-                    {/* 이미지 로딩 실패 시 백업 글자 */}
+
+                    {/* 이미지 실패 시 백업 텍스트 */}
                     <span className="text-[11px] font-black text-muted pointer-events-none absolute text-center px-0.5 truncate max-w-[44px]">
                       {unit.name.slice(0, 2)}
                     </span>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end justify-center pb-0.5 pointer-events-none z-20">
-                      <span className="text-[9px] font-mono text-white/90 font-bold">
-                        {cost}G
+
+                    {/* 성급 뱃지 */}
+                    {unit.tier === 3 ? (
+                      <span className="absolute -top-0.5 -right-0.5 z-20 flex items-center rounded bg-amber-950/95 px-1 py-0.2 text-[8px] font-black text-amber-300 border border-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+                        ★★★
                       </span>
+                    ) : unit.tier === 2 ? (
+                      <span className="absolute -top-0.5 -right-0.5 z-20 flex items-center rounded bg-slate-900/95 px-1 py-0.2 text-[8px] font-black text-slate-200 border border-slate-400/50">
+                        ★★
+                      </span>
+                    ) : null}
+
+                    {/* 코스트 배지 */}
+                    <div className="absolute -bottom-0.5 -left-0.5 rounded bg-black/90 px-1 py-0.2 text-[8px] font-mono text-white/90 font-bold z-20 border border-white/10">
+                      {cost}G
                     </div>
                   </div>
 
-                  {/* 기물 이름 */}
-                  <span className="text-[10px] text-muted truncate max-w-[48px] text-center mt-1 font-medium">
-                    {unit.name}
-                  </span>
-
-                  {/* 장착 아이템 3슬롯 실제 아이콘 */}
-                  <div className="flex items-center gap-0.5 mt-0.5 h-4">
+                  {/* 장착 아이템 3슬롯 정렬 (초상화 하단 결착) */}
+                  <div className="flex items-center gap-0.5 mt-1 h-3.5">
                     {unit.items.slice(0, 3).map((item, itemIdx) => {
                       const iconUrl = unit.itemIcons?.[itemIdx]
                       return (
                         <div
                           key={itemIdx}
                           title={item}
-                          className="w-4 h-4 rounded bg-sunken/70 border border-amber-500/70 overflow-hidden shadow shrink-0 flex items-center justify-center"
+                          className="h-3.5 w-3.5 rounded-[2px] bg-sunken border border-amber-500/80 overflow-hidden shadow shrink-0 flex items-center justify-center transition hover:scale-125 hover:z-30"
                         >
                           {iconUrl ? (
                             <img
@@ -290,15 +285,19 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                               }}
                             />
                           ) : (
-                            <span className="text-[8px] text-amber-300 font-black">
+                            <span className="text-[7px] text-amber-300 font-black">
                               {item.charAt(0)}
                             </span>
                           )}
                         </div>
                       )
                     })}
-                    {unit.items.length === 0 && <span className="w-4 h-4" />}
                   </div>
+
+                  {/* 기물 이름 */}
+                  <span className="text-[9px] text-muted truncate max-w-[48px] text-center mt-0.5 font-medium group-hover/unit:text-ink">
+                    {unit.name}
+                  </span>
                 </div>
               )
             })}
@@ -405,17 +404,37 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
                     <td className="py-2.5">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {p.units.slice(0, 6).map((u, uIdx) => (
+                        {p.units.slice(0, 8).map((u, uIdx) => (
                           <div
                             key={uIdx}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-panel/90 border border-line/10 text-[11px]"
+                            title={`${u.name} ${u.tier}성${u.items.length ? ` (${u.items.join(', ')})` : ''}`}
+                            className="relative flex items-center rounded-md border border-line/10 bg-panel/90 p-0.5"
                           >
-                            <span className="text-amber-400 text-[10px]">
-                              {'★'.repeat(Math.min(u.tier, 3))}
-                            </span>
-                            <span className="text-muted">{u.name}</span>
+                            <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded bg-sunken">
+                              {u.imgUrl ? (
+                                <img
+                                  src={u.imgUrl}
+                                  alt={u.name}
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    ;(e.target as HTMLElement).style.display = 'none'
+                                  }}
+                                />
+                              ) : (
+                                <span className="flex h-full w-full items-center justify-center text-[8px] font-black text-muted">
+                                  {u.name.slice(0, 1)}
+                                </span>
+                              )}
+                              {u.tier > 1 && (
+                                <span className="absolute right-0 top-0 rounded-bl bg-black/80 px-0.5 text-[7px] font-black text-amber-300">
+                                  {u.tier}★
+                                </span>
+                              )}
+                            </div>
                             {u.items.length > 0 && (
-                              <span className="text-subtle text-[9px]">({u.items.length})</span>
+                              <span className="ml-1 pr-1 text-[9px] font-mono font-bold text-amber-400">
+                                ⚔{u.items.length}
+                              </span>
                             )}
                           </div>
                         ))}
@@ -424,9 +443,13 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
                     <td className="py-2.5">
                       <div className="flex flex-wrap gap-1">
-                        {p.traits.slice(0, 2).map((t, tIdx) => (
-                          <span key={tIdx} className="px-1.5 py-0.2 rounded bg-slate-800 text-muted text-[10px]">
-                            {t.name} {t.count}
+                        {p.traits.slice(0, 3).map((t, tIdx) => (
+                          <span
+                            key={tIdx}
+                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 bg-slate-800 text-muted text-[10px] font-bold border border-line/10"
+                          >
+                            <span>{t.name}</span>
+                            <span className="text-cyan-300 font-mono">{t.count}</span>
                           </span>
                         ))}
                       </div>

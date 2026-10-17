@@ -102,52 +102,51 @@ export default function TFTCoachPage() {
     <div className="min-h-screen bg-app text-ink selection:bg-blue-500 selection:text-ink pb-20">
       <SiteHeader active={tab} onChange={setTab} />
 
-      {/* Background Ambience */}
+      {/* Background Ambience - Sleek MetaTFT dark grid */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-blue-600/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -left-32 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.7) 1px, transparent 0)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[360px] bg-gradient-to-b from-cyan-500/[0.07] via-blue-600/[0.03] to-transparent blur-3xl" />
       </div>
 
-      <main className="relative max-w-6xl mx-auto px-4 py-6 md:py-10">
+      <main className="relative max-w-6xl mx-auto px-4 py-4 md:py-6">
         {tab === 'meta' ? (
-          <section className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-gradient-to-br from-panel via-panel to-blue-500/[0.08] p-5 md:p-7">
-              <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl" />
-              <div
-                className="pointer-events-none absolute inset-0 opacity-[0.12]"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
-                  backgroundSize: '22px 22px',
-                }}
-              />
-              <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <section className="space-y-3.5">
+            {/* MetaTFT / LOLCHESS Style Compact Live Meta Header */}
+            <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-panel/90 backdrop-blur-xl p-4 md:px-6 md:py-5 shadow-xl">
+              <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" />
+              <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                    Live Meta · Set 18
-                  </span>
-                  <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-ink md:text-4xl">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-cyan-300">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                      Live Meta · Set 18
+                    </span>
+                    <span className="text-[12px] font-medium text-muted">
+                      Riot 실측 래더 표본 데이터 기반
+                    </span>
+                  </div>
+                  <h1 className="mt-1.5 text-2xl font-black tracking-tight text-ink md:text-3xl">
                     시즌 18{' '}
-                    <span className="bg-gradient-to-r from-cyan-600 via-sky-500 to-indigo-500 bg-clip-text text-transparent">
-                      메타 랭킹
+                    <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
+                      메타 티어표 &amp; 추천 덱
                     </span>
                   </h1>
-                  <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted md:text-sm">
-                    Riot 실측 매치 표본으로 집계한 기물 · 시너지 · 아이템 · BIS 조합 티어표.
-                    <span className="text-muted"> 평균 등수가 낮을수록 강한 기물입니다.</span>
-                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="rounded-xl border border-line/10 bg-elev/5 px-3 py-2 text-center">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">기준 등수</p>
-                    <p className="font-mono text-lg font-black text-ink">4.50</p>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="rounded-xl border border-line/10 bg-sunken/60 px-3 py-1.5 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted">기준 등수</p>
+                    <p className="font-mono text-base font-black text-ink">4.50</p>
                   </div>
-                  <div className="rounded-xl border border-line/10 bg-elev/5 px-3 py-2 text-center">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">데이터</p>
-                    <p className="font-mono text-lg font-black text-emerald-300">실측</p>
+                  <div className="rounded-xl border border-line/10 bg-sunken/60 px-3 py-1.5 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted">표본 품질</p>
+                    <p className="font-mono text-base font-black text-emerald-400">실측</p>
                   </div>
                 </div>
               </div>
@@ -283,51 +282,53 @@ export default function TFTCoachPage() {
               </div>
             )}
 
-            {/* 1. 소환사 프로필 요약 카드 */}
+            {/* 1. 소환사 프로필 요약 카드 (LOLCHESS 스타일) */}
             {search.summonerProfile && (
-              <div className="bg-panel/90 border border-line/10 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
+              <div className="relative overflow-hidden bg-panel/90 backdrop-blur-xl border border-line/10 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full bg-cyan-500/15 blur-2xl" />
+
+                <div className="relative flex items-center gap-4">
                   <div className="relative">
                     <img
                       src={search.summonerProfile.profileIconUrl}
                       alt="Summoner Icon"
-                      className="w-16 h-16 rounded-2xl border-2 border-cyan-500/50 shadow-lg object-cover bg-sunken/70"
+                      className="w-16 h-16 rounded-2xl border-2 border-cyan-400 shadow-lg shadow-cyan-500/20 object-cover bg-sunken/80"
                       onError={(e) => {
                         ;(e.target as HTMLElement).style.display = 'none'
                       }}
                     />
-                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-sunken/70 border border-line/15 text-[11px] font-mono font-bold text-muted">
+                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-slate-900 border border-cyan-400/50 text-[10px] font-mono font-black text-cyan-300 shadow">
                       Lv.{search.summonerProfile.summonerLevel}
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-ink flex items-center gap-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-ink flex items-baseline gap-2">
                       <span>{search.summonerProfile.gameName}</span>
-                      <span className="text-sm font-normal text-muted">#{search.summonerProfile.tagLine}</span>
+                      <span className="text-sm font-bold text-muted font-mono">#{search.summonerProfile.tagLine}</span>
                     </h2>
-                    <p className="text-xs text-muted mt-0.5">
-                      최근 {search.summonerProfile.totalGames}경기 전적 통계 기준
+                    <p className="text-xs text-muted mt-1 font-medium">
+                      최근 <strong className="text-cyan-400 font-mono">{search.summonerProfile.totalGames}경기</strong> 전적 통계 기준
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 bg-sunken/70 border border-line/10/80 rounded-xl px-6 py-3">
+                <div className="relative flex items-center gap-4 sm:gap-6 bg-sunken/80 border border-line/15 rounded-2xl px-5 py-3 shadow-inner">
                   <div className="text-center">
-                    <p className="text-[12px] font-bold text-muted">평균 등수</p>
+                    <p className="text-[11px] font-bold text-muted">평균 등수</p>
                     <p className="text-xl md:text-2xl font-black text-amber-400 font-mono">
                       #{search.summonerProfile.avgPlacement}
                     </p>
                   </div>
-                  <div className="w-[1px] h-8 bg-slate-800" />
+                  <div className="w-[1px] h-8 bg-line/10" />
                   <div className="text-center">
-                    <p className="text-[12px] font-bold text-muted">순방률 (TOP 4)</p>
+                    <p className="text-[11px] font-bold text-muted">순방률 (TOP 4)</p>
                     <p className="text-xl md:text-2xl font-black text-emerald-400 font-mono">
                       {search.summonerProfile.top4Rate}%
                     </p>
                   </div>
-                  <div className="w-[1px] h-8 bg-slate-800" />
+                  <div className="w-[1px] h-8 bg-line/10" />
                   <div className="text-center">
-                    <p className="text-[12px] font-bold text-muted">1등 승률</p>
+                    <p className="text-[11px] font-bold text-muted">1등 승률</p>
                     <p className="text-xl md:text-2xl font-black text-cyan-400 font-mono">
                       {search.summonerProfile.winRate}%
                     </p>

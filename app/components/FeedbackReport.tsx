@@ -16,46 +16,61 @@ interface FeedbackReportProps {
   compact?: boolean
 }
 
-/** 6축 진단 바 */
+/** 6축 진단 프로 게이머 HUD 바 */
 function AxisRow({ axis, isFocus }: { axis: CoachingAxis; isFocus: boolean }) {
-  const color =
+  const gradient =
     axis.score >= 80
-      ? 'bg-emerald-500'
+      ? 'from-emerald-400 to-teal-400'
       : axis.score >= 65
-      ? 'bg-cyan-500'
+      ? 'from-cyan-400 to-blue-400'
       : axis.score >= 50
-      ? 'bg-amber-500'
-      : 'bg-rose-500'
+      ? 'from-amber-400 to-orange-400'
+      : 'from-rose-500 to-red-500'
+
   const text =
     axis.score >= 80
-      ? 'text-emerald-300'
+      ? 'text-emerald-400'
       : axis.score >= 65
-      ? 'text-cyan-300'
+      ? 'text-cyan-400'
       : axis.score >= 50
-      ? 'text-amber-300'
-      : 'text-rose-300'
+      ? 'text-amber-400'
+      : 'text-rose-400'
+
   return (
     <div
-      className={`rounded-xl border px-3 py-2.5 ${
-        isFocus ? 'border-amber-500/40 bg-amber-500/5' : 'border-line/10 bg-elev/5'
+      className={`relative overflow-hidden rounded-xl border p-3 transition-all ${
+        isFocus
+          ? 'border-amber-400/50 bg-gradient-to-br from-amber-500/10 via-panel to-panel shadow-md shadow-amber-950/20 ring-1 ring-amber-400/30'
+          : 'border-line/10 bg-sunken/60 hover:border-line/20'
       }`}
     >
-      <div className="flex items-center gap-2">
-        <span className="truncate text-[13px] font-bold text-ink">{axis.label}</span>
-        {isFocus ? (
-          <span className="shrink-0 rounded bg-amber-500/20 px-1 text-[9px] font-black text-amber-300">
-            이번 주제
-          </span>
-        ) : null}
-        <span className={`ml-auto shrink-0 font-mono text-[13px] font-black ${text}`}>{axis.score}</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="truncate text-xs font-black text-ink">{axis.label}</span>
+          {isFocus ? (
+            <span className="shrink-0 rounded-full border border-amber-400/60 bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-black text-amber-300 animate-pulse">
+              🎯 핵심 교정
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-baseline gap-0.5 shrink-0">
+          <span className={`font-mono text-base font-black ${text}`}>{axis.score}</span>
+          <span className="text-[10px] text-muted">/100</span>
+        </div>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-elev/10">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${axis.score}%` }} />
+
+      {/* 스탯 프로그레스 게이지 */}
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800/80">
+        <div
+          className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-500 shadow-sm`}
+          style={{ width: `${Math.max(axis.score, 4)}%` }}
+        />
       </div>
-      <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+
+      <p className="mt-2 text-[11px] font-semibold leading-relaxed text-ink-soft">
         {axis.verdict || axis.lesson}
       </p>
-      <p className="mt-0.5 text-[10px] text-subtle">{axis.detail}</p>
+      <p className="mt-0.5 text-[10px] text-muted font-mono">{axis.detail}</p>
     </div>
   )
 }
@@ -166,42 +181,52 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
 
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'}>
-      {/* Hero Score Card (메타 점수 + 유연성 성향) */}
-      <div className={`relative overflow-hidden bg-gradient-to-br from-panel via-panel to-blue-500/10 border border-line/15 rounded-2xl ${pad} shadow-2xl`}>
-        <div className="absolute top-0 right-0 transform translate-x-10 -translate-y-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Score Card (메타 점수 + 유연성 성향 - Tactical HUD Style) */}
+      <div className={`relative overflow-hidden bg-panel/90 backdrop-blur-xl border border-line/15 rounded-2xl ${pad} shadow-2xl`}>
+        <div className="absolute top-0 right-0 transform translate-x-10 -translate-y-10 w-60 h-60 bg-gradient-to-br from-cyan-500/15 via-blue-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider mb-2">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
               <Award className="w-4 h-4 text-cyan-400" />
               <span>{title || (feedback.mode === 'single' ? '단일 경기 정밀 코칭 총평' : `최근 ${matchCount ?? ''}경기 종합 메타 총평`)}</span>
             </div>
             <h2 className="text-xl md:text-2xl font-black text-ink leading-snug flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-cyan-300" />
-              AI 전략 코치 진단 리포트
+              <span>AI 전략 코치 종합 진단</span>
             </h2>
-            <p className="mt-2 text-muted text-[15px] md:text-lg leading-relaxed max-w-2xl">
+            <p className="mt-2.5 text-ink-soft text-sm md:text-base leading-relaxed max-w-2xl bg-sunken/40 p-3 rounded-xl border border-line/10">
               {feedback.overview}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 bg-sunken/70 border border-line/10 rounded-2xl p-4 shrink-0">
-            <div className="text-center px-3">
-              <p className="text-[11px] font-bold text-muted uppercase tracking-wider">메타 점수</p>
-              <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
-                {feedback.metaScore}
-                <span className="text-xs text-muted font-normal">/100</span>
-              </p>
-              <span className="text-[12px] font-bold text-muted">등급: {feedback.metaTier}</span>
-              <span className="block text-[11px] text-muted">코드 산출</span>
+          <div className="flex flex-wrap items-center gap-3 bg-sunken/80 border border-line/15 rounded-2xl p-4 shrink-0 shadow-lg">
+            {/* 메타 스코어 다이얼 */}
+            <div className="text-center px-4 py-1">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">전술 점수</p>
+              <div className="my-1">
+                <span className="text-3xl md:text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.3)]">
+                  {feedback.metaScore}
+                </span>
+                <span className="text-xs text-muted font-mono ml-1 font-semibold">/100</span>
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-md border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-black text-cyan-300">
+                <span>등급: {feedback.metaTier}</span>
+              </div>
             </div>
 
-            <div className="w-[1px] h-12 bg-slate-800 hidden sm:block" />
+            <div className="w-[1px] h-14 bg-line/15 hidden sm:block" />
 
-            <div className="text-center px-3">
-              <p className="text-[11px] font-bold text-muted uppercase tracking-wider">유연성 지수</p>
-              <p className={`text-3xl md:text-4xl font-black font-mono ${flexColor}`}>{flexScore}%</p>
-              <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full border ${flexBadge}`}>
+            {/* 유연성 지수 */}
+            <div className="text-center px-4 py-1">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">유연성 지수</p>
+              <div className="my-1">
+                <span className={`text-3xl md:text-4xl font-black font-mono ${flexColor} drop-shadow-md`}>
+                  {flexScore}%
+                </span>
+              </div>
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded-md border ${flexBadge}`}>
                 {feedback.playstyle}
               </span>
             </div>

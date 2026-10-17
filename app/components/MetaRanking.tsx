@@ -715,15 +715,163 @@ function DeckBoard({
   )
 }
 
-const COST_BORDER: Record<number, string> = {
-  1: 'border-slate-500/50',
-  2: 'border-emerald-500/50',
-  3: 'border-sky-500/50',
-  4: 'border-violet-500/60',
-  5: 'border-amber-400/70',
+const COST_STYLE: Record<
+  number,
+  { border: string; glow: string; text: string; bg: string; ring: string }
+> = {
+  1: {
+    border: 'border-slate-500/70',
+    glow: 'shadow-[0_0_8px_rgba(148,163,184,0.2)]',
+    text: 'text-slate-300',
+    bg: 'bg-slate-800/60',
+    ring: 'ring-slate-400/40',
+  },
+  2: {
+    border: 'border-emerald-500/80',
+    glow: 'shadow-[0_0_10px_rgba(16,185,129,0.25)]',
+    text: 'text-emerald-400',
+    bg: 'bg-emerald-950/60',
+    ring: 'ring-emerald-400/50',
+  },
+  3: {
+    border: 'border-blue-500/85',
+    glow: 'shadow-[0_0_10px_rgba(59,130,246,0.3)]',
+    text: 'text-blue-400',
+    bg: 'bg-blue-950/60',
+    ring: 'ring-blue-400/50',
+  },
+  4: {
+    border: 'border-purple-500/90',
+    glow: 'shadow-[0_0_12px_rgba(168,85,247,0.35)]',
+    text: 'text-purple-300',
+    bg: 'bg-purple-950/60',
+    ring: 'ring-purple-400/50',
+  },
+  5: {
+    border: 'border-amber-400',
+    glow: 'shadow-[0_0_14px_rgba(251,191,36,0.45)]',
+    text: 'text-amber-300',
+    bg: 'bg-amber-950/60',
+    ring: 'ring-amber-400/60',
+  },
 }
 
-/** 메타 덱 카드 — 실제 보드 구성(유닛·성급·아이템·시너지) */
+function StarBadge({ star }: { star: number }) {
+  if (star <= 1) return null
+  if (star === 3) {
+    return (
+      <span className="absolute -top-1 -right-1 z-10 flex items-center rounded bg-amber-950/95 px-1 py-0.5 text-[9px] font-black tracking-tighter text-amber-300 border border-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+        ★★★
+      </span>
+    )
+  }
+  return (
+    <span className="absolute -top-1 -right-1 z-10 flex items-center rounded bg-slate-900/95 px-1 py-0.5 text-[9px] font-black tracking-tighter text-slate-200 border border-slate-400/50">
+      ★★
+    </span>
+  )
+}
+
+function ItemDock({
+  items,
+  compact = false,
+}: {
+  items: { key: string; name: string; iconUrl: string }[]
+  compact?: boolean
+}) {
+  if (!items || items.length === 0) return null
+  return (
+    <div
+      className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-0.5 rounded bg-black/90 px-1 py-0.5 border border-white/20 shadow-lg ${
+        compact ? 'scale-90 origin-center' : ''
+      }`}
+    >
+      {items.map((it) => (
+        <img
+          key={it.key}
+          src={it.iconUrl}
+          alt={it.name}
+          title={it.name}
+          className={`${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} rounded-[2px] border border-black/80 bg-sunken object-cover transition hover:scale-125 hover:z-20`}
+          onError={(e) => {
+            ;(e.target as HTMLElement).style.display = 'none'
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function TraitBadge({
+  trait,
+}: {
+  trait: { key: string; name: string; iconUrl: string; count: number }
+}) {
+  const isHigh = trait.count >= 6
+  const isMid = trait.count >= 4
+  const isLow = trait.count >= 2
+
+  let colorClass = 'border-line/10 bg-elev/5 text-muted'
+  let countColor = 'text-muted'
+
+  if (isHigh) {
+    colorClass =
+      'border-amber-400/40 bg-amber-500/15 text-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.2)]'
+    countColor = 'text-amber-300 font-black'
+  } else if (isMid) {
+    colorClass = 'border-cyan-400/35 bg-cyan-500/15 text-cyan-200'
+    countColor = 'text-cyan-300 font-black'
+  } else if (isLow) {
+    colorClass = 'border-slate-500/40 bg-slate-700/30 text-ink-soft'
+    countColor = 'text-white font-bold'
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-bold transition hover:border-line/30 ${colorClass}`}
+      title={`${trait.name} ${trait.count}`}
+    >
+      {trait.iconUrl ? (
+        <img
+          src={trait.iconUrl}
+          alt={trait.name}
+          className="h-3.5 w-3.5 object-contain"
+          onError={(e) => {
+            ;(e.target as HTMLElement).style.display = 'none'
+          }}
+        />
+      ) : null}
+      <span className="truncate max-w-[65px]">{trait.name}</span>
+      <span className={`font-mono ${countColor}`}>{trait.count}</span>
+    </span>
+  )
+}
+
+function inferDeckMeta(deck: MetaDeckRanking) {
+  const threeStars = deck.units.filter((u) => u.star === 3)
+  const legendaries = deck.units.filter((u) => (u.cost || 0) === 5)
+
+  let tempo = '운영 (Fast 8)'
+  let tempoColor = 'bg-blue-500/10 text-blue-400 border-blue-500/25'
+
+  if (legendaries.length >= 3) {
+    tempo = '9레벨 밸류 (Fast 9)'
+    tempoColor = 'bg-amber-500/10 text-amber-300 border-amber-500/25'
+  } else if (threeStars.some((u) => (u.cost || 0) === 1)) {
+    tempo = '1코 리롤 (Slow Roll 5Lv)'
+    tempoColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+  } else if (threeStars.some((u) => (u.cost || 0) === 2)) {
+    tempo = '2코 리롤 (Slow Roll 6Lv)'
+    tempoColor = 'bg-teal-500/10 text-teal-300 border-teal-500/25'
+  } else if (threeStars.some((u) => (u.cost || 0) === 3)) {
+    tempo = '3코 리롤 (Slow Roll 7Lv)'
+    tempoColor = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/25'
+  }
+
+  return { tempo, tempoColor }
+}
+
+/** 메타 덱 와이드 카드 — TFTAcademy / LOLCHESS 스타일 */
 function DeckCard({
   r,
   onOpen,
@@ -735,6 +883,20 @@ function DeckCard({
 }) {
   const tier = (r.tier === '-' ? 'C' : r.tier) as Tier
   const s = TIER_STYLE[tier]
+  const { tempo, tempoColor } = inferDeckMeta(r)
+
+  // 핵심 캐리 (carryKey 또는 아이템 2개 이상 유닛)
+  const carryUnits = r.units.filter(
+    (u) => u.key === r.carryKey || u.items.length >= 2
+  )
+  const coreCarries =
+    carryUnits.length > 0
+      ? carryUnits.slice(0, 3)
+      : [r.units.find((u) => (u.cost || 0) >= 4) || r.units[0]].filter(Boolean)
+
+  const coreCarryKeys = new Set(coreCarries.map((c) => c.key))
+  const supportUnits = r.units.filter((u) => !coreCarryKeys.has(u.key))
+
   return (
     <div
       role="button"
@@ -747,110 +909,194 @@ function DeckCard({
           onOpen()
         }
       }}
-      className="cursor-pointer rounded-2xl border border-line/10 bg-gradient-to-br from-elev/10 to-transparent p-3.5 transition hover:border-line/20 hover:bg-elev/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/60"
+      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-line/10 bg-panel/80 p-4 transition-all duration-200 hover:border-cyan-400/40 hover:bg-elev/10 hover:shadow-xl hover:shadow-cyan-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
     >
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`rounded border px-1 py-0.5 text-[10px] font-black leading-none ${s.text} ${s.border} ${s.bg}`}
-            >
-              {r.tier}
-            </span>
-            <p className="truncate text-[15px] font-extrabold text-ink">{r.name}</p>
-          </div>
-          <p className="mt-1 truncate text-[11px] text-muted">
-            {r.units.length}유닛 · {r.unitCost}코
-            {r.gold ? ` · ${r.gold}골드` : ''} · 실측 커버리지 {Math.round(r.coverage * 100)}%
-          </p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className={`font-mono text-lg font-black leading-none ${r.avgPlacement != null ? s.text : 'text-muted'}`}>
-            {r.avgPlacement != null ? r.avgPlacement.toFixed(2) : '—'}
-          </p>
-          <p className="mt-1 text-[10px] text-muted">
-            {r.sampleSize > 0 ? `${r.sampleSize.toLocaleString()}판` : '표본 없음'}
-          </p>
-        </div>
-      </div>
+      {/* 배경 은은한 그라데이션 글로우 */}
+      <div
+        className={`pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full opacity-15 blur-2xl transition-opacity group-hover:opacity-25 ${
+          tier === 'S'
+            ? 'bg-amber-400'
+            : tier === 'A'
+            ? 'bg-emerald-400'
+            : tier === 'B'
+            ? 'bg-sky-400'
+            : 'bg-slate-400'
+        }`}
+      />
 
-      {/* 보드 구성 */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {r.units.map((u) => {
-          const carry = r.carryKey === u.key
-          return (
-            <button
-              key={`${u.key}-${u.name}`}
-              type="button"
-              onClick={() => onSelectUnit(u.key)}
-              title={`${u.name} ${u.star}성${u.stat ? ` · 평균 ${u.stat.avgPlacement.toFixed(2)}` : ''}${
-                u.items.length ? ` · ${u.items.map((i) => i.name).join(', ')}` : ''
-              }`}
-              className="w-[52px] shrink-0 cursor-pointer text-center"
-            >
-              <div className="relative mx-auto h-12 w-12">
-                <img
-                  src={u.imgUrl}
-                  alt={u.name}
-                  className={`h-12 w-12 rounded-lg border-2 bg-sunken/70 object-cover ${
-                    carry ? 'border-amber-400/80' : COST_BORDER[u.cost || 1] || 'border-line/20'
-                  }`}
-                  onError={(e) => {
-                    ;(e.target as HTMLElement).style.display = 'none'
-                  }}
-                />
-                <span className="absolute -right-1 -top-1 rounded bg-panel/95 px-0.5 text-[9px] font-black leading-tight text-amber-300">
-                  {u.star}★
+      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* 1. 좌측 정보: 티어 배지 + 덱 명칭 + 템포/비용 태그 */}
+        <div className="flex items-start gap-3.5 lg:w-[260px] lg:shrink-0">
+          {/* TFTAcademy 스타일 웅장한 티어 뱃지 */}
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 font-black shadow-lg transition-transform group-hover:scale-105 ${
+              tier === 'S'
+                ? 'border-amber-400/80 bg-gradient-to-br from-amber-500/25 to-orange-500/20 text-amber-300 shadow-amber-500/20'
+                : tier === 'A'
+                ? 'border-emerald-400/80 bg-gradient-to-br from-emerald-500/25 to-teal-500/20 text-emerald-300 shadow-emerald-500/20'
+                : tier === 'B'
+                ? 'border-sky-400/80 bg-gradient-to-br from-sky-500/25 to-blue-500/20 text-sky-300 shadow-sky-500/20'
+                : 'border-slate-500/50 bg-gradient-to-br from-slate-600/20 to-slate-800/20 text-slate-300'
+            }`}
+          >
+            <span className="text-2xl font-black leading-none">{r.tier}</span>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-[16px] font-black text-ink group-hover:text-cyan-300 transition-colors">
+              {r.name}
+            </h3>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span
+                className={`rounded border px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${tempoColor}`}
+              >
+                {tempo}
+              </span>
+              {r.gold ? (
+                <span className="inline-flex items-center gap-0.5 text-[11px] font-mono text-muted">
+                  <span className="text-amber-400">💰</span>
+                  {r.gold}g
                 </span>
-                {u.items.length > 0 ? (
-                  <div className="absolute -bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5">
-                    {u.items.map((it) => (
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* 2. 중앙 메인: 핵심 캐리 (Carry) & 팀 유닛 (Team Units) */}
+        <div className="flex flex-1 flex-col gap-2.5">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* 핵심 캐리 섹션 (TFTAcademy 시그니처) */}
+            {coreCarries.length > 0 && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-line/10 bg-sunken/60 p-1.5">
+                {coreCarries.map((u) => {
+                  const costInfo = COST_STYLE[u.cost || 1] || COST_STYLE[1]
+                  return (
+                    <button
+                      key={`core-${u.key}-${u.name}`}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSelectUnit(u.key)
+                      }}
+                      title={`[메인 캐리] ${u.name} ${u.star}성 · 클릭시 상세정보`}
+                      className="group/unit relative flex flex-col items-center cursor-pointer"
+                    >
+                      <div
+                        className={`relative h-13 w-13 rounded-xl border-2 bg-sunken/80 transition-transform group-hover/unit:scale-105 ${costInfo.border} ${costInfo.glow}`}
+                      >
+                        <img
+                          src={u.imgUrl}
+                          alt={u.name}
+                          className="h-full w-full rounded-[10px] object-cover"
+                          onError={(e) => {
+                            ;(e.target as HTMLElement).style.display = 'none'
+                          }}
+                        />
+                        <StarBadge star={u.star} />
+                        <ItemDock items={u.items} />
+                        <span className="absolute -bottom-1 -left-1 rounded bg-black/90 px-1 py-0.2 text-[8px] font-black tracking-tight text-amber-400 border border-amber-400/50">
+                          {u.cost}코
+                        </span>
+                      </div>
+                      <span className="mt-2.5 max-w-[56px] truncate text-[10px] font-bold text-ink group-hover/unit:text-cyan-300">
+                        {u.name}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* 서브 기물 섹션 */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {supportUnits.map((u) => {
+                const costInfo = COST_STYLE[u.cost || 1] || COST_STYLE[1]
+                return (
+                  <button
+                    key={`sub-${u.key}-${u.name}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectUnit(u.key)
+                    }}
+                    title={`${u.name} ${u.star}성${
+                      u.items.length
+                        ? ` · ${u.items.map((i) => i.name).join(', ')}`
+                        : ''
+                    }`}
+                    className="group/unit relative flex flex-col items-center cursor-pointer"
+                  >
+                    <div
+                      className={`relative h-10 w-10 rounded-lg border-2 bg-sunken/80 transition-transform group-hover/unit:scale-105 ${costInfo.border}`}
+                    >
                       <img
-                        key={it.key}
-                        src={it.iconUrl}
-                        alt={it.name}
-                        className="h-3.5 w-3.5 rounded-sm border border-black/50 bg-sunken object-cover"
+                        src={u.imgUrl}
+                        alt={u.name}
+                        className="h-full w-full rounded-[6px] object-cover"
                         onError={(e) => {
                           ;(e.target as HTMLElement).style.display = 'none'
                         }}
                       />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              <p className="mt-2 truncate text-[10px] font-bold text-ink-soft">{u.name}</p>
-            </button>
-          )
-        })}
-      </div>
+                      <StarBadge star={u.star} />
+                      <ItemDock items={u.items} compact />
+                    </div>
+                    <span className="mt-2 max-w-[44px] truncate text-[9px] font-medium text-muted group-hover/unit:text-ink">
+                      {u.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-      {/* 시너지 */}
-      {r.traits.length > 0 ? (
-        <div className="mt-2.5 flex flex-wrap gap-1">
-          {r.traits.map((t) => (
-            <span
-              key={t.key}
-              className="inline-flex items-center gap-0.5 rounded-full border border-line/10 bg-elev/5 py-0.5 pl-0.5 pr-1.5 text-[10px] font-bold text-muted"
-            >
-              {t.iconUrl ? (
-                <img
-                  src={t.iconUrl}
-                  alt={t.name}
-                  className="h-3.5 w-3.5 object-contain"
-                  onError={(e) => {
-                    ;(e.target as HTMLElement).style.display = 'none'
-                  }}
-                />
-              ) : null}
-              <span className="text-ink-soft">{t.name}</span>
-              <span className="text-cyan-300">{t.count}</span>
-            </span>
-          ))}
+          {/* 시너지 뱃지 */}
+          {r.traits.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              {r.traits.map((t) => (
+                <TraitBadge key={t.key} trait={t} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : null}
 
-      <div className="mt-2 flex items-center justify-end gap-1 text-[10px] font-bold text-cyan-300">
-        보드 배치 보기 <span aria-hidden="true">›</span>
+        {/* 3. 우측 통계 & 액션 버튼 (MetaTFT / LOLCHESS 스타일) */}
+        <div className="flex items-center justify-between border-t border-line/10 pt-3 lg:border-t-0 lg:pt-0 lg:w-[200px] lg:shrink-0 lg:flex-col lg:items-end lg:justify-center lg:gap-2">
+          <div className="flex items-center gap-4 lg:w-full lg:justify-end">
+            <div className="text-left lg:text-right">
+              <div className="flex items-baseline gap-1 lg:justify-end">
+                <span className="text-[11px] font-bold text-muted">평균등수</span>
+                <span
+                  className={`font-mono text-xl font-black ${
+                    r.avgPlacement != null ? s.text : 'text-muted'
+                  }`}
+                >
+                  {r.avgPlacement != null ? r.avgPlacement.toFixed(2) : '—'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted lg:justify-end">
+                <span>순방률</span>
+                <span className="font-bold text-emerald-400">
+                  {r.top4Rate != null ? `${Math.round(r.top4Rate * 100)}%` : '—'}
+                </span>
+                <span className="text-subtle">·</span>
+                <span>
+                  {r.sampleSize > 0
+                    ? `${r.sampleSize.toLocaleString()}판`
+                    : '표본 없음'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpen}
+            className="inline-flex items-center gap-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-black text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400 active:scale-95 cursor-pointer shadow-sm shadow-cyan-500/10"
+          >
+            <span>보드 배치</span>
+            <span aria-hidden="true" className="text-sm">›</span>
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -1461,160 +1707,140 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
   }
 
   return (
-    <div className="space-y-3 animate-fade-up">
-      <Podium
-        rows={podiumRows}
-        title={tab === 'decks' ? 'TOP 3 메타 덱' : tab === 'comps' ? 'TOP 3 메타 조합' : 'TOP 3 기물'}
-      />
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-        <KpiCard
-          icon={CalendarDays}
-          label="패치"
-          value={data?.patch ?? '—'}
-          sub={
-            data?.source === 'riot-sample'
-              ? 'Riot 실측 표본'
-              : data?.source === 'riot-ladder'
-              ? '래더 실측 표본'
-              : '수집 표본'
-          }
-          tone="cyan"
+    <div className="space-y-3.5 animate-fade-up">
+      {/* 챔피언 및 조합 탭에서만 TOP 3 포디움 표시 */}
+      {tab !== 'decks' && (
+        <Podium
+          rows={podiumRows}
+          title={tab === 'comps' ? 'TOP 3 메타 BIS 조합' : 'TOP 3 핵심 기물'}
         />
-        <KpiCard
-          icon={Crown}
-          label="추적 기물"
-          value={data ? data.champions.length : '—'}
-          sub="티어 집계"
-          tone="amber"
-        />
-        <KpiCard
-          icon={Package}
-          label="추적 아이템"
-          value={data ? data.items.length : '—'}
-          sub="성적 집계"
-          tone="violet"
-        />
-        <KpiCard
-          icon={Layers}
-          label="메타 덱"
-          value={data ? data.decks.length : '—'}
-          sub={data?.deckMeta?.patch ? `롤체지지 v${data.deckMeta.patch}` : '보드 조합'}
-          tone="emerald"
-        />
-      </div>
+      )}
 
+      {/* MetaTFT 스타일 올인원 통합 툴바 */}
       <div
         id="meta-tabs"
-        className="flex scroll-mt-16 flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between"
+        className="rounded-2xl border border-line/10 bg-panel/90 backdrop-blur-xl p-3 shadow-xl space-y-3"
       >
-        <div className="hidden flex-wrap items-center gap-1 rounded-xl border border-line/10 bg-sunken/70 p-1 md:flex">
-          {TABS.map((t) => {
-            const Icon = t.icon
-            const active = tab === t.id
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => selectTab(t.id)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition cursor-pointer ${
-                  active
-                    ? 'bg-elev/5 text-ink shadow-sm'
-                    : 'text-muted hover:bg-elev/5 hover:text-ink-soft'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 lg:w-64">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="이름 검색 (예: 럭스, 돌거북) — / 단축키"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-xl border border-line/10 bg-sunken/70 py-2 pl-9 pr-3 text-xs text-ink placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
-            />
+        {/* Row 1: 세그먼트 탭 & 실시간 검색창 */}
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-line/10 bg-sunken/80 p-1">
+            {TABS.map((t) => {
+              const Icon = t.icon
+              const active = tab === t.id
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => selectTab(t.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    active
+                      ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 shadow-sm'
+                      : 'text-muted hover:bg-elev/5 hover:text-ink-soft border border-transparent'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{t.label}</span>
+                </button>
+              )
+            })}
           </div>
-          <button
-            type="button"
-            onClick={load}
-            disabled={isLoading}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line/10 bg-sunken/70 px-3 py-2 text-xs font-semibold text-muted transition hover:bg-elev/5 disabled:opacity-60 cursor-pointer"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isLoading ? '불러오는 중' : '새로고침'}</span>
-          </button>
-        </div>
-      </div>
 
-      {/* 필터/정렬: 모바일에서는 한 줄 가로 스크롤 */}
-      <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">
-        <div className="flex min-w-max items-center gap-x-3 md:min-w-0 md:flex-wrap">
-        {(tab === 'champions' || tab === 'comps') && (
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">코스트</span>
-            <Chip active={costFilter === 'all'} onClick={() => setCostFilter('all')}>
-              전체
-            </Chip>
-            {[1, 2, 3, 4, 5].map((c) => (
-              <Chip key={c} active={costFilter === c} onClick={() => setCostFilter(c)}>
-                {c}코
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="기물, 시너지 검색 (/)"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full rounded-xl border border-line/10 bg-sunken/80 py-1.5 pl-8 pr-3 text-xs text-ink placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={load}
+              disabled={isLoading}
+              title="데이터 새로고침"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line/10 bg-sunken/80 px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:bg-elev/5 disabled:opacity-60 cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
+              <span className="hidden sm:inline">{isLoading ? '불러오는 중' : '새로고침'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: 티어 필터, 코스트 필터, 정렬 셀렉트 */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line/10 pt-2.5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {/* 티어 필터 */}
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">티어</span>
+              <Chip active={tierFilter === 'all'} onClick={() => setTierFilter('all')}>
+                전체
               </Chip>
-            ))}
+              {TIER_ORDER.map((t) => (
+                <Chip key={t} active={tierFilter === t} onClick={() => setTierFilter(t)}>
+                  {t}
+                </Chip>
+              ))}
+            </div>
+
+            {/* 코스트 필터 (champions 또는 comps일 때) */}
+            {(tab === 'champions' || tab === 'comps') && (
+              <div className="flex items-center gap-1 pl-2 border-l border-line/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">코스트</span>
+                <Chip active={costFilter === 'all'} onClick={() => setCostFilter('all')}>
+                  전체
+                </Chip>
+                {[1, 2, 3, 4, 5].map((c) => (
+                  <Chip key={c} active={costFilter === c} onClick={() => setCostFilter(c)}>
+                    {c}코
+                  </Chip>
+                ))}
+              </div>
+            )}
+
+            {/* 정렬 셀렉트 */}
+            <div className="flex items-center gap-1 pl-2 border-l border-line/10">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">정렬</span>
+              <select
+                value={sortBy}
+                onChange={(e) =>
+                  setSortBy(e.target.value as 'avg' | 'sample' | 'threeStar' | 'top4' | 'cost')
+                }
+                className="cursor-pointer rounded-lg border border-line/10 bg-sunken/80 px-2 py-0.5 text-[11px] font-bold text-ink-soft focus:border-cyan-400/50 focus:outline-none"
+              >
+                <option value="avg">평균등수 순</option>
+                <option value="top4">TOP4 순방률 순</option>
+                <option value="sample">표본수 순</option>
+                <option value="cost">코스트 순</option>
+                {tab === 'champions' && <option value="threeStar">3성 달성률 순</option>}
+              </select>
+            </div>
+
+            {/* 표본 필터 */}
+            <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-line/10">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">표본</span>
+              <Chip active={minSample === 0} onClick={() => setMinSample(0)}>
+                전체
+              </Chip>
+              {[10, 50, 100].map((n) => (
+                <Chip key={n} active={minSample === n} onClick={() => setMinSample(n)}>
+                  {n}+
+                </Chip>
+              ))}
+            </div>
           </div>
-        )}
 
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">티어</span>
-          <Chip active={tierFilter === 'all'} onClick={() => setTierFilter('all')}>
-            전체
-          </Chip>
-          {TIER_ORDER.map((t) => (
-            <Chip key={t} active={tierFilter === t} onClick={() => setTierFilter(t)}>
-              {t}
-            </Chip>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">표본</span>
-          <Chip active={minSample === 0} onClick={() => setMinSample(0)}>
-            전체
-          </Chip>
-          {[10, 20, 50].map((n) => (
-            <Chip key={n} active={minSample === n} onClick={() => setMinSample(n)}>
-              {n}+
-            </Chip>
-          ))}
-        </div>
-
-        <label className="flex items-center gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-subtle">정렬</span>
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as 'avg' | 'sample' | 'threeStar' | 'top4' | 'cost')
-            }
-            className="cursor-pointer rounded-lg border border-line/10 bg-sunken/60 px-2 py-1 text-[11px] font-bold text-ink-soft focus:border-cyan-400/50 focus:outline-none"
-          >
-            <option value="avg">평균등수</option>
-            <option value="sample">표본</option>
-            <option value="threeStar">3성률</option>
-            <option value="top4">TOP4</option>
-            <option value="cost">코스트</option>
-          </select>
-        </label>
-
-        <span className="ml-auto hidden text-[10px] text-subtle sm:inline">
-          <kbd className="rounded border border-line/15 px-1">/</kbd> 검색 ·{' '}
-          <kbd className="rounded border border-line/15 px-1">Esc</kbd> 초기화
-        </span>
+          {/* 메트릭 정보 뱃지 */}
+          <div className="hidden lg:flex items-center gap-2 text-[11px] text-muted font-mono">
+            <span>패치: <strong className="text-cyan-400">{data?.patch || 'v16.17'}</strong></span>
+            <span>·</span>
+            <span>덱 <strong className="text-emerald-400">{data?.decks.length || 0}</strong>개</span>
+            <span>·</span>
+            <span>기물 <strong className="text-amber-400">{data?.champions.length || 0}</strong>종</span>
+          </div>
         </div>
       </div>
 
@@ -1679,7 +1905,7 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
       {!isLoading && !error && hasMeta && (
         <>
           {tab === 'decks' && (
-            <div className="grid gap-2.5 lg:grid-cols-2">
+            <div className="flex flex-col gap-3">
               {decks.slice(0, limit).map((r) => (
                 <DeckCard
                   key={r.id}
