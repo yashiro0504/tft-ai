@@ -190,6 +190,58 @@ export interface SummonerProfile {
   totalGames: number
 }
 
+/** LLM 서술의 수치 근거 검증 결과 (코드 산출) */
+export interface GroundingReport {
+  /** 근거 일치율 0~100 (낮을수록 창작/환각 가능성) */
+  score: number
+  /** 검증한 수치 주장 수 */
+  total: number
+  /** 제공된 사실에서 확인된 수치 주장 수 */
+  supported: number
+  /** 사실에서 확인되지 않은 수치 주장 (예: "72%", "3.44") */
+  unsupported: string[]
+}
+
+/** 리포트가 참조한 데이터 출처/패치/표본 정보 */
+export interface FeedbackProvenance {
+  patch?: string
+  source?: string
+  generatedAt?: string
+  sample?: boolean
+  /** 프롬프트에 주입한 기물/아이템/조합 통계 항목 수 */
+  championStats?: number
+  itemStats?: number
+  comboStats?: number
+}
+
+/** 점수 구성요소 (코드 산출) */
+export interface ScoreComponent {
+  key: 'placement' | 'completion' | 'items' | 'contest'
+  label: string
+  /** 가중치 0~1 */
+  weight: number
+  /** 구성요소 점수 0~100 */
+  score: number
+  /** 기여도 = weight × score (0~100) */
+  contribution: number
+  /** 근거 요약 (경기 평균 기준) */
+  detail: string
+}
+
+/** 결정론적 metaScore 산출 근거 */
+export interface ScoreBreakdown {
+  /** 가중 합산 점수 0~100 */
+  total: number
+  tier: string
+  components: ScoreComponent[]
+  /** 집계에 사용된 경기 수 */
+  matches: number
+  /** 경기별 총점 (재현/디버깅용) */
+  perMatch: number[]
+  /** 산출식 버전 */
+  version: string
+}
+
 // 전문 메타 코칭 응답 결과
 export interface MetaCoachFeedback {
   mode: 'single' | 'multi'
@@ -204,6 +256,14 @@ export interface MetaCoachFeedback {
   economyAnalysis: string
   improvements: string[]
   actionPlan: string[]
+  /** LLM 서술의 수치 근거 검증 결과 */
+  grounding?: GroundingReport
+  /** LLM 미사용(규칙 기반 폴백) 여부 */
+  isFallback?: boolean
+  /** 참조한 데이터 출처/패치/표본 */
+  provenance?: FeedbackProvenance
+  /** 코드가 산출한 점수 근거 (LLM 아님) */
+  scoreBreakdown?: ScoreBreakdown
   fullMarkdown?: string
 }
 
@@ -255,5 +315,83 @@ export interface TftOverviewResponse {
   feedback?: MetaCoachFeedback
   summonerProfile?: SummonerProfile
   isDemo?: boolean
+  error?: string
+}
+
+// ---- Meta Rank (메타 랭킹, Phase 4) ----
+
+/** GET /api/tft/meta: 챔피언/시너지/아이템/조합 메타 티어 응답 */
+
+export interface MetaChampRanking {
+  /** 수집 키 (예: 'Brambleback', 'Lux') — 화면 표시는 name 사용 */
+  key: string
+  name: string
+  imgUrl: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  avgTier: number
+  threeStarRate: number
+  /** 이전 수집 대비 (있을 때만) */
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+  /** 코스트 1~5 */
+  cost?: number
+}
+
+export interface MetaTraitRanking {
+  key: string
+  name: string
+  iconUrl: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  avgTier: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+export interface MetaItemRanking {
+  key: string
+  name: string
+  iconUrl: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+export interface MetaComboRanking {
+  key: string
+  champKey: string
+  itemKey: string
+  champName: string
+  champImgUrl: string
+  itemName: string
+  itemIconUrl: string
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+}
+
+export interface TftMetaResponse {
+  success: boolean
+  /** 실측 수집 메타인가 (false면 아직 수집 안 됨) */
+  hasMeta: boolean
+  patch?: string
+  source?: string
+  generatedAt?: string
+  /** 직전 수집 시각 (순위 변동 기준) */
+  prevGeneratedAt?: string
+  /** 증강은 Riot 세트18 미제공으로 비어 있을 수 있음 */
+  hasAugmentMeta: boolean
+  champions: MetaChampRanking[]
+  traits: MetaTraitRanking[]
+  items: MetaItemRanking[]
+  combos: MetaComboRanking[]
   error?: string
 }

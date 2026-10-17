@@ -1,6 +1,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { SlimMatchData, MetaCoachFeedback } from './types'
+import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance } from './types'
 import { serializeMatchesForLLM } from './summarize'
+import {
+  getChampionRankings,
+  getTraitRankings,
+  getItemRankings,
+  getComboRankings,
+  getMetaSectionInfo,
+} from './meta'
+import { translateChampion, translateItem, translateTrait } from './constants'
+import { validateFeedbackGrounding } from './grounding'
+import { computeScoreBreakdown } from './scoring'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
@@ -14,6 +24,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 프로팀 전력분석관�
 - 증강체 분석과 '메타 적합도'는 제공된 데이터로 추론 가능한 범위에서만 서술하고, 근거가 약하면 반드시 "메타 통계가 제공되지 않아 단정 불가"라고 솔직히 밝혀라.
 - 모든 단정에는 근거가 된 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 함께 제시하라.
 - 제공된 데이터에 등장하지 않은 증강/시너지/기물 이름을 새로 만들어내지 마라.
+- [메타 통계 인용] 프롬프트의 [메타 실측 통계] 블록에 있는 수치만 인용할 수 있다. 블록에 없는 기물/아이템/시너지의 평균등수·표본·픽률은 만들어내지 마라. 표본(n)이 작으면 "표본이 적어 참고용"이라고 밝혀라.
+- [수치 표기] 인용하는 모든 수치는 제공된 표기 그대로 써라. (예: 평균등수 3.44, 표본 n=21, 경합 강도 62/100) 근사치를 새로 계산해 반올림 값을 지어내지 마라.
 - [경합 지표 주의] 로비 겹침(경합 강도)은 '로비 수렴도'로 서술하라. 실측 데이터상 경합과 최종 성적의 상관은 약하거나 역방향이므로, "겹쳐서(대깨) 졌다"는 식의 인과 단정을 금지한다. (겹침은 '상황 정보'이지 '패배 원인'으로 단정하지 말 것)
 
 ⚠️ 분석 및 코칭 필수 원칙:
@@ -69,8 +81,9 @@ async function callDeepSeek(prompt: string): Promise<string> {
         { role: 'system', content: SYSTEM_INSTRUCTION },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.7,
+      temperature: 0.2,
       max_tokens: 2500,
+      response_format: { type: 'json_object' },
     }),
   })
 
@@ -84,6 +97,63 @@ async function callDeepSeek(prompt: string): Promise<string> {
 }
 
 /**
+ * 프롬프트에 주입할 [메타 실측 통계] 블록 + 출처 메타데이터.
+ * LLM이 인용할 수 있는 수치의 화이트리스트 역할을 한다.
+ */
+function buildMetaFacts(): { text: string; provenance: FeedbackProvenance } {
+  const info = getMetaSectionInfo()
+  const provenance: FeedbackProvenance = {
+    patch: info.patch,
+    source: info.source,
+    generatedAt: info.generatedAt,
+    sample: info.sample,
+    championStats: 0,
+    itemStats: 0,
+    comboStats: 0,
+  }
+
+  if (!info.hasMeta) {
+    return {
+      text: '[메타 실측 통계]\n※ 수집된 메타 통계가 없다. 기물/아이템/시너지의 평균등수·픽률을 인용하지 말고 "메타 통계 미제공"으로 명시하라.',
+      provenance,
+    }
+  }
+
+  const champs = getChampionRankings().filter((c) => c.sampleSize >= 10).slice(0, 12)
+  const traits = getTraitRankings(10).slice(0, 10)
+  const items = getItemRankings().filter((i) => i.sampleSize >= 10).slice(0, 10)
+  const combos = getComboRankings(10).slice(0, 8)
+  provenance.championStats = champs.length
+  provenance.itemStats = items.length
+  provenance.comboStats = combos.length
+
+  const fmt = (x: number) => (Math.round(x * 100) / 100).toFixed(2)
+  const lines = [
+    '[메타 실측 통계 — 아래 수치만 인용 가능]',
+    `- 패치: ${info.patch ?? '?'} · 출처: ${info.source ?? '?'} · 수집일: ${
+      (info.generatedAt || '').slice(0, 10) || '?'
+    }${info.sample ? ' · (샘플/검증 전)' : ''}`,
+    `- 기물 TOP${champs.length} (평균등수 · 표본): ${champs
+      .map((c) => `${translateChampion(c.key).name} ${fmt(c.avgPlacement)} (n=${c.sampleSize})`)
+      .join(', ')}`,
+    `- 시너지 TOP${traits.length}: ${traits
+      .map((t) => `${translateTrait(t.key).name} ${fmt(t.avgPlacement)} (n=${t.sampleSize})`)
+      .join(', ')}`,
+    `- 아이템 TOP${items.length}: ${items
+      .map((i) => `${translateItem(i.key).name} ${fmt(i.avgPlacement)} (n=${i.sampleSize})`)
+      .join(', ')}`,
+    `- BIS 조합 TOP${combos.length}: ${combos
+      .map((c) => {
+        const [ck, ...rest] = c.key.split('|')
+        return `${translateChampion(ck).name} × ${translateItem(rest.join('|')).name} ${fmt(c.avgPlacement)} (n=${c.sampleSize})`
+      })
+      .join(', ')}`,
+    '※ 위 목록에 없는 기물/아이템/시너지의 수치는 인용 금지. n<10은 참고용으로만.',
+  ]
+  return { text: lines.join('\n'), provenance }
+}
+
+/**
  * 전문 메타 분석 AI 코칭 피드백 생성
  */
 export async function generateMetaCoachFeedback(
@@ -92,6 +162,19 @@ export async function generateMetaCoachFeedback(
   mode: 'single' | 'multi' = 'single'
 ): Promise<MetaCoachFeedback> {
   const matchSerialized = serializeMatchesForLLM(matches)
+  const { text: metaFacts, provenance } = buildMetaFacts()
+  const scoring = computeScoreBreakdown(matches)
+  const scoreFacts = scoring
+    ? [
+        '[코드 산출 점수 — 이 값을 그대로 사용하라]',
+        `- metaScore: ${scoring.total} · metaTier: ${scoring.tier} (산출식 ${scoring.version}, ${scoring.matches}경기 평균)`,
+        ...scoring.components.map(
+          (c) =>
+            `- ${c.label}: ${c.score}/100 × ${Math.round(c.weight * 100)}% = +${c.contribution} (${c.detail})`
+        ),
+        '※ metaScore/metaTier 는 반드시 위 코드 산출값을 그대로 반환하라. 점수 해설은 위 구성요소 수치를 근거로 작성하라.',
+      ].join('\n')
+    : '[코드 산출 점수]\n※ 산출 불가 (경기 데이터 없음)'
   const modeContext = mode === 'single'
     ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
     : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
@@ -111,16 +194,32 @@ ${modeContext}
 ${matchSerialized}
 
 ${metaNote}
+
+${metaFacts}
+
+${scoreFacts}
+
    모든 서술은 위 데이터의 수치(경합 강도/등급, 겹친 상대 수, 코스트, 성급, 골드, 탈락 라운드)를 직접 인용해 작성하라.
 
 위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 정밀 분석하여, 로비 기물 경합 기반 대깨/유연성 판단과 데이터 기반 종합 수행 점수, 구체적 실력 개선 포인트를 포함한 JSON 형식의 전문 코칭 리포트를 작성하라.`
+
+  // LLM 응답에 코드 기반 '점수/근거 검증/출처'를 붙인다.
+  const finalize = (fb: MetaCoachFeedback, isFallback = false): MetaCoachFeedback => ({
+    ...fb,
+    metaScore: scoring ? scoring.total : fb.metaScore,
+    metaTier: scoring ? scoring.tier : fb.metaTier,
+    isFallback,
+    provenance,
+    scoreBreakdown: scoring ?? undefined,
+    grounding: validateFeedbackGrounding(fb, prompt),
+  })
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용
   if (DEEPSEEK_API_KEY) {
     try {
       const text = await callDeepSeek(prompt)
       const parsed = parseJsonFeedback(text)
-      if (parsed) return parsed
+      if (parsed) return finalize(parsed)
     } catch (err) {
       console.error('DeepSeek API Error, falling back:', err)
     }
@@ -138,14 +237,14 @@ ${metaNote}
       const result = await model.generateContent(prompt)
       const text = result.response.text()
       const parsed = parseJsonFeedback(text)
-      if (parsed) return parsed
+      if (parsed) return finalize(parsed)
     } catch (err) {
       console.error('Gemini API Error, falling back:', err)
     }
   }
 
   // 3. 지능형 메타 코칭 폴백
-  return generateFallbackMetaFeedback(gameName, matches)
+  return finalize(generateFallbackMetaFeedback(gameName, matches), true)
 }
 
 /**
@@ -166,14 +265,15 @@ function parseJsonFeedback(rawText: string): MetaCoachFeedback | null {
     }
 
     const obj = JSON.parse(cleanJson)
-    if (typeof obj.metaScore === 'number' && obj.overview) {
+    if (obj.overview) {
       const flexibility = typeof obj.flexibilityScore === 'number' ? Math.min(Math.max(obj.flexibilityScore, 0), 100) : 55
       const playstyle = obj.playstyle || (flexibility < 45 ? '대깨 고집형 빌드업' : flexibility > 70 ? '빈집 탐색 유연형' : '하이브리드 템포형')
+      const llmScore = typeof obj.metaScore === 'number' ? Math.min(Math.max(obj.metaScore, 0), 100) : 0
 
       return {
         mode: (obj.mode as 'single' | 'multi') || 'single',
-        metaScore: Math.min(Math.max(obj.metaScore, 0), 100),
-        metaTier: obj.metaTier || calculateTier(obj.metaScore),
+        metaScore: llmScore,
+        metaTier: obj.metaTier || calculateTier(llmScore),
         flexibilityScore: flexibility,
         playstyle,
         overview: obj.overview,

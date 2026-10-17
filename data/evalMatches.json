@@ -1,0 +1,3202 @@
+{
+  "version": 1,
+  "capturedAt": "2026-10-17T11:45:11.071Z",
+  "cases": [
+    {
+      "name": "백승민#agent 3경기",
+      "gameName": "백승민",
+      "tagLine": "agent",
+      "mode": "multi",
+      "matches": [
+        {
+          "matchId": "KR_8415042887",
+          "setNumber": 18,
+          "gameDatetime": 1791668961639,
+          "timeAgo": "6일 전",
+          "gameLengthStr": "8분 03초",
+          "queueType": "랭크 게임",
+          "placement": 1,
+          "level": 4,
+          "lastRound": "2-2",
+          "goldLeft": 9,
+          "augments": [],
+          "traits": [],
+          "units": [
+            {
+              "id": "DA_18_Camille",
+              "name": "카밀",
+              "tier": 3,
+              "rarity": 1,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
+              "items": [
+                "피바라기",
+                "스테락의 도전"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Bloodthirster.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png"
+              ]
+            }
+          ],
+          "lobbyParticipants": [
+            {
+              "placement": 1,
+              "gameName": "백승민",
+              "tagLine": "agent",
+              "level": 4,
+              "lastRound": "2-2",
+              "damageToPlayers": 0,
+              "traits": [],
+              "units": [
+                {
+                  "id": "DA_18_Camille",
+                  "name": "카밀",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
+                  "items": [
+                    "피바라기",
+                    "스테락의 도전"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Bloodthirster.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png"
+                  ]
+                }
+              ],
+              "isUser": true
+            }
+          ],
+          "contestedInfo": {
+            "isContested": false,
+            "contestScore": 0,
+            "level": "빈집",
+            "opponentCount": 0,
+            "contestedUnits": [],
+            "contestedTraits": [],
+            "unitDetails": [],
+            "traitDetails": [],
+            "summary": "경합 강도 0/100 (빈집) · 로비 내 내 코어 기물/시너지 겹침이 거의 없는 '빈집' 판이었습니다."
+          },
+          "augmentAnalysis": {
+            "hasMeta": false,
+            "sample": false,
+            "patch": "set18",
+            "source": "riot-ladder",
+            "baselineAvgPlacement": 4.5,
+            "details": []
+          }
+        },
+        {
+          "matchId": "KR_8414975456",
+          "setNumber": 18,
+          "gameDatetime": 1791658277863,
+          "timeAgo": "6일 전",
+          "gameLengthStr": "32분 58초",
+          "queueType": "랭크 게임",
+          "placement": 5,
+          "level": 7,
+          "lastRound": "6-1",
+          "goldLeft": 14,
+          "augments": [],
+          "traits": [
+            {
+              "name": "주문술사",
+              "tier": 2,
+              "count": 4,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+            },
+            {
+              "name": "나무정령",
+              "tier": 1,
+              "count": 3,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png"
+            },
+            {
+              "name": "검은 가시",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGod.TFT_Set18.png"
+            },
+            {
+              "name": "난동꾼",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+            },
+            {
+              "name": "엄호대",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+            },
+            {
+              "name": "치명적인 꽃",
+              "tier": 1,
+              "count": 1,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png"
+            }
+          ],
+          "units": [
+            {
+              "id": "DA_18_Veigar",
+              "name": "베이가",
+              "tier": 3,
+              "rarity": 1,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+              "items": [
+                "보석 건틀릿",
+                "루덴의 폭풍",
+                "새벽심장"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_LudensTempest.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_Dawncore.png"
+              ]
+            },
+            {
+              "id": "DA_18_Alistar",
+              "name": "알리스타",
+              "tier": 3,
+              "rarity": 2,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
+              "items": [
+                "스테락의 도전",
+                "크라운가드",
+                "이온 충격기"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_IonicSpark.png"
+              ]
+            },
+            {
+              "id": "DA_18_Ornn",
+              "name": "오른",
+              "tier": 3,
+              "rarity": 1,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+              "items": [
+                "음전자 망토",
+                "폭발 물약"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_NegatronCloak.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlastPotion18.png"
+              ]
+            },
+            {
+              "id": "DA_18_RekSai",
+              "name": "렉사이",
+              "tier": 3,
+              "rarity": 1,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
+              "items": [
+                "크라운가드"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+              ]
+            },
+            {
+              "id": "DA_18_LeBlanc",
+              "name": "르블랑",
+              "tier": 3,
+              "rarity": 2,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
+              "items": [],
+              "itemIcons": []
+            },
+            {
+              "id": "DA_18_Cassiopeia",
+              "name": "카시오페아",
+              "tier": 2,
+              "rarity": 3,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
+              "items": [
+                "쇼진의 창",
+                "거인 학살자",
+                "보석 건틀릿"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png"
+              ]
+            },
+            {
+              "id": "DA_Fiddlesticks18",
+              "name": "피들스틱",
+              "tier": 1,
+              "rarity": 3,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+              "items": [
+                "모렐로노미콘"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Morellonomicon.png"
+              ]
+            }
+          ],
+          "lobbyParticipants": [
+            {
+              "placement": 1,
+              "gameName": "ffdsgnldkfadfkln",
+              "tagLine": "fgdsd",
+              "level": 9,
+              "lastRound": "6-5",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "선봉대",
+                  "tier": 2,
+                  "count": 4,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "달빛",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png"
+                },
+                {
+                  "name": "주문술사",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+                },
+                {
+                  "name": "자연의 아버지",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Greenfather.TFT_Set18.png"
+                },
+                {
+                  "name": "치명적인 꽃",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "조율",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Attuned.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Ivern",
+                  "name": "아이번",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+                  "items": [
+                    "쇼진의 창",
+                    "라바돈의 죽음모자",
+                    "라바돈의 죽음모자"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RabadonsDeathcap.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RabadonsDeathcap.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [
+                    "수호자의 맹세",
+                    "수호자의 맹세",
+                    "수호자의 맹세"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Morgana",
+                  "name": "모르가나",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
+                  "items": [
+                    "공허의 지팡이",
+                    "모렐로노미콘",
+                    "적응형 투구"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_VoidStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Morellonomicon.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_AdaptiveHelm.png"
+                  ]
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [
+                    "크라운가드",
+                    "워모그의 갑옷",
+                    "크라운가드"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Lillia",
+                  "name": "릴리아",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
+                  "items": [
+                    "수호자의 맹세"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Diana",
+                  "name": "다이애나",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Hecarim",
+                  "name": "헤카림",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Alune",
+                  "name": "알룬",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+                  "items": [
+                    "보석 건틀릿",
+                    "공허의 지팡이",
+                    "연습용 장갑"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_VoidStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_SparringGloves.png"
+                  ]
+                },
+                {
+                  "id": "DA_Fiddlesticks18",
+                  "name": "피들스틱",
+                  "tier": 1,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 2,
+              "gameName": "오타쿠",
+              "tagLine": "aaa",
+              "level": 8,
+              "lastRound": "6-5",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "햇빛",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Solar.TFT_Set18.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "속사포",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Rapidfire.TFT_Set18.png"
+                },
+                {
+                  "name": "약탈자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Ravager.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "고목",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGrowth.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Varus",
+                  "name": "바루스",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
+                  "items": [
+                    "푸른 파수꾼",
+                    "무한의 대검",
+                    "거인 학살자"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Akali_AD",
+                  "name": "아칼리",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+                  "items": [
+                    "거인 학살자",
+                    "정의의 손길",
+                    "밤의 끝자락"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_HandOfJustice.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_EdgeOfNight.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Leona",
+                  "name": "레오나",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "정령의 형상",
+                    "크라운가드"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Camille",
+                  "name": "카밀",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
+                  "items": [
+                    "밤의 끝자락",
+                    "스테락의 도전",
+                    "무한의 대검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_EdgeOfNight.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ornn",
+                  "name": "오른",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+                  "items": [
+                    "저녁갑주"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Evenshroud.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sejuani",
+                  "name": "세주아니",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Kayle",
+                  "name": "케일",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Maokai",
+                  "name": "마오카이",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 3,
+              "gameName": "작은거인",
+              "tagLine": "SOOP",
+              "level": 8,
+              "lastRound": "6-3",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "처형자",
+                  "tier": 2,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png"
+                },
+                {
+                  "name": "소환사",
+                  "tier": 2,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Summoner.TFT_Set18.png"
+                },
+                {
+                  "name": "치명적인 꽃",
+                  "tier": 2,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png"
+                },
+                {
+                  "name": "검은 가시",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGod.TFT_Set18.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "거석",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Monolith.TFT_Set18.png"
+                },
+                {
+                  "name": "가시의 여인",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ZyraOrigin.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Azir",
+                  "name": "아지르",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+                  "items": [
+                    "붉은 덩굴정령",
+                    "대천사의 지팡이",
+                    "거인 학살자"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ArchangelsStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Soraka",
+                  "name": "소라카",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
+                  "items": [
+                    "대천사의 지팡이",
+                    "대천사의 지팡이",
+                    "마법공학 총검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ArchangelsStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ArchangelsStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_HextechGunblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Zyra",
+                  "name": "자이라",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
+                  "items": [
+                    "처형자 상징",
+                    "쇼진의 창",
+                    "공허의 지팡이"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemExecutioner.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_VoidStaff.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Malphite",
+                  "name": "말파이트",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
+                  "items": [
+                    "워모그의 갑옷",
+                    "가고일 돌갑옷",
+                    "정령의 형상"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Lillia",
+                  "name": "릴리아",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
+                  "items": [
+                    "피바라기",
+                    "크라운가드"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Bloodthirster.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Yorick",
+                  "name": "요릭",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+                  "items": [
+                    "연습용 장갑"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_SparringGloves.png"
+                  ]
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Fiddlesticks18",
+                  "name": "피들스틱",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 4,
+              "gameName": "카시원툴",
+              "tagLine": "717",
+              "level": 8,
+              "lastRound": "6-2",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "적응가",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "달빛",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png"
+                },
+                {
+                  "name": "원시",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Ixtal.png"
+                },
+                {
+                  "name": "속사포",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Rapidfire.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "부식",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Caustic.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Aphelios",
+                  "name": "아펠리오스",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+                  "items": [
+                    "죽음의 검",
+                    "구인수의 격노검",
+                    "거인 학살자"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png"
+                  ]
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "가고일 돌갑옷",
+                    "정령의 형상"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png"
+                  ]
+                },
+                {
+                  "id": "DA_Nidalee18_AP",
+                  "name": "니달리",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
+                  "items": [
+                    "스테락의 도전",
+                    "무한의 대검",
+                    "쇼진의 창"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png"
+                  ]
+                },
+                {
+                  "id": "DA_KogMaw18_AD",
+                  "name": "코그모",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+                  "items": [
+                    "붉은 덩굴정령"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Diana",
+                  "name": "다이애나",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Vi18",
+                  "name": "바이",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Varus",
+                  "name": "바루스",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [
+                    "수호자의 맹세",
+                    "수호자의 맹세",
+                    "용의 발톱"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_DragonsClaw.png"
+                  ]
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 5,
+              "gameName": "백승민",
+              "tagLine": "agent",
+              "level": 7,
+              "lastRound": "6-1",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "주문술사",
+                  "tier": 2,
+                  "count": 4,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+                },
+                {
+                  "name": "나무정령",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png"
+                },
+                {
+                  "name": "검은 가시",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGod.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "치명적인 꽃",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Veigar",
+                  "name": "베이가",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+                  "items": [
+                    "보석 건틀릿",
+                    "루덴의 폭풍",
+                    "새벽심장"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_LudensTempest.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_Dawncore.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Alistar",
+                  "name": "알리스타",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
+                  "items": [
+                    "스테락의 도전",
+                    "크라운가드",
+                    "이온 충격기"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_IonicSpark.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ornn",
+                  "name": "오른",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+                  "items": [
+                    "음전자 망토",
+                    "폭발 물약"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_NegatronCloak.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlastPotion18.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_RekSai",
+                  "name": "렉사이",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
+                  "items": [
+                    "크라운가드"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_LeBlanc",
+                  "name": "르블랑",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Cassiopeia",
+                  "name": "카시오페아",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
+                  "items": [
+                    "쇼진의 창",
+                    "거인 학살자",
+                    "보석 건틀릿"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png"
+                  ]
+                },
+                {
+                  "id": "DA_Fiddlesticks18",
+                  "name": "피들스틱",
+                  "tier": 1,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+                  "items": [
+                    "모렐로노미콘"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Morellonomicon.png"
+                  ]
+                }
+              ],
+              "isUser": true
+            },
+            {
+              "placement": 6,
+              "gameName": "난잘하는데",
+              "tagLine": "팀이못함",
+              "level": 8,
+              "lastRound": "5-3",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "협곡야수",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "검은 가시",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGod.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "적응가",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png"
+                },
+                {
+                  "name": "사냥꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Demacia.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "원시",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Ixtal.png"
+                },
+                {
+                  "name": "거석",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Monolith.TFT_Set18.png"
+                },
+                {
+                  "name": "부식",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Caustic.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Malphite",
+                  "name": "말파이트",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
+                  "items": [
+                    "워모그의 갑옷",
+                    "가고일 돌갑옷",
+                    "정령의 형상"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sivir",
+                  "name": "시비르",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
+                  "items": [
+                    "황금 징수의 총",
+                    "죽음의 검",
+                    "쇼진의 창"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_GoldCollector.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png"
+                  ]
+                },
+                {
+                  "id": "DA_Nidalee18_AP",
+                  "name": "니달리",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
+                  "items": [
+                    "쇼진의 창",
+                    "밤의 끝자락"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_EdgeOfNight.png"
+                  ]
+                },
+                {
+                  "id": "DA_KogMaw18_AD",
+                  "name": "코그모",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+                  "items": [
+                    "구인수의 격노검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [
+                    "음전자 망토"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_NegatronCloak.png"
+                  ]
+                },
+                {
+                  "id": "DA_Cinderling18",
+                  "name": "불타는 묘목",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_cinderling/tft18_cinderling_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Krug18",
+                  "name": "돌거북",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_RekSai",
+                  "name": "렉사이",
+                  "tier": 1,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 7,
+              "gameName": "SNU Challenger",
+              "tagLine": "KR1",
+              "level": 6,
+              "lastRound": "5-2",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "속사포",
+                  "tier": 2,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Rapidfire.TFT_Set18.png"
+                },
+                {
+                  "name": "햇빛",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Solar.TFT_Set18.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Shen",
+                  "name": "쉔",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "가고일 돌갑옷",
+                    "워모그의 갑옷"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Kayle",
+                  "name": "케일",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
+                  "items": [
+                    "구인수의 격노검",
+                    "승천의 부적",
+                    "라바돈의 죽음모자"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Item_Artifact_TalismanOfAscension.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RabadonsDeathcap.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sejuani",
+                  "name": "세주아니",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Varus",
+                  "name": "바루스",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Leona",
+                  "name": "레오나",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Aphelios",
+                  "name": "아펠리오스",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+                  "items": [
+                    "구인수의 격노검",
+                    "무한의 대검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png"
+                  ]
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 8,
+              "gameName": "궁디궁딩",
+              "tagLine": "KR1",
+              "level": 6,
+              "lastRound": "5-2",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "처형자",
+                  "tier": 2,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png"
+                },
+                {
+                  "name": "개화",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Blossom.TFT_Set18.png"
+                },
+                {
+                  "name": "주문술사",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Yunara",
+                  "name": "유나라",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
+                  "items": [
+                    "붉은 덩굴정령",
+                    "쇼진의 창",
+                    "죽음의 검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_Karma18",
+                  "name": "카르마",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
+                  "items": [
+                    "처형자 상징",
+                    "마법공학 총검",
+                    "적응형 투구"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemExecutioner.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_HextechGunblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_AdaptiveHelm.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Yorick",
+                  "name": "요릭",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+                  "items": [
+                    "워모그의 갑옷",
+                    "가고일 돌갑옷",
+                    "거물의갑옷"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_MogulsMail.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_LeBlanc",
+                  "name": "르블랑",
+                  "tier": 3,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
+                  "items": [
+                    "음전자 망토"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_NegatronCloak.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sejuani",
+                  "name": "세주아니",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
+                  "items": [
+                    "정령의 형상"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ezreal",
+                  "name": "이즈리얼",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            }
+          ],
+          "contestedInfo": {
+            "isContested": true,
+            "contestScore": 37,
+            "level": "보통",
+            "opponentCount": 5,
+            "contestedUnits": [
+              "피들스틱",
+              "르블랑",
+              "오른",
+              "렉사이"
+            ],
+            "contestedTraits": [
+              "주문술사",
+              "검은 가시",
+              "난동꾼"
+            ],
+            "unitDetails": [
+              {
+                "unitId": "DA_Fiddlesticks18",
+                "name": "피들스틱",
+                "cost": 3,
+                "myTier": 1,
+                "opponentCount": 2,
+                "weight": 5.5
+              },
+              {
+                "unitId": "DA_18_LeBlanc",
+                "name": "르블랑",
+                "cost": 2,
+                "myTier": 3,
+                "opponentCount": 1,
+                "weight": 1
+              },
+              {
+                "unitId": "DA_18_Ornn",
+                "name": "오른",
+                "cost": 1,
+                "myTier": 3,
+                "opponentCount": 1,
+                "weight": 0.5
+              },
+              {
+                "unitId": "DA_18_RekSai",
+                "name": "렉사이",
+                "cost": 1,
+                "myTier": 3,
+                "opponentCount": 1,
+                "weight": 0.5
+              }
+            ],
+            "traitDetails": [
+              {
+                "name": "주문술사",
+                "myTier": 2,
+                "myCount": 4,
+                "opponentCount": 2,
+                "weight": 4
+              },
+              {
+                "name": "검은 가시",
+                "myTier": 1,
+                "myCount": 2,
+                "opponentCount": 2,
+                "weight": 2
+              },
+              {
+                "name": "난동꾼",
+                "myTier": 1,
+                "myCount": 2,
+                "opponentCount": 1,
+                "weight": 1
+              }
+            ],
+            "summary": "경합 강도 37/100 (보통) · 로비 5명이 내 덱과 겹쳤습니다. 핵심 기물 경합: 피들스틱(3코·나 1성·상대 2명), 르블랑(2코·나 3성·상대 1명), 오른(1코·나 3성·상대 1명). 시너지 경합: 주문술사(2단계·상대 2명), 검은 가시(1단계·상대 2명), 난동꾼(1단계·상대 1명)."
+          },
+          "augmentAnalysis": {
+            "hasMeta": false,
+            "sample": false,
+            "patch": "set18",
+            "source": "riot-ladder",
+            "baselineAvgPlacement": 4.5,
+            "details": []
+          }
+        },
+        {
+          "matchId": "KR_8414938511",
+          "setNumber": 18,
+          "gameDatetime": 1791655905347,
+          "timeAgo": "6일 전",
+          "gameLengthStr": "30분 45초",
+          "queueType": "랭크 게임",
+          "placement": 4,
+          "level": 9,
+          "lastRound": "5-6",
+          "goldLeft": 3,
+          "augments": [],
+          "traits": [
+            {
+              "name": "기원자",
+              "tier": 3,
+              "count": 4,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+            },
+            {
+              "name": "개화",
+              "tier": 1,
+              "count": 3,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Blossom.TFT_Set18.png"
+            },
+            {
+              "name": "협곡야수",
+              "tier": 1,
+              "count": 3,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+            },
+            {
+              "name": "난동꾼",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+            },
+            {
+              "name": "주문술사",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+            },
+            {
+              "name": "선봉대",
+              "tier": 1,
+              "count": 2,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+            },
+            {
+              "name": "부식",
+              "tier": 1,
+              "count": 1,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Caustic.TFT_Set18.png"
+            },
+            {
+              "name": "에메랄드",
+              "tier": 1,
+              "count": 1,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+            },
+            {
+              "name": "조율",
+              "tier": 1,
+              "count": 1,
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Attuned.TFT_Set18.png"
+            }
+          ],
+          "units": [
+            {
+              "id": "DA_18_Sett",
+              "name": "세트",
+              "tier": 2,
+              "rarity": 4,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
+              "items": [
+                "가고일 돌갑옷",
+                "거인의 결의",
+                "가고일 돌갑옷"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_TitansResolve.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png"
+              ]
+            },
+            {
+              "id": "DA_18_Ahri",
+              "name": "아리",
+              "tier": 2,
+              "rarity": 4,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
+              "items": [
+                "보석 건틀릿",
+                "타격대의 철퇴",
+                "기원자 상징"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_StrikersFlail.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemInvoker.png"
+              ]
+            },
+            {
+              "id": "DA_18_Alune",
+              "name": "알룬",
+              "tier": 2,
+              "rarity": 5,
+              "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+              "items": [
+                "푸른 파수꾼",
+                "보석 건틀릿",
+                "내셔의 이빨"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_NashorsTooth.png"
+              ]
+            },
+            {
+              "id": "DA_18_Ashe",
+              "name": "애쉬",
+              "tier": 2,
+              "rarity": 5,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
+              "items": [
+                "붉은 덩굴정령",
+                "붉은 덩굴정령",
+                "푸른 파수꾼"
+              ],
+              "itemIcons": [
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png"
+              ]
+            },
+            {
+              "id": "DA_KogMaw18_AD",
+              "name": "코그모",
+              "tier": 2,
+              "rarity": 3,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+              "items": [],
+              "itemIcons": []
+            },
+            {
+              "id": "DA_18_Sentry",
+              "name": "조약돌",
+              "tier": 1,
+              "rarity": 1,
+              "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+              "items": [],
+              "itemIcons": []
+            },
+            {
+              "id": "DA_Krug18",
+              "name": "돌거북",
+              "tier": 1,
+              "rarity": 3,
+              "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+              "items": [],
+              "itemIcons": []
+            },
+            {
+              "id": "DA_Sentinel18",
+              "name": "감시자",
+              "tier": 1,
+              "rarity": 4,
+              "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+              "items": [],
+              "itemIcons": []
+            },
+            {
+              "id": "DA_Taric18",
+              "name": "타릭",
+              "tier": 1,
+              "rarity": 5,
+              "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+              "items": [],
+              "itemIcons": []
+            }
+          ],
+          "lobbyParticipants": [
+            {
+              "placement": 1,
+              "gameName": "건어물 대통령",
+              "tagLine": "KR1",
+              "level": 10,
+              "lastRound": "6-5",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "협곡야수",
+                  "tier": 3,
+                  "count": 7,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "처형자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png"
+                },
+                {
+                  "name": "약탈자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Ravager.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "최상위 포식자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ApexPredator.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Sentry",
+                  "name": "조약돌",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+                  "items": [
+                    "푸른 파수꾼",
+                    "공허의 지팡이",
+                    "처형자 상징"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_VoidStaff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemExecutioner.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "가고일 돌갑옷",
+                    "워모그의 갑옷"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_ElderDragon",
+                  "name": "장로 드래곤",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+                  "items": [
+                    "타격대의 철퇴",
+                    "무한의 대검",
+                    "최후의 속삭임"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_StrikersFlail.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_LastWhisper.png"
+                  ]
+                },
+                {
+                  "id": "DA_Brambleback18",
+                  "name": "덩굴정령",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
+                  "items": [
+                    "요정 상징"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemFae.png"
+                  ]
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [
+                    "태양불꽃 망토"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SunfireCape.png"
+                  ]
+                },
+                {
+                  "id": "DA_Murkwolf18",
+                  "name": "어스름늑대",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Krug18",
+                  "name": "돌거북",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_GnarSmall",
+                  "name": "나르",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Kennen",
+                  "name": "케넨",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 2,
+              "gameName": "Stily",
+              "tagLine": "KR1",
+              "level": 9,
+              "lastRound": "6-5",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "협곡야수",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "사냥꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Demacia.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "자연의 아버지",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Greenfather.TFT_Set18.png"
+                },
+                {
+                  "name": "고목",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGrowth.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "최상위 포식자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ApexPredator.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Ashe",
+                  "name": "애쉬",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
+                  "items": [
+                    "지옥불 상징",
+                    "붉은 덩굴정령",
+                    "쇼진의 창"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemInferno.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_ElderDragon",
+                  "name": "장로 드래곤",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+                  "items": [
+                    "피바라기",
+                    "스테락의 도전",
+                    "죽음의 검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Bloodthirster.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Maokai",
+                  "name": "마오카이",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+                  "items": [
+                    "워모그의 갑옷",
+                    "가고일 돌갑옷",
+                    "수호자의 맹세"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_WarmogsArmor.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sivir",
+                  "name": "시비르",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
+                  "items": [
+                    "최후의 속삭임"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_LastWhisper.png"
+                  ]
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [
+                    "굳건한 심장"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteadfastHeart.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ivern",
+                  "name": "아이번",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+                  "items": [
+                    "적응형 투구"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_AdaptiveHelm.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 3,
+              "gameName": "Nodme",
+              "tagLine": "111",
+              "level": 8,
+              "lastRound": "6-1",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "처형자",
+                  "tier": 3,
+                  "count": 4,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png"
+                },
+                {
+                  "name": "치명적인 꽃",
+                  "tier": 2,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png"
+                },
+                {
+                  "name": "나무정령",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png"
+                },
+                {
+                  "name": "엄호대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Defender.TFT_Set18.png"
+                },
+                {
+                  "name": "달빛",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png"
+                },
+                {
+                  "name": "약탈자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Ravager.TFT_Set18.png"
+                },
+                {
+                  "name": "주문술사",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "라이벌",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Heroic.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_KhaZix",
+                  "name": "카직스",
+                  "tier": 3,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
+                  "items": [
+                    "정의의 손길",
+                    "라바돈의 죽음모자",
+                    "내셔의 이빨"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_HandOfJustice.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RabadonsDeathcap.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_NashorsTooth.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Diana",
+                  "name": "다이애나",
+                  "tier": 3,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+                  "items": [
+                    "처형자 상징",
+                    "이온 충격기",
+                    "피바라기"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemExecutioner.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_IonicSpark.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Bloodthirster.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Hecarim",
+                  "name": "헤카림",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "크라운가드",
+                    "태양불꽃 망토"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SunfireCape.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ezreal",
+                  "name": "이즈리얼",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
+                  "items": [
+                    "연습용 장갑",
+                    "죽음의 검",
+                    "푸른 파수꾼"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_SparringGloves.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ornn",
+                  "name": "오른",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Fiddlesticks18",
+                  "name": "피들스틱",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Soraka",
+                  "name": "소라카",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Aphelios",
+                  "name": "아펠리오스",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 4,
+              "gameName": "백승민",
+              "tagLine": "agent",
+              "level": 9,
+              "lastRound": "5-6",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "기원자",
+                  "tier": 3,
+                  "count": 4,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "개화",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Blossom.TFT_Set18.png"
+                },
+                {
+                  "name": "협곡야수",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "주문술사",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "부식",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Caustic.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "조율",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Attuned.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Sett",
+                  "name": "세트",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
+                  "items": [
+                    "가고일 돌갑옷",
+                    "거인의 결의",
+                    "가고일 돌갑옷"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_TitansResolve.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ahri",
+                  "name": "아리",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
+                  "items": [
+                    "보석 건틀릿",
+                    "타격대의 철퇴",
+                    "기원자 상징"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_StrikersFlail.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemInvoker.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Alune",
+                  "name": "알룬",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+                  "items": [
+                    "푸른 파수꾼",
+                    "보석 건틀릿",
+                    "내셔의 이빨"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_JeweledGauntlet.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_NashorsTooth.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ashe",
+                  "name": "애쉬",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
+                  "items": [
+                    "붉은 덩굴정령",
+                    "붉은 덩굴정령",
+                    "푸른 파수꾼"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png"
+                  ]
+                },
+                {
+                  "id": "DA_KogMaw18_AD",
+                  "name": "코그모",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Sentry",
+                  "name": "조약돌",
+                  "tier": 1,
+                  "rarity": 1,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Krug18",
+                  "name": "돌거북",
+                  "tier": 1,
+                  "rarity": 3,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": true
+            },
+            {
+              "placement": 5,
+              "gameName": "코끼리비스킷",
+              "tagLine": "KR1",
+              "level": 9,
+              "lastRound": "5-5",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "적응가",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "자연의 아버지",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Greenfather.TFT_Set18.png"
+                },
+                {
+                  "name": "고목",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGrowth.TFT_Set18.png"
+                },
+                {
+                  "name": "부식",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Caustic.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "현상금 추적자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_BountySeeker.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_Nidalee18_AP",
+                  "name": "니달리",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
+                  "items": [
+                    "은빛 여명",
+                    "스테락의 도전",
+                    "푸른 파수꾼"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Artifact_SilvermereDawn.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SteraksGage.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png"
+                  ]
+                },
+                {
+                  "id": "DA_Draven18",
+                  "name": "드레이븐",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
+                  "items": [
+                    "거인 학살자",
+                    "구인수의 격노검",
+                    "크라켄의 분노"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GiantSlayer.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_KrakensFury.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Kennen",
+                  "name": "케넨",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+                  "items": [
+                    "밤의 끝자락"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_EdgeOfNight.png"
+                  ]
+                },
+                {
+                  "id": "DA_KogMaw18_AD",
+                  "name": "코그모",
+                  "tier": 2,
+                  "rarity": 3,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Maokai",
+                  "name": "마오카이",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+                  "items": [
+                    "저녁갑주",
+                    "크라운가드",
+                    "크라운가드"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Evenshroud.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Crownguard.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Ivern",
+                  "name": "아이번",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 6,
+              "gameName": "구름위에무지개",
+              "tagLine": "KR1",
+              "level": 9,
+              "lastRound": "5-3",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "협곡야수",
+                  "tier": 3,
+                  "count": 7,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "사냥꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Demacia.png"
+                },
+                {
+                  "name": "기원자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Invoker.TFT_Set18.png"
+                },
+                {
+                  "name": "선봉대",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png"
+                },
+                {
+                  "name": "최상위 포식자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ApexPredator.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_Krug18",
+                  "name": "돌거북",
+                  "tier": 3,
+                  "rarity": 3,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+                  "items": [
+                    "선봉대 상징",
+                    "가고일 돌갑옷"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_18_EmblemVanguard.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GargoyleStoneplate.png"
+                  ]
+                },
+                {
+                  "id": "DA_Cinderling18",
+                  "name": "불타는 묘목",
+                  "tier": 3,
+                  "rarity": 1,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_cinderling/tft18_cinderling_square.png",
+                  "items": [
+                    "쇼진의 창"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpearOfShojin.png"
+                  ]
+                },
+                {
+                  "id": "DA_Sentinel18",
+                  "name": "감시자",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+                  "items": [
+                    "수호자의 맹세",
+                    "정령의 형상"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_ProtectorsVow.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_SpiritVisage.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Sentry",
+                  "name": "조약돌",
+                  "tier": 2,
+                  "rarity": 1,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Scuttlecrab18",
+                  "name": "바위 게",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Sett",
+                  "name": "세트",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_ElderDragon",
+                  "name": "장로 드래곤",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+                  "items": [
+                    "무한의 대검",
+                    "죽음의 검",
+                    "최후의 속삭임"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_LastWhisper.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ashe",
+                  "name": "애쉬",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 7,
+              "gameName": "낙수희수예슬",
+              "tagLine": "KR1",
+              "level": 10,
+              "lastRound": "5-3",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "나무정령",
+                  "tier": 2,
+                  "count": 5,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png"
+                },
+                {
+                  "name": "난동꾼",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Brawler.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "처형자",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "자연의 아버지",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Greenfather.TFT_Set18.png"
+                },
+                {
+                  "name": "화신",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Avatar.TFT_Set18.png"
+                },
+                {
+                  "name": "고목",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGrowth.TFT_Set18.png"
+                },
+                {
+                  "name": "최상위 포식자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ApexPredator.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_Ezreal",
+                  "name": "이즈리얼",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
+                  "items": [
+                    "붉은 덩굴정령",
+                    "구인수의 격노검",
+                    "크라켄의 분노"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_RedBuff.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_KrakensFury.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Alistar",
+                  "name": "알리스타",
+                  "tier": 2,
+                  "rarity": 2,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 2,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_ElderDragon",
+                  "name": "장로 드래곤",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+                  "items": [
+                    "무한의 대검",
+                    "타격대의 철퇴",
+                    "죽음의 검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_StrikersFlail.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Deathblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_GnarSmall",
+                  "name": "나르",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
+                  "items": [
+                    "거인의 결의"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_TitansResolve.png"
+                  ]
+                },
+                {
+                  "id": "DA_Lux18_Base",
+                  "name": "럭스",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lux.png",
+                  "items": [
+                    "푸른 파수꾼"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_BlueBuff.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Maokai",
+                  "name": "마오카이",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Ivern",
+                  "name": "아이번",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Kennen",
+                  "name": "케넨",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            },
+            {
+              "placement": 8,
+              "gameName": "D I O R",
+              "tagLine": "재엽1",
+              "level": 9,
+              "lastRound": "4-6",
+              "damageToPlayers": 0,
+              "traits": [
+                {
+                  "name": "협곡야수",
+                  "tier": 1,
+                  "count": 3,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png"
+                },
+                {
+                  "name": "지옥불",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png"
+                },
+                {
+                  "name": "전쟁기계",
+                  "tier": 1,
+                  "count": 2,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png"
+                },
+                {
+                  "name": "자연의 아버지",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_Greenfather.TFT_Set18.png"
+                },
+                {
+                  "name": "고목",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_OldGrowth.TFT_Set18.png"
+                },
+                {
+                  "name": "에메랄드",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_16_Targon.png"
+                },
+                {
+                  "name": "현상금 추적자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_BountySeeker.TFT_Set18.png"
+                },
+                {
+                  "name": "최상위 포식자",
+                  "tier": 1,
+                  "count": 1,
+                  "iconUrl": "https://ddragon.leagueoflegends.com/cdn/tft-16.17.1/img/tft-trait/Trait_Icon_18_ApexPredator.TFT_Set18.png"
+                }
+              ],
+              "units": [
+                {
+                  "id": "DA_18_ElderDragon",
+                  "name": "장로 드래곤",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+                  "items": [
+                    "최후의 속삭임",
+                    "무한의 대검",
+                    "모렐로노미콘"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_LastWhisper.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_InfinityEdge.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Morellonomicon.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Maokai",
+                  "name": "마오카이",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+                  "items": [
+                    "적응형 투구",
+                    "거인의 허리띠"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_AdaptiveHelm.png",
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_Component_GiantsBelt.png"
+                  ]
+                },
+                {
+                  "id": "DA_18_Ivern",
+                  "name": "아이번",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Taric18",
+                  "name": "타릭",
+                  "tier": 2,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Draven18",
+                  "name": "드레이븐",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
+                  "items": [
+                    "구인수의 격노검"
+                  ],
+                  "itemIcons": [
+                    "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/DA_GuinsoosRageblade.png"
+                  ]
+                },
+                {
+                  "id": "DA_Amumu18",
+                  "name": "아무무",
+                  "tier": 1,
+                  "rarity": 4,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_Murkwolf18",
+                  "name": "어스름늑대",
+                  "tier": 1,
+                  "rarity": 2,
+                  "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
+                  "items": [],
+                  "itemIcons": []
+                },
+                {
+                  "id": "DA_18_Kennen",
+                  "name": "케넨",
+                  "tier": 1,
+                  "rarity": 5,
+                  "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+                  "items": [],
+                  "itemIcons": []
+                }
+              ],
+              "isUser": false
+            }
+          ],
+          "contestedInfo": {
+            "isContested": true,
+            "contestScore": 54,
+            "level": "경합",
+            "opponentCount": 6,
+            "contestedUnits": [
+              "애쉬",
+              "세트",
+              "코그모"
+            ],
+            "contestedTraits": [
+              "기원자",
+              "협곡야수",
+              "난동꾼"
+            ],
+            "unitDetails": [
+              {
+                "unitId": "DA_18_Ashe",
+                "name": "애쉬",
+                "cost": 5,
+                "myTier": 2,
+                "opponentCount": 2,
+                "weight": 6.5
+              },
+              {
+                "unitId": "DA_18_Sett",
+                "name": "세트",
+                "cost": 4,
+                "myTier": 2,
+                "opponentCount": 1,
+                "weight": 4
+              },
+              {
+                "unitId": "DA_KogMaw18_AD",
+                "name": "코그모",
+                "cost": 3,
+                "myTier": 2,
+                "opponentCount": 1,
+                "weight": 3
+              }
+            ],
+            "traitDetails": [
+              {
+                "name": "기원자",
+                "myTier": 3,
+                "myCount": 4,
+                "opponentCount": 3,
+                "weight": 9
+              },
+              {
+                "name": "협곡야수",
+                "myTier": 1,
+                "myCount": 3,
+                "opponentCount": 4,
+                "weight": 4
+              },
+              {
+                "name": "난동꾼",
+                "myTier": 1,
+                "myCount": 2,
+                "opponentCount": 3,
+                "weight": 3
+              }
+            ],
+            "summary": "경합 강도 54/100 (경합) · 로비 6명이 내 덱과 겹쳤습니다. 핵심 기물 경합: 애쉬(5코·나 2성·상대 2명), 세트(4코·나 2성·상대 1명), 코그모(3코·나 2성·상대 1명). 시너지 경합: 기원자(3단계·상대 3명), 협곡야수(1단계·상대 4명), 난동꾼(1단계·상대 3명)."
+          },
+          "augmentAnalysis": {
+            "hasMeta": false,
+            "sample": false,
+            "patch": "set18",
+            "source": "riot-ladder",
+            "baselineAvgPlacement": 4.5,
+            "details": []
+          }
+        }
+      ]
+    }
+  ]
+}

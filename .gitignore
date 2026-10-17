@@ -22,6 +22,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# dev server logs
+dev.log
+dev.err.log
+collect.log
+collect.err.log
+ladder.log
+ladder.err.log
+eval.log
+eval.err.log
+
 # local env files
 .env*.local
 .env
@@ -32,3 +42,9 @@ next-env.d.ts
 
 # tuning data outputs (실측 수집 데이터; 샘플은 커밋함)
 /data/contestSamples.json
+
+# eval harness output (생성물)
+/data/evalReport.json
+
+# 수집 스냅샷 아카이브 (로컬 보관)
+/data/metaHistory/

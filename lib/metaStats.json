@@ -1,26 +1,6344 @@
 {
-  "version": "1",
-  "patch": "16.17",
-  "source": "sample-seed",
-  "sample": true,
-  "generatedAt": "2026-10-13T00:00:00.000Z",
+  "version": "2",
+  "patch": "set18",
+  "source": "riot-ladder",
+  "sample": false,
+  "generatedAt": "2026-10-17T10:51:25.582Z",
   "baselineAvgPlacement": 4.5,
-  "_comment": "⚠️ 샘플(검증 전) 데이터입니다. 실제 통계는 scripts/buildMetaStats.js 로 Riot 매치 표본을 집계해 생성하세요. sample=true 인 동안 UI/LLM 모두 '단정 금지'로 처리됩니다.",
-  "augments": {
-    "보석 연꽃 II": { "avgPlacement": 3.95, "top4Rate": 0.61, "pickRate": 0.18, "sampleSize": 15400 },
-    "아이템 숙련": { "avgPlacement": 4.35, "top4Rate": 0.49, "pickRate": 0.12, "sampleSize": 9800 },
-    "판도라의 아이템": { "avgPlacement": 4.12, "top4Rate": 0.57, "pickRate": 0.15, "sampleSize": 12300 },
-    "사이버네틱 통신": { "avgPlacement": 4.05, "top4Rate": 0.58, "pickRate": 0.14, "sampleSize": 10100 },
-    "골드 티켓": { "avgPlacement": 4.1, "top4Rate": 0.55, "pickRate": 0.11, "sampleSize": 8700 },
-    "최후의 저항": { "avgPlacement": 4.55, "top4Rate": 0.44, "pickRate": 0.1, "sampleSize": 7200 },
-    "쇼핑몰 죽돌이": { "avgPlacement": 4.6, "top4Rate": 0.43, "pickRate": 0.09, "sampleSize": 6400 },
-    "이중 공중보급": { "avgPlacement": 4.3, "top4Rate": 0.51, "pickRate": 0.13, "sampleSize": 9100 },
-    "돈벼락": { "avgPlacement": 4.75, "top4Rate": 0.4, "pickRate": 0.08, "sampleSize": 5600 },
-    "보물 사냥꾼": { "avgPlacement": 4.25, "top4Rate": 0.52, "pickRate": 0.12, "sampleSize": 8300 },
-    "초월": { "avgPlacement": 3.85, "top4Rate": 0.63, "pickRate": 0.16, "sampleSize": 11200 },
-    "휴대용 대장간": { "avgPlacement": 4.4, "top4Rate": 0.48, "pickRate": 0.1, "sampleSize": 7700 },
-    "신병": { "avgPlacement": 4.62, "top4Rate": 0.43, "pickRate": 0.09, "sampleSize": 6100 },
-    "살인술사": { "avgPlacement": 4.15, "top4Rate": 0.55, "pickRate": 0.13, "sampleSize": 8900 },
-    "적응형 방어": { "avgPlacement": 4.28, "top4Rate": 0.51, "pickRate": 0.12, "sampleSize": 8000 }
-  }
+  "augments": {},
+  "champions": {
+    "Camille": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.535,
+      "sampleSize": 99,
+      "avgTier": 2.77,
+      "threeStarRate": 0.798,
+      "prevRank": 30,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Lillia": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.481,
+      "sampleSize": 351,
+      "avgTier": 1.74,
+      "threeStarRate": 0,
+      "prevRank": 38,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Fiddlesticks": {
+      "avgPlacement": 4.48,
+      "top4Rate": 0.499,
+      "sampleSize": 896,
+      "avgTier": 1.93,
+      "threeStarRate": 0.098,
+      "prevRank": 32,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Diana": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.532,
+      "sampleSize": 763,
+      "avgTier": 1.93,
+      "threeStarRate": 0.1,
+      "prevRank": 24,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Ivern": {
+      "avgPlacement": 3.76,
+      "top4Rate": 0.619,
+      "sampleSize": 451,
+      "avgTier": 1.42,
+      "threeStarRate": 0,
+      "prevRank": 4,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Sentinel": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.528,
+      "sampleSize": 1257,
+      "avgTier": 1.61,
+      "threeStarRate": 0.001,
+      "prevRank": 21,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Hecarim": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.512,
+      "sampleSize": 619,
+      "avgTier": 2.04,
+      "threeStarRate": 0.179,
+      "prevRank": 27,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Morgana": {
+      "avgPlacement": 4.52,
+      "top4Rate": 0.504,
+      "sampleSize": 407,
+      "avgTier": 1.76,
+      "threeStarRate": 0.01,
+      "prevRank": 35,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Taric": {
+      "avgPlacement": 3.94,
+      "top4Rate": 0.589,
+      "sampleSize": 706,
+      "avgTier": 1.37,
+      "threeStarRate": 0,
+      "prevRank": 7,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Alune": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.666,
+      "sampleSize": 437,
+      "avgTier": 1.29,
+      "threeStarRate": 0,
+      "prevRank": 2,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Varus": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.489,
+      "sampleSize": 362,
+      "avgTier": 2,
+      "threeStarRate": 0.293,
+      "prevRank": 52,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Akali_AD": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.546,
+      "sampleSize": 130,
+      "avgTier": 2.48,
+      "threeStarRate": 0.631,
+      "prevRank": 23,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Leona": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.499,
+      "sampleSize": 365,
+      "avgTier": 2.45,
+      "threeStarRate": 0.553,
+      "prevRank": 45,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Ornn": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.531,
+      "sampleSize": 697,
+      "avgTier": 2.29,
+      "threeStarRate": 0.418,
+      "prevRank": 28,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Sejuani": {
+      "avgPlacement": 4.81,
+      "top4Rate": 0.454,
+      "sampleSize": 427,
+      "avgTier": 2.27,
+      "threeStarRate": 0.412,
+      "prevRank": 59,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Kayle": {
+      "avgPlacement": 4.51,
+      "top4Rate": 0.509,
+      "sampleSize": 322,
+      "avgTier": 2.01,
+      "threeStarRate": 0.276,
+      "prevRank": 34,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Maokai": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.554,
+      "sampleSize": 415,
+      "avgTier": 1.51,
+      "threeStarRate": 0,
+      "prevRank": 16,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Yorick": {
+      "avgPlacement": 4.84,
+      "top4Rate": 0.434,
+      "sampleSize": 608,
+      "avgTier": 2.05,
+      "threeStarRate": 0.252,
+      "prevRank": 60,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Azir": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.46,
+      "sampleSize": 524,
+      "avgTier": 2.04,
+      "threeStarRate": 0.248,
+      "prevRank": 50,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Soraka": {
+      "avgPlacement": 4.23,
+      "top4Rate": 0.536,
+      "sampleSize": 603,
+      "avgTier": 1.63,
+      "threeStarRate": 0,
+      "prevRank": 20,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Zyra": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.467,
+      "sampleSize": 460,
+      "avgTier": 1.72,
+      "threeStarRate": 0.002,
+      "prevRank": 39,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Malphite": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.458,
+      "sampleSize": 238,
+      "avgTier": 1.86,
+      "threeStarRate": 0,
+      "prevRank": 46,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Amumu": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.496,
+      "sampleSize": 865,
+      "avgTier": 1.7,
+      "threeStarRate": 0,
+      "prevRank": 33,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Aphelios": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.582,
+      "sampleSize": 502,
+      "avgTier": 1.75,
+      "threeStarRate": 0.006,
+      "prevRank": 17,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Vi": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.461,
+      "sampleSize": 571,
+      "avgTier": 2.01,
+      "threeStarRate": 0.138,
+      "prevRank": 57,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Nidalee18_AP": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.496,
+      "sampleSize": 391,
+      "avgTier": 1.74,
+      "threeStarRate": 0,
+      "prevRank": 53,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "KogMaw18_AD": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.49,
+      "sampleSize": 394,
+      "avgTier": 1.81,
+      "threeStarRate": 0.076,
+      "prevRank": 51,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Veigar": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.482,
+      "sampleSize": 425,
+      "avgTier": 2.27,
+      "threeStarRate": 0.433,
+      "prevRank": 41,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "LeBlanc": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.466,
+      "sampleSize": 521,
+      "avgTier": 2.37,
+      "threeStarRate": 0.476,
+      "prevRank": 55,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Alistar": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.483,
+      "sampleSize": 534,
+      "avgTier": 2.1,
+      "threeStarRate": 0.26,
+      "prevRank": 44,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "RekSai": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.515,
+      "sampleSize": 301,
+      "avgTier": 2.45,
+      "threeStarRate": 0.528,
+      "prevRank": 43,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Cassiopeia": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.491,
+      "sampleSize": 267,
+      "avgTier": 2.14,
+      "threeStarRate": 0.281,
+      "prevRank": 48,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Cinderling": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.505,
+      "sampleSize": 220,
+      "avgTier": 2.31,
+      "threeStarRate": 0.477,
+      "prevRank": 25,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Krug": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.556,
+      "sampleSize": 743,
+      "avgTier": 2.11,
+      "threeStarRate": 0.222,
+      "prevRank": 19,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Sivir": {
+      "avgPlacement": 4.68,
+      "top4Rate": 0.464,
+      "sampleSize": 211,
+      "avgTier": 1.74,
+      "threeStarRate": 0,
+      "prevRank": 54,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Shen": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.492,
+      "sampleSize": 183,
+      "avgTier": 2.05,
+      "threeStarRate": 0.191,
+      "prevRank": 42,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Yunara": {
+      "avgPlacement": 5.02,
+      "top4Rate": 0.412,
+      "sampleSize": 301,
+      "avgTier": 2.36,
+      "threeStarRate": 0.535,
+      "prevRank": 63,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Karma": {
+      "avgPlacement": 5.02,
+      "top4Rate": 0.415,
+      "sampleSize": 364,
+      "avgTier": 2.21,
+      "threeStarRate": 0.404,
+      "prevRank": 64,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Ezreal": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.567,
+      "sampleSize": 561,
+      "avgTier": 1.68,
+      "threeStarRate": 0.004,
+      "prevRank": 12,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Sentry": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.554,
+      "sampleSize": 554,
+      "avgTier": 2.16,
+      "threeStarRate": 0.357,
+      "prevRank": 18,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Murkwolf": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.548,
+      "sampleSize": 332,
+      "avgTier": 2.12,
+      "threeStarRate": 0.253,
+      "prevRank": 14,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Brambleback": {
+      "avgPlacement": 4.05,
+      "top4Rate": 0.59,
+      "sampleSize": 432,
+      "avgTier": 1.74,
+      "threeStarRate": 0.002,
+      "prevRank": 10,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "ElderDragon": {
+      "avgPlacement": 3.71,
+      "top4Rate": 0.638,
+      "sampleSize": 400,
+      "avgTier": 1.52,
+      "threeStarRate": 0,
+      "prevRank": 3,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Gnar": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.635,
+      "sampleSize": 564,
+      "avgTier": 1.35,
+      "threeStarRate": 0,
+      "prevRank": 5,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Kennen": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.594,
+      "sampleSize": 517,
+      "avgTier": 1.45,
+      "threeStarRate": 0,
+      "prevRank": 6,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Ashe": {
+      "avgPlacement": 4.04,
+      "top4Rate": 0.598,
+      "sampleSize": 219,
+      "avgTier": 1.46,
+      "threeStarRate": 0,
+      "prevRank": 9,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "KhaZix": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.577,
+      "sampleSize": 220,
+      "avgTier": 2.6,
+      "threeStarRate": 0.623,
+      "prevRank": 8,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Sett": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.525,
+      "sampleSize": 541,
+      "avgTier": 1.73,
+      "threeStarRate": 0.002,
+      "prevRank": 29,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Ahri": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.528,
+      "sampleSize": 417,
+      "avgTier": 1.83,
+      "threeStarRate": 0.007,
+      "prevRank": 31,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Draven": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.531,
+      "sampleSize": 211,
+      "avgTier": 1.66,
+      "threeStarRate": 0.005,
+      "prevRank": 15,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Scuttlecrab": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.519,
+      "sampleSize": 416,
+      "avgTier": 2.08,
+      "threeStarRate": 0.26,
+      "prevRank": 22,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Lux18_Base": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.673,
+      "sampleSize": 382,
+      "avgTier": 1.33,
+      "threeStarRate": 0,
+      "prevRank": 1,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Rammus": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.476,
+      "sampleSize": 292,
+      "avgTier": 2.5,
+      "threeStarRate": 0.541,
+      "prevRank": 36,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Teemo": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.487,
+      "sampleSize": 193,
+      "avgTier": 2.23,
+      "threeStarRate": 0.275,
+      "prevRank": 40,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Rakan": {
+      "avgPlacement": 4.78,
+      "top4Rate": 0.441,
+      "sampleSize": 392,
+      "avgTier": 1.8,
+      "threeStarRate": 0.151,
+      "prevRank": 58,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "CrimsonRaptor": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.594,
+      "sampleSize": 133,
+      "avgTier": 1.79,
+      "threeStarRate": 0.098,
+      "prevRank": 11,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "MasterYi_AD": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.5,
+      "sampleSize": 132,
+      "avgTier": 2.77,
+      "threeStarRate": 0.795,
+      "prevRank": 37,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Rengar": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.516,
+      "sampleSize": 188,
+      "avgTier": 2.7,
+      "threeStarRate": 0.718,
+      "prevRank": 26,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Elise": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.469,
+      "sampleSize": 177,
+      "avgTier": 2.45,
+      "threeStarRate": 0.565,
+      "prevRank": 56,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Tristana": {
+      "avgPlacement": 4.91,
+      "top4Rate": 0.433,
+      "sampleSize": 67,
+      "avgTier": 2.21,
+      "threeStarRate": 0.418,
+      "prevRank": 62,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Xayah": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.496,
+      "sampleSize": 244,
+      "avgTier": 2.08,
+      "threeStarRate": 0.262,
+      "prevRank": 47,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Warwick": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.517,
+      "sampleSize": 87,
+      "avgTier": 2.64,
+      "threeStarRate": 0.736,
+      "prevRank": 49,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Gromp18_AP": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.53,
+      "sampleSize": 134,
+      "avgTier": 2.14,
+      "threeStarRate": 0.328,
+      "prevRank": 13,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Kobuko": {
+      "avgPlacement": 4.84,
+      "top4Rate": 0.493,
+      "sampleSize": 67,
+      "avgTier": 1.85,
+      "threeStarRate": 0.164,
+      "prevRank": 61,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "Caitlyn": {
+      "avgPlacement": 6.35,
+      "top4Rate": 0.15,
+      "sampleSize": 20,
+      "avgTier": 2.2,
+      "threeStarRate": 0.5,
+      "prevRank": 65,
+      "rankDelta": 0,
+      "avgDelta": 0
+    }
+  },
+  "traits": {
+    "DA_18_Defender": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.514,
+      "sampleSize": 1153,
+      "avgTier": 1.09,
+      "prevRank": 22,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Greenfather": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.622,
+      "sampleSize": 444,
+      "avgTier": 1,
+      "prevRank": 4,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Invoker": {
+      "avgPlacement": 4.35,
+      "top4Rate": 0.529,
+      "sampleSize": 977,
+      "avgTier": 1.45,
+      "prevRank": 18,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Lunar": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.589,
+      "sampleSize": 604,
+      "avgTier": 1.41,
+      "prevRank": 7,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Spellweaver": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.522,
+      "sampleSize": 1307,
+      "avgTier": 1.18,
+      "prevRank": 21,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Vanguard": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.551,
+      "sampleSize": 1443,
+      "avgTier": 1.18,
+      "prevRank": 14,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_FloraFatalis18": {
+      "avgPlacement": 4.45,
+      "top4Rate": 0.501,
+      "sampleSize": 1021,
+      "avgTier": 1.55,
+      "prevRank": 24,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Emerald18": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.593,
+      "sampleSize": 700,
+      "avgTier": 1,
+      "prevRank": 6,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_AluneUniqueTrait18": {
+      "avgPlacement": 3.54,
+      "top4Rate": 0.664,
+      "sampleSize": 434,
+      "avgTier": 1,
+      "prevRank": 2,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Inferno": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.513,
+      "sampleSize": 760,
+      "avgTier": 1.24,
+      "prevRank": 23,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Maokai_UniqueTrait": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.547,
+      "sampleSize": 406,
+      "avgTier": 1,
+      "prevRank": 13,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Rapidfire": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.558,
+      "sampleSize": 625,
+      "avgTier": 1.34,
+      "prevRank": 16,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Slayer": {
+      "avgPlacement": 4.04,
+      "top4Rate": 0.589,
+      "sampleSize": 713,
+      "avgTier": 1.08,
+      "prevRank": 8,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Solar": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.532,
+      "sampleSize": 325,
+      "avgTier": 1,
+      "prevRank": 17,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Juggernaut18": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.5,
+      "sampleSize": 1423,
+      "avgTier": 1.17,
+      "prevRank": 25,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Battlemage": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.458,
+      "sampleSize": 236,
+      "avgTier": 1,
+      "prevRank": 30,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Blackthorn": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.482,
+      "sampleSize": 657,
+      "avgTier": 1.27,
+      "prevRank": 29,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Executioner": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.51,
+      "sampleSize": 931,
+      "avgTier": 1.73,
+      "prevRank": 19,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Summoner": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.475,
+      "sampleSize": 554,
+      "avgTier": 1.25,
+      "prevRank": 28,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_ZyraUniqueTrait": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.468,
+      "sampleSize": 459,
+      "avgTier": 1,
+      "prevRank": 26,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Adaptor": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.489,
+      "sampleSize": 380,
+      "avgTier": 1.19,
+      "prevRank": 34,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Primal18": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.508,
+      "sampleSize": 559,
+      "avgTier": 1.05,
+      "prevRank": 27,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Caustic": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.49,
+      "sampleSize": 394,
+      "avgTier": 1,
+      "prevRank": 35,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Brawler": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.569,
+      "sampleSize": 1207,
+      "avgTier": 1.06,
+      "prevRank": 11,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Elderwood": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.546,
+      "sampleSize": 738,
+      "avgTier": 1.58,
+      "prevRank": 15,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Hunter": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.484,
+      "sampleSize": 223,
+      "avgTier": 1.35,
+      "prevRank": 32,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Riftbeast18": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.567,
+      "sampleSize": 864,
+      "avgTier": 1.8,
+      "prevRank": 9,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Blossom": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.492,
+      "sampleSize": 652,
+      "avgTier": 1.11,
+      "prevRank": 33,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_ApexPredator": {
+      "avgPlacement": 3.73,
+      "top4Rate": 0.628,
+      "sampleSize": 390,
+      "avgTier": 1,
+      "prevRank": 3,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Rival": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.548,
+      "sampleSize": 389,
+      "avgTier": 1.1,
+      "prevRank": 10,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_DravenUniqueTrait18": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.525,
+      "sampleSize": 204,
+      "avgTier": 1,
+      "prevRank": 12,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_LuxUniqueTrait": {
+      "avgPlacement": 3.46,
+      "top4Rate": 0.669,
+      "sampleSize": 378,
+      "avgTier": 1,
+      "prevRank": 1,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Sprykin": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.523,
+      "sampleSize": 260,
+      "avgTier": 1.05,
+      "prevRank": 20,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Coven": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.491,
+      "sampleSize": 116,
+      "avgTier": 1.34,
+      "prevRank": 31,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Fae": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.465,
+      "sampleSize": 271,
+      "avgTier": 1.21,
+      "prevRank": 36,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_Eclipse": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.615,
+      "sampleSize": 65,
+      "avgTier": 1,
+      "prevRank": 5,
+      "rankDelta": 0,
+      "avgDelta": 0
+    }
+  },
+  "items": {
+    "DA_Bloodthirster": {
+      "avgPlacement": 3.96,
+      "top4Rate": 0.6,
+      "sampleSize": 425,
+      "prevRank": 21,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SteraksGage": {
+      "avgPlacement": 4.12,
+      "top4Rate": 0.576,
+      "sampleSize": 1080,
+      "prevRank": 40,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_ProtectorsVow": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.556,
+      "sampleSize": 1295,
+      "prevRank": 49,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SpearOfShojin": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.551,
+      "sampleSize": 1610,
+      "prevRank": 54,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_RabadonsDeathcap": {
+      "avgPlacement": 4.09,
+      "top4Rate": 0.572,
+      "sampleSize": 963,
+      "prevRank": 38,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_VoidStaff": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.536,
+      "sampleSize": 1202,
+      "prevRank": 63,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Morellonomicon": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.527,
+      "sampleSize": 810,
+      "prevRank": 68,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_AdaptiveHelm": {
+      "avgPlacement": 4.05,
+      "top4Rate": 0.6,
+      "sampleSize": 1127,
+      "prevRank": 34,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Crownguard": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.57,
+      "sampleSize": 1134,
+      "prevRank": 45,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_WarmogsArmor": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.56,
+      "sampleSize": 1696,
+      "prevRank": 50,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_JeweledGauntlet": {
+      "avgPlacement": 4.23,
+      "top4Rate": 0.561,
+      "sampleSize": 1249,
+      "prevRank": 55,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_SparringGloves": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.488,
+      "sampleSize": 86,
+      "prevRank": 92,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_BlueBuff": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.542,
+      "sampleSize": 841,
+      "prevRank": 51,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_InfinityEdge": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.558,
+      "sampleSize": 1366,
+      "prevRank": 52,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GiantSlayer": {
+      "avgPlacement": 4.04,
+      "top4Rate": 0.591,
+      "sampleSize": 804,
+      "prevRank": 33,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_HandOfJustice": {
+      "avgPlacement": 3.87,
+      "top4Rate": 0.618,
+      "sampleSize": 720,
+      "prevRank": 15,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_EdgeOfNight": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.61,
+      "sampleSize": 707,
+      "prevRank": 19,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GargoyleStoneplate": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.51,
+      "sampleSize": 2938,
+      "prevRank": 80,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SpiritVisage": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.559,
+      "sampleSize": 1282,
+      "prevRank": 62,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Evenshroud": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.61,
+      "sampleSize": 482,
+      "prevRank": 20,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_RedBuff": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.559,
+      "sampleSize": 979,
+      "prevRank": 46,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_ArchangelsStaff": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.52,
+      "sampleSize": 811,
+      "prevRank": 64,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_HextechGunblade": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.551,
+      "sampleSize": 965,
+      "prevRank": 53,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemExecutioner": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.539,
+      "sampleSize": 258,
+      "prevRank": 42,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Deathblade": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.565,
+      "sampleSize": 766,
+      "prevRank": 43,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GuinsoosRageblade": {
+      "avgPlacement": 4.4,
+      "top4Rate": 0.518,
+      "sampleSize": 1522,
+      "prevRank": 76,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_DragonsClaw": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.601,
+      "sampleSize": 489,
+      "prevRank": 29,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_LudensTempest": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.607,
+      "sampleSize": 61,
+      "prevRank": 35,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_Dawncore": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.543,
+      "sampleSize": 81,
+      "prevRank": 61,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_NegatronCloak": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.536,
+      "sampleSize": 125,
+      "prevRank": 78,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_BlastPotion18": {
+      "avgPlacement": 5.08,
+      "top4Rate": 0.462,
+      "sampleSize": 13,
+      "prevRank": 112,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_IonicSpark": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.613,
+      "sampleSize": 437,
+      "prevRank": 14,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_GoldCollector": {
+      "avgPlacement": 4.92,
+      "top4Rate": 0.462,
+      "sampleSize": 13,
+      "prevRank": 107,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Item_Artifact_TalismanOfAscension": {
+      "avgPlacement": 4.46,
+      "top4Rate": 0.5,
+      "sampleSize": 24,
+      "prevRank": 82,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_MogulsMail": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.4,
+      "sampleSize": 20,
+      "prevRank": 105,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemFae": {
+      "avgPlacement": 4.82,
+      "top4Rate": 0.424,
+      "sampleSize": 85,
+      "prevRank": 102,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_StrikersFlail": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.566,
+      "sampleSize": 818,
+      "prevRank": 44,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_LastWhisper": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.538,
+      "sampleSize": 928,
+      "prevRank": 56,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SunfireCape": {
+      "avgPlacement": 4.01,
+      "top4Rate": 0.593,
+      "sampleSize": 621,
+      "prevRank": 27,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemInferno": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.595,
+      "sampleSize": 121,
+      "prevRank": 41,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SteadfastHeart": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.557,
+      "sampleSize": 697,
+      "prevRank": 47,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_NashorsTooth": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.579,
+      "sampleSize": 432,
+      "prevRank": 31,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_TitansResolve": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.521,
+      "sampleSize": 399,
+      "prevRank": 85,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemInvoker": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.559,
+      "sampleSize": 204,
+      "prevRank": 59,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_SilvermereDawn": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.474,
+      "sampleSize": 38,
+      "prevRank": 88,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_KrakensFury": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.536,
+      "sampleSize": 573,
+      "prevRank": 71,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemVanguard": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.577,
+      "sampleSize": 123,
+      "prevRank": 39,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_GiantsBelt": {
+      "avgPlacement": 5.06,
+      "top4Rate": 0.4,
+      "sampleSize": 200,
+      "prevRank": 111,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Quicksilver": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.563,
+      "sampleSize": 416,
+      "prevRank": 57,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_ThiefsGloves": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.585,
+      "sampleSize": 990,
+      "prevRank": 36,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_ChainVest": {
+      "avgPlacement": 4.52,
+      "top4Rate": 0.462,
+      "sampleSize": 104,
+      "prevRank": 87,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemBlossom": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.486,
+      "sampleSize": 105,
+      "prevRank": 90,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemBlackthorn": {
+      "avgPlacement": 4.49,
+      "top4Rate": 0.497,
+      "sampleSize": 161,
+      "prevRank": 84,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemFloraFatalis": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.527,
+      "sampleSize": 91,
+      "prevRank": 65,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_HellfireHatchet": {
+      "avgPlacement": 4.92,
+      "top4Rate": 0.458,
+      "sampleSize": 24,
+      "prevRank": 108,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemSpellweaver": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.496,
+      "sampleSize": 127,
+      "prevRank": 74,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_Fishbones": {
+      "avgPlacement": 4.45,
+      "top4Rate": 0.5,
+      "sampleSize": 38,
+      "prevRank": 81,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_TearOfTheGoddess": {
+      "avgPlacement": 4.94,
+      "top4Rate": 0.398,
+      "sampleSize": 128,
+      "prevRank": 109,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GiantSlayer_Radiant": {
+      "avgPlacement": 3.27,
+      "top4Rate": 0.636,
+      "sampleSize": 11,
+      "prevRank": 2,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemElderwood": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.538,
+      "sampleSize": 197,
+      "prevRank": 69,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemSprykin": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.569,
+      "sampleSize": 58,
+      "prevRank": 75,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_BrambleVest": {
+      "avgPlacement": 3.96,
+      "top4Rate": 0.636,
+      "sampleSize": 374,
+      "prevRank": 22,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GuinsoosRagebladeRadiant": {
+      "avgPlacement": 4.76,
+      "top4Rate": 0.429,
+      "sampleSize": 21,
+      "prevRank": 97,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_AdaptiveHelm_Radiant": {
+      "avgPlacement": 4.46,
+      "top4Rate": 0.429,
+      "sampleSize": 28,
+      "prevRank": 83,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_RecurveBow": {
+      "avgPlacement": 4.4,
+      "top4Rate": 0.566,
+      "sampleSize": 136,
+      "prevRank": 77,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_LightshieldCrest": {
+      "avgPlacement": 4.37,
+      "top4Rate": 0.5,
+      "sampleSize": 70,
+      "prevRank": 72,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemDefender": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.543,
+      "sampleSize": 116,
+      "prevRank": 66,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_TheIndomitable": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.479,
+      "sampleSize": 48,
+      "prevRank": 98,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_Manazane": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.56,
+      "sampleSize": 50,
+      "prevRank": 58,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_BlightingJewel": {
+      "avgPlacement": 4,
+      "top4Rate": 0.667,
+      "sampleSize": 27,
+      "prevRank": 24,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SteraksGageRadiant": {
+      "avgPlacement": 3.58,
+      "top4Rate": 0.583,
+      "sampleSize": 12,
+      "prevRank": 6,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemSlayer": {
+      "avgPlacement": 4.01,
+      "top4Rate": 0.589,
+      "sampleSize": 95,
+      "prevRank": 28,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemBrawler": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.617,
+      "sampleSize": 149,
+      "prevRank": 11,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_TitanicHydra": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.524,
+      "sampleSize": 21,
+      "prevRank": 91,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemRapidfire": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.585,
+      "sampleSize": 142,
+      "prevRank": 60,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemJuggernaut": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.482,
+      "sampleSize": 114,
+      "prevRank": 89,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemFloraFatalisAugment": {
+      "avgPlacement": 5.25,
+      "top4Rate": 0.45,
+      "sampleSize": 20,
+      "prevRank": 113,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemLunar": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.599,
+      "sampleSize": 142,
+      "prevRank": 30,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemHunter": {
+      "avgPlacement": 4.8,
+      "top4Rate": 0.419,
+      "sampleSize": 86,
+      "prevRank": 101,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_NeedlesslyLargeRod": {
+      "avgPlacement": 4.51,
+      "top4Rate": 0.507,
+      "sampleSize": 134,
+      "prevRank": 86,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_TacticiansCrown": {
+      "avgPlacement": 3.84,
+      "top4Rate": 0.622,
+      "sampleSize": 74,
+      "prevRank": 13,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemCoven": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.419,
+      "sampleSize": 31,
+      "prevRank": 106,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_VoidGauntlet": {
+      "avgPlacement": 4.79,
+      "top4Rate": 0.368,
+      "sampleSize": 19,
+      "prevRank": 100,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_EternalPact": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.657,
+      "sampleSize": 35,
+      "prevRank": 7,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_JeweledGauntletRadiant": {
+      "avgPlacement": 3.25,
+      "top4Rate": 0.667,
+      "sampleSize": 12,
+      "prevRank": 1,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_HandOfJusticeRadiant": {
+      "avgPlacement": 3.9,
+      "top4Rate": 0.6,
+      "sampleSize": 10,
+      "prevRank": 17,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_GargoyleStoneplate_Radiant": {
+      "avgPlacement": 3.67,
+      "top4Rate": 0.75,
+      "sampleSize": 12,
+      "prevRank": 8,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_RabadonsDeathcap_Radiant": {
+      "avgPlacement": 4.82,
+      "top4Rate": 0.412,
+      "sampleSize": 17,
+      "prevRank": 103,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_InfinityForce": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.5,
+      "sampleSize": 20,
+      "prevRank": 96,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_GamblersBlade": {
+      "avgPlacement": 4,
+      "top4Rate": 0.6,
+      "sampleSize": 10,
+      "prevRank": 25,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Component_BFSword": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.482,
+      "sampleSize": 85,
+      "prevRank": 94,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_Mittens": {
+      "avgPlacement": 4.32,
+      "top4Rate": 0.5,
+      "sampleSize": 22,
+      "prevRank": 70,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_SeekersArmguard": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.5,
+      "sampleSize": 30,
+      "prevRank": 79,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_TacticiansCape": {
+      "avgPlacement": 3.91,
+      "top4Rate": 0.593,
+      "sampleSize": 54,
+      "prevRank": 18,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_InfinityEdgeRadiant": {
+      "avgPlacement": 4,
+      "top4Rate": 0.583,
+      "sampleSize": 12,
+      "prevRank": 26,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_BlueBuffRadiant": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.625,
+      "sampleSize": 32,
+      "prevRank": 32,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_ArchangelsStaffRadiant": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.7,
+      "sampleSize": 10,
+      "prevRank": 4,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_ZhonyasParadox": {
+      "avgPlacement": 5.04,
+      "top4Rate": 0.417,
+      "sampleSize": 24,
+      "prevRank": 110,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_18_EmblemPrimal": {
+      "avgPlacement": 4.37,
+      "top4Rate": 0.539,
+      "sampleSize": 76,
+      "prevRank": 73,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_LichBane": {
+      "avgPlacement": 3.97,
+      "top4Rate": 0.656,
+      "sampleSize": 32,
+      "prevRank": 23,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_AegisOfDusk": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.467,
+      "sampleSize": 30,
+      "prevRank": 99,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_NavoriFlickerblade": {
+      "avgPlacement": 4.88,
+      "top4Rate": 0.452,
+      "sampleSize": 42,
+      "prevRank": 104,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_WitsEnd": {
+      "avgPlacement": 3.81,
+      "top4Rate": 0.563,
+      "sampleSize": 16,
+      "prevRank": 10,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_TacticiansShield": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.688,
+      "sampleSize": 16,
+      "prevRank": 3,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_HorizonFocus": {
+      "avgPlacement": 3.87,
+      "top4Rate": 0.609,
+      "sampleSize": 23,
+      "prevRank": 16,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_RapidFireCannon": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.607,
+      "sampleSize": 28,
+      "prevRank": 37,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_HextechGunbladeRadiant": {
+      "avgPlacement": 5.42,
+      "top4Rate": 0.333,
+      "sampleSize": 12,
+      "prevRank": 114,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_ThiefsGlovesRadiant": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.583,
+      "sampleSize": 12,
+      "prevRank": 12,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_AegisOfDawn": {
+      "avgPlacement": 3.56,
+      "top4Rate": 0.688,
+      "sampleSize": 16,
+      "prevRank": 5,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_Hullcrusher": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.583,
+      "sampleSize": 24,
+      "prevRank": 67,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_StrikersFlailRadiant": {
+      "avgPlacement": 4.64,
+      "top4Rate": 0.357,
+      "sampleSize": 14,
+      "prevRank": 93,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_WarmogsArmorRadiant": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.545,
+      "sampleSize": 11,
+      "prevRank": 48,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_Artifact_ForbiddenIdol": {
+      "avgPlacement": 4.69,
+      "top4Rate": 0.563,
+      "sampleSize": 16,
+      "prevRank": 95,
+      "rankDelta": 0,
+      "avgDelta": 0
+    },
+    "DA_SpearOfShojinRadiant": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.75,
+      "sampleSize": 16,
+      "prevRank": 9,
+      "rankDelta": 0,
+      "avgDelta": 0
+    }
+  },
+  "combos": {
+    "Camille|DA_Bloodthirster": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "Camille|DA_SteraksGage": {
+      "avgPlacement": 3.77,
+      "top4Rate": 0.628,
+      "sampleSize": 43
+    },
+    "Lillia|DA_ProtectorsVow": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.506,
+      "sampleSize": 89
+    },
+    "Ivern|DA_SpearOfShojin": {
+      "avgPlacement": 3.24,
+      "top4Rate": 0.755,
+      "sampleSize": 49
+    },
+    "Ivern|DA_RabadonsDeathcap": {
+      "avgPlacement": 2.84,
+      "top4Rate": 0.737,
+      "sampleSize": 19
+    },
+    "Sentinel|DA_ProtectorsVow": {
+      "avgPlacement": 4.12,
+      "top4Rate": 0.565,
+      "sampleSize": 600
+    },
+    "Morgana|DA_VoidStaff": {
+      "avgPlacement": 4.32,
+      "top4Rate": 0.551,
+      "sampleSize": 256
+    },
+    "Morgana|DA_Morellonomicon": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.53,
+      "sampleSize": 202
+    },
+    "Morgana|DA_AdaptiveHelm": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.719,
+      "sampleSize": 32
+    },
+    "Taric|DA_Crownguard": {
+      "avgPlacement": 3.21,
+      "top4Rate": 0.719,
+      "sampleSize": 57
+    },
+    "Taric|DA_WarmogsArmor": {
+      "avgPlacement": 3.59,
+      "top4Rate": 0.619,
+      "sampleSize": 63
+    },
+    "Alune|DA_JeweledGauntlet": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.513,
+      "sampleSize": 80
+    },
+    "Alune|DA_VoidStaff": {
+      "avgPlacement": 3.82,
+      "top4Rate": 0.6,
+      "sampleSize": 85
+    },
+    "Varus|DA_BlueBuff": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.471,
+      "sampleSize": 17
+    },
+    "Varus|DA_InfinityEdge": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.604,
+      "sampleSize": 48
+    },
+    "Varus|DA_GiantSlayer": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Akali_AD|DA_HandOfJustice": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.5,
+      "sampleSize": 34
+    },
+    "Akali_AD|DA_EdgeOfNight": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.595,
+      "sampleSize": 37
+    },
+    "Leona|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.515,
+      "sampleSize": 33
+    },
+    "Leona|DA_SpiritVisage": {
+      "avgPlacement": 4.48,
+      "top4Rate": 0.478,
+      "sampleSize": 23
+    },
+    "Leona|DA_Crownguard": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.722,
+      "sampleSize": 18
+    },
+    "Camille|DA_EdgeOfNight": {
+      "avgPlacement": 3.8,
+      "top4Rate": 0.65,
+      "sampleSize": 20
+    },
+    "Camille|DA_InfinityEdge": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.483,
+      "sampleSize": 29
+    },
+    "Ornn|DA_Evenshroud": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.545,
+      "sampleSize": 22
+    },
+    "Azir|DA_RedBuff": {
+      "avgPlacement": 5,
+      "top4Rate": 0.381,
+      "sampleSize": 21
+    },
+    "Azir|DA_ArchangelsStaff": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.404,
+      "sampleSize": 52
+    },
+    "Azir|DA_GiantSlayer": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.576,
+      "sampleSize": 33
+    },
+    "Soraka|DA_ArchangelsStaff": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.523,
+      "sampleSize": 109
+    },
+    "Soraka|DA_HextechGunblade": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.576,
+      "sampleSize": 66
+    },
+    "Zyra|DA_18_EmblemExecutioner": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.487,
+      "sampleSize": 76
+    },
+    "Zyra|DA_SpearOfShojin": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.482,
+      "sampleSize": 110
+    },
+    "Zyra|DA_VoidStaff": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.488,
+      "sampleSize": 211
+    },
+    "Malphite|DA_WarmogsArmor": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.448,
+      "sampleSize": 105
+    },
+    "Malphite|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.76,
+      "top4Rate": 0.424,
+      "sampleSize": 203
+    },
+    "Malphite|DA_SpiritVisage": {
+      "avgPlacement": 4.78,
+      "top4Rate": 0.412,
+      "sampleSize": 51
+    },
+    "Lillia|DA_Crownguard": {
+      "avgPlacement": 4,
+      "top4Rate": 0.571,
+      "sampleSize": 42
+    },
+    "Aphelios|DA_Deathblade": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.58,
+      "sampleSize": 112
+    },
+    "Aphelios|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.519,
+      "sampleSize": 310
+    },
+    "Aphelios|DA_GiantSlayer": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.621,
+      "sampleSize": 66
+    },
+    "Amumu|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.478,
+      "sampleSize": 295
+    },
+    "Amumu|DA_SpiritVisage": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.503,
+      "sampleSize": 147
+    },
+    "Nidalee18_AP|DA_SteraksGage": {
+      "avgPlacement": 4.64,
+      "top4Rate": 0.5,
+      "sampleSize": 168
+    },
+    "Nidalee18_AP|DA_InfinityEdge": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.497,
+      "sampleSize": 179
+    },
+    "Nidalee18_AP|DA_SpearOfShojin": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.529,
+      "sampleSize": 70
+    },
+    "KogMaw18_AD|DA_RedBuff": {
+      "avgPlacement": 4.05,
+      "top4Rate": 0.605,
+      "sampleSize": 38
+    },
+    "Sentinel|DA_DragonsClaw": {
+      "avgPlacement": 3.74,
+      "top4Rate": 0.63,
+      "sampleSize": 46
+    },
+    "Veigar|DA_JeweledGauntlet": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.497,
+      "sampleSize": 163
+    },
+    "Veigar|DA_Artifact_LudensTempest": {
+      "avgPlacement": 3.39,
+      "top4Rate": 0.742,
+      "sampleSize": 31
+    },
+    "Veigar|DA_Artifact_Dawncore": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.594,
+      "sampleSize": 32
+    },
+    "Alistar|DA_SteraksGage": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.545,
+      "sampleSize": 11
+    },
+    "Alistar|DA_Crownguard": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.625,
+      "sampleSize": 40
+    },
+    "Alistar|DA_IonicSpark": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.5,
+      "sampleSize": 18
+    },
+    "RekSai|DA_Crownguard": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.45,
+      "sampleSize": 20
+    },
+    "Fiddlesticks|DA_Morellonomicon": {
+      "avgPlacement": 3.9,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Cassiopeia|DA_SpearOfShojin": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.531,
+      "sampleSize": 81
+    },
+    "Cassiopeia|DA_GiantSlayer": {
+      "avgPlacement": 3.59,
+      "top4Rate": 0.591,
+      "sampleSize": 22
+    },
+    "Cassiopeia|DA_JeweledGauntlet": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.611,
+      "sampleSize": 36
+    },
+    "KogMaw18_AD|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.52,
+      "sampleSize": 25
+    },
+    "Sentinel|DA_Component_NegatronCloak": {
+      "avgPlacement": 4.4,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Nidalee18_AP|DA_EdgeOfNight": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.576,
+      "sampleSize": 66
+    },
+    "Sivir|DA_Deathblade": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.485,
+      "sampleSize": 33
+    },
+    "Sivir|DA_SpearOfShojin": {
+      "avgPlacement": 4.91,
+      "top4Rate": 0.444,
+      "sampleSize": 45
+    },
+    "Shen|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.5,
+      "sampleSize": 20
+    },
+    "Shen|DA_WarmogsArmor": {
+      "avgPlacement": 5.64,
+      "top4Rate": 0.364,
+      "sampleSize": 11
+    },
+    "Kayle|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.74,
+      "top4Rate": 0.478,
+      "sampleSize": 69
+    },
+    "Kayle|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.581,
+      "sampleSize": 31
+    },
+    "Aphelios|DA_InfinityEdge": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.61,
+      "sampleSize": 172
+    },
+    "Yunara|DA_RedBuff": {
+      "avgPlacement": 5.43,
+      "top4Rate": 0.381,
+      "sampleSize": 21
+    },
+    "Yunara|DA_SpearOfShojin": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.434,
+      "sampleSize": 113
+    },
+    "Yunara|DA_Deathblade": {
+      "avgPlacement": 4.88,
+      "top4Rate": 0.44,
+      "sampleSize": 84
+    },
+    "Karma|DA_18_EmblemExecutioner": {
+      "avgPlacement": 4.48,
+      "top4Rate": 0.481,
+      "sampleSize": 27
+    },
+    "Karma|DA_HextechGunblade": {
+      "avgPlacement": 4.82,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Karma|DA_AdaptiveHelm": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.632,
+      "sampleSize": 19
+    },
+    "Yorick|DA_WarmogsArmor": {
+      "avgPlacement": 4.88,
+      "top4Rate": 0.458,
+      "sampleSize": 24
+    },
+    "Yorick|DA_GargoyleStoneplate": {
+      "avgPlacement": 5.66,
+      "top4Rate": 0.286,
+      "sampleSize": 35
+    },
+    "Sejuani|DA_SpiritVisage": {
+      "avgPlacement": 4.8,
+      "top4Rate": 0.493,
+      "sampleSize": 71
+    },
+    "Sentry|DA_BlueBuff": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.565,
+      "sampleSize": 92
+    },
+    "Sentry|DA_VoidStaff": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.592,
+      "sampleSize": 71
+    },
+    "Sentinel|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.565,
+      "sampleSize": 239
+    },
+    "Sentinel|DA_WarmogsArmor": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.556,
+      "sampleSize": 169
+    },
+    "ElderDragon|DA_StrikersFlail": {
+      "avgPlacement": 3.37,
+      "top4Rate": 0.658,
+      "sampleSize": 79
+    },
+    "ElderDragon|DA_InfinityEdge": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.647,
+      "sampleSize": 275
+    },
+    "ElderDragon|DA_LastWhisper": {
+      "avgPlacement": 3.64,
+      "top4Rate": 0.635,
+      "sampleSize": 156
+    },
+    "Taric|DA_SunfireCape": {
+      "avgPlacement": 2.82,
+      "top4Rate": 0.727,
+      "sampleSize": 11
+    },
+    "Sivir|DA_LastWhisper": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.464,
+      "sampleSize": 56
+    },
+    "Ashe|DA_18_EmblemInferno": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.571,
+      "sampleSize": 42
+    },
+    "Ashe|DA_RedBuff": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.614,
+      "sampleSize": 70
+    },
+    "Ashe|DA_SpearOfShojin": {
+      "avgPlacement": 4.09,
+      "top4Rate": 0.596,
+      "sampleSize": 89
+    },
+    "ElderDragon|DA_Bloodthirster": {
+      "avgPlacement": 3.43,
+      "top4Rate": 0.762,
+      "sampleSize": 21
+    },
+    "ElderDragon|DA_SteraksGage": {
+      "avgPlacement": 3.58,
+      "top4Rate": 0.67,
+      "sampleSize": 112
+    },
+    "ElderDragon|DA_Deathblade": {
+      "avgPlacement": 3.59,
+      "top4Rate": 0.625,
+      "sampleSize": 96
+    },
+    "Amumu|DA_SteadfastHeart": {
+      "avgPlacement": 4.32,
+      "top4Rate": 0.507,
+      "sampleSize": 69
+    },
+    "Ivern|DA_AdaptiveHelm": {
+      "avgPlacement": 2.78,
+      "top4Rate": 0.806,
+      "sampleSize": 36
+    },
+    "Maokai|DA_WarmogsArmor": {
+      "avgPlacement": 3.32,
+      "top4Rate": 0.712,
+      "sampleSize": 111
+    },
+    "Maokai|DA_GargoyleStoneplate": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.718,
+      "sampleSize": 131
+    },
+    "Maokai|DA_ProtectorsVow": {
+      "avgPlacement": 3.82,
+      "top4Rate": 0.643,
+      "sampleSize": 56
+    },
+    "KhaZix|DA_HandOfJustice": {
+      "avgPlacement": 3.73,
+      "top4Rate": 0.644,
+      "sampleSize": 219
+    },
+    "KhaZix|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.608,
+      "sampleSize": 120
+    },
+    "KhaZix|DA_NashorsTooth": {
+      "avgPlacement": 3.84,
+      "top4Rate": 0.603,
+      "sampleSize": 68
+    },
+    "Diana|DA_18_EmblemExecutioner": {
+      "avgPlacement": 2.9,
+      "top4Rate": 0.762,
+      "sampleSize": 21
+    },
+    "Diana|DA_IonicSpark": {
+      "avgPlacement": 3.12,
+      "top4Rate": 0.776,
+      "sampleSize": 49
+    },
+    "Diana|DA_Bloodthirster": {
+      "avgPlacement": 3,
+      "top4Rate": 0.8,
+      "sampleSize": 25
+    },
+    "Hecarim|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.57,
+      "sampleSize": 186
+    },
+    "Hecarim|DA_Crownguard": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.613,
+      "sampleSize": 62
+    },
+    "Hecarim|DA_SunfireCape": {
+      "avgPlacement": 3.78,
+      "top4Rate": 0.681,
+      "sampleSize": 69
+    },
+    "Ezreal|DA_Deathblade": {
+      "avgPlacement": 3.81,
+      "top4Rate": 0.63,
+      "sampleSize": 135
+    },
+    "Ezreal|DA_BlueBuff": {
+      "avgPlacement": 4.06,
+      "top4Rate": 0.514,
+      "sampleSize": 35
+    },
+    "Sett|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.479,
+      "sampleSize": 267
+    },
+    "Ahri|DA_JeweledGauntlet": {
+      "avgPlacement": 4.45,
+      "top4Rate": 0.528,
+      "sampleSize": 267
+    },
+    "Ahri|DA_StrikersFlail": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.604,
+      "sampleSize": 106
+    },
+    "Ahri|DA_18_EmblemInvoker": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.57,
+      "sampleSize": 86
+    },
+    "Alune|DA_BlueBuff": {
+      "avgPlacement": 3.36,
+      "top4Rate": 0.718,
+      "sampleSize": 39
+    },
+    "Alune|DA_NashorsTooth": {
+      "avgPlacement": 3.77,
+      "top4Rate": 0.636,
+      "sampleSize": 22
+    },
+    "Ashe|DA_BlueBuff": {
+      "avgPlacement": 3.8,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Nidalee18_AP|DA_Artifact_SilvermereDawn": {
+      "avgPlacement": 5.44,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "Nidalee18_AP|DA_BlueBuff": {
+      "avgPlacement": 5.33,
+      "top4Rate": 0.333,
+      "sampleSize": 18
+    },
+    "Draven|DA_GiantSlayer": {
+      "avgPlacement": 3.82,
+      "top4Rate": 0.588,
+      "sampleSize": 17
+    },
+    "Draven|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.518,
+      "sampleSize": 191
+    },
+    "Draven|DA_KrakensFury": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.632,
+      "sampleSize": 106
+    },
+    "Kennen|DA_EdgeOfNight": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.663,
+      "sampleSize": 80
+    },
+    "Maokai|DA_Evenshroud": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.655,
+      "sampleSize": 29
+    },
+    "Maokai|DA_Crownguard": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.702,
+      "sampleSize": 57
+    },
+    "Cinderling|DA_SpearOfShojin": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.526,
+      "sampleSize": 19
+    },
+    "Krug|DA_18_EmblemVanguard": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Krug|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.09,
+      "top4Rate": 0.565,
+      "sampleSize": 177
+    },
+    "Sentinel|DA_SpiritVisage": {
+      "avgPlacement": 4.01,
+      "top4Rate": 0.634,
+      "sampleSize": 145
+    },
+    "Ezreal|DA_RedBuff": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.604,
+      "sampleSize": 96
+    },
+    "Ezreal|DA_GuinsoosRageblade": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.375,
+      "sampleSize": 16
+    },
+    "Ezreal|DA_KrakensFury": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Gnar|DA_TitansResolve": {
+      "avgPlacement": 3.64,
+      "top4Rate": 0.682,
+      "sampleSize": 22
+    },
+    "Lux18_Base|DA_BlueBuff": {
+      "avgPlacement": 3.05,
+      "top4Rate": 0.718,
+      "sampleSize": 39
+    },
+    "Maokai|DA_AdaptiveHelm": {
+      "avgPlacement": 3.97,
+      "top4Rate": 0.586,
+      "sampleSize": 29
+    },
+    "Fiddlesticks|DA_Component_GiantsBelt": {
+      "avgPlacement": 4.68,
+      "top4Rate": 0.421,
+      "sampleSize": 19
+    },
+    "Diana|DA_ArchangelsStaff": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.6,
+      "sampleSize": 15
+    },
+    "Diana|DA_EdgeOfNight": {
+      "avgPlacement": 2.96,
+      "top4Rate": 0.786,
+      "sampleSize": 28
+    },
+    "Diana|DA_Quicksilver": {
+      "avgPlacement": 2.25,
+      "top4Rate": 0.917,
+      "sampleSize": 12
+    },
+    "Hecarim|DA_IonicSpark": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.667,
+      "sampleSize": 33
+    },
+    "Ezreal|DA_ThiefsGloves": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Kennen|DA_AdaptiveHelm": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.718,
+      "sampleSize": 39
+    },
+    "Kennen|DA_Morellonomicon": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.59,
+      "sampleSize": 39
+    },
+    "Rammus|DA_Crownguard": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.525,
+      "sampleSize": 99
+    },
+    "Rammus|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.497,
+      "sampleSize": 286
+    },
+    "Rammus|DA_SpiritVisage": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.516,
+      "sampleSize": 64
+    },
+    "Azir|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.513,
+      "sampleSize": 197
+    },
+    "Azir|DA_JeweledGauntlet": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.586,
+      "sampleSize": 29
+    },
+    "Azir|DA_HextechGunblade": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.5,
+      "sampleSize": 188
+    },
+    "Fiddlesticks|DA_ProtectorsVow": {
+      "avgPlacement": 3.97,
+      "top4Rate": 0.655,
+      "sampleSize": 29
+    },
+    "Fiddlesticks|DA_SunfireCape": {
+      "avgPlacement": 3.78,
+      "top4Rate": 0.662,
+      "sampleSize": 68
+    },
+    "Ezreal|DA_SpearOfShojin": {
+      "avgPlacement": 4.06,
+      "top4Rate": 0.599,
+      "sampleSize": 207
+    },
+    "Ezreal|DA_InfinityEdge": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.689,
+      "sampleSize": 103
+    },
+    "Krug|DA_DragonsClaw": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.667,
+      "sampleSize": 30
+    },
+    "Sett|DA_SpiritVisage": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.57,
+      "sampleSize": 79
+    },
+    "Sett|DA_WarmogsArmor": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.63,
+      "sampleSize": 119
+    },
+    "Fiddlesticks|DA_Component_ChainVest": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.538,
+      "sampleSize": 13
+    },
+    "Ahri|DA_BlueBuff": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.509,
+      "sampleSize": 53
+    },
+    "Ahri|DA_VoidStaff": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.586,
+      "sampleSize": 29
+    },
+    "Zyra|DA_BlueBuff": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 24
+    },
+    "Zyra|DA_ArchangelsStaff": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.455,
+      "sampleSize": 123
+    },
+    "Zyra|DA_HextechGunblade": {
+      "avgPlacement": 4.49,
+      "top4Rate": 0.478,
+      "sampleSize": 90
+    },
+    "Amumu|DA_ProtectorsVow": {
+      "avgPlacement": 4.81,
+      "top4Rate": 0.411,
+      "sampleSize": 73
+    },
+    "Yunara|DA_ThiefsGloves": {
+      "avgPlacement": 5.22,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Zyra|DA_18_EmblemBlackthorn": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.563,
+      "sampleSize": 32
+    },
+    "Zyra|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.76,
+      "top4Rate": 0.405,
+      "sampleSize": 37
+    },
+    "Malphite|DA_SteraksGage": {
+      "avgPlacement": 3.43,
+      "top4Rate": 0.714,
+      "sampleSize": 14
+    },
+    "Kennen|DA_RedBuff": {
+      "avgPlacement": 4,
+      "top4Rate": 0.565,
+      "sampleSize": 23
+    },
+    "Kennen|DA_18_EmblemFloraFatalis": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Kennen|DA_Bloodthirster": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.667,
+      "sampleSize": 48
+    },
+    "Sentinel|DA_AdaptiveHelm": {
+      "avgPlacement": 3.94,
+      "top4Rate": 0.648,
+      "sampleSize": 253
+    },
+    "Diana|DA_SpiritVisage": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.5,
+      "sampleSize": 16
+    },
+    "Brambleback|DA_EdgeOfNight": {
+      "avgPlacement": 3.85,
+      "top4Rate": 0.636,
+      "sampleSize": 140
+    },
+    "Brambleback|DA_SteraksGage": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.553,
+      "sampleSize": 123
+    },
+    "CrimsonRaptor|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.391,
+      "sampleSize": 23
+    },
+    "Aphelios|DA_RedBuff": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.574,
+      "sampleSize": 61
+    },
+    "Aphelios|DA_LastWhisper": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.7,
+      "sampleSize": 60
+    },
+    "Ornn|DA_WarmogsArmor": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.45,
+      "sampleSize": 80
+    },
+    "Ornn|DA_SpiritVisage": {
+      "avgPlacement": 5.02,
+      "top4Rate": 0.448,
+      "sampleSize": 58
+    },
+    "Ornn|DA_GargoyleStoneplate": {
+      "avgPlacement": 5.28,
+      "top4Rate": 0.375,
+      "sampleSize": 152
+    },
+    "Veigar|DA_BlueBuff": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.511,
+      "sampleSize": 139
+    },
+    "Veigar|DA_StrikersFlail": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "LeBlanc|DA_GiantSlayer": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.448,
+      "sampleSize": 29
+    },
+    "LeBlanc|DA_VoidStaff": {
+      "avgPlacement": 5.07,
+      "top4Rate": 0.414,
+      "sampleSize": 87
+    },
+    "LeBlanc|DA_ArchangelsStaff": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.545,
+      "sampleSize": 11
+    },
+    "Gnar|DA_SunfireCape": {
+      "avgPlacement": 3.46,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "MasterYi_AD|DA_TitansResolve": {
+      "avgPlacement": 5.04,
+      "top4Rate": 0.458,
+      "sampleSize": 24
+    },
+    "Vi|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.93,
+      "top4Rate": 0.449,
+      "sampleSize": 136
+    },
+    "Vi|DA_DragonsClaw": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.429,
+      "sampleSize": 21
+    },
+    "Vi|DA_SpiritVisage": {
+      "avgPlacement": 4.99,
+      "top4Rate": 0.441,
+      "sampleSize": 68
+    },
+    "KogMaw18_AD|DA_GiantSlayer": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "KogMaw18_AD|DA_InfinityEdge": {
+      "avgPlacement": 4.35,
+      "top4Rate": 0.522,
+      "sampleSize": 23
+    },
+    "Cassiopeia|DA_HextechGunblade": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.582,
+      "sampleSize": 67
+    },
+    "Cassiopeia|DA_BlueBuff": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.444,
+      "sampleSize": 36
+    },
+    "Elise|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.81,
+      "top4Rate": 0.446,
+      "sampleSize": 83
+    },
+    "Elise|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.64,
+      "top4Rate": 0.494,
+      "sampleSize": 87
+    },
+    "Elise|DA_TitansResolve": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.487,
+      "sampleSize": 78
+    },
+    "Hecarim|DA_WarmogsArmor": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.583,
+      "sampleSize": 120
+    },
+    "Hecarim|DA_SpiritVisage": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.636,
+      "sampleSize": 77
+    },
+    "Sentinel|DA_Evenshroud": {
+      "avgPlacement": 3.3,
+      "top4Rate": 0.757,
+      "sampleSize": 37
+    },
+    "Amumu|DA_Component_NegatronCloak": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.538,
+      "sampleSize": 13
+    },
+    "Ivern|DA_Morellonomicon": {
+      "avgPlacement": 2.81,
+      "top4Rate": 0.75,
+      "sampleSize": 16
+    },
+    "Maokai|DA_SpiritVisage": {
+      "avgPlacement": 3.61,
+      "top4Rate": 0.727,
+      "sampleSize": 66
+    },
+    "Maokai|DA_SteraksGage": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 16
+    },
+    "Lux18_Base|DA_ArchangelsStaff": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.688,
+      "sampleSize": 32
+    },
+    "Lux18_Base|DA_JeweledGauntlet": {
+      "avgPlacement": 3.24,
+      "top4Rate": 0.743,
+      "sampleSize": 74
+    },
+    "Ezreal|DA_LastWhisper": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.569,
+      "sampleSize": 202
+    },
+    "Ezreal|DA_GiantSlayer": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.558,
+      "sampleSize": 52
+    },
+    "Soraka|DA_18_EmblemElderwood": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 32
+    },
+    "Gnar|DA_WarmogsArmor": {
+      "avgPlacement": 3.27,
+      "top4Rate": 0.733,
+      "sampleSize": 15
+    },
+    "Gnar|DA_Evenshroud": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Lux18_Base|DA_SpearOfShojin": {
+      "avgPlacement": 3.58,
+      "top4Rate": 0.651,
+      "sampleSize": 146
+    },
+    "Lux18_Base|DA_Morellonomicon": {
+      "avgPlacement": 3.67,
+      "top4Rate": 0.535,
+      "sampleSize": 43
+    },
+    "Sett|DA_ProtectorsVow": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.571,
+      "sampleSize": 28
+    },
+    "Kennen|DA_HextechGunblade": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.7,
+      "sampleSize": 30
+    },
+    "Kennen|DA_JeweledGauntlet": {
+      "avgPlacement": 3.52,
+      "top4Rate": 0.571,
+      "sampleSize": 21
+    },
+    "Alune|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.9,
+      "top4Rate": 0.621,
+      "sampleSize": 29
+    },
+    "Alune|DA_Morellonomicon": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.618,
+      "sampleSize": 55
+    },
+    "Rengar|DA_18_EmblemSprykin": {
+      "avgPlacement": 3.7,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Rengar|DA_Quicksilver": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.633,
+      "sampleSize": 30
+    },
+    "Rengar|DA_SteraksGage": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.564,
+      "sampleSize": 55
+    },
+    "Vi|DA_BrambleVest": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.667,
+      "sampleSize": 12
+    },
+    "Tristana|DA_HextechGunblade": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "Tristana|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.471,
+      "sampleSize": 34
+    },
+    "Maokai|DA_DragonsClaw": {
+      "avgPlacement": 3.04,
+      "top4Rate": 0.821,
+      "sampleSize": 28
+    },
+    "Sivir|DA_InfinityEdge": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.465,
+      "sampleSize": 86
+    },
+    "Ezreal|DA_StrikersFlail": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.58,
+      "sampleSize": 81
+    },
+    "Ahri|DA_18_EmblemExecutioner": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.6,
+      "sampleSize": 20
+    },
+    "Ahri|DA_SpearOfShojin": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.531,
+      "sampleSize": 128
+    },
+    "Soraka|DA_NashorsTooth": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.578,
+      "sampleSize": 64
+    },
+    "Sett|DA_DragonsClaw": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.63,
+      "sampleSize": 27
+    },
+    "Amumu|DA_DragonsClaw": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.607,
+      "sampleSize": 56
+    },
+    "Sentinel|DA_Crownguard": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.539,
+      "sampleSize": 115
+    },
+    "Nidalee18_AP|DA_GiantSlayer": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.5,
+      "sampleSize": 18
+    },
+    "Nidalee18_AP|DA_Bloodthirster": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.561,
+      "sampleSize": 41
+    },
+    "Aphelios|DA_StrikersFlail": {
+      "avgPlacement": 4.46,
+      "top4Rate": 0.622,
+      "sampleSize": 37
+    },
+    "KogMaw18_AD|DA_Morellonomicon": {
+      "avgPlacement": 4.74,
+      "top4Rate": 0.421,
+      "sampleSize": 19
+    },
+    "KogMaw18_AD|DA_Component_TearOfTheGoddess": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Cassiopeia|DA_Morellonomicon": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.5,
+      "sampleSize": 36
+    },
+    "Diana|DA_HandOfJustice": {
+      "avgPlacement": 3.82,
+      "top4Rate": 0.727,
+      "sampleSize": 33
+    },
+    "Xayah|DA_KrakensFury": {
+      "avgPlacement": 5.42,
+      "top4Rate": 0.421,
+      "sampleSize": 19
+    },
+    "Kayle|DA_HextechGunblade": {
+      "avgPlacement": 5,
+      "top4Rate": 0.438,
+      "sampleSize": 16
+    },
+    "Fiddlesticks|DA_AdaptiveHelm": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.757,
+      "sampleSize": 37
+    },
+    "Fiddlesticks|DA_SteadfastHeart": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.61,
+      "sampleSize": 41
+    },
+    "Fiddlesticks|DA_IonicSpark": {
+      "avgPlacement": 3.91,
+      "top4Rate": 0.607,
+      "sampleSize": 56
+    },
+    "Hecarim|DA_BrambleVest": {
+      "avgPlacement": 3,
+      "top4Rate": 0.793,
+      "sampleSize": 29
+    },
+    "Alune|DA_AdaptiveHelm": {
+      "avgPlacement": 4,
+      "top4Rate": 0.552,
+      "sampleSize": 58
+    },
+    "Rengar|DA_GiantSlayer": {
+      "avgPlacement": 4,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Rengar|DA_HandOfJustice": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.444,
+      "sampleSize": 18
+    },
+    "MasterYi_AD|DA_EdgeOfNight": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.46,
+      "sampleSize": 63
+    },
+    "MasterYi_AD|DA_KrakensFury": {
+      "avgPlacement": 4.73,
+      "top4Rate": 0.538,
+      "sampleSize": 26
+    },
+    "MasterYi_AD|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.37,
+      "top4Rate": 0.508,
+      "sampleSize": 63
+    },
+    "Krug|DA_Evenshroud": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.721,
+      "sampleSize": 43
+    },
+    "Krug|DA_ProtectorsVow": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.667,
+      "sampleSize": 24
+    },
+    "Sett|DA_SunfireCape": {
+      "avgPlacement": 4,
+      "top4Rate": 0.594,
+      "sampleSize": 32
+    },
+    "Vi|DA_ThiefsGloves": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.537,
+      "sampleSize": 41
+    },
+    "Taric|DA_ProtectorsVow": {
+      "avgPlacement": 3.71,
+      "top4Rate": 0.647,
+      "sampleSize": 34
+    },
+    "Ahri|DA_NashorsTooth": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.581,
+      "sampleSize": 43
+    },
+    "Maokai|DA_IonicSpark": {
+      "avgPlacement": 3.7,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Alune|DA_GiantSlayer": {
+      "avgPlacement": 3.27,
+      "top4Rate": 0.654,
+      "sampleSize": 26
+    },
+    "Zyra|DA_Morellonomicon": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.474,
+      "sampleSize": 76
+    },
+    "Rengar|DA_18_EmblemDefender": {
+      "avgPlacement": 3.85,
+      "top4Rate": 0.636,
+      "sampleSize": 33
+    },
+    "Cassiopeia|DA_ArchangelsStaff": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.492,
+      "sampleSize": 63
+    },
+    "Lux18_Base|DA_RedBuff": {
+      "avgPlacement": 3.58,
+      "top4Rate": 0.658,
+      "sampleSize": 38
+    },
+    "Morgana|DA_HextechGunblade": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.578,
+      "sampleSize": 64
+    },
+    "Morgana|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.511,
+      "sampleSize": 47
+    },
+    "Alune|DA_SpearOfShojin": {
+      "avgPlacement": 3.51,
+      "top4Rate": 0.629,
+      "sampleSize": 89
+    },
+    "Azir|DA_StrikersFlail": {
+      "avgPlacement": 5.22,
+      "top4Rate": 0.352,
+      "sampleSize": 54
+    },
+    "Lux18_Base|DA_VoidStaff": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.6,
+      "sampleSize": 65
+    },
+    "Sentinel|DA_ThiefsGloves": {
+      "avgPlacement": 3.58,
+      "top4Rate": 0.632,
+      "sampleSize": 38
+    },
+    "Sentinel|DA_SteadfastHeart": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.508,
+      "sampleSize": 63
+    },
+    "Sivir|DA_RedBuff": {
+      "avgPlacement": 5,
+      "top4Rate": 0.344,
+      "sampleSize": 32
+    },
+    "Sivir|DA_StrikersFlail": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "Veigar|DA_SpearOfShojin": {
+      "avgPlacement": 5.63,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Veigar|DA_HextechGunblade": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.48,
+      "sampleSize": 50
+    },
+    "Veigar|DA_Artifact_Manazane": {
+      "avgPlacement": 3.2,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "RekSai|DA_WarmogsArmor": {
+      "avgPlacement": 3.74,
+      "top4Rate": 0.652,
+      "sampleSize": 23
+    },
+    "Ahri|DA_RedBuff": {
+      "avgPlacement": 4,
+      "top4Rate": 0.6,
+      "sampleSize": 15
+    },
+    "Ahri|DA_AdaptiveHelm": {
+      "avgPlacement": 4.52,
+      "top4Rate": 0.484,
+      "sampleSize": 31
+    },
+    "Amumu|DA_Crownguard": {
+      "avgPlacement": 4.05,
+      "top4Rate": 0.614,
+      "sampleSize": 101
+    },
+    "Amumu|DA_Evenshroud": {
+      "avgPlacement": 4.97,
+      "top4Rate": 0.375,
+      "sampleSize": 40
+    },
+    "Kennen|DA_ThiefsGloves": {
+      "avgPlacement": 3.74,
+      "top4Rate": 0.644,
+      "sampleSize": 87
+    },
+    "Lux18_Base|DA_RabadonsDeathcap": {
+      "avgPlacement": 2.86,
+      "top4Rate": 0.771,
+      "sampleSize": 35
+    },
+    "Lux18_Base|DA_HextechGunblade": {
+      "avgPlacement": 2.97,
+      "top4Rate": 0.733,
+      "sampleSize": 30
+    },
+    "Ivern|DA_GiantSlayer": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Ivern|DA_JeweledGauntlet": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.467,
+      "sampleSize": 15
+    },
+    "Ashe|DA_Deathblade": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "Ezreal|DA_HandOfJustice": {
+      "avgPlacement": 2.88,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Ezreal|DA_HextechGunblade": {
+      "avgPlacement": 3.68,
+      "top4Rate": 0.579,
+      "sampleSize": 19
+    },
+    "Sett|DA_SteraksGage": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.598,
+      "sampleSize": 122
+    },
+    "Ahri|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.48,
+      "sampleSize": 98
+    },
+    "Alune|DA_HextechGunblade": {
+      "avgPlacement": 3.52,
+      "top4Rate": 0.652,
+      "sampleSize": 23
+    },
+    "Gnar|DA_EdgeOfNight": {
+      "avgPlacement": 3.29,
+      "top4Rate": 0.714,
+      "sampleSize": 49
+    },
+    "Amumu|DA_WarmogsArmor": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.498,
+      "sampleSize": 203
+    },
+    "Amumu|DA_BrambleVest": {
+      "avgPlacement": 4.02,
+      "top4Rate": 0.644,
+      "sampleSize": 45
+    },
+    "Aphelios|DA_KrakensFury": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.504,
+      "sampleSize": 240
+    },
+    "Lux18_Base|DA_AdaptiveHelm": {
+      "avgPlacement": 3.24,
+      "top4Rate": 0.762,
+      "sampleSize": 42
+    },
+    "Warwick|DA_SpearOfShojin": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.483,
+      "sampleSize": 29
+    },
+    "Warwick|DA_TitansResolve": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.583,
+      "sampleSize": 24
+    },
+    "Brambleback|DA_InfinityEdge": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.475,
+      "sampleSize": 40
+    },
+    "Malphite|DA_SteadfastHeart": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.4,
+      "sampleSize": 25
+    },
+    "Leona|DA_SteadfastHeart": {
+      "avgPlacement": 4,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "CrimsonRaptor|DA_LastWhisper": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.44,
+      "sampleSize": 25
+    },
+    "Rammus|DA_ProtectorsVow": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.438,
+      "sampleSize": 16
+    },
+    "MasterYi_AD|DA_18_EmblemBrawler": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.553,
+      "sampleSize": 38
+    },
+    "Rengar|DA_EdgeOfNight": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.521,
+      "sampleSize": 71
+    },
+    "Rengar|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.551,
+      "sampleSize": 89
+    },
+    "Rengar|DA_TitansResolve": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.5,
+      "sampleSize": 66
+    },
+    "Krug|DA_SunfireCape": {
+      "avgPlacement": 3.24,
+      "top4Rate": 0.696,
+      "sampleSize": 46
+    },
+    "Brambleback|DA_Deathblade": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.545,
+      "sampleSize": 33
+    },
+    "Brambleback|DA_Quicksilver": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.573,
+      "sampleSize": 82
+    },
+    "Alistar|DA_Component_GiantsBelt": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Ezreal|DA_18_EmblemRapidfire": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Hecarim|DA_18_EmblemDefender": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Hecarim|DA_DragonsClaw": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.545,
+      "sampleSize": 44
+    },
+    "Lillia|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.37,
+      "sampleSize": 73
+    },
+    "Lillia|DA_SunfireCape": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.556,
+      "sampleSize": 27
+    },
+    "Lillia|DA_BrambleVest": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Sett|DA_BrambleVest": {
+      "avgPlacement": 3.87,
+      "top4Rate": 0.633,
+      "sampleSize": 30
+    },
+    "Ahri|DA_HextechGunblade": {
+      "avgPlacement": 5,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Morgana|DA_RedBuff": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.558,
+      "sampleSize": 95
+    },
+    "Krug|DA_Component_NegatronCloak": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Diana|DA_ThiefsGloves": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.71,
+      "sampleSize": 62
+    },
+    "Diana|DA_RedBuff": {
+      "avgPlacement": 4.45,
+      "top4Rate": 0.636,
+      "sampleSize": 11
+    },
+    "Hecarim|DA_ProtectorsVow": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.548,
+      "sampleSize": 93
+    },
+    "Varus|DA_Deathblade": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.7,
+      "sampleSize": 20
+    },
+    "Varus|DA_StrikersFlail": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.733,
+      "sampleSize": 15
+    },
+    "Varus|DA_LastWhisper": {
+      "avgPlacement": 4.49,
+      "top4Rate": 0.488,
+      "sampleSize": 41
+    },
+    "Sejuani|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.78,
+      "top4Rate": 0.471,
+      "sampleSize": 189
+    },
+    "Sejuani|DA_BrambleVest": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.818,
+      "sampleSize": 11
+    },
+    "Karma|DA_VoidStaff": {
+      "avgPlacement": 5.19,
+      "top4Rate": 0.306,
+      "sampleSize": 36
+    },
+    "Karma|DA_JeweledGauntlet": {
+      "avgPlacement": 5.06,
+      "top4Rate": 0.441,
+      "sampleSize": 68
+    },
+    "Karma|DA_SpearOfShojin": {
+      "avgPlacement": 4.83,
+      "top4Rate": 0.512,
+      "sampleSize": 41
+    },
+    "Yorick|DA_Crownguard": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.429,
+      "sampleSize": 21
+    },
+    "Yunara|DA_StrikersFlail": {
+      "avgPlacement": 5.54,
+      "top4Rate": 0.321,
+      "sampleSize": 28
+    },
+    "LeBlanc|DA_Morellonomicon": {
+      "avgPlacement": 4.88,
+      "top4Rate": 0.464,
+      "sampleSize": 56
+    },
+    "Amumu|DA_SteraksGage": {
+      "avgPlacement": 3.48,
+      "top4Rate": 0.667,
+      "sampleSize": 27
+    },
+    "Ivern|DA_RedBuff": {
+      "avgPlacement": 3.48,
+      "top4Rate": 0.68,
+      "sampleSize": 25
+    },
+    "Kennen|DA_Quicksilver": {
+      "avgPlacement": 3.2,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Azir|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.519,
+      "sampleSize": 135
+    },
+    "Fiddlesticks|DA_ThiefsGloves": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.5,
+      "sampleSize": 56
+    },
+    "Fiddlesticks|DA_Evenshroud": {
+      "avgPlacement": 3.89,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Soraka|DA_Morellonomicon": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.472,
+      "sampleSize": 36
+    },
+    "Soraka|DA_SpearOfShojin": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.513,
+      "sampleSize": 115
+    },
+    "Soraka|DA_RedBuff": {
+      "avgPlacement": 4.84,
+      "top4Rate": 0.421,
+      "sampleSize": 19
+    },
+    "Zyra|DA_ThiefsGloves": {
+      "avgPlacement": 7,
+      "top4Rate": 0,
+      "sampleSize": 8
+    },
+    "Zyra|DA_NashorsTooth": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.625,
+      "sampleSize": 16
+    },
+    "Scuttlecrab|DA_Crownguard": {
+      "avgPlacement": 3.91,
+      "top4Rate": 0.594,
+      "sampleSize": 32
+    },
+    "Scuttlecrab|DA_SpiritVisage": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.375,
+      "sampleSize": 32
+    },
+    "Sentry|DA_JeweledGauntlet": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.606,
+      "sampleSize": 109
+    },
+    "Karma|DA_BlueBuff": {
+      "avgPlacement": 4.96,
+      "top4Rate": 0.4,
+      "sampleSize": 45
+    },
+    "Karma|DA_RabadonsDeathcap": {
+      "avgPlacement": 5.32,
+      "top4Rate": 0.415,
+      "sampleSize": 41
+    },
+    "Yorick|DA_Evenshroud": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "Yorick|DA_SteadfastHeart": {
+      "avgPlacement": 4.4,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "Yunara|DA_GiantSlayer": {
+      "avgPlacement": 5.17,
+      "top4Rate": 0.348,
+      "sampleSize": 23
+    },
+    "Sejuani|DA_ProtectorsVow": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.615,
+      "sampleSize": 26
+    },
+    "Soraka|DA_VoidStaff": {
+      "avgPlacement": 4.34,
+      "top4Rate": 0.516,
+      "sampleSize": 64
+    },
+    "KhaZix|DA_JeweledGauntlet": {
+      "avgPlacement": 3.57,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Diana|DA_SunfireCape": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Gnar|DA_HandOfJustice": {
+      "avgPlacement": 3.42,
+      "top4Rate": 0.737,
+      "sampleSize": 19
+    },
+    "Sett|DA_SteadfastHeart": {
+      "avgPlacement": 4.32,
+      "top4Rate": 0.569,
+      "sampleSize": 65
+    },
+    "Sentinel|DA_Bloodthirster": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Ahri|DA_ArchangelsStaff": {
+      "avgPlacement": 4.8,
+      "top4Rate": 0.44,
+      "sampleSize": 25
+    },
+    "Soraka|DA_ThiefsGloves": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.435,
+      "sampleSize": 23
+    },
+    "Soraka|DA_JeweledGauntlet": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.578,
+      "sampleSize": 64
+    },
+    "Morgana|DA_BlueBuff": {
+      "avgPlacement": 4.52,
+      "top4Rate": 0.476,
+      "sampleSize": 21
+    },
+    "Amumu|DA_AdaptiveHelm": {
+      "avgPlacement": 4.78,
+      "top4Rate": 0.475,
+      "sampleSize": 40
+    },
+    "Gnar|DA_Bloodthirster": {
+      "avgPlacement": 3.68,
+      "top4Rate": 0.676,
+      "sampleSize": 37
+    },
+    "Kennen|DA_Crownguard": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.625,
+      "sampleSize": 16
+    },
+    "Kennen|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.29,
+      "top4Rate": 0.69,
+      "sampleSize": 42
+    },
+    "Draven|DA_InfinityEdge": {
+      "avgPlacement": 4.28,
+      "top4Rate": 0.492,
+      "sampleSize": 61
+    },
+    "Amumu|DA_18_EmblemVanguard": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Rakan|DA_ProtectorsVow": {
+      "avgPlacement": 5.64,
+      "top4Rate": 0.214,
+      "sampleSize": 14
+    },
+    "Brambleback|DA_18_EmblemRapidfire": {
+      "avgPlacement": 4.51,
+      "top4Rate": 0.535,
+      "sampleSize": 43
+    },
+    "Yorick|DA_ThiefsGloves": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Yorick|DA_IonicSpark": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.526,
+      "sampleSize": 19
+    },
+    "Malphite|DA_Crownguard": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.457,
+      "sampleSize": 94
+    },
+    "Malphite|DA_DragonsClaw": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.625,
+      "sampleSize": 24
+    },
+    "Sett|DA_18_EmblemJuggernaut": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Kennen|DA_18_EmblemBlackthorn": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Kennen|DA_HandOfJustice": {
+      "avgPlacement": 3.42,
+      "top4Rate": 0.66,
+      "sampleSize": 53
+    },
+    "Soraka|DA_18_EmblemBlackthorn": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Diana|DA_TitansResolve": {
+      "avgPlacement": 4.06,
+      "top4Rate": 0.529,
+      "sampleSize": 17
+    },
+    "Soraka|DA_GuinsoosRageblade": {
+      "avgPlacement": 3.54,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "Ezreal|DA_Morellonomicon": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.526,
+      "sampleSize": 19
+    },
+    "Rammus|DA_BrambleVest": {
+      "avgPlacement": 3.68,
+      "top4Rate": 0.636,
+      "sampleSize": 22
+    },
+    "Rammus|DA_DragonsClaw": {
+      "avgPlacement": 4.91,
+      "top4Rate": 0.455,
+      "sampleSize": 22
+    },
+    "Gnar|DA_SteraksGage": {
+      "avgPlacement": 3.39,
+      "top4Rate": 0.707,
+      "sampleSize": 75
+    },
+    "Cassiopeia|DA_VoidStaff": {
+      "avgPlacement": 4.96,
+      "top4Rate": 0.404,
+      "sampleSize": 57
+    },
+    "Sett|DA_Crownguard": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.632,
+      "sampleSize": 57
+    },
+    "Lillia|DA_SpiritVisage": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.5,
+      "sampleSize": 48
+    },
+    "Malphite|DA_SunfireCape": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Rengar|DA_18_EmblemHunter": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Tristana|DA_KrakensFury": {
+      "avgPlacement": 5.25,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Veigar|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "KogMaw18_AD|DA_BlueBuff": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "KogMaw18_AD|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.727,
+      "sampleSize": 11
+    },
+    "LeBlanc|DA_HextechGunblade": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.55,
+      "sampleSize": 20
+    },
+    "LeBlanc|DA_SpearOfShojin": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.522,
+      "sampleSize": 46
+    },
+    "Gnar|DA_InfinityEdge": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.667,
+      "sampleSize": 21
+    },
+    "Gnar|DA_Deathblade": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Soraka|DA_18_EmblemSpellweaver": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.536,
+      "sampleSize": 28
+    },
+    "Soraka|DA_AdaptiveHelm": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.565,
+      "sampleSize": 69
+    },
+    "Krug|DA_WarmogsArmor": {
+      "avgPlacement": 3.56,
+      "top4Rate": 0.659,
+      "sampleSize": 132
+    },
+    "Krug|DA_IonicSpark": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Sentry|DA_ArchangelsStaff": {
+      "avgPlacement": 3.98,
+      "top4Rate": 0.561,
+      "sampleSize": 114
+    },
+    "Gromp18_AP|DA_RedBuff": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.467,
+      "sampleSize": 15
+    },
+    "Gromp18_AP|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "ElderDragon|DA_HandOfJustice": {
+      "avgPlacement": 3.14,
+      "top4Rate": 0.744,
+      "sampleSize": 43
+    },
+    "Gnar|DA_ThiefsGloves": {
+      "avgPlacement": 3.45,
+      "top4Rate": 0.692,
+      "sampleSize": 78
+    },
+    "Gnar|DA_Morellonomicon": {
+      "avgPlacement": 3.07,
+      "top4Rate": 0.733,
+      "sampleSize": 15
+    },
+    "Rammus|DA_WarmogsArmor": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.519,
+      "sampleSize": 81
+    },
+    "Lillia|DA_SteraksGage": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Lillia|DA_WarmogsArmor": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.5,
+      "sampleSize": 38
+    },
+    "Sentinel|DA_BrambleVest": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.568,
+      "sampleSize": 37
+    },
+    "Alune|DA_ArchangelsStaff": {
+      "avgPlacement": 3.29,
+      "top4Rate": 0.679,
+      "sampleSize": 56
+    },
+    "Draven|DA_LastWhisper": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.469,
+      "sampleSize": 49
+    },
+    "Kennen|DA_18_EmblemJuggernaut": {
+      "avgPlacement": 5,
+      "top4Rate": 0.308,
+      "sampleSize": 13
+    },
+    "ElderDragon|DA_18_EmblemInferno": {
+      "avgPlacement": 4.89,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "Lillia|DA_AdaptiveHelm": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.63,
+      "sampleSize": 54
+    },
+    "Ashe|DA_LastWhisper": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.591,
+      "sampleSize": 44
+    },
+    "Ashe|DA_Morellonomicon": {
+      "avgPlacement": 3.65,
+      "top4Rate": 0.739,
+      "sampleSize": 23
+    },
+    "Ivern|DA_Component_NeedlesslyLargeRod": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Vi|DA_AdaptiveHelm": {
+      "avgPlacement": 4.73,
+      "top4Rate": 0.5,
+      "sampleSize": 22
+    },
+    "Cassiopeia|DA_AdaptiveHelm": {
+      "avgPlacement": 4,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Sentry|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.48,
+      "top4Rate": 0.687,
+      "sampleSize": 67
+    },
+    "Sentry|DA_HextechGunblade": {
+      "avgPlacement": 3.12,
+      "top4Rate": 0.758,
+      "sampleSize": 33
+    },
+    "Sentinel|DA_IonicSpark": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.542,
+      "sampleSize": 24
+    },
+    "Murkwolf|DA_Deathblade": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Murkwolf|DA_HandOfJustice": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.615,
+      "sampleSize": 26
+    },
+    "Murkwolf|DA_EdgeOfNight": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.85,
+      "sampleSize": 20
+    },
+    "RekSai|DA_SpiritVisage": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.615,
+      "sampleSize": 26
+    },
+    "Elise|DA_Crownguard": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Zyra|DA_StrikersFlail": {
+      "avgPlacement": 4,
+      "top4Rate": 0.538,
+      "sampleSize": 13
+    },
+    "Soraka|DA_StrikersFlail": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.506,
+      "sampleSize": 81
+    },
+    "Lillia|DA_IonicSpark": {
+      "avgPlacement": 5.4,
+      "top4Rate": 0.267,
+      "sampleSize": 15
+    },
+    "LeBlanc|DA_RedBuff": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.411,
+      "sampleSize": 56
+    },
+    "RekSai|DA_SteraksGage": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 16
+    },
+    "RekSai|DA_Component_GiantsBelt": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Alistar|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.01,
+      "top4Rate": 0.595,
+      "sampleSize": 131
+    },
+    "Alistar|DA_WarmogsArmor": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.622,
+      "sampleSize": 74
+    },
+    "Kennen|DA_StrikersFlail": {
+      "avgPlacement": 3.42,
+      "top4Rate": 0.742,
+      "sampleSize": 31
+    },
+    "Amumu|DA_Component_GiantsBelt": {
+      "avgPlacement": 5.55,
+      "top4Rate": 0.273,
+      "sampleSize": 11
+    },
+    "Fiddlesticks|DA_WarmogsArmor": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.6,
+      "sampleSize": 50
+    },
+    "Fiddlesticks|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.518,
+      "sampleSize": 56
+    },
+    "Zyra|DA_GiantSlayer": {
+      "avgPlacement": 5.5,
+      "top4Rate": 0.357,
+      "sampleSize": 14
+    },
+    "Krug|DA_Crownguard": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.586,
+      "sampleSize": 58
+    },
+    "Scuttlecrab|DA_ProtectorsVow": {
+      "avgPlacement": 5.17,
+      "top4Rate": 0.333,
+      "sampleSize": 12
+    },
+    "Scuttlecrab|DA_SunfireCape": {
+      "avgPlacement": 3.55,
+      "top4Rate": 0.591,
+      "sampleSize": 22
+    },
+    "Gromp18_AP|DA_SpearOfShojin": {
+      "avgPlacement": 3.66,
+      "top4Rate": 0.621,
+      "sampleSize": 29
+    },
+    "Gromp18_AP|DA_JeweledGauntlet": {
+      "avgPlacement": 3.52,
+      "top4Rate": 0.714,
+      "sampleSize": 21
+    },
+    "Ahri|DA_GiantSlayer": {
+      "avgPlacement": 5.32,
+      "top4Rate": 0.36,
+      "sampleSize": 25
+    },
+    "Morgana|DA_Bloodthirster": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.412,
+      "sampleSize": 17
+    },
+    "Krug|DA_ThiefsGloves": {
+      "avgPlacement": 3.84,
+      "top4Rate": 0.711,
+      "sampleSize": 38
+    },
+    "Azir|DA_ThiefsGloves": {
+      "avgPlacement": 5.53,
+      "top4Rate": 0.294,
+      "sampleSize": 17
+    },
+    "Azir|DA_NashorsTooth": {
+      "avgPlacement": 5.11,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "ElderDragon|DA_Quicksilver": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "ElderDragon|DA_HextechGunblade": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "Gnar|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.5,
+      "sampleSize": 16
+    },
+    "Taric|DA_SteraksGage": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.579,
+      "sampleSize": 19
+    },
+    "Fiddlesticks|DA_SteraksGage": {
+      "avgPlacement": 3.74,
+      "top4Rate": 0.632,
+      "sampleSize": 19
+    },
+    "Fiddlesticks|DA_RedBuff": {
+      "avgPlacement": 4.6,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Scuttlecrab|DA_WarmogsArmor": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.564,
+      "sampleSize": 39
+    },
+    "Scuttlecrab|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.563,
+      "sampleSize": 80
+    },
+    "Gromp18_AP|DA_VoidStaff": {
+      "avgPlacement": 2.61,
+      "top4Rate": 0.826,
+      "sampleSize": 23
+    },
+    "ElderDragon|DA_EdgeOfNight": {
+      "avgPlacement": 4,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Lillia|DA_18_EmblemLunar": {
+      "avgPlacement": 3.22,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Tristana|DA_GiantSlayer": {
+      "avgPlacement": 4,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Tristana|DA_InfinityEdge": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.375,
+      "sampleSize": 16
+    },
+    "Maokai|DA_BrambleVest": {
+      "avgPlacement": 3.35,
+      "top4Rate": 0.826,
+      "sampleSize": 23
+    },
+    "Veigar|DA_GiantSlayer": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Rammus|DA_IonicSpark": {
+      "avgPlacement": 6,
+      "top4Rate": 0.125,
+      "sampleSize": 8
+    },
+    "Cinderling|DA_InfinityEdge": {
+      "avgPlacement": 4.79,
+      "top4Rate": 0.381,
+      "sampleSize": 42
+    },
+    "Cinderling|DA_GiantSlayer": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Cinderling|DA_StrikersFlail": {
+      "avgPlacement": 4.93,
+      "top4Rate": 0.357,
+      "sampleSize": 14
+    },
+    "Krug|DA_SpiritVisage": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.554,
+      "sampleSize": 83
+    },
+    "Alune|DA_18_EmblemInvoker": {
+      "avgPlacement": 4,
+      "top4Rate": 0.576,
+      "sampleSize": 33
+    },
+    "Kennen|DA_18_EmblemElderwood": {
+      "avgPlacement": 4.35,
+      "top4Rate": 0.471,
+      "sampleSize": 17
+    },
+    "Kennen|DA_VoidStaff": {
+      "avgPlacement": 3.17,
+      "top4Rate": 0.774,
+      "sampleSize": 53
+    },
+    "Taric|DA_GargoyleStoneplate": {
+      "avgPlacement": 3.46,
+      "top4Rate": 0.64,
+      "sampleSize": 89
+    },
+    "Warwick|DA_InfinityEdge": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.56,
+      "sampleSize": 25
+    },
+    "Warwick|DA_SteraksGage": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.542,
+      "sampleSize": 24
+    },
+    "Warwick|DA_Quicksilver": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.519,
+      "sampleSize": 27
+    },
+    "Brambleback|DA_LastWhisper": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "Krug|DA_SteadfastHeart": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.625,
+      "sampleSize": 24
+    },
+    "Nidalee18_AP|DA_HandOfJustice": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.607,
+      "sampleSize": 61
+    },
+    "Sentry|DA_GiantSlayer": {
+      "avgPlacement": 3.29,
+      "top4Rate": 0.679,
+      "sampleSize": 28
+    },
+    "Sentinel|DA_Component_TearOfTheGoddess": {
+      "avgPlacement": 5.06,
+      "top4Rate": 0.353,
+      "sampleSize": 17
+    },
+    "Lux18_Base|DA_18_EmblemSpellweaver": {
+      "avgPlacement": 3,
+      "top4Rate": 0.708,
+      "sampleSize": 24
+    },
+    "Gnar|DA_BlueBuff": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Karma|DA_ArchangelsStaff": {
+      "avgPlacement": 5.71,
+      "top4Rate": 0.317,
+      "sampleSize": 41
+    },
+    "LeBlanc|DA_GuinsoosRageblade": {
+      "avgPlacement": 5.5,
+      "top4Rate": 0.2,
+      "sampleSize": 10
+    },
+    "Yorick|DA_SteraksGage": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Brambleback|DA_GuinsoosRageblade": {
+      "avgPlacement": 3.47,
+      "top4Rate": 0.702,
+      "sampleSize": 47
+    },
+    "Brambleback|DA_HandOfJustice": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.63,
+      "sampleSize": 54
+    },
+    "Zyra|DA_JeweledGauntlet": {
+      "avgPlacement": 4.91,
+      "top4Rate": 0.313,
+      "sampleSize": 32
+    },
+    "Murkwolf|DA_InfinityEdge": {
+      "avgPlacement": 4.82,
+      "top4Rate": 0.529,
+      "sampleSize": 17
+    },
+    "Sentry|DA_Component_NeedlesslyLargeRod": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Akali_AD|DA_InfinityEdge": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.571,
+      "sampleSize": 28
+    },
+    "Camille|DA_GiantSlayer": {
+      "avgPlacement": 4,
+      "top4Rate": 0.667,
+      "sampleSize": 12
+    },
+    "Soraka|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.533,
+      "sampleSize": 105
+    },
+    "Soraka|DA_GiantSlayer": {
+      "avgPlacement": 4,
+      "top4Rate": 0.531,
+      "sampleSize": 32
+    },
+    "Vi|DA_SteadfastHeart": {
+      "avgPlacement": 4.66,
+      "top4Rate": 0.474,
+      "sampleSize": 38
+    },
+    "Hecarim|DA_SteadfastHeart": {
+      "avgPlacement": 4.32,
+      "top4Rate": 0.5,
+      "sampleSize": 38
+    },
+    "Alune|DA_RedBuff": {
+      "avgPlacement": 3.22,
+      "top4Rate": 0.722,
+      "sampleSize": 36
+    },
+    "Krug|DA_SteraksGage": {
+      "avgPlacement": 4.23,
+      "top4Rate": 0.545,
+      "sampleSize": 22
+    },
+    "Scuttlecrab|DA_Evenshroud": {
+      "avgPlacement": 3.85,
+      "top4Rate": 0.769,
+      "sampleSize": 13
+    },
+    "Brambleback|DA_ThiefsGloves": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 28
+    },
+    "Zyra|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.89,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "RekSai|DA_ThiefsGloves": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.697,
+      "sampleSize": 33
+    },
+    "Ornn|DA_Artifact_LightshieldCrest": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "ElderDragon|DA_BlueBuff": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.684,
+      "sampleSize": 19
+    },
+    "ElderDragon|DA_Artifact_SilvermereDawn": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Yunara|DA_LastWhisper": {
+      "avgPlacement": 5.23,
+      "top4Rate": 0.388,
+      "sampleSize": 98
+    },
+    "LeBlanc|DA_ThiefsGloves": {
+      "avgPlacement": 5.21,
+      "top4Rate": 0.429,
+      "sampleSize": 14
+    },
+    "Kayle|DA_RedBuff": {
+      "avgPlacement": 4.7,
+      "top4Rate": 0.478,
+      "sampleSize": 23
+    },
+    "Vi|DA_ProtectorsVow": {
+      "avgPlacement": 4.97,
+      "top4Rate": 0.424,
+      "sampleSize": 33
+    },
+    "KhaZix|DA_EdgeOfNight": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.625,
+      "sampleSize": 32
+    },
+    "Sett|DA_18_EmblemVanguard": {
+      "avgPlacement": 4.53,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "Taric|DA_SpiritVisage": {
+      "avgPlacement": 3.71,
+      "top4Rate": 0.633,
+      "sampleSize": 49
+    },
+    "Taric|DA_Component_GiantsBelt": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Taric|DA_AdaptiveHelm": {
+      "avgPlacement": 2.95,
+      "top4Rate": 0.8,
+      "sampleSize": 20
+    },
+    "MasterYi_AD|DA_GiantSlayer": {
+      "avgPlacement": 4.09,
+      "top4Rate": 0.545,
+      "sampleSize": 11
+    },
+    "Zyra|DA_AdaptiveHelm": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.548,
+      "sampleSize": 31
+    },
+    "Sejuani|DA_WarmogsArmor": {
+      "avgPlacement": 4.69,
+      "top4Rate": 0.442,
+      "sampleSize": 77
+    },
+    "Yunara|DA_InfinityEdge": {
+      "avgPlacement": 4.76,
+      "top4Rate": 0.457,
+      "sampleSize": 46
+    },
+    "Lux18_Base|DA_18_EmblemExecutioner": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Lux18_Base|DA_NashorsTooth": {
+      "avgPlacement": 3.07,
+      "top4Rate": 0.75,
+      "sampleSize": 28
+    },
+    "Gnar|DA_StrikersFlail": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.75,
+      "sampleSize": 16
+    },
+    "Sentry|DA_StrikersFlail": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Nidalee18_AP|DA_Deathblade": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.609,
+      "sampleSize": 23
+    },
+    "KogMaw18_AD|DA_ArchangelsStaff": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Lillia|DA_18_EmblemElderwood": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.455,
+      "sampleSize": 33
+    },
+    "Ornn|DA_ThiefsGloves": {
+      "avgPlacement": 3.84,
+      "top4Rate": 0.632,
+      "sampleSize": 19
+    },
+    "Ornn|DA_SteraksGage": {
+      "avgPlacement": 5.36,
+      "top4Rate": 0.364,
+      "sampleSize": 11
+    },
+    "Alistar|DA_ThiefsGloves": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "LeBlanc|DA_JeweledGauntlet": {
+      "avgPlacement": 3.98,
+      "top4Rate": 0.628,
+      "sampleSize": 43
+    },
+    "Rakan|DA_SpiritVisage": {
+      "avgPlacement": 4.07,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Rakan|DA_GargoyleStoneplate": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.56,
+      "sampleSize": 25
+    },
+    "Rakan|DA_WarmogsArmor": {
+      "avgPlacement": 3.29,
+      "top4Rate": 0.647,
+      "sampleSize": 17
+    },
+    "Xayah|DA_RedBuff": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Kayle|DA_Artifact_SeekersArmguard": {
+      "avgPlacement": 2.5,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Sejuani|DA_AdaptiveHelm": {
+      "avgPlacement": 5.22,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "LeBlanc|DA_AdaptiveHelm": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.5,
+      "sampleSize": 26
+    },
+    "Lillia|DA_ThiefsGloves": {
+      "avgPlacement": 4.27,
+      "top4Rate": 0.455,
+      "sampleSize": 22
+    },
+    "Lillia|DA_SteadfastHeart": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.483,
+      "sampleSize": 29
+    },
+    "Fiddlesticks|DA_Crownguard": {
+      "avgPlacement": 3.68,
+      "top4Rate": 0.636,
+      "sampleSize": 22
+    },
+    "MasterYi_AD|DA_Artifact_HellfireHatchet": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Vi|DA_Crownguard": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.548,
+      "sampleSize": 31
+    },
+    "Nidalee18_AP|DA_ThiefsGloves": {
+      "avgPlacement": 3.6,
+      "top4Rate": 0.8,
+      "sampleSize": 10
+    },
+    "Nidalee18_AP|DA_RedBuff": {
+      "avgPlacement": 3.53,
+      "top4Rate": 0.706,
+      "sampleSize": 17
+    },
+    "Nidalee18_AP|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.8,
+      "top4Rate": 0.488,
+      "sampleSize": 41
+    },
+    "Sett|DA_ThiefsGloves": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "Sett|DA_AdaptiveHelm": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.667,
+      "sampleSize": 27
+    },
+    "Gromp18_AP|DA_InfinityEdge": {
+      "avgPlacement": 4.73,
+      "top4Rate": 0.4,
+      "sampleSize": 15
+    },
+    "Gromp18_AP|DA_LastWhisper": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Brambleback|DA_TitansResolve": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.5,
+      "sampleSize": 24
+    },
+    "Karma|DA_GiantSlayer": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.4,
+      "sampleSize": 15
+    },
+    "Karma|DA_Morellonomicon": {
+      "avgPlacement": 5,
+      "top4Rate": 0.35,
+      "sampleSize": 20
+    },
+    "Ezreal|DA_18_EmblemFloraFatalis": {
+      "avgPlacement": 4,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Diana|DA_Crownguard": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Hecarim|DA_Component_GiantsBelt": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "Kennen|DA_Component_NeedlesslyLargeRod": {
+      "avgPlacement": 5.11,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "Morgana|DA_GiantSlayer": {
+      "avgPlacement": 5.17,
+      "top4Rate": 0.478,
+      "sampleSize": 23
+    },
+    "Kennen|DA_ProtectorsVow": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.618,
+      "sampleSize": 34
+    },
+    "Kennen|DA_BlueBuff": {
+      "avgPlacement": 4.71,
+      "top4Rate": 0.294,
+      "sampleSize": 17
+    },
+    "Diana|DA_NashorsTooth": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Fiddlesticks|DA_BrambleVest": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Cassiopeia|DA_RedBuff": {
+      "avgPlacement": 4.72,
+      "top4Rate": 0.414,
+      "sampleSize": 29
+    },
+    "Vi|DA_WarmogsArmor": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.451,
+      "sampleSize": 71
+    },
+    "Scuttlecrab|DA_ThiefsGloves": {
+      "avgPlacement": 3.72,
+      "top4Rate": 0.667,
+      "sampleSize": 18
+    },
+    "Scuttlecrab|DA_SteraksGage": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Amumu|DA_IonicSpark": {
+      "avgPlacement": 4,
+      "top4Rate": 0.6,
+      "sampleSize": 20
+    },
+    "Amumu|DA_SunfireCape": {
+      "avgPlacement": 4.4,
+      "top4Rate": 0.486,
+      "sampleSize": 35
+    },
+    "Ivern|DA_GuinsoosRageblade": {
+      "avgPlacement": 2.84,
+      "top4Rate": 0.795,
+      "sampleSize": 44
+    },
+    "Ivern|DA_VoidStaff": {
+      "avgPlacement": 3.96,
+      "top4Rate": 0.571,
+      "sampleSize": 28
+    },
+    "Aphelios|DA_18_EmblemElderwood": {
+      "avgPlacement": 4.16,
+      "top4Rate": 0.649,
+      "sampleSize": 37
+    },
+    "Lillia|DA_Evenshroud": {
+      "avgPlacement": 3.4,
+      "top4Rate": 0.767,
+      "sampleSize": 30
+    },
+    "Ivern|DA_HextechGunblade": {
+      "avgPlacement": 3.36,
+      "top4Rate": 0.636,
+      "sampleSize": 11
+    },
+    "Fiddlesticks|DA_DragonsClaw": {
+      "avgPlacement": 3.48,
+      "top4Rate": 0.741,
+      "sampleSize": 27
+    },
+    "Fiddlesticks|DA_SpiritVisage": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.548,
+      "sampleSize": 42
+    },
+    "Ezreal|DA_Component_BFSword": {
+      "avgPlacement": 5.1,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Elise|DA_18_EmblemSlayer": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Xayah|DA_StrikersFlail": {
+      "avgPlacement": 4,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Sejuani|DA_ThiefsGloves": {
+      "avgPlacement": 5,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "KogMaw18_AD|DA_JeweledGauntlet": {
+      "avgPlacement": 3.21,
+      "top4Rate": 0.786,
+      "sampleSize": 14
+    },
+    "Krug|DA_Component_GiantsBelt": {
+      "avgPlacement": 5.4,
+      "top4Rate": 0.2,
+      "sampleSize": 10
+    },
+    "Alistar|DA_SunfireCape": {
+      "avgPlacement": 3.6,
+      "top4Rate": 0.6,
+      "sampleSize": 20
+    },
+    "Alistar|DA_SpiritVisage": {
+      "avgPlacement": 3.64,
+      "top4Rate": 0.707,
+      "sampleSize": 58
+    },
+    "KogMaw18_AD|DA_SpearOfShojin": {
+      "avgPlacement": 4.03,
+      "top4Rate": 0.658,
+      "sampleSize": 38
+    },
+    "Teemo|DA_JeweledGauntlet": {
+      "avgPlacement": 4.87,
+      "top4Rate": 0.467,
+      "sampleSize": 15
+    },
+    "Cinderling|DA_BlueBuff": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Cinderling|DA_LastWhisper": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.429,
+      "sampleSize": 28
+    },
+    "Brambleback|DA_Bloodthirster": {
+      "avgPlacement": 3.41,
+      "top4Rate": 0.717,
+      "sampleSize": 46
+    },
+    "Brambleback|DA_KrakensFury": {
+      "avgPlacement": 2.45,
+      "top4Rate": 0.909,
+      "sampleSize": 11
+    },
+    "Yunara|DA_18_EmblemBlackthorn": {
+      "avgPlacement": 5.05,
+      "top4Rate": 0.364,
+      "sampleSize": 22
+    },
+    "Krug|DA_AdaptiveHelm": {
+      "avgPlacement": 5.2,
+      "top4Rate": 0.333,
+      "sampleSize": 15
+    },
+    "Sett|DA_Evenshroud": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.68,
+      "sampleSize": 25
+    },
+    "Sentinel|DA_SunfireCape": {
+      "avgPlacement": 3.8,
+      "top4Rate": 0.61,
+      "sampleSize": 41
+    },
+    "Sejuani|DA_Evenshroud": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Sejuani|DA_SteadfastHeart": {
+      "avgPlacement": 4.74,
+      "top4Rate": 0.474,
+      "sampleSize": 19
+    },
+    "Sentinel|DA_Component_ChainVest": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Sett|DA_IonicSpark": {
+      "avgPlacement": 3.87,
+      "top4Rate": 0.652,
+      "sampleSize": 23
+    },
+    "Morgana|DA_JeweledGauntlet": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.565,
+      "sampleSize": 23
+    },
+    "Kennen|DA_IonicSpark": {
+      "avgPlacement": 3.66,
+      "top4Rate": 0.69,
+      "sampleSize": 29
+    },
+    "Draven|DA_Deathblade": {
+      "avgPlacement": 4.51,
+      "top4Rate": 0.467,
+      "sampleSize": 45
+    },
+    "Taric|DA_ThiefsGloves": {
+      "avgPlacement": 3.36,
+      "top4Rate": 0.722,
+      "sampleSize": 36
+    },
+    "Ornn|DA_ProtectorsVow": {
+      "avgPlacement": 4.26,
+      "top4Rate": 0.63,
+      "sampleSize": 27
+    },
+    "Ornn|DA_IonicSpark": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "Soraka|DA_BlueBuff": {
+      "avgPlacement": 4.17,
+      "top4Rate": 0.574,
+      "sampleSize": 47
+    },
+    "Alune|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.45,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "KhaZix|DA_StrikersFlail": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Teemo|DA_SpearOfShojin": {
+      "avgPlacement": 5.4,
+      "top4Rate": 0.4,
+      "sampleSize": 15
+    },
+    "Fiddlesticks|DA_Bloodthirster": {
+      "avgPlacement": 4.56,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Ornn|DA_SunfireCape": {
+      "avgPlacement": 4.61,
+      "top4Rate": 0.5,
+      "sampleSize": 18
+    },
+    "Ornn|DA_SteadfastHeart": {
+      "avgPlacement": 4.89,
+      "top4Rate": 0.429,
+      "sampleSize": 28
+    },
+    "Leona|DA_WarmogsArmor": {
+      "avgPlacement": 3.94,
+      "top4Rate": 0.688,
+      "sampleSize": 32
+    },
+    "Nidalee18_AP|DA_Quicksilver": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.55,
+      "sampleSize": 20
+    },
+    "RekSai|DA_ProtectorsVow": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.625,
+      "sampleSize": 16
+    },
+    "Alistar|DA_Artifact_LightshieldCrest": {
+      "avgPlacement": 3.6,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Fiddlesticks|DA_18_EmblemVanguard": {
+      "avgPlacement": 4.8,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Fiddlesticks|DA_18_EmblemExecutioner": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Varus|DA_18_EmblemLunar": {
+      "avgPlacement": 6.33,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "CrimsonRaptor|DA_Deathblade": {
+      "avgPlacement": 4,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Malphite|DA_BrambleVest": {
+      "avgPlacement": 5,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Rengar|DA_KrakensFury": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Hecarim|DA_AdaptiveHelm": {
+      "avgPlacement": 5.14,
+      "top4Rate": 0.417,
+      "sampleSize": 36
+    },
+    "Taric|DA_BrambleVest": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.632,
+      "sampleSize": 19
+    },
+    "Ezreal|DA_Quicksilver": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.714,
+      "sampleSize": 14
+    },
+    "Gnar|DA_NashorsTooth": {
+      "avgPlacement": 3.8,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Kayle|DA_GiantSlayer": {
+      "avgPlacement": 5,
+      "top4Rate": 0.45,
+      "sampleSize": 20
+    },
+    "Sejuani|DA_18_EmblemDefender": {
+      "avgPlacement": 5.4,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Varus|DA_GuinsoosRageblade": {
+      "avgPlacement": 3.15,
+      "top4Rate": 0.846,
+      "sampleSize": 13
+    },
+    "Shen|DA_SpiritVisage": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.846,
+      "sampleSize": 13
+    },
+    "Shen|DA_Crownguard": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Sejuani|DA_Crownguard": {
+      "avgPlacement": 4.57,
+      "top4Rate": 0.483,
+      "sampleSize": 60
+    },
+    "CrimsonRaptor|DA_KrakensFury": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Taric|DA_Evenshroud": {
+      "avgPlacement": 2.93,
+      "top4Rate": 0.815,
+      "sampleSize": 27
+    },
+    "Diana|DA_Morellonomicon": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Diana|DA_JeweledGauntlet": {
+      "avgPlacement": 3.34,
+      "top4Rate": 0.813,
+      "sampleSize": 32
+    },
+    "Nidalee18_AP|DA_18_EmblemSlayer": {
+      "avgPlacement": 3.76,
+      "top4Rate": 0.706,
+      "sampleSize": 34
+    },
+    "KogMaw18_AD|DA_Component_RecurveBow": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "KogMaw18_AD|DA_AdaptiveHelm": {
+      "avgPlacement": 3.73,
+      "top4Rate": 0.727,
+      "sampleSize": 11
+    },
+    "Gnar|DA_BrambleVest": {
+      "avgPlacement": 2.88,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "LeBlanc|DA_Component_TearOfTheGoddess": {
+      "avgPlacement": 5.78,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "Cassiopeia|DA_NashorsTooth": {
+      "avgPlacement": 3.25,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Rammus|DA_SteadfastHeart": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.545,
+      "sampleSize": 33
+    },
+    "ElderDragon|DA_GuinsoosRageblade": {
+      "avgPlacement": 5.5,
+      "top4Rate": 0.286,
+      "sampleSize": 14
+    },
+    "KhaZix|DA_IonicSpark": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Morgana|DA_18_EmblemSlayer": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Diana|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.708,
+      "sampleSize": 24
+    },
+    "Fiddlesticks|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Fiddlesticks|DA_ArchangelsStaff": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.733,
+      "sampleSize": 15
+    },
+    "Scuttlecrab|DA_18_EmblemBrawler": {
+      "avgPlacement": 3.25,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Sentinel|DA_18_EmblemBrawler": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "ElderDragon|DA_ThiefsGloves": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.455,
+      "sampleSize": 11
+    },
+    "Xayah|DA_GuinsoosRageblade": {
+      "avgPlacement": 5.15,
+      "top4Rate": 0.382,
+      "sampleSize": 34
+    },
+    "Xayah|DA_Deathblade": {
+      "avgPlacement": 5.36,
+      "top4Rate": 0.318,
+      "sampleSize": 22
+    },
+    "Xayah|DA_LastWhisper": {
+      "avgPlacement": 5.24,
+      "top4Rate": 0.412,
+      "sampleSize": 17
+    },
+    "Diana|DA_VoidStaff": {
+      "avgPlacement": 4.38,
+      "top4Rate": 0.571,
+      "sampleSize": 21
+    },
+    "Taric|DA_18_EmblemBrawler": {
+      "avgPlacement": 3.44,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Kennen|DA_ArchangelsStaff": {
+      "avgPlacement": 4.29,
+      "top4Rate": 0.412,
+      "sampleSize": 17
+    },
+    "Gnar|DA_Quicksilver": {
+      "avgPlacement": 3.78,
+      "top4Rate": 0.652,
+      "sampleSize": 23
+    },
+    "Taric|DA_SteadfastHeart": {
+      "avgPlacement": 3.09,
+      "top4Rate": 0.829,
+      "sampleSize": 35
+    },
+    "Ivern|DA_BlueBuff": {
+      "avgPlacement": 2.48,
+      "top4Rate": 0.905,
+      "sampleSize": 21
+    },
+    "Kennen|DA_SteraksGage": {
+      "avgPlacement": 4,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Ashe|DA_GiantSlayer": {
+      "avgPlacement": 3.06,
+      "top4Rate": 0.813,
+      "sampleSize": 16
+    },
+    "Ashe|DA_InfinityEdge": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.563,
+      "sampleSize": 32
+    },
+    "Diana|DA_SteadfastHeart": {
+      "avgPlacement": 3.11,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Gromp18_AP|DA_BlueBuff": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.5,
+      "sampleSize": 14
+    },
+    "Morgana|DA_18_EmblemBlossom": {
+      "avgPlacement": 5.4,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Sentinel|DA_Artifact_HorizonFocus": {
+      "avgPlacement": 3.94,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "Ivern|DA_Component_RecurveBow": {
+      "avgPlacement": 3.8,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "ElderDragon|DA_18_EmblemHunter": {
+      "avgPlacement": 3.64,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Sivir|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.481,
+      "sampleSize": 27
+    },
+    "Sivir|DA_HextechGunblade": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Maokai|DA_SteadfastHeart": {
+      "avgPlacement": 3.81,
+      "top4Rate": 0.5,
+      "sampleSize": 26
+    },
+    "Nidalee18_AP|DA_JeweledGauntlet": {
+      "avgPlacement": 4.59,
+      "top4Rate": 0.588,
+      "sampleSize": 17
+    },
+    "Nidalee18_AP|DA_ArchangelsStaff": {
+      "avgPlacement": 4.14,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Veigar|DA_18_EmblemFloraFatalisAugment": {
+      "avgPlacement": 5.75,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "LeBlanc|DA_NashorsTooth": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Nidalee18_AP|DA_18_EmblemHunter": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.458,
+      "sampleSize": 24
+    },
+    "Ashe|DA_HextechGunblade": {
+      "avgPlacement": 5.1,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Taric|DA_18_EmblemElderwood": {
+      "avgPlacement": 4.82,
+      "top4Rate": 0.364,
+      "sampleSize": 11
+    },
+    "RekSai|DA_SteadfastHeart": {
+      "avgPlacement": 3.61,
+      "top4Rate": 0.742,
+      "sampleSize": 31
+    },
+    "Azir|DA_Morellonomicon": {
+      "avgPlacement": 4.62,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Azir|DA_VoidStaff": {
+      "avgPlacement": 5.14,
+      "top4Rate": 0.364,
+      "sampleSize": 22
+    },
+    "Zyra|DA_18_EmblemFloraFatalis": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.5,
+      "sampleSize": 14
+    },
+    "Malphite|DA_18_EmblemJuggernaut": {
+      "avgPlacement": 6.44,
+      "top4Rate": 0.111,
+      "sampleSize": 9
+    },
+    "Soraka|DA_Quicksilver": {
+      "avgPlacement": 4.55,
+      "top4Rate": 0.545,
+      "sampleSize": 11
+    },
+    "Alistar|DA_SteadfastHeart": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.688,
+      "sampleSize": 32
+    },
+    "Yunara|DA_BlueBuff": {
+      "avgPlacement": 5.75,
+      "top4Rate": 0.188,
+      "sampleSize": 16
+    },
+    "RekSai|DA_GargoyleStoneplate": {
+      "avgPlacement": 4.37,
+      "top4Rate": 0.593,
+      "sampleSize": 27
+    },
+    "Brambleback|DA_GiantSlayer": {
+      "avgPlacement": 4.15,
+      "top4Rate": 0.618,
+      "sampleSize": 34
+    },
+    "Kayle|DA_18_EmblemLunar": {
+      "avgPlacement": 5.3,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Zyra|DA_RedBuff": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.53,
+      "sampleSize": 66
+    },
+    "Kennen|DA_TitansResolve": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Yorick|DA_SunfireCape": {
+      "avgPlacement": 4.39,
+      "top4Rate": 0.611,
+      "sampleSize": 18
+    },
+    "LeBlanc|DA_BlueBuff": {
+      "avgPlacement": 3.61,
+      "top4Rate": 0.722,
+      "sampleSize": 18
+    },
+    "Vi|DA_SunfireCape": {
+      "avgPlacement": 4.68,
+      "top4Rate": 0.463,
+      "sampleSize": 41
+    },
+    "Vi|DA_SteraksGage": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.522,
+      "sampleSize": 23
+    },
+    "Ivern|DA_ThiefsGloves": {
+      "avgPlacement": 3.95,
+      "top4Rate": 0.55,
+      "sampleSize": 20
+    },
+    "Sivir|DA_18_EmblemFae": {
+      "avgPlacement": 5.45,
+      "top4Rate": 0.182,
+      "sampleSize": 11
+    },
+    "Lillia|DA_Morellonomicon": {
+      "avgPlacement": 5.25,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Vi|DA_Evenshroud": {
+      "avgPlacement": 4.18,
+      "top4Rate": 0.564,
+      "sampleSize": 39
+    },
+    "MasterYi_AD|DA_Quicksilver": {
+      "avgPlacement": 4.7,
+      "top4Rate": 0.42,
+      "sampleSize": 50
+    },
+    "MasterYi_AD|DA_Bloodthirster": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.438,
+      "sampleSize": 16
+    },
+    "Fiddlesticks|DA_VoidStaff": {
+      "avgPlacement": 4,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "LeBlanc|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.77,
+      "top4Rate": 0.462,
+      "sampleSize": 26
+    },
+    "Draven|DA_RedBuff": {
+      "avgPlacement": 3.61,
+      "top4Rate": 0.607,
+      "sampleSize": 28
+    },
+    "Malphite|DA_AdaptiveHelm": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Aphelios|DA_Artifact_NavoriFlickerblade": {
+      "avgPlacement": 5.5,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Cinderling|DA_RedBuff": {
+      "avgPlacement": 5.1,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Lux18_Base|DA_18_EmblemLunar": {
+      "avgPlacement": 2.75,
+      "top4Rate": 0.75,
+      "sampleSize": 12
+    },
+    "Ornn|DA_Crownguard": {
+      "avgPlacement": 4.86,
+      "top4Rate": 0.437,
+      "sampleSize": 71
+    },
+    "Veigar|DA_Artifact_EternalPact": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Veigar|DA_BlueBuffRadiant": {
+      "avgPlacement": 4,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Rengar|DA_Bloodthirster": {
+      "avgPlacement": 3.86,
+      "top4Rate": 0.545,
+      "sampleSize": 22
+    },
+    "Scuttlecrab|DA_BrambleVest": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Scuttlecrab|DA_DragonsClaw": {
+      "avgPlacement": 4.54,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Sentry|DA_AdaptiveHelm": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.458,
+      "sampleSize": 24
+    },
+    "Cinderling|DA_Deathblade": {
+      "avgPlacement": 5.07,
+      "top4Rate": 0.267,
+      "sampleSize": 15
+    },
+    "Rengar|DA_18_EmblemFae": {
+      "avgPlacement": 5.33,
+      "top4Rate": 0.278,
+      "sampleSize": 18
+    },
+    "Alistar|DA_DragonsClaw": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.684,
+      "sampleSize": 19
+    },
+    "Leona|DA_ProtectorsVow": {
+      "avgPlacement": 5.22,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "Kennen|DA_GiantSlayer": {
+      "avgPlacement": 2.79,
+      "top4Rate": 0.714,
+      "sampleSize": 14
+    },
+    "Hecarim|DA_SteraksGage": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.5,
+      "sampleSize": 24
+    },
+    "Brambleback|DA_18_EmblemBrawler": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Sivir|DA_GiantSlayer": {
+      "avgPlacement": 4.46,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Sentinel|DA_Component_GiantsBelt": {
+      "avgPlacement": 5.38,
+      "top4Rate": 0.313,
+      "sampleSize": 16
+    },
+    "LeBlanc|DA_StrikersFlail": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Leona|DA_ThiefsGloves": {
+      "avgPlacement": 3.11,
+      "top4Rate": 0.684,
+      "sampleSize": 19
+    },
+    "Murkwolf|DA_LastWhisper": {
+      "avgPlacement": 3.82,
+      "top4Rate": 0.636,
+      "sampleSize": 11
+    },
+    "Murkwolf|DA_Bloodthirster": {
+      "avgPlacement": 5.23,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Warwick|DA_Bloodthirster": {
+      "avgPlacement": 5.25,
+      "top4Rate": 0.333,
+      "sampleSize": 12
+    },
+    "Malphite|DA_Evenshroud": {
+      "avgPlacement": 5,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "RekSai|DA_SunfireCape": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.63,
+      "sampleSize": 27
+    },
+    "RekSai|DA_IonicSpark": {
+      "avgPlacement": 3.16,
+      "top4Rate": 0.684,
+      "sampleSize": 19
+    },
+    "RekSai|DA_BrambleVest": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Maokai|DA_ThiefsGloves": {
+      "avgPlacement": 4.12,
+      "top4Rate": 0.588,
+      "sampleSize": 17
+    },
+    "Varus|DA_SpearOfShojin": {
+      "avgPlacement": 4,
+      "top4Rate": 0.575,
+      "sampleSize": 40
+    },
+    "Ornn|DA_DragonsClaw": {
+      "avgPlacement": 4.76,
+      "top4Rate": 0.44,
+      "sampleSize": 25
+    },
+    "Rakan|DA_Crownguard": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Ahri|DA_Morellonomicon": {
+      "avgPlacement": 4.06,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "ElderDragon|DA_GiantSlayer": {
+      "avgPlacement": 2.46,
+      "top4Rate": 0.848,
+      "sampleSize": 46
+    },
+    "Taric|DA_IonicSpark": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Taric|DA_DragonsClaw": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.75,
+      "sampleSize": 24
+    },
+    "Maokai|DA_18_EmblemBrawler": {
+      "avgPlacement": 2.56,
+      "top4Rate": 0.889,
+      "sampleSize": 9
+    },
+    "Maokai|DA_18_EmblemVanguard": {
+      "avgPlacement": 3,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "LeBlanc|DA_18_EmblemExecutioner": {
+      "avgPlacement": 4.85,
+      "top4Rate": 0.385,
+      "sampleSize": 13
+    },
+    "Alistar|DA_ProtectorsVow": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.667,
+      "sampleSize": 21
+    },
+    "Gnar|DA_LastWhisper": {
+      "avgPlacement": 3.7,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Sentinel|DA_18_EmblemJuggernaut": {
+      "avgPlacement": 3.69,
+      "top4Rate": 0.75,
+      "sampleSize": 16
+    },
+    "ElderDragon|DA_RedBuff": {
+      "avgPlacement": 3.08,
+      "top4Rate": 0.8,
+      "sampleSize": 25
+    },
+    "Yorick|DA_SpiritVisage": {
+      "avgPlacement": 4.19,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "Diana|DA_AdaptiveHelm": {
+      "avgPlacement": 3,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Soraka|DA_Component_TearOfTheGoddess": {
+      "avgPlacement": 5.11,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "RekSai|DA_DragonsClaw": {
+      "avgPlacement": 4.21,
+      "top4Rate": 0.5,
+      "sampleSize": 14
+    },
+    "Camille|DA_HandOfJustice": {
+      "avgPlacement": 4,
+      "top4Rate": 0.429,
+      "sampleSize": 21
+    },
+    "Rengar|DA_InfinityEdge": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Warwick|DA_GiantSlayer": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.667,
+      "sampleSize": 12
+    },
+    "Elise|DA_SpiritVisage": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Draven|DA_HextechGunblade": {
+      "avgPlacement": 3.93,
+      "top4Rate": 0.6,
+      "sampleSize": 15
+    },
+    "Ivern|DA_ArchangelsStaff": {
+      "avgPlacement": 3.11,
+      "top4Rate": 0.737,
+      "sampleSize": 19
+    },
+    "Murkwolf|DA_ThiefsGloves": {
+      "avgPlacement": 4.41,
+      "top4Rate": 0.529,
+      "sampleSize": 17
+    },
+    "Murkwolf|DA_SteraksGage": {
+      "avgPlacement": 5.56,
+      "top4Rate": 0.25,
+      "sampleSize": 16
+    },
+    "Sentinel|DA_SteraksGage": {
+      "avgPlacement": 4.65,
+      "top4Rate": 0.471,
+      "sampleSize": 34
+    },
+    "Tristana|DA_LastWhisper": {
+      "avgPlacement": 6,
+      "top4Rate": 0.125,
+      "sampleSize": 8
+    },
+    "Murkwolf|DA_GiantSlayer": {
+      "avgPlacement": 5.89,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "ElderDragon|DA_SpearOfShojin": {
+      "avgPlacement": 3.83,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "Vi|DA_Component_GiantsBelt": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "KhaZix|DA_ThiefsGloves": {
+      "avgPlacement": 4.6,
+      "top4Rate": 0.333,
+      "sampleSize": 15
+    },
+    "Cassiopeia|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Rammus|DA_SunfireCape": {
+      "avgPlacement": 4.95,
+      "top4Rate": 0.421,
+      "sampleSize": 19
+    },
+    "KogMaw18_AD|DA_Deathblade": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.769,
+      "sampleSize": 13
+    },
+    "Yunara|DA_HextechGunblade": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Lux18_Base|DA_StrikersFlail": {
+      "avgPlacement": 3.67,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Fiddlesticks|DA_TitansResolve": {
+      "avgPlacement": 4.73,
+      "top4Rate": 0.577,
+      "sampleSize": 26
+    },
+    "Hecarim|DA_ThiefsGloves": {
+      "avgPlacement": 4.31,
+      "top4Rate": 0.563,
+      "sampleSize": 32
+    },
+    "Diana|DA_GiantSlayer": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.75,
+      "sampleSize": 12
+    },
+    "Amumu|DA_ThiefsGloves": {
+      "avgPlacement": 4.12,
+      "top4Rate": 0.654,
+      "sampleSize": 26
+    },
+    "Tristana|DA_Deathblade": {
+      "avgPlacement": 4.58,
+      "top4Rate": 0.417,
+      "sampleSize": 12
+    },
+    "Yorick|DA_Component_NegatronCloak": {
+      "avgPlacement": 6.13,
+      "top4Rate": 0.125,
+      "sampleSize": 8
+    },
+    "Diana|DA_HextechGunblade": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Akali_AD|DA_JeweledGauntlet": {
+      "avgPlacement": 4.43,
+      "top4Rate": 0.567,
+      "sampleSize": 30
+    },
+    "Sett|DA_Component_GiantsBelt": {
+      "avgPlacement": 5.24,
+      "top4Rate": 0.471,
+      "sampleSize": 17
+    },
+    "Brambleback|DA_HextechGunblade": {
+      "avgPlacement": 3.7,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "KogMaw18_AD|DA_ThiefsGloves": {
+      "avgPlacement": 4.36,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Maokai|DA_SunfireCape": {
+      "avgPlacement": 3.57,
+      "top4Rate": 0.643,
+      "sampleSize": 28
+    },
+    "KogMaw18_AD|DA_NashorsTooth": {
+      "avgPlacement": 3.92,
+      "top4Rate": 0.667,
+      "sampleSize": 12
+    },
+    "Xayah|DA_InfinityEdge": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.5,
+      "sampleSize": 18
+    },
+    "Fiddlesticks|DA_18_EmblemElderwood": {
+      "avgPlacement": 4,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Alune|DA_18_EmblemExecutioner": {
+      "avgPlacement": 3.11,
+      "top4Rate": 0.889,
+      "sampleSize": 9
+    },
+    "Malphite|DA_ProtectorsVow": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.6,
+      "sampleSize": 15
+    },
+    "Kennen|DA_InfinityEdge": {
+      "avgPlacement": 5,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "Rakan|DA_SunfireCape": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Ashe|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.611,
+      "sampleSize": 18
+    },
+    "KogMaw18_AD|DA_HandOfJustice": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Rammus|DA_Evenshroud": {
+      "avgPlacement": 3.38,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Leona|DA_Evenshroud": {
+      "avgPlacement": 3.94,
+      "top4Rate": 0.588,
+      "sampleSize": 17
+    },
+    "Camille|DA_TitansResolve": {
+      "avgPlacement": 5,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Hecarim|DA_Evenshroud": {
+      "avgPlacement": 4.97,
+      "top4Rate": 0.355,
+      "sampleSize": 31
+    },
+    "Alune|DA_18_EmblemBlossom": {
+      "avgPlacement": 3.7,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Lillia|DA_18_EmblemVanguard": {
+      "avgPlacement": 2.56,
+      "top4Rate": 0.889,
+      "sampleSize": 9
+    },
+    "Morgana|DA_18_EmblemSpellweaver": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.563,
+      "sampleSize": 16
+    },
+    "Hecarim|DA_Component_NegatronCloak": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Aphelios|DA_18_EmblemExecutioner": {
+      "avgPlacement": 2.56,
+      "top4Rate": 0.889,
+      "sampleSize": 9
+    },
+    "Nidalee18_AP|DA_HextechGunblade": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.667,
+      "sampleSize": 15
+    },
+    "Gnar|DA_SteadfastHeart": {
+      "avgPlacement": 3.64,
+      "top4Rate": 0.636,
+      "sampleSize": 11
+    },
+    "Taric|DA_18_EmblemInvoker": {
+      "avgPlacement": 3,
+      "top4Rate": 1,
+      "sampleSize": 8
+    },
+    "Murkwolf|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.1,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "RekSai|DA_HextechGunblade": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Cinderling|DA_GuinsoosRageblade": {
+      "avgPlacement": 4.69,
+      "top4Rate": 0.462,
+      "sampleSize": 13
+    },
+    "Morgana|DA_HandOfJustice": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.769,
+      "sampleSize": 13
+    },
+    "Fiddlesticks|DA_Component_NegatronCloak": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.615,
+      "sampleSize": 13
+    },
+    "Fiddlesticks|DA_GiantSlayer": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Draven|DA_18_EmblemExecutioner": {
+      "avgPlacement": 4,
+      "top4Rate": 0.545,
+      "sampleSize": 11
+    },
+    "LeBlanc|DA_Component_NeedlesslyLargeRod": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Nidalee18_AP|DA_LastWhisper": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Sentry|DA_RedBuff": {
+      "avgPlacement": 3.78,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "Elise|DA_WarmogsArmor": {
+      "avgPlacement": 4.75,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Karma|DA_StrikersFlail": {
+      "avgPlacement": 5.56,
+      "top4Rate": 0.313,
+      "sampleSize": 16
+    },
+    "Brambleback|DA_RedBuff": {
+      "avgPlacement": 2.91,
+      "top4Rate": 0.818,
+      "sampleSize": 11
+    },
+    "Ornn|DA_AdaptiveHelm": {
+      "avgPlacement": 5.22,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "Nidalee18_AP|DA_StrikersFlail": {
+      "avgPlacement": 4.11,
+      "top4Rate": 0.632,
+      "sampleSize": 19
+    },
+    "Nidalee18_AP|DA_RabadonsDeathcap": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.667,
+      "sampleSize": 9
+    },
+    "Alistar|DA_BrambleVest": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "RekSai|DA_Evenshroud": {
+      "avgPlacement": 4.2,
+      "top4Rate": 0.6,
+      "sampleSize": 10
+    },
+    "Gnar|DA_RedBuff": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.8,
+      "sampleSize": 15
+    },
+    "KhaZix|DA_18_EmblemBlackthorn": {
+      "avgPlacement": 6,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "Rammus|DA_SteraksGage": {
+      "avgPlacement": 4.9,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "KogMaw18_AD|DA_StrikersFlail": {
+      "avgPlacement": 4.83,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Nidalee18_AP|DA_VoidStaff": {
+      "avgPlacement": 4.89,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Scuttlecrab|DA_SteadfastHeart": {
+      "avgPlacement": 4,
+      "top4Rate": 0.643,
+      "sampleSize": 14
+    },
+    "Leona|DA_SunfireCape": {
+      "avgPlacement": 4.83,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "MasterYi_AD|DA_Artifact_RapidFireCannon": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Sett|DA_Component_NegatronCloak": {
+      "avgPlacement": 5.63,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Sett|DA_Bloodthirster": {
+      "avgPlacement": 4.6,
+      "top4Rate": 0.5,
+      "sampleSize": 10
+    },
+    "Brambleback|DA_StrikersFlail": {
+      "avgPlacement": 2.63,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Gnar|DA_18_EmblemExecutioner": {
+      "avgPlacement": 5.25,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    },
+    "Teemo|DA_RabadonsDeathcap": {
+      "avgPlacement": 2.88,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Lux18_Base|DA_GiantSlayer": {
+      "avgPlacement": 3.31,
+      "top4Rate": 0.846,
+      "sampleSize": 13
+    },
+    "Diana|DA_SteraksGage": {
+      "avgPlacement": 3.75,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Xayah|DA_HextechGunblade": {
+      "avgPlacement": 5.56,
+      "top4Rate": 0.333,
+      "sampleSize": 9
+    },
+    "Akali_AD|DA_SteraksGage": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Ezreal|DA_AdaptiveHelm": {
+      "avgPlacement": 3.63,
+      "top4Rate": 0.625,
+      "sampleSize": 16
+    },
+    "Kennen|DA_GuinsoosRageblade": {
+      "avgPlacement": 3.88,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Kennen|DA_WarmogsArmor": {
+      "avgPlacement": 5.2,
+      "top4Rate": 0.4,
+      "sampleSize": 10
+    },
+    "Kennen|DA_NashorsTooth": {
+      "avgPlacement": 4.47,
+      "top4Rate": 0.467,
+      "sampleSize": 15
+    },
+    "Camille|DA_Artifact_SilvermereDawn": {
+      "avgPlacement": 3,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Aphelios|DA_HextechGunblade": {
+      "avgPlacement": 4,
+      "top4Rate": 0.625,
+      "sampleSize": 24
+    },
+    "Rammus|DA_ThiefsGloves": {
+      "avgPlacement": 5.38,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Sentry|DA_Morellonomicon": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 12
+    },
+    "Gnar|DA_GiantSlayer": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.75,
+      "sampleSize": 16
+    },
+    "Lillia|DA_DragonsClaw": {
+      "avgPlacement": 3.54,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "Xayah|DA_GiantSlayer": {
+      "avgPlacement": 4.63,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "Kayle|DA_JeweledGauntlet": {
+      "avgPlacement": 4.24,
+      "top4Rate": 0.606,
+      "sampleSize": 33
+    },
+    "Ornn|DA_BrambleVest": {
+      "avgPlacement": 4.25,
+      "top4Rate": 0.625,
+      "sampleSize": 16
+    },
+    "Leona|DA_AdaptiveHelm": {
+      "avgPlacement": 4.3,
+      "top4Rate": 0.7,
+      "sampleSize": 10
+    },
+    "Leona|DA_DragonsClaw": {
+      "avgPlacement": 4,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Gromp18_AP|DA_GiantSlayer": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Krug|DA_BrambleVest": {
+      "avgPlacement": 4.22,
+      "top4Rate": 0.593,
+      "sampleSize": 27
+    },
+    "Rengar|DA_18_EmblemBrawler": {
+      "avgPlacement": 4.44,
+      "top4Rate": 0.556,
+      "sampleSize": 9
+    },
+    "Veigar|DA_Artifact_Fishbones": {
+      "avgPlacement": 5.5,
+      "top4Rate": 0.3,
+      "sampleSize": 10
+    },
+    "Yorick|DA_ProtectorsVow": {
+      "avgPlacement": 4.93,
+      "top4Rate": 0.533,
+      "sampleSize": 15
+    },
+    "Morgana|DA_SpearOfShojin": {
+      "avgPlacement": 4.89,
+      "top4Rate": 0.444,
+      "sampleSize": 27
+    },
+    "Alune|DA_StrikersFlail": {
+      "avgPlacement": 3.79,
+      "top4Rate": 0.571,
+      "sampleSize": 14
+    },
+    "Alistar|DA_Evenshroud": {
+      "avgPlacement": 4.67,
+      "top4Rate": 0.222,
+      "sampleSize": 9
+    },
+    "Sejuani|DA_SunfireCape": {
+      "avgPlacement": 5.47,
+      "top4Rate": 0.235,
+      "sampleSize": 17
+    },
+    "Sejuani|DA_DragonsClaw": {
+      "avgPlacement": 5.13,
+      "top4Rate": 0.4,
+      "sampleSize": 15
+    },
+    "Kennen|DA_Evenshroud": {
+      "avgPlacement": 2.63,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Ezreal|DA_NashorsTooth": {
+      "avgPlacement": 4.42,
+      "top4Rate": 0.583,
+      "sampleSize": 12
+    },
+    "Veigar|DA_18_EmblemFloraFatalis": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Ivern|DA_18_EmblemLunar": {
+      "avgPlacement": 2.13,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Gromp18_AP|DA_RabadonsDeathcap": {
+      "avgPlacement": 3.33,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Morgana|DA_ArchangelsStaff": {
+      "avgPlacement": 4.33,
+      "top4Rate": 0.556,
+      "sampleSize": 18
+    },
+    "Yunara|DA_KrakensFury": {
+      "avgPlacement": 5.38,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Soraka|DA_Artifact_Dawncore": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.692,
+      "sampleSize": 13
+    },
+    "ElderDragon|DA_TitansResolve": {
+      "avgPlacement": 3,
+      "top4Rate": 0.75,
+      "sampleSize": 8
+    },
+    "Sivir|DA_KrakensFury": {
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
+      "sampleSize": 8
+    },
+    "LeBlanc|DA_Component_RecurveBow": {
+      "avgPlacement": 5.33,
+      "top4Rate": 0.444,
+      "sampleSize": 9
+    },
+    "KogMaw18_AD|DA_18_EmblemRapidfire": {
+      "avgPlacement": 3.38,
+      "top4Rate": 1,
+      "sampleSize": 8
+    },
+    "Lux18_Base|DA_18_EmblemInvoker": {
+      "avgPlacement": 3.78,
+      "top4Rate": 0.778,
+      "sampleSize": 9
+    },
+    "Rammus|DA_AdaptiveHelm": {
+      "avgPlacement": 4.87,
+      "top4Rate": 0.467,
+      "sampleSize": 15
+    },
+    "Diana|DA_GuinsoosRageblade": {
+      "avgPlacement": 3.5,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Camille|DA_Deathblade": {
+      "avgPlacement": 4.13,
+      "top4Rate": 0.625,
+      "sampleSize": 8
+    },
+    "Ivern|DA_NashorsTooth": {
+      "avgPlacement": 4.08,
+      "top4Rate": 0.538,
+      "sampleSize": 13
+    },
+    "Karma|DA_RedBuff": {
+      "avgPlacement": 5.38,
+      "top4Rate": 0.375,
+      "sampleSize": 8
+    },
+    "Leona|DA_Component_ChainVest": {
+      "avgPlacement": 5.58,
+      "top4Rate": 0.25,
+      "sampleSize": 12
+    },
+    "Kennen|DA_SpiritVisage": {
+      "avgPlacement": 2,
+      "top4Rate": 0.875,
+      "sampleSize": 8
+    },
+    "Morgana|DA_ThiefsGloves": {
+      "avgPlacement": 4.88,
+      "top4Rate": 0.25,
+      "sampleSize": 8
+    }
+  },
+  "prevGeneratedAt": "2026-10-17T10:51:25.582Z"
 }

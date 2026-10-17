@@ -1,13 +1,20 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+
 export const metadata: Metadata = {
-  title: '🎯 TFT 메타 분석 & AI 전략 코치 | 롤체 실전 개선 리포트',
-  description: '최근 롤체 경기 전적과 정석 메타 적합도를 정밀 분석하고 구체적인 실력 개선 포인트를 제공하는 AI 전략 코치',
-  keywords: ['TFT', '롤토체스', '전략적팀전투', '롤체 메타 분석', 'AI 코치', 'TFT 공략', '덱 빌드업'],
+  title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
+  description:
+    'TFT 시즌 18 실측 매치 표본 기반 메타 랭킹(기물·시너지·아이템·BIS 조합)과 경기별 AI 전략 코칭을 제공하는 롤체 분석 사이트',
+  keywords: ['TFT', '롤토체스', '전략적팀전투', '롤체 메타', 'TFT 티어표', 'TFT 조합', 'AI 코치', '덱 빌드업'],
   openGraph: {
-    title: '🎯 TFT 메타 분석 & AI 전략 코치',
-    description: '내 플레이가 현재 메타와 얼마나 맞았는지 정밀 진단하고 다음 경기 승률을 올릴 액션 플랜을 제시합니다.',
+    title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
+    description: '실측 매치 표본 기반 TFT 메타 티어표와 경기별 AI 전략 코칭',
     type: 'website',
   },
 }
@@ -18,8 +25,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        <script
+          // 저장된 테마(또는 시스템 설정)를 첫 페인트 전에 적용해 깜빡임 방지
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('tft-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
+          }}
+        />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -30,7 +43,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-pretendard bg-[#090D16] text-slate-100 antialiased min-h-screen selection:bg-rose-500 selection:text-white">
+      <body className="font-pretendard bg-app text-ink antialiased min-h-screen selection:bg-rose-500 selection:text-white">
         {children}
       </body>
     </html>

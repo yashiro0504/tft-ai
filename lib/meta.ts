@@ -1,5 +1,5 @@
 import metaStatsData from './metaStats.json'
-import { AugmentAnalysis, AugmentMetaDetail } from './types'
+import type { AugmentAnalysis, AugmentMetaDetail } from './types'
 
 /**
  * 증강 메타 통계 조회/분석 (메타 데이터 파이프라인).
@@ -96,4 +96,173 @@ export function analyzeAugments(augmentNames: string[]): AugmentAnalysis {
     details,
     augmentScore,
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* v2 메타 섹션 (챔피언/시너지/아이템/조합) — Phase 4 메타 랭킹 UI용     */
+/* ------------------------------------------------------------------ */
+
+interface RawChampStat {
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  avgTier?: number
+  threeStarRate?: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+interface RawTraitStat {
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  avgTier?: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+interface RawItemStat {
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+const statsAny = metaStatsData as unknown as Record<string, unknown>
+const CHAMPS = (statsAny.champions || {}) as Record<string, RawChampStat>
+const TRAITS = (statsAny.traits || {}) as Record<string, RawTraitStat>
+const ITEMS = (statsAny.items || {}) as Record<string, RawItemStat>
+const COMBOS = (statsAny.combos || {}) as Record<string, RawItemStat>
+
+/** 실측 수집된 기물/시너지/아이템/조합 통계가 하나라도 있는가 */
+export function hasCompMetaStats(): boolean {
+  return (
+    Object.keys(CHAMPS).length > 0 ||
+    Object.keys(TRAITS).length > 0 ||
+    Object.keys(ITEMS).length > 0 ||
+    Object.keys(COMBOS).length > 0
+  )
+}
+
+export interface MetaSectionInfo {
+  patch?: string
+  source?: string
+  generatedAt?: string
+  prevGeneratedAt?: string
+  sample: boolean
+  hasMeta: boolean
+}
+
+/** 메타 섹션 기본 정보 (패치/출처/수집 여부) */
+export function getMetaSectionInfo(): MetaSectionInfo {
+  return {
+    patch: typeof statsAny.patch === 'string' ? statsAny.patch : undefined,
+    source: typeof statsAny.source === 'string' ? statsAny.source : undefined,
+    generatedAt: typeof statsAny.generatedAt === 'string' ? statsAny.generatedAt : undefined,
+    prevGeneratedAt:
+      typeof statsAny.prevGeneratedAt === 'string' ? statsAny.prevGeneratedAt : undefined,
+    sample: Boolean(metaStatsData.sample),
+    hasMeta: hasCompMetaStats(),
+  }
+}
+
+export interface ChampRankingStat {
+  key: string
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  avgTier?: number
+  threeStarRate?: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+export interface TraitRankingStat {
+  key: string
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  avgTier?: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+export interface ItemRankingStat {
+  key: string
+  avgPlacement: number
+  top4Rate?: number
+  sampleSize: number
+  prevRank?: number
+  rankDelta?: number
+  avgDelta?: number
+}
+
+/** 평균등수 오름차순(낮을수록 1위)으로 정렬된 기물 랭킹 */
+export function getChampionRankings(): ChampRankingStat[] {
+  return Object.entries(CHAMPS)
+    .filter(([, s]) => typeof s?.avgPlacement === 'number')
+    .map(([key, s]) => ({
+      key,
+      avgPlacement: s.avgPlacement,
+      top4Rate: s.top4Rate,
+      sampleSize: s.sampleSize,
+      avgTier: s.avgTier,
+      threeStarRate: s.threeStarRate,
+      prevRank: s.prevRank,
+      rankDelta: s.rankDelta,
+      avgDelta: s.avgDelta,
+    }))
+    .sort((a, b) => a.avgPlacement - b.avgPlacement)
+}
+
+/** 평균등수 오름차순으로 정렬된 시너지 랭킹 (활성 시너지만, 개수는 minGames 하한) */
+export function getTraitRankings(minGames = 1): TraitRankingStat[] {
+  return Object.entries(TRAITS)
+    .filter(([, s]) => typeof s?.avgPlacement === 'number' && (s.sampleSize || 0) >= minGames)
+    .map(([key, s]) => ({
+      key,
+      avgPlacement: s.avgPlacement,
+      top4Rate: s.top4Rate,
+      sampleSize: s.sampleSize,
+      avgTier: s.avgTier,
+      prevRank: s.prevRank,
+      rankDelta: s.rankDelta,
+      avgDelta: s.avgDelta,
+    }))
+    .sort((a, b) => a.avgPlacement - b.avgPlacement)
+}
+
+/** 평균등수 오름차순으로 정렬된 아이템 랭킹 */
+export function getItemRankings(): ItemRankingStat[] {
+  return Object.entries(ITEMS)
+    .filter(([, s]) => typeof s?.avgPlacement === 'number')
+    .map(([key, s]) => ({
+      key,
+      avgPlacement: s.avgPlacement,
+      top4Rate: s.top4Rate,
+      sampleSize: s.sampleSize,
+      prevRank: s.prevRank,
+      rankDelta: s.rankDelta,
+      avgDelta: s.avgDelta,
+    }))
+    .sort((a, b) => a.avgPlacement - b.avgPlacement)
+}
+
+/** 평균등수 오름차순으로 정렬된 챔피언+아이템 조합(BIS 근거) 랭킹 */
+export function getComboRankings(minGames = 3): ItemRankingStat[] {
+  return Object.entries(COMBOS)
+    .filter(([, s]) => typeof s?.avgPlacement === 'number' && (s.sampleSize || 0) >= minGames)
+    .map(([key, s]) => ({
+      key,
+      avgPlacement: s.avgPlacement,
+      top4Rate: s.top4Rate,
+      sampleSize: s.sampleSize,
+    }))
+    .sort((a, b) => a.avgPlacement - b.avgPlacement)
 }

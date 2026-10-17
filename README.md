@@ -1,5 +1,8 @@
 # 🎯 TFT AI 전략 코치 & 실전 전적 검색 웹앱 (TFT Tactical Meta Coach)
 
+[![CI](https://github.com/yashiro0504/tft-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/yashiro0504/tft-ai/actions/workflows/ci.yml)
+[![Collect Ladder Meta](https://github.com/yashiro0504/tft-ai/actions/workflows/collect-ladder.yml/badge.svg)](https://github.com/yashiro0504/tft-ai/actions/workflows/collect-ladder.yml)
+
 > **"내 플레이가 현재 메타와 얼마나 맞았을까? 대깨였을까, 빈집 유연 운영이었을까?"**  
 > 롤체지지(LOLCHESS) / OP.GG 스타일의 실시간 전적 및 로비 8명 순위 조회와 함께, **DeepSeek V3 AI**가 현재 정석 메타 적합도와 결정적인 개선 포인트를 정밀 코칭해주는 웹앱입니다.
 
@@ -22,6 +25,16 @@
    - 3대 핵심 영역 진단 (아이템 3신기 BIS 최적화, 앞/뒷라인 밸런스, 렙업 및 골드 운영)
    - 결정적 개선 포인트 3가지 (`What to Improve`)
    - 다음 경기 실전 적용 가이드 (`Action Plan`)
+
+---
+
+## 🎨 테마 (다크 / 라이트)
+
+- 헤더 우측 **☀/🌙 버튼**으로 전환 (롤체지지 스타일 화이트 테마 포함)
+- 첫 방문 시 **시스템 설정**(`prefers-color-scheme`)을 따르고, 선택은 `localStorage('tft-theme')`에 유지
+- 색상은 `app/globals.css`의 CSS 변수(`--app-bg`, `--panel`, `--ink`, `--muted`, `--line` …)와
+  Tailwind 토큰(`bg-app`, `bg-panel`, `text-ink`, `text-muted`, `border-line` …)으로 관리됩니다.
+- 라이트 모드에서 색상 배지/경고 칩은 자동으로 밝은 톤 + 짙은 글자로 보정됩니다.
 
 ---
 
@@ -77,6 +90,17 @@ GEMINI_API_KEY=
 - **계산은 코드, 해설만 AI**: 기물 경합(`lib/contest.ts`), 증강 메타 대조(`lib/meta.ts`)는 코드가 수치로 산출합니다.
 - LLM은 **제공된 수치만** 근거로 서술하며, 제공되지 않은 메타/증강 통계는 "단정 불가"로 답합니다.
 
+### 🛡️ 신뢰성 계층 (환각 탐지 · 코드 검증)
+- **근거 검증(`lib/grounding.ts`)**: LLM 리포트의 수치 주장(등/명/%/G/라운드, `3.44` 같은 소수, `62/100`)을 **프롬프트에 제공된 실측 데이터와 코드로 대조**합니다.
+  → 응답/UI에 `grounding { score, supported, total, unsupported[] }` 로 표시 (낮을수록 창작·환각 가능성).
+- **메타 통계 화이트리스트**: `[메타 실측 통계]` 블록(기물 12 · 시너지 10 · 아이템 10 · BIS 8, `n≥10`만) 외의 수치는 인용 금지로 프롬프트에 명시.
+- **출처 표기**: `provenance { patch, source, generatedAt, sample }` 를 리포트에 함께 반환해 패치·표본·수집일을 화면에 노출.
+- **결정론적 점수(`lib/scoring.ts`)**: `metaScore`/`metaTier` 는 LLM이 아니라 **코드가 계산**합니다.
+  - 결과(등수) **40%** + 덱 완성도 **25%** + 아이템 활용 **20%** + 경합 대응 **15%**
+  - 응답에 `scoreBreakdown { total, tier, components[], matches, perMatch, version }` 포함 → UI에 구성요소별 기여도 바 표시
+  - LLM에는 계산된 점수를 프롬프트로 주고 "그대로 사용"하도록 지시한 뒤, 파싱 후 **코드 값으로 덮어쓰기** (같은 경기 = 항상 같은 점수)
+- **결정론 옵션**: `temperature 0.2` + JSON 모드(`response_format: json_object`), 실패 시 규칙 기반 폴백(`isFallback: true`)으로 표시.
+
 ### 🧮 경합 강도 (0~100)
 ```
 기물 weight = 코스트 × 성급민감도(1성1.4/2성1.0/3성0.5) × (1 + (상대수-1)×0.3)
@@ -91,18 +115,132 @@ contestScore = 100 × raw / (raw + 25)   → 등급: 빈집/보통/경합/심각
 Riot 공식 API는 **집계 통계(증강 승률/평균등수)를 제공하지 않습니다.** 따라서 자체 집계합니다.
 
 - 데이터 파일: `lib/metaStats.json`
-- 현재 상태: **`sample: true` (샘플/검증 전)** → UI에 `샘플` 태그 표시, LLM도 "단정 금지"로 처리
-- 실측 데이터 생성:
+- 상태 태그: `sample: true`(검증 전)일 때만 UI에 `샘플` 표시, LLM도 "단정 금지" 처리
+- 실측 데이터 생성 (2가지 방식)
   ```bash
-  RIOT_API_KEY=RGAPI-xxxx node scripts/buildMetaStats.js "닉네임#KR1" "닉네임2#KR1" ...
+  # (권장) 래더 전체 표본 자동 수집 — 특정 소환사에 의존하지 않음
+  #  챌린저·그랜드마스터·마스터 래더에서 표본 선수를 뽑아 최근 매치를 대량 집계
+  npm run collect:ladder
+
+  # 소환사 시드 기반 수집 (특정 고수 표본)
+  npm run seeds:pick     # 챌린저 랭킹에서 시드 자동 추출 → .env.local SEEDS
+  npm run collect:meta   # SEEDS 기반 수집
   ```
-  → `lib/metaStats.json` 을 `sample: false, source: "riot-sample"` 로 덮어씁니다.
+  → `lib/metaStats.json` 을 `sample: false` + `source: "riot-ladder" | "riot-sample"` 로 덮어씁니다.
   → 실행 시 UI/LLM이 실측 통계를 인용하게 됩니다.
+- 래더 수집 옵션(환경변수): `PLAYERS`(기본 60), `MATCHES_PER_PLAYER`(8), `MAX_MATCHES`(400), `RIOT_MIN_INTERVAL_MS`(350)
 - ⚠️ 증강 키 표기는 `lib/summarize.ts` 의 `cleanName()` 결과와 일치해야 합니다(스크립트가 동일 규칙 사용).
 - ⚠️ Riot 개발 키는 24시간마다 만료되며, 표본이 많을수록 통계가 안정적입니다.
 
 > 📖 **실측 데이터 수집·튜닝 상세 가이드 → [docs/DATA_PIPELINE.md](docs/DATA_PIPELINE.md)**
 > (`.env.local` 자동 로드, `npm run collect:check` 키 점검, PowerShell/CMD 사용법 포함)
+
+---
+
+## 🧪 AI 신뢰성 평가 (회귀 테스트 · CI 게이트)
+
+```bash
+# 1) 골든셋 캡처 — 실제 경기 N개를 고정 입력으로 저장 (data/evalMatches.json)
+npm run eval:capture -- "닉네임#KR1" 3
+
+# 2) 반복 평가 — 캐시 우회로 매 실행 실제 LLM 호출 측정 (기본 2회)
+npm run eval:reports
+#   node scripts/evalReports.js --runs 3 --api http://localhost:3000
+```
+
+**측정 지표**
+- 성공률 · 폴백률 · 평균 지연
+- **근거 검증(grounding) 평균/최저**, 주장 수 대비 미확인 수치 수
+- **점수 = 코드 산출 일치**(`metaScore === scoreBreakdown.total`) 및 실행 간 **점수 변동**
+- 유연성 점수(LLM) 표준편차
+
+**출력**: 콘솔 요약 + `data/evalReport.json` (생성물, gitignore)
+
+**CI 게이트**: 아래 중 하나라도 실패하면 `exit 1`
+`성공률 < 100%` · `폴백 발생` · `grounding < 85%` · `점수-코드 불일치` · `실행 간 점수 변동`
+
+---
+
+## 🤖 운영 자동화 (GitHub Actions)
+
+### 워크플로
+
+| 파일 | 트리거 | 내용 |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | push(`main`, `upgrade/**`) · PR | Lint → Typecheck → 데이터 점검(`meta:check`) → Build, 이어서 **AI 신뢰성 평가 게이트**(성공률 100% · 폴백 0 · grounding ≥85% · 점수 고정 검증) |
+| `.github/workflows/collect-ladder.yml` | 매일 21:00 UTC(= 06:00 KST) · 수동 실행 | 래더 표본 수집 → 데이터 검증 → 순위 변동 요약 → `lib/metaStats.json` 자동 커밋/푸시 |
+
+### 필요한 Repository Secrets
+
+| 이름 | 필수 여부 | 설명 |
+| --- | --- | --- |
+| `RIOT_API_KEY` | 래더 수집 필수 | Riot 개발 키는 **24시간마다 만료**됩니다. 예약 수집을 상시 운영하려면 Personal/Production 키를 사용하거나 주기적으로 Secret 을 갱신하세요. |
+| `DEEPSEEK_API_KEY` | AI 평가 필수 | 미설정 시 `eval` 잡은 안내 메시지를 남기고 건너뜁니다(빌드는 계속 검증됨). |
+
+설정 위치: 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
+
+### 로컬/수동 실행
+
+```bash
+# GitHub CLI
+gh workflow run collect-ladder.yml -f players=80 -f max_matches=600
+gh workflow run collect-ladder.yml -f dry_run=true     # 수집만 하고 커밋 안 함
+
+# 로컬 동일 파이프라인
+npm run collect:ladder
+npm run meta:check      # 데이터 무결성 (기물/특성/아이템/조합 최소치)
+npm run meta:summary    # 직전 수집 대비 순위 변동 ▲▼ 요약
+npm run ci              # lint + typecheck + meta:check + build
+```
+
+### 동작 규칙
+
+- 수집 후 기물이 **40종 미만**이면 워크플로를 실패시켜 `lib/metaStats.json` 커밋을 차단합니다(표본 붕괴 방지).
+- 커밋 대상은 `lib/metaStats.json` 하나이며, `data/metaHistory/`(로컬 아카이브)·`data/evalReport.json` 은 `.gitignore` 로 제외됩니다.
+- 순위 변동(▲▼)은 **직전 커밋본 `lib/metaStats.json`** 과 비교해 자동 계산되고, Job Summary 에 상승/하락 항목이 표시됩니다.
+- `concurrency` 로 중복 실행을 막고, 수집 잡은 `timeout-minutes: 40` 으로 제한합니다.
+- `eval` 잡 산출물(`data/evalReport.json`, 서버 로그)은 Actions Artifact 로 업로드됩니다.
+
+---
+
+## 📈 순위 변동 (▲▼)
+
+수집할 때마다 **이전 `lib/metaStats.json` 과 비교**해 기물/시너지/아이템의 순위·평균등수 변동을 계산합니다.
+
+- 계산: `rankDelta > 0` = 순위 상승 (예: 5위 → 3위 = ▲2), `avgDelta > 0` = 평균등수 개선
+- 저장: 각 항목에 `prevRank`, `rankDelta`, `avgDelta`, 루트에 `prevGeneratedAt`
+- UI: 기물/시너지/아이템 행과 상세 드로어에 **▲/▼ 배지** (호버 시 평균등수 변화 툴팁), 푸터에 `변동 기준 날짜`
+- 이전 수집본은 `data/metaHistory/YYYY-MM-DD.json` 로 자동 아카이브 (gitignore)
+
+```bash
+# 수집 시 자동 계산됨
+npm run collect:ladder
+
+# 이미 수집된 파일 기준으로 변동만 재계산 (미리보기 / 저장)
+npm run meta:deltas
+node scripts/attachMetaDeltas.js --prev data/metaHistory/2026-10-17.json --write
+```
+
+---
+
+## 📱 모바일 UX
+
+- **하단 탭 바** (`md` 미만): 기물 / 특성 / 아이템 / BIS 조합 / AI 코치 — 탭 전환 시 랭킹 상단으로 스크롤, 안전 영역(`safe-area-inset`) 대응
+- **카드 리스트 테이블**: 기물·특성·아이템 행이 좁은 화면에서 2단 카드로 재배치되고 TOP4 바가 행 하단 전체 폭으로 이동
+- **가로 스크롤 필터 바**: 코스트/티어/표본/정렬 칩이 한 줄 스와이프로 동작 (스크롤바 숨김)
+- **포디움**: 모바일에서 1위가 최상단에 오도록 순서 재배치
+- **상세 드로어**: 좁은 화면에서 전체 폭으로 열림
+- `viewport-fit=cover` 로 iOS 노치/홈 인디케이터 영역 침범 방지
+
+---
+
+## 🔎 필터 · 정렬 · 단축키
+
+- **코스트 1~5** (기물 탭) · **티어 S~D** · **최소 표본** 10+/20+/50+ 필터
+- **정렬**: 평균등수 · 표본 · 3성률 · TOP4
+- 아이템 탭: 일반 / 찬란한 / 유물 / 상징 / 특수 분류 필터
+- **키보드**: `/` 검색 포커스, `Esc` 검색 초기화 (상세 드로어 닫기 포함)
+- 코스트는 `lib/constants.ts`의 **세트18 코스트 표**(65종)를 사용합니다. (수집 데이터에 코스트가 포함되면 우선 사용하도록 확장 가능)
 
 ---
 

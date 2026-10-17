@@ -37,11 +37,15 @@ export async function POST(req: NextRequest) {
     }
 
     const mode: 'single' | 'multi' = raw.mode === 'single' ? 'single' : 'multi'
+    // 신뢰성 평가 하네스용 캐시 우회 (프로덕션에서는 무시)
+    const nocache = raw.nocache === true && process.env.NODE_ENV !== 'production'
     const ids = matches.map((m) => m.matchId).join(',')
 
     const cacheKey = `overview:${gameName}#${tagLine}:${mode}:${ids}`
-    const cached = cacheGet<TftOverviewResponse>(cacheKey)
-    if (cached) return NextResponse.json(cached)
+    if (!nocache) {
+      const cached = cacheGet<TftOverviewResponse>(cacheKey)
+      if (cached) return NextResponse.json(cached)
+    }
 
     const feedback = await generateMetaCoachFeedback(gameName, matches, mode)
 
@@ -54,7 +58,7 @@ export async function POST(req: NextRequest) {
       feedback,
     }
 
-    cacheSet(cacheKey, response, CACHE_TTL.OVERVIEW)
+    if (!nocache) cacheSet(cacheKey, response, CACHE_TTL.OVERVIEW)
     return NextResponse.json(response)
   } catch (err) {
     return handleApiError(err, 'overview')

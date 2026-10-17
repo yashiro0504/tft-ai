@@ -7,8 +7,11 @@ import {
 import type { TftSearchResponse, TftOverviewResponse, MetaCoachFeedback } from '@/lib/types'
 import { MatchCard } from './components/MatchCard'
 import { FeedbackReport } from './components/FeedbackReport'
+import { MetaRanking } from './components/MetaRanking'
+import { SiteHeader } from './components/SiteHeader'
 
 export default function TFTCoachPage() {
+  const [tab, setTab] = useState<'meta' | 'coach'>('meta')
   const [gameName, setGameName] = useState('')
   const [tagLine, setTagLine] = useState('KR1')
 
@@ -96,7 +99,9 @@ export default function TFTCoachPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080C15] text-slate-100 selection:bg-blue-500 selection:text-white pb-20">
+    <div className="min-h-screen bg-app text-ink selection:bg-blue-500 selection:text-ink pb-20">
+      <SiteHeader active={tab} onChange={setTab} />
+
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-blue-600/10 rounded-full blur-3xl" />
@@ -104,27 +109,73 @@ export default function TFTCoachPage() {
         <div className="absolute bottom-10 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 py-10 md:py-14">
+      <main className="relative max-w-6xl mx-auto px-4 py-6 md:py-10">
+        {tab === 'meta' ? (
+          <section className="space-y-4">
+            <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-gradient-to-br from-panel via-panel to-blue-500/[0.08] p-5 md:p-7">
+              <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
+                  backgroundSize: '22px 22px',
+                }}
+              />
+              <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    Live Meta · Set 18
+                  </span>
+                  <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-ink md:text-4xl">
+                    시즌 18{' '}
+                    <span className="bg-gradient-to-r from-cyan-600 via-sky-500 to-indigo-500 bg-clip-text text-transparent">
+                      메타 랭킹
+                    </span>
+                  </h1>
+                  <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-muted md:text-sm">
+                    Riot 실측 매치 표본으로 집계한 기물 · 시너지 · 아이템 · BIS 조합 티어표.
+                    <span className="text-muted"> 평균 등수가 낮을수록 강한 기물입니다.</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="rounded-xl border border-line/10 bg-elev/5 px-3 py-2 text-center">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">기준 등수</p>
+                    <p className="font-mono text-lg font-black text-ink">4.50</p>
+                  </div>
+                  <div className="rounded-xl border border-line/10 bg-elev/5 px-3 py-2 text-center">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">데이터</p>
+                    <p className="font-mono text-lg font-black text-emerald-300">실측</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <MetaRanking onOpenCoach={() => setTab('coach')} />
+          </section>
+        ) : (
+        <section className="max-w-5xl mx-auto">
         {/* Header Title */}
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-cyan-400 text-xs md:text-sm font-semibold tracking-wider uppercase mb-3">
             <Trophy className="w-4 h-4 text-amber-400" />
             TFT Match History &amp; AI Strategy Coach
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-3">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-ink mb-3">
             TFT 실전 전적 검색 &amp;{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">
               경기별 AI 코칭
             </span>
           </h1>
-          <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-muted text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
             아이디를 검색하면 최근 경기 리스트가 뜨고, <strong>원하는 경기마다 [AI 분석]</strong>을 눌러
             기물 경합·증강 선택·아이템·운영을 그 판 기준으로 정밀 진단합니다.
           </p>
         </header>
 
         {/* Search Input Box */}
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl mb-8">
+        <div className="bg-panel/90 backdrop-blur-xl border border-line/10 rounded-2xl p-4 md:p-6 shadow-2xl mb-8">
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -138,7 +189,7 @@ export default function TFTCoachPage() {
                 placeholder="Riot ID 입력 (예: 테스트#KR1 또는 소환사명)"
                 value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm md:text-base transition"
+                className="w-full bg-sunken/70 border border-line/15 rounded-xl px-4 py-3.5 text-ink placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm md:text-base transition"
               />
             </div>
             <div className="w-full sm:w-28">
@@ -147,7 +198,7 @@ export default function TFTCoachPage() {
                 placeholder="#KR1"
                 value={tagLine}
                 onChange={(e) => setTagLine(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm md:text-base transition text-center"
+                className="w-full bg-sunken/70 border border-line/15 rounded-xl px-3 py-3.5 text-ink placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm md:text-base transition text-center"
               />
             </div>
             <button
@@ -170,8 +221,8 @@ export default function TFTCoachPage() {
           </form>
 
           {/* Quick Preset Samples */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
-            <span className="font-semibold text-slate-500">체험용 프리셋:</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-line/10/80 text-xs text-muted">
+            <span className="font-semibold text-muted">체험용 프리셋:</span>
             <button
               type="button"
               onClick={() => setSample('띵 땡', 'KR1')}
@@ -182,14 +233,14 @@ export default function TFTCoachPage() {
             <button
               type="button"
               onClick={() => setSample('대깨고집러', 'KR1')}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/50"
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-muted hover:text-ink transition border border-line/15"
             >
               ⚠️ 대깨 사출 판
             </button>
             <button
               type="button"
               onClick={() => setSample('빈집장인', 'KR1')}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/50"
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-muted hover:text-ink transition border border-line/15"
             >
               📊 빈집 유연 운영
             </button>
@@ -209,12 +260,12 @@ export default function TFTCoachPage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-8 text-center animate-pulse space-y-4">
+          <div className="bg-panel/90 border border-line/10/80 rounded-2xl p-8 text-center animate-pulse space-y-4">
             <div className="w-12 h-12 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center text-cyan-400">
               <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
             </div>
-            <p className="text-lg font-bold text-slate-200">{loadingStep}</p>
-            <p className="text-xs text-slate-500">Riot 공식 서버 데이터를 실시간 로드하고 있습니다...</p>
+            <p className="text-lg font-bold text-ink-soft">{loadingStep}</p>
+            <p className="text-xs text-muted">Riot 공식 서버 데이터를 실시간 로드하고 있습니다...</p>
           </div>
         )}
 
@@ -223,7 +274,7 @@ export default function TFTCoachPage() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
             {/* Demo Notice */}
             {search.isDemo && (
-              <div className="px-4 py-2.5 rounded-xl bg-cyan-950/40 border border-cyan-800/50 text-cyan-300 text-xs flex items-center gap-2">
+              <div className="px-4 py-3 rounded-xl bg-cyan-950/40 border border-cyan-800/50 text-cyan-300 text-xs flex items-center gap-2">
                 <Info className="w-4 h-4 shrink-0" />
                 <span>
                   <strong>체험 모드:</strong> API 키가 없거나 데모 데이터로 동작 중입니다. 실제 Riot API 키를 설정하면
@@ -234,49 +285,49 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 프로필 요약 카드 */}
             {search.summonerProfile && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="bg-panel/90 border border-line/10 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <img
                       src={search.summonerProfile.profileIconUrl}
                       alt="Summoner Icon"
-                      className="w-16 h-16 rounded-2xl border-2 border-cyan-500/50 shadow-lg object-cover bg-slate-950"
+                      className="w-16 h-16 rounded-2xl border-2 border-cyan-500/50 shadow-lg object-cover bg-sunken/70"
                       onError={(e) => {
                         ;(e.target as HTMLElement).style.display = 'none'
                       }}
                     />
-                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-[10px] font-mono font-bold text-slate-300">
+                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-sunken/70 border border-line/15 text-[11px] font-mono font-bold text-muted">
                       Lv.{search.summonerProfile.summonerLevel}
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-black text-ink flex items-center gap-2">
                       <span>{search.summonerProfile.gameName}</span>
-                      <span className="text-sm font-normal text-slate-400">#{search.summonerProfile.tagLine}</span>
+                      <span className="text-sm font-normal text-muted">#{search.summonerProfile.tagLine}</span>
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-muted mt-0.5">
                       최근 {search.summonerProfile.totalGames}경기 전적 통계 기준
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 bg-slate-950/80 border border-slate-800/80 rounded-xl px-6 py-3">
+                <div className="flex items-center gap-6 bg-sunken/70 border border-line/10/80 rounded-xl px-6 py-3">
                   <div className="text-center">
-                    <p className="text-[11px] font-bold text-slate-400">평균 등수</p>
+                    <p className="text-[12px] font-bold text-muted">평균 등수</p>
                     <p className="text-xl md:text-2xl font-black text-amber-400 font-mono">
                       #{search.summonerProfile.avgPlacement}
                     </p>
                   </div>
                   <div className="w-[1px] h-8 bg-slate-800" />
                   <div className="text-center">
-                    <p className="text-[11px] font-bold text-slate-400">순방률 (TOP 4)</p>
+                    <p className="text-[12px] font-bold text-muted">순방률 (TOP 4)</p>
                     <p className="text-xl md:text-2xl font-black text-emerald-400 font-mono">
                       {search.summonerProfile.top4Rate}%
                     </p>
                   </div>
                   <div className="w-[1px] h-8 bg-slate-800" />
                   <div className="text-center">
-                    <p className="text-[11px] font-bold text-slate-400">1등 승률</p>
+                    <p className="text-[12px] font-bold text-muted">1등 승률</p>
                     <p className="text-xl md:text-2xl font-black text-cyan-400 font-mono">
                       {search.summonerProfile.winRate}%
                     </p>
@@ -286,14 +337,14 @@ export default function TFTCoachPage() {
             )}
 
             {/* 2. 종합 AI 분석 (선택) */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div className="bg-panel/90 border border-line/10 rounded-2xl p-6 shadow-xl">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-cyan-400" />
                     최근 {search.matches.length}경기 종합 AI 코칭
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     여러 판을 묶어 플레이스타일·유연성 성향을 진단합니다. (개별 정밀 분석은 아래 경기 카드에서)
                   </p>
                 </div>
@@ -338,11 +389,11 @@ export default function TFTCoachPage() {
             {/* 3. 매치 히스토리 리스트 (경기별 AI 분석) */}
             <div className="pt-2">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="text-base font-black text-white flex items-center gap-2">
+                <h3 className="text-base font-black text-ink flex items-center gap-2">
                   <Layers className="w-5 h-5 text-cyan-400" />
                   <span>실전 매치 히스토리 ({search.matches.length}경기)</span>
                 </h3>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted">
                   각 경기의 <strong className="text-cyan-300">[이 경기 AI 분석]</strong> 버튼으로 개별 정밀 코칭을 받아보세요.
                 </span>
               </div>
@@ -367,7 +418,7 @@ export default function TFTCoachPage() {
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="text-xs text-slate-400 hover:text-slate-200 underline transition cursor-pointer"
+                className="text-xs text-muted hover:text-ink-soft underline transition cursor-pointer"
               >
                 소환사 다시 검색하기 ↑
               </button>
@@ -375,8 +426,20 @@ export default function TFTCoachPage() {
 
           </div>
         )}
+        </section>
+        )}
+      </main>
 
-      </div>
+      <footer className="relative border-t border-line/10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-1.5 px-4 py-6 text-center sm:flex-row sm:text-left">
+          <p className="text-[12px] text-muted">
+            <span className="font-black text-muted">TFT LAB</span> · 시즌 18 메타 랭킹 &amp; AI 코치
+          </p>
+          <p className="text-[11px] leading-relaxed text-subtle">
+            데이터: Riot 실측 매치 표본 · TFT LAB is not endorsed by Riot Games.
+          </p>
+        </div>
+      </footer>
     </div>
   )
 
