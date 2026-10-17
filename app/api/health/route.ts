@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cacheBackend } from '@/lib/cache'
 import { redisConfigured } from '@/lib/redisRest'
 import { snapshotMetrics, uptimeSeconds } from '@/lib/observability'
+import { dailyQuotaLimit } from '@/lib/quota'
+import { getLlmBudgetStatus } from '@/lib/llmBudget'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +39,14 @@ export async function GET(req: NextRequest) {
     warnings.push('NEXT_PUBLIC_CONTACT_EMAIL 미설정: 약관/개인정보 문의처가 플레이스홀더입니다.')
   }
 
+  const budget = await getLlmBudgetStatus()
+  if (budget.exceeded) {
+    warnings.push('LLM 일일 예산 초과: AI 코칭이 결정론적 폴백으로 응답 중입니다.')
+  }
+  if (process.env.NODE_ENV === 'production' && !process.env.RIOT_API_KEY) {
+    warnings.push('프로덕션에 RIOT_API_KEY 미설정: 검색이 503으로 실패합니다.')
+  }
+
   return NextResponse.json({
     status: 'ok',
     env: process.env.NODE_ENV,
@@ -46,6 +56,19 @@ export async function GET(req: NextRequest) {
       riot: Boolean(process.env.RIOT_API_KEY),
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
       gemini: Boolean(process.env.GEMINI_API_KEY),
+    },
+    limits: {
+      perDay: {
+        search: dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50),
+        analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10),
+        overview: dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 10),
+      },
+      llmBudget: {
+        enabled: budget.enabled,
+        budgetUsd: budget.budgetUsd,
+        spentTodayUsd: budget.spentUsd,
+        exceeded: budget.exceeded,
+      },
     },
     warnings,
     metrics: snapshotMetrics(),

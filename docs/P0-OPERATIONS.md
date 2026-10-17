@@ -95,3 +95,36 @@ curl -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/
 - Redis만 끄기: `UPSTASH_REDIS_REST_URL`/`TOKEN` 제거 → 자동으로 L1 메모리 캐시로 동작
 - meta CDN 캐시 끄기: `app/api/tft/meta/route.ts` 의 `META_CACHE_HEADERS` 제거
 - Riot 재시도 끄기: `RIOT_MAX_RETRIES=0`
+
+## 7. 일일 쿼터 · LLM 예산 (P0-2 비용 방어)
+
+| 항목 | 기본값 | env |
+| --- | --- | --- |
+| 검색(IP당/일) | 50회 | `QUOTA_SEARCH_PER_DAY` |
+| 경기 AI 분석(IP당/일) | 10회 | `QUOTA_ANALYSIS_PER_DAY` |
+| 종합 AI 분석(IP당/일) | 10회 | `QUOTA_OVERVIEW_PER_DAY` |
+| LLM 일일 예산 | 3 USD | `LLM_DAILY_BUDGET_USD` |
+
+- 0 이하는 **무제한**(가드 비활성)입니다.
+- 쿼터는 KST 자정에 초기화되며, Redis 설정 시 인스턴스 간 공유됩니다.
+- 초과 시 `429` + `Retry-After` 와 함께 `quota` 객체를 반환합니다.
+- LLM 예산 초과 시 제공자 호출 없이 **결정론적 폴백 리포트**(`isFallback: true`)를 반환합니다.
+- Redis가 없으면 인메모리 폴백이라 서버리스 다중 인스턴스에서는 느슨해집니다. **운영은 Redis 설정을 권장**합니다.
+
+### 프로덕션 데모 폴백
+
+`NODE_ENV=production` 에서 `RIOT_API_KEY` 가 없으면 검색/분석은 `503` 으로 실패합니다.
+(데모 데이터를 실제 전적으로 오인하는 사고 방지. `isDemo: true` 를 명시한 요청만 데모 허용)
+
+### 확인
+
+```powershell
+curl http://localhost:3000/api/health
+# limits.perDay, limits.llmBudget, warnings 확인
+```
+
+`/api/health` 의 `warnings` 에 아래가 뜨면 아직 설정이 필요합니다.
+
+- `프로덕션에 RIOT_API_KEY 미설정` → 배포 환경변수 확인
+- `LLM 일일 예산 초과` → 예산 상향 또는 다음날 리셋 대기
+

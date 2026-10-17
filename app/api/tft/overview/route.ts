@@ -3,7 +3,8 @@ import { generateMetaCoachFeedback } from '@/lib/llm'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
-import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { dailyQuotaLimit } from '@/lib/quota'
 import { MAX_MATCH_LIMIT } from '@/lib/tftService'
 import { SlimMatchData, TftOverviewResponse } from '@/lib/types'
 
@@ -19,6 +20,9 @@ export async function POST(req: NextRequest) {
   try {
     const limited = rateLimitGuard(req, 'overview', 10, 60_000)
     if (limited) return limited
+
+    const daily = await quotaGuard(req, 'overview', dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 10))
+    if (daily) return daily
 
     const raw = await readJson(req)
     if (isNextResponse(raw)) return raw

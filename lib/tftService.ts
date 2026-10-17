@@ -36,6 +36,12 @@ export async function loadSummonerData(
   const hasApiKey = Boolean(process.env.RIOT_API_KEY)
   const normalizedLimit = Math.min(Math.max(Math.floor(limit) || DEFAULT_MATCH_LIMIT, 1), MAX_MATCH_LIMIT)
 
+  // 프로덕션에서 키가 없으면 데모 데이터를 "조용히" 보여주지 않는다.
+  // (키 만료 사고 시 사용자가 가짜 전적을 실제로 오인하는 것을 방지)
+  if (!hasApiKey && !isDemo && process.env.NODE_ENV === 'production') {
+    throw new RiotApiError('서비스 준비 중입니다. 잠시 후 다시 시도해주세요.', 503)
+  }
+
   if (isDemo || !hasApiKey) {
     const matches = getDemoMatches(gameName).slice(0, normalizedLimit)
     return {

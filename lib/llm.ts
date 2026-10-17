@@ -13,6 +13,7 @@ import { validateFeedbackGrounding } from './grounding'
 import { computeScoreBreakdown } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { errorFields, incrMetric, logEvent } from './observability'
+import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
 export const COACH_PROMPT_VERSION = '2026-10-18.1'
@@ -47,6 +48,8 @@ function recordLlmUsage(
   if (inputTokens > 0) incrMetric('llm.tokens.input', inputTokens)
   if (outputTokens > 0) incrMetric('llm.tokens.output', outputTokens)
   incrMetric('llm.cost_usd_micros', Math.round(usd * 1_000_000))
+  // 일일 예산 누적(전역 Redis 또는 인메모리). 실패해도 호출 자체는 계속된다.
+  void addLlmSpendUsd(usd)
   logEvent('info', 'llm_call', {
     provider,
     model,
@@ -341,6 +344,19 @@ ${planFacts}
       lecture: normalizeLecture(fb.lecture, planWithVerdicts, fb),
       grounding: validateFeedbackGrounding(fb, prompt),
     }
+  }
+
+  // 0. 일일 예산 가드 — 초과 시 제공자 호출을 건너뛰고 폴백 리포트를 반환한다.
+  const budget = await getLlmBudgetStatus()
+  if (budget.exceeded) {
+    incrMetric('llm.budget_blocked')
+    logEvent('warn', 'llm_budget_blocked', {
+      spentUsd: budget.spentUsd,
+      budgetUsd: budget.budgetUsd,
+      matches: matches.length,
+      mode,
+    })
+    return finalize(generateFallbackMetaFeedback(gameName, matches), true)
   }
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
+import { consumeDailyQuota } from './quota'
+import { incrMetric, logEvent } from './observability'
 import { RiotApiError } from './riot'
 
 /**
@@ -23,6 +25,55 @@ export function rateLimitGuard(
     )
   }
   return null
+}
+
+/** 초 단위 대기 시간을 사람이 읽기 쉬운 문구로. */
+function humanizeRetry(seconds: number): string {
+  if (seconds >= 3600) return `${Math.ceil(seconds / 3600)}시간`
+  if (seconds >= 60) return `${Math.ceil(seconds / 60)}분`
+  return `${seconds}초`
+}
+
+/**
+ * IP 기준 일일 쿼터를 1회 소모한다. 초과 시 429 응답을 반환하고, 허용되면 null.
+ * 한도 0 이하이면 무제한(가드 비활성).
+ */
+export async function quotaGuard(
+  req: NextRequest,
+  bucket: string,
+  limit: number
+): Promise<NextResponse | null> {
+  if (limit <= 0) return null
+
+  const ip = getClientIp(req.headers)
+  const result = await consumeDailyQuota(bucket, ip, limit)
+  if (result.allowed) return null
+
+  incrMetric(`quota.blocked_response.${bucket}`)
+  logEvent('warn', 'quota_blocked', {
+    bucket,
+    limit: result.limit,
+    used: result.used,
+    resetInSec: result.retryAfterSec,
+  })
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: `오늘 이용 한도(${result.limit}회)를 초과했습니다. 약 ${humanizeRetry(result.retryAfterSec)} 후(한국 시간 자정) 다시 이용할 수 있습니다.`,
+      quota: {
+        bucket,
+        limit: result.limit,
+        used: result.used,
+        remaining: 0,
+        resetInSec: result.retryAfterSec,
+      },
+    },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(result.retryAfterSec) },
+    }
+  )
 }
 
 /** JSON 본문을 안전하게 파싱한다. 실패 시 400 응답을 반환한다. */

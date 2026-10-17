@@ -6,7 +6,8 @@ import { generateMetaCoachFeedback } from '@/lib/llm'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
-import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { dailyQuotaLimit } from '@/lib/quota'
 import { SlimMatchData, TftMatchAnalysisResponse } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +23,9 @@ export async function POST(req: NextRequest) {
   try {
     const limited = rateLimitGuard(req, 'match', 30, 60_000)
     if (limited) return limited
+
+    const daily = await quotaGuard(req, 'analysis', dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10))
+    if (daily) return daily
 
     const raw = await readJson(req)
     if (isNextResponse(raw)) return raw
@@ -54,6 +58,14 @@ export async function POST(req: NextRequest) {
     const hasApiKey = Boolean(process.env.RIOT_API_KEY)
     let match: SlimMatchData | null = null
     let displayName = gameNameInput || '소환사'
+
+    // 프로덕션에서 키가 없을 때 데모 데이터로 조용히 폴백하지 않는다.
+    if (!isDemo && !hasApiKey && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: '서비스 준비 중입니다. 잠시 후 다시 시도해주세요.' },
+        { status: 503 }
+      )
+    }
 
     if (isDemo || !hasApiKey) {
       match = getDemoMatches(displayName).find((m) => m.matchId === matchId) || null

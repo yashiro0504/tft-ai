@@ -3,7 +3,8 @@ import { loadSummonerData, DEFAULT_MATCH_LIMIT } from '@/lib/tftService'
 import { calculateProfileStats } from '@/lib/profile'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
-import { rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { dailyQuotaLimit } from '@/lib/quota'
 import { TftSearchResponse } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   try {
     const limited = rateLimitGuard(req, 'search', 30, 60_000)
     if (limited) return limited
+
+    const daily = await quotaGuard(req, 'search', dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50))
+    if (daily) return daily
 
     const raw = await readJson(req)
     if (isNextResponse(raw)) return raw

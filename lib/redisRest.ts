@@ -76,3 +76,16 @@ export async function redisSet(key: string, value: string, ttlSeconds: number): 
     body: value,
   })
 }
+
+/** 정수 값 증가 후 결과 반환. 실패/미설정 시 null. */
+export async function redisIncrBy(key: string, by = 1): Promise<number | null> {
+  const result = await command(`incrby/${encodeURIComponent(key)}/${Math.trunc(by)}`)
+  const parsed = typeof result === 'number' ? result : Number(result)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+/** TTL 설정(초). 실패해도 예외를 던지지 않는다. */
+export async function redisExpire(key: string, ttlSeconds: number): Promise<void> {
+  await command(`expire/${encodeURIComponent(key)}/${Math.max(1, Math.floor(ttlSeconds))}`)
+}
+
