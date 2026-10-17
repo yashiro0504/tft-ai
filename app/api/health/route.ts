@@ -4,6 +4,7 @@ import { redisConfigured } from '@/lib/redisRest'
 import { snapshotMetrics, uptimeSeconds } from '@/lib/observability'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getLlmBudgetStatus } from '@/lib/llmBudget'
+import { turnstileStatus } from '@/lib/turnstile'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,8 +41,15 @@ export async function GET(req: NextRequest) {
   }
 
   const budget = await getLlmBudgetStatus()
+  const turnstile = turnstileStatus()
   if (budget.exceeded) {
     warnings.push('LLM 일일 예산 초과: AI 코칭이 결정론적 폴백으로 응답 중입니다.')
+  }
+  if (turnstile.enforced && !turnstile.siteKeyConfigured) {
+    warnings.push('TURNSTILE_SECRET_KEY만 설정됨: 클라이언트 site key가 없어 검색이 403으로 차단됩니다.')
+  }
+  if (!turnstile.enforced && turnstile.siteKeyConfigured) {
+    warnings.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY만 설정됨: 서버 검증이 비활성입니다.')
   }
   if (process.env.NODE_ENV === 'production' && !process.env.RIOT_API_KEY) {
     warnings.push('프로덕션에 RIOT_API_KEY 미설정: 검색이 503으로 실패합니다.')
@@ -56,6 +64,7 @@ export async function GET(req: NextRequest) {
       riot: Boolean(process.env.RIOT_API_KEY),
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
       gemini: Boolean(process.env.GEMINI_API_KEY),
+      turnstile,
     },
     limits: {
       perDay: {

@@ -128,3 +128,40 @@ curl http://localhost:3000/api/health
 - `프로덕션에 RIOT_API_KEY 미설정` → 배포 환경변수 확인
 - `LLM 일일 예산 초과` → 예산 상향 또는 다음날 리셋 대기
 
+## 8. 봇 차단 (Cloudflare Turnstile)
+
+검색은 Riot API 13콜을 유발하므로, 봇이 검색 폼을 직접 두드리는 것을 막는다.
+
+### 설정
+
+1. https://dash.cloudflare.com → Turnstile → 사이트 추가
+   - 도메인: 배포 도메인 (로컬 테스트는 `localhost` 추가)
+   - 위젯 모드: Managed
+2. Vercel 환경변수 등록
+   ```
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key>
+   TURNSTILE_SECRET_KEY=<secret key>
+   ```
+3. 재배포 후 `/` 에서 위젯이 보이고, 검색이 정상 동작하는지 확인
+
+### 동작
+
+- **검색(`/api/tft/search`)에만 적용**된다. (Riot 호출이 집중되는 진입점)
+- 경기별/종합 AI 분석은 일일 쿼터 + LLM 예산 가드로 보호한다.
+- 토큰은 1회용이므로 검색 후 위젯을 자동 reset 한다.
+- `TURNSTILE_ENFORCE=false` 로 즉시 해제할 수 있다.
+- Cloudflare 장애/타임아웃 시에는 **fail-open**(통과)하고 `turnstile_unavailable` 로그를 남긴다.
+- 사이트 키만/시크릿만 설정하면 `/api/health` 경고가 뜬다.
+
+### 확인
+
+```powershell
+# 키 미설정: 검색 정상 (가드 비활성)
+curl -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/json" `
+     -d '{"gameName":"Demo","tagLine":"KR1","isDemo":true,"limit":1}'
+
+# 시크릿만 설정: 토큰 없으면 403
+# 응답: {"success":false,"code":"TURNSTILE_FAILED", ...}
+```
+
+

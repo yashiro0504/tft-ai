@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
 import { consumeDailyQuota } from './quota'
+import { verifyTurnstile } from './turnstile'
 import { incrMetric, logEvent } from './observability'
 import { RiotApiError } from './riot'
 
@@ -73,6 +74,30 @@ export async function quotaGuard(
       status: 429,
       headers: { 'Retry-After': String(result.retryAfterSec) },
     }
+  )
+}
+
+/**
+ * Turnstile 토큰을 검증한다. 강제되지 않았거나 통과 시 null.
+ * 검증 실패 시 403 응답.
+ */
+export async function turnstileGuard(
+  req: NextRequest,
+  raw: Record<string, unknown>
+): Promise<NextResponse | null> {
+  const token = typeof raw.turnstileToken === 'string' ? raw.turnstileToken.trim() : ''
+  const result = await verifyTurnstile(token, getClientIp(req.headers))
+  if (result.ok) return null
+
+  incrMetric('turnstile.blocked')
+  logEvent('warn', 'turnstile_blocked', { reason: result.reason })
+  return NextResponse.json(
+    {
+      success: false,
+      code: 'TURNSTILE_FAILED',
+      error: '로봇 확인에 실패했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.',
+    },
+    { status: 403 }
   )
 }
 

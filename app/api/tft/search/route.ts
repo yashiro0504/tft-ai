@@ -3,7 +3,7 @@ import { loadSummonerData, DEFAULT_MATCH_LIMIT } from '@/lib/tftService'
 import { calculateProfileStats } from '@/lib/profile'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
-import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError, turnstileGuard } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { TftSearchResponse } from '@/lib/types'
 
@@ -25,6 +25,9 @@ export async function POST(req: NextRequest) {
 
     const raw = await readJson(req)
     if (isNextResponse(raw)) return raw
+
+    const botCheck = await turnstileGuard(req, raw)
+    if (botCheck) return botCheck
 
     const nt = normalizeGameNameTagLine(raw)
     if (isNextResponse(nt)) return nt

@@ -9,6 +9,9 @@ import { MatchCard } from './components/MatchCard'
 import { FeedbackReport } from './components/FeedbackReport'
 import { MetaRanking } from './components/MetaRanking'
 import { SiteHeader } from './components/SiteHeader'
+import { TurnstileWidget } from './components/TurnstileWidget'
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 export default function TFTCoachPage() {
   const [tab, setTab] = useState<'meta' | 'coach'>('meta')
@@ -21,6 +24,10 @@ export default function TFTCoachPage() {
 
   const [search, setSearch] = useState<TftSearchResponse | null>(null)
 
+  // Turnstile: 토큰은 1회용이므로 요청 후 resetSignal 을 증가시켜 재발급한다.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+
   const [isOverviewLoading, setIsOverviewLoading] = useState(false)
   const [overviewFeedback, setOverviewFeedback] = useState<MetaCoachFeedback | null>(null)
   const [overviewError, setOverviewError] = useState<string | null>(null)
@@ -31,6 +38,11 @@ export default function TFTCoachPage() {
 
     if (!targetName) {
       setError('소환사 닉네임을 입력해주세요!')
+      return
+    }
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('로봇 확인을 완료한 뒤 다시 검색해주세요.')
       return
     }
 
@@ -46,7 +58,12 @@ export default function TFTCoachPage() {
       const res = await fetch('/api/tft/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameName: targetName, tagLine: targetTag || 'KR1', limit: 10 }),
+        body: JSON.stringify({
+          gameName: targetName,
+          tagLine: targetTag || 'KR1',
+          limit: 10,
+          turnstileToken: turnstileToken || undefined,
+        }),
       })
       const data: TftSearchResponse = await res.json()
 
@@ -61,6 +78,8 @@ export default function TFTCoachPage() {
       clearTimeout(stepTimer1)
       setIsLoading(false)
       setLoadingStep('')
+      // 토큰은 1회용: 성공/실패와 무관하게 위젯을 재발급한다.
+      if (TURNSTILE_SITE_KEY) setTurnstileResetSignal((value) => value + 1)
     }
   }
 
@@ -218,6 +237,13 @@ export default function TFTCoachPage() {
               )}
             </button>
           </form>
+
+          {/* Cloudflare Turnstile (site key 미설정 시 렌더링 안 됨) */}
+          {TURNSTILE_SITE_KEY ? (
+            <div className="mt-3">
+              <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+            </div>
+          ) : null}
 
           {/* Quick Preset Samples */}
           <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-line/10/80 text-xs text-muted">
