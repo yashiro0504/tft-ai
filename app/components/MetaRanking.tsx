@@ -1537,10 +1537,16 @@ function DetailDrawer({
   )
 }
 
-export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
+export function MetaRanking({
+  onOpenCoach,
+  initialData,
+}: {
+  onOpenCoach?: () => void
+  initialData?: TftMetaResponse
+}) {
   const [tab, setTab] = useState<MetaTab>('decks')
-  const [data, setData] = useState<TftMetaResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [data, setData] = useState<TftMetaResponse | null>(initialData ?? null)
+  const [isLoading, setIsLoading] = useState(!initialData)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -1571,8 +1577,11 @@ export function MetaRanking({ onOpenCoach }: { onOpenCoach?: () => void }) {
   }
 
   useEffect(() => {
+    // 서버(/meta)에서 초기 데이터를 받은 경우 클라이언트 fetch 를 생략한다.
+    if (initialData) return
     load()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData])
 
   const q = query.trim().toLowerCase()
   useEffect(() => {

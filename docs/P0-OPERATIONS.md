@@ -164,4 +164,44 @@ curl -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/
 # 응답: {"success":false,"code":"TURNSTILE_FAILED", ...}
 ```
 
+## 9. URL 라우팅 · OG 이미지
+
+### 라우트
+
+| 경로 | 렌더링 | 캐시 |
+| --- | --- | --- |
+| `/meta` | 서버(ISR) — 메타 랭킹 전체를 HTML로 제공 | `revalidate = 300` |
+| `/profile/kr/{name}/{tag}` | 서버(ISR) — 소환사 전적 + 경기 카드 | `revalidate = 120` |
+| `/profile/kr/{name}/{tag}/opengraph-image` | `next/og` PNG (1200×630) | 300s |
+
+- 홈 검색 결과의 **"전적 페이지 링크 복사"** 버튼이 프로필 URL을 복사합니다.
+- sitemap에는 `/`, `/meta`, `/terms`, `/privacy`가 포함됩니다. (프로필은 열거 불가)
+- canonical/OG URL은 `NEXT_PUBLIC_SITE_URL` 기준이므로 **배포 시 반드시 설정**하세요.
+
+### OG 이미지의 한글 폰트
+
+전체 한글 폰트(수 MB)를 번들하지 않고, 이미지에 실제로 쓰는 글자만
+Google Fonts `text=` 서브셋으로 요청해 TTF로 받아 렌더링합니다.
+- 실패 시 기본 폰트로 폴백(한글이 깨질 수 있음) → `/api/health`가 아니라 OG 응답 로그 확인
+- 폰트 응답은 모듈 캐시에 보관(같은 텍스트 반복 시 재요청 없음)
+
+### 주의: 서버 렌더링은 쿼터/Turnstile을 거치지 않는다
+
+`/profile/...` 은 RSC에서 직접 `loadSummonerData` 를 호출하므로 API 라우트의
+IP 쿼터·Turnstile을 bypass한다. 대신 아래로 보호된다.
+
+1. **ISR(120s)**: 같은 URL은 2분에 1번만 Riot을 호출
+2. **2계층 캐시**: account 24h / summoner 6h / matchIds 45s / match 상세 30d
+3. 검증된 파라미터(지역 `kr`, 이름 32자·태그 10자 제한)
+
+트래픽이 커지면 프로필 URL에 서명 토큰을 요구하거나 CDN 캐시를 늘리는 것을 검토한다.
+
+### 알려진 제약
+
+- `/meta` HTML이 약 800KB(전체 랭킹 포함)이라 모바일 초기 로딩이 무겁다.
+  필요하면 탭별 분할 라우트(`/meta/champions` 등)로 쪼갠다.
+- 프로필은 `kr`만 지원한다. 다른 지역은 `lib/profileData.ts`의 검증과
+  `loadSummonerData` 지역 매핑을 함께 확장해야 한다.
+
+
 

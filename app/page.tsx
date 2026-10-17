@@ -10,6 +10,7 @@ import { FeedbackReport } from './components/FeedbackReport'
 import { MetaRanking } from './components/MetaRanking'
 import { SiteHeader } from './components/SiteHeader'
 import { TurnstileWidget } from './components/TurnstileWidget'
+import { ShareButton } from './components/ShareButton'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -440,8 +441,12 @@ export default function TFTCoachPage() {
               </div>
             </div>
 
-            {/* Bottom button */}
-            <div className="text-center pt-8">
+            {/* Bottom actions */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-8">
+              <ShareButton
+                path={`/profile/kr/${encodeURIComponent(search.gameName)}/${encodeURIComponent(search.tagLine)}`}
+                label="전적 페이지 링크 복사"
+              />
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
