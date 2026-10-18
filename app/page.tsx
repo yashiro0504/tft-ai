@@ -11,6 +11,7 @@ import { MetaRanking } from './components/MetaRanking'
 import { SiteHeader } from './components/SiteHeader'
 import { TurnstileWidget } from './components/TurnstileWidget'
 import { ShareButton } from './components/ShareButton'
+import { track, trackOnce } from '@/lib/analytics'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -38,12 +39,16 @@ export default function TFTCoachPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
-    if (params.get('tab') === 'coach') setTab('coach')
+    const initialTab = params.get('tab') === 'coach' ? 'coach' : 'meta'
+    if (initialTab === 'coach') setTab('coach')
+    trackOnce('tab_view:home:initial', 'tab_view', { tab: initialTab, surface: 'home' })
   }, [])
 
   /** 탭 전환 + URL 쿼리 동기화 (공유/새로고침 시 현재 탭 유지) */
   const handleTabChange = (next: 'meta' | 'coach') => {
+    if (next === tab) return
     setTab(next)
+    track('tab_view', { tab: next, surface: 'home' })
     if (typeof window === 'undefined') return
     const url = new URL(window.location.href)
     if (next === 'coach') url.searchParams.set('tab', 'coach')
@@ -71,6 +76,7 @@ export default function TFTCoachPage() {
     setOverviewError(null)
     setIsLoading(true)
     setLoadingStep('Riot API 로 최근 전적과 로비 8인 데이터를 수집 중...')
+    track('search_submit', { surface: 'coach' })
     const stepTimer1 = setTimeout(() => setLoadingStep('매치 리스트와 로비 기물 데이터를 정리하는 중...'), 900)
 
     try {
@@ -90,6 +96,10 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '검색 중 오류가 발생했습니다.')
       }
       setSearch(data)
+      track('search_success', {
+        matchCount: data.matches.length,
+        isDemo: Boolean(data.isDemo),
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.'
       setError(message)
@@ -106,6 +116,7 @@ export default function TFTCoachPage() {
     if (!search || isOverviewLoading) return
     setIsOverviewLoading(true)
     setOverviewError(null)
+    track('analysis_click', { scope: 'overview', matchCount: search.matches.length })
     try {
       const res = await fetch('/api/tft/overview', {
         method: 'POST',
@@ -122,6 +133,7 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
+      track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
     } catch (err) {
       const message = err instanceof Error ? err.message : '종합 분석 중 오류가 발생했습니다.'
       setOverviewError(message)
@@ -430,6 +442,7 @@ export default function TFTCoachPage() {
               <ShareButton
                 path={`/profile/kr/${encodeURIComponent(search.gameName)}/${encodeURIComponent(search.tagLine)}`}
                 label="전적 페이지 링크 복사"
+                surface="coach_result"
               />
               <button
                 type="button"

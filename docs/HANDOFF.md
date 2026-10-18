@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `5694432` · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-1-events` (P0-1 이벤트 계측 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -19,6 +19,7 @@
 | 스택 | Next.js 15.5 · React 19 · TypeScript · Tailwind 3.4 |
 | 배포 | Vercel (Production = www.tftlab.kr) |
 | DB/인증 | Supabase (코드 준비 완료, **Vercel env 미등록 상태**) |
+| 계측 | 자체 이벤트 수집 (`POST /api/events`) — Supabase `events` 테이블(0002) 또는 구조화 로그 |
 | 캐시 | Upstash Redis + 인메모리 L1 |
 | 봇 차단 | Cloudflare Turnstile (검색에만 적용) |
 
@@ -105,6 +106,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `/api/tft/overview` | Dynamic | 종합 분석 (쿼터·LLM) |
 | `/api/tft/meta` | Dynamic | 메타 전체 payload (CDN 캐시 헤더) |
 | `/api/me` | Dynamic | 로그인 사용자·플랜·사용량 |
+| `/api/events` | Dynamic | 제품 이벤트 수집 (204, no-store, rate limit) |
 | `/api/health` | Dynamic | 운영 상태 |
 | `/robots.txt`, `/sitemap.xml` | Static | sitemap에 덱 24개 포함 |
 
@@ -127,8 +129,13 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/userQuota.ts` | 로그인 사용자 RPC 쿼터 |
 | `lib/turnstile.ts` | 검색 봇 차단 |
 | `lib/llm.ts` | DeepSeek/Gemini + 프롬프트 + 예산 가드 |
+| `lib/eventSchema.ts` | 이벤트 이름 허용 목록 + PII 정제 규칙 (클라·서버 공용) |
+| `lib/analytics.ts` | 클라이언트 `track()` / `trackOnce()` (sessionStorage UUID, keepalive) |
+| `lib/events.ts` | 서버 이벤트 저장 (Supabase insert → 실패 시 구조화 로그) |
+| `app/api/events/route.ts` | 이벤트 수집 API (204, no-store, IP 레이트리밋) |
 | `middleware.ts` | Supabase 세션 쿠키 갱신 |
 | `supabase/migrations/0001_auth_quota.sql` | profiles/usage_daily/RLS/RPC |
+| `supabase/migrations/0002_events.sql` | events 테이블 (insert-only RLS) |
 
 ### 완료된 상태 (요약)
 
@@ -141,26 +148,43 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - Discord 로그인·플랜·사용자 쿼터 코드 완료 (Supabase env 미등록)
 - CI: lint/typecheck/meta/decks/build + **SSR 스모크**
 - 매일 10:30 KST `Ops Check` 워크플로우 (Riot 키 만료 + strict 점검)
+- **P0-1 제품 이벤트 계측 완료**: `/api/events`(204·no-store·IP 레이트리밋), 이벤트 9종 화이트리스트,
+  `events` 테이블 마이그레이션(insert-only RLS), Supabase 미설정 시 구조화 로그, `track()`/`trackOnce()`,
+  개인정보처리방침에 수집 항목·보관 기간(90일) 반영
 
 ## 4. 개발 우선순위 (이 순서대로)
 
 > 전제: **결제/구독 UI는 아직 만들지 않는다.** 계정·쿼터 배관은 유지하되, 유료화는 아래 게이트 통과 후.
 > 제품의 현재 약점은 기능 수가 아니라 **재방문 이유 부재**와 **첫 경험 마찰**이다.
 
-### P0-1. 이벤트 계측 (0.5~1일) — 가장 먼저
+### P0-1. 이벤트 계측 (0.5~1일) — ✅ 완료 (2026-10-18)
 
 - 목표: 검색 → 분석 → 공유/로그인 전환과 이탈 지점을 숫자로 본다.
-- 구현
-  - `POST /api/events` (rate limit, Turnstile 불필요, `no-store`)
-  - 이벤트: `search_submit`, `search_success`, `analysis_click`, `analysis_success`, `tab_view`, `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
-  - payload: `{ name, sessionId, props }` — **Riot ID/이메일 등 PII 저장 금지**, `isDemo`, `cached`, `tab`, `matchCount` 정도만
-  - 저장: Supabase 설정 시 `events` 테이블(마이그레이션 `0002_events.sql`, RLS insert-only/anon 가능), 미설정 시 구조화 로그(`logEvent`)로만
-  - 클라이언트: `lib/analytics.ts` 의 `track()` (sessionStorage UUID, fetch keepalive)
-- 완료 조건
-  - `/api/events` 204, 이벤트가 Supabase/로그에 남음
-  - `npm run build` + 스모크 통과, 개인정보처리방침에 이벤트 수집 항목 추가
+- 구현 (완료)
+  - `POST /api/events` (rate limit 120/분/IP, Turnstile 불필요, `no-store`, 성공 시 **204**)
+  - 이벤트 9종: `search_submit`, `search_success`, `analysis_click`, `analysis_success`, `tab_view`,
+    `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
+  - payload: `{ name, sessionId, props, route }` — **Riot ID/이메일/PUUID 등 PII 미수집**
+    (`lib/eventSchema.ts` 가 키 이름 + 값 패턴을 이중 차단, 서버에서 재정제)
+  - 저장: Supabase 설정 시 `events` 테이블(`0002_events.sql`, insert-only RLS),
+    미설정 시 구조화 로그(`analytics_event`)
+  - 클라이언트: `lib/analytics.ts` 의 `track()` / `trackOnce()` (sessionStorage UUID, `keepalive`)
+- 배선 위치
+  | 이벤트 | 위치 |
+  | --- | --- |
+  | `search_submit` / `search_success` | `app/page.tsx` |
+  | `analysis_click` / `analysis_success` | `app/page.tsx`(종합), `app/components/MatchCard.tsx`(경기별) |
+  | `tab_view` | `app/page.tsx`(홈), `app/components/MetaDashboard.tsx`(메타 5탭) |
+  | `deck_open` | `app/components/DeckViewTracker.tsx`(덱 페이지), `MetaDashboard`(덱 카드 링크) |
+  | `share_click` | `app/components/ShareButton.tsx` (surface: coach_result/deck_page/meta_deck_row) |
+  | `login_click` | `app/components/UserMenu.tsx` |
+  | `pro_waitlist_click` | **미배선** — `/pro` 페이지(P2-7) 생성 시 연결 |
+- 완료 조건 충족
+  - `/api/events` 204 · 이벤트가 로그/Supabase에 남음 (로컬 검증 완료)
+  - `npm run build` + typecheck/eslint 통과, 개인정보처리방침에 수집 항목·보관 기간 추가
+- 남은 운영 작업: Supabase 프로젝트 생성 후 `0002_events.sql` 실행 → Vercel env 등록 시 자동으로 DB 저장으로 전환
 
-### P0-2. 랭크/티어 표시 (1~2일) — 가장 큰 가치
+### P0-2. 랭크/티어 표시 (1~2일) — 🔜 **다음 작업** (가장 큰 가치)
 
 - 목표: “내 위치”를 보여줘 재방문 이유를 만든다.
 - 구현
@@ -236,6 +260,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | 항목 | 상태 | 담당 |
 | --- | --- | --- |
 | Supabase 프로젝트 + Discord OAuth + env 등록 | **미완료** — 코드만 준비됨 | 운영자 |
+| Supabase `0002_events.sql` 적용 | **미완료** — 미적용 시 이벤트는 구조화 로그로만 적재(기능 정상) | 운영자 |
 | Riot 프로덕션 키 승인 | **Pending Review** | Riot |
 | Vercel Pro 전환 (상업화 전) | 미완료 | 운영자 |
 | DeepSeek/Gemini 월 스펜드 리밋 | 미완료 | 운영자 |
@@ -279,6 +304,14 @@ Supabase 설정 절차: `docs/supabase-auth.md`
     - `@next/swc-win32-x64-msvc ... not a valid Win32 application` 은 기존 환경 이슈. WASM 폴백으로 빌드 성공.
 11. **`/rank` canonical**
     - 루트 metadata의 canonical(`/`)을 상속한다. 공유용 URL로 쓰려면 canonical 정책 결정 필요.
+12. **이벤트 테이블은 insert-only**
+    - `events` 는 anon/authenticated 에 **INSERT 권한만** 부여했다. SELECT 를 열면 세션 단위 행동이
+      그대로 노출되므로 열지 말 것. 집계는 SQL Editor/서비스 롤에서만.
+    - 이벤트 이름은 화이트리스트(`lib/eventSchema.ts`)다. 새 이벤트를 추가할 때는 **양쪽(스키마 상수)과
+      개인정보처리방침**을 함께 갱신한다.
+    - `props` 에 Riot ID/이메일을 넣지 말 것. 서버가 차단하지만 조용히 사라지므로 디버깅이 어렵다.
+    - 보관 90일 권장: `delete from public.events where created_at < now() - interval '90 days';`
+    - `pro_waitlist_click` 은 `/pro` 페이지가 아직 없어 **미배선** 상태다(P2-7에서 연결).
 
 ---
 
@@ -313,7 +346,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 
 | 일차 | 작업 | 산출물 |
 | --- | --- | --- |
-| 1일 | P0-1 이벤트 계측 | `/api/events`, `events` 테이블/로그, 클라이언트 `track()` |
+| 1일 | ✅ P0-1 이벤트 계측 (완료) | `/api/events`, `events` 테이블/로그, 클라이언트 `track()` |
 | 2일 | P0-2 랭크/티어 API + 프로필 카드 | `tft/league/v1` 연동, 캐시, UI |
 | 3일 | P0-3 즐겨찾기/최근 검색 | Supabase/localStorage, 검색 UI |
 

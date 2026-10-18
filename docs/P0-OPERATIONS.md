@@ -364,6 +364,93 @@ curl https://www.tftlab.kr/api/me
 # configured/user/plan/usage/limits 확인
 ```
 
+## 15. 제품 이벤트 계측 (P0-1)
+
+검색 → 분석 → 공유/로그인 전환을 숫자로 보기 위한 자체 계측이다. 외부 분석 SDK 는 쓰지 않는다.
+
+### 계약
+
+```
+POST /api/events
+Content-Type: application/json
+{ "name": "search_submit", "sessionId": "<uuid>", "props": { "surface": "coach" }, "route": "/" }
+
+→ 204 No Content (Cache-Control: no-store)
+→ 400 알 수 없는 이벤트 / sessionId 형식 오류
+→ 429 IP당 120회/분 초과
+→ 405 POST 외 메서드
+```
+
+- 이벤트 이름은 **화이트리스트**만 허용: `search_submit`, `search_success`, `analysis_click`,
+  `analysis_success`, `tab_view`, `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
+- `sessionId` 는 브라우저 sessionStorage 의 UUID (탭 단위, 브라우저 종료 시 소멸)
+- **PII 미수집**: `props` 키 이름 차단 목록 + 이메일 패턴 차단 + 서버 재정제.
+  경로는 `/profile/[region]/[name]/[tag]` 로 마스킹된다.
+- Turnstile 은 적용하지 않는다(집계용). 남용은 IP 레이트리밋으로 완화한다.
+
+### 저장 위치
+
+| 조건 | 저장 |
+| --- | --- |
+| Supabase env 설정 + `0002_events.sql` 적용 | `public.events` (insert-only RLS) |
+| Supabase 미설정/오류 | 구조화 로그 `analytics_event` (Vercel Log Drain 으로 집계) |
+
+적용: Supabase SQL Editor 에서 `supabase/migrations/0002_events.sql` 실행.
+
+### 확인
+
+```powershell
+curl -i -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
+  -d '{"name":"search_submit","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","props":{"surface":"coach"},"route":"/"}'
+# HTTP/1.1 204 No Content, cache-control: no-store
+
+curl -s -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
+  -d '{"name":"nope","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
+# {"success":false,"error":"알 수 없는 이벤트입니다."}
+```
+
+서버 로그(Supabase 미설정 시):
+
+```json
+{"level":"info","event":"analytics_event","name":"search_submit","sessionId":"...","route":"/","props":{"surface":"coach"}}
+```
+
+### 집계 쿼리
+
+```sql
+-- 이벤트별 최근 7일 건수
+select name, count(*) from public.events
+ where created_at > now() - interval '7 days'
+ group by name order by 2 desc;
+
+-- 일별 세션 수
+select date_trunc('day', created_at) as day, count(distinct session_id) as sessions
+  from public.events where created_at > now() - interval '14 days'
+  group by 1 order by 1 desc;
+
+-- 검색 대비 분석 실행률 (게이트 지표)
+select
+  count(*) filter (where name = 'search_success') as searches,
+  count(*) filter (where name = 'analysis_click') as analysis_clicks
+from public.events where created_at > now() - interval '7 days';
+```
+
+### 보관
+
+90일 보관을 권장한다. pg_cron 이 없으면 운영자가 주기적으로 실행한다.
+
+```sql
+delete from public.events where created_at < now() - interval '90 days';
+```
+
+### 이벤트 추가 절차
+
+1. `lib/eventSchema.ts` 의 `ANALYTICS_EVENT_NAMES` 에 이름 추가
+2. 배선할 컴포넌트에서 `track('새_이벤트', { ... })` 호출
+3. `app/privacy/page.tsx` 수집 항목/목적에 반영 (필요 시)
+4. `npm run typecheck && npx eslint <변경 파일> && npm run build`
+
+
 
 
 

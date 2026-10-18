@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
+import { track } from '@/lib/analytics'
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -70,6 +71,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     if (isAnalyzing) return
     setIsAnalyzing(true)
     setAnalyzeError(null)
+    track('analysis_click', { scope: 'match', placement: match.placement })
     try {
       const res = await fetch('/api/tft/match', {
         method: 'POST',
@@ -82,6 +84,11 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       }
       setFeedback(data.feedback)
       setWasCached(Boolean(data.cached))
+      track('analysis_success', {
+        scope: 'match',
+        placement: match.placement,
+        cached: Boolean(data.cached),
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : '이 경기 분석 중 오류가 발생했습니다.'
       setAnalyzeError(message)

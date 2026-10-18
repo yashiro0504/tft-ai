@@ -2,19 +2,32 @@
 
 import { useState } from 'react'
 import { Check, Copy } from 'lucide-react'
+import { track } from '@/lib/analytics'
+
+/** 공유 대상 분류 (경로에 Riot ID 가 들어가므로 원문 경로는 전송하지 않는다) */
+function shareTarget(path: string): 'deck' | 'profile' | 'other' {
+  if (path.startsWith('/deck/')) return 'deck'
+  if (path.startsWith('/profile/')) return 'profile'
+  return 'other'
+}
 
 /** 현재 오리진 기준 절대 URL 을 클립보드에 복사한다. */
 export function ShareButton({
   path,
   label = '링크 복사',
+  surface = 'unknown',
 }: {
   path: string
   label?: string
+  /** 어느 화면에서 눌렀는지 (집계용) */
+  surface?: string
 }) {
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {
     const url = typeof window === 'undefined' ? path : new URL(path, window.location.origin).toString()
+
+    track('share_click', { surface, target: shareTarget(path) })
 
     try {
       await navigator.clipboard.writeText(url)

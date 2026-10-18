@@ -5,6 +5,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { track } from '@/lib/analytics'
 
 interface MeResponse {
   configured: boolean
@@ -55,6 +56,7 @@ export function UserMenu() {
     return (
       <Link
         href="/login"
+        onClick={() => track('login_click', { surface: 'header' })}
         className="ml-1 rounded-lg border border-line/15 px-2.5 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink"
       >
         로그인

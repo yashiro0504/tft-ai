@@ -6,6 +6,7 @@ import { getDeckMetaInfo, getDeckViews, type DeckView } from '@/lib/decks'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
+import { DeckViewTracker } from '@/app/components/DeckViewTracker'
 import { SITE_URL } from '@/lib/site'
 import '../../rank/rank.css'
 import '../deck.css'
@@ -88,6 +89,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="min-h-screen bg-app text-ink">
       <SimpleHeader active="meta" />
+      <DeckViewTracker deckId={deck.id} />
 
       <div className="rk-shell rk-deck">
         <main className="rk-deck-main">
@@ -114,7 +116,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
               {deck.units.length}유닛 · {deck.unitCost}코
             </p>
             <div className="rk-deck-actions">
-              <ShareButton path={`/deck/${deck.id}`} label="덱 링크 복사" />
+              <ShareButton path={`/deck/${deck.id}`} label="덱 링크 복사" surface="deck_page" />
               <Link href="/rank" className="rk-deck-link">
                 랭킹으로 돌아가기
               </Link>
