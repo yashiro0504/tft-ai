@@ -189,7 +189,7 @@ export default function TFTCoachPage() {
           </h1>
           <p className="text-muted text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
             아이디를 검색하면 최근 경기 리스트가 뜨고, <strong>원하는 경기마다 [AI 분석]</strong>을 눌러
-            기물 경합·증강 선택·아이템·운영을 그 판 기준으로 정밀 진단합니다.
+            기물 경합·아이템·운영을 그 판 기준으로 정밀 진단합니다.
           </p>
         </header>
 

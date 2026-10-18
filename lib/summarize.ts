@@ -189,12 +189,13 @@ export function serializeMatchesForLLM(matches: SlimMatchData[]): string {
             .join(' | ')
         : `✅ 빈집 성공 (강도 ${ci.contestScore ?? 0}/100, 겹침 거의 없음)`
 
+      const augmentLine = m.augments.length ? `\n- 선택 증강체: ${augStr}` : ''
+
       return `[매치 ${idx + 1} - ${setStr}]
 - 최종 등수: ${m.placement}등 (${m.placement <= 4 ? '순방/승리' : '하위권/탈락'})
 - 로비 경쟁 현황: ${contestStr}
 - 계산 지표(코드 산출): 2성+기물 ${twoStarPlus}개, 3성 ${threeStar}개, 총 장착아이템 ${totalItems}개
-- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 남은 골드: ${m.goldLeft}G)
-- 선택 증강체: ${augStr}
+- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 남은 골드: ${m.goldLeft}G)${augmentLine}
 - 활성 시너지: ${traitStr}
 - 최종 기물/아이템 구성: ${unitStr}`
     })

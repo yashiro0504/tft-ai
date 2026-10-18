@@ -296,13 +296,22 @@ export async function generateMetaCoachFeedback(
     ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
     : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
 
-  // 증강 메타 통계 제공 여부에 따라 접지 안내를 동적으로 구성
+  // 증강 데이터/메타 통계 제공 여부에 따라 접지 안내를 동적으로 구성
+  const hasAugments = matches.some((m) => (m.augments?.length || 0) > 0)
   const metaDetail = matches.find((m) => m.augmentAnalysis?.hasMeta)?.augmentAnalysis
-  const metaNote = metaDetail
-    ? metaDetail.sample
+
+  let metaNote: string
+  if (!hasAugments) {
+    metaNote =
+      '※ 이번 경기 데이터에는 증강 정보가 포함되어 있지 않다. 증강/증강 메타에 대한 평가나 추측을 하지 말고, 경제·아이템·템포·완성도·시너지·수렴도에 집중하라.'
+  } else if (metaDetail) {
+    metaNote = metaDetail.sample
       ? `※ 이번 요청에는 증강 메타 통계가 '샘플(검증 전)'로 제공되었다. 참고용으로만 언급하고, 실측 통계인 것처럼 단정하지 마라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'})`
       : `※ 이번 요청에는 증강 메타 통계(평균 등수/티어)가 제공되었다. 증강 선택 평가에 이 수치를 직접 인용하라. (출처: ${metaDetail.source ?? 'unknown'}, 패치 ${metaDetail.patch ?? '?'}, baseline 평균등수 ${metaDetail.baselineAvgPlacement ?? 4.5})`
-    : `※ 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다. 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.`
+  } else {
+    metaNote =
+      '※ 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다. 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.'
+  }
 
   const prompt = `소환사명: ${gameName}
 ${modeContext}
@@ -514,7 +523,7 @@ function parseJsonFeedback(
           : ['메인 캐리 기물의 3신기 아이템 집중 완성', '앞라인 2성 탱커 확보 우선순위 상향', '피 관리 구간에서의 과감한 리롤 타이밍 조정'],
         actionPlan: Array.isArray(obj.actionPlan) && obj.actionPlan.length > 0
           ? obj.actionPlan
-          : ['초반 2-1~3-2 구간 피 관리를 위한 연승/연패 확실한 노선 선택', '4-1 라운드 7레벨 핵심 딜러 2성작 완료 후 레벨업', '증강체 선택 시 덱의 부족한 앞라인/뒷라인 밸런스를 보완하는 옵션 선택'],
+          : ['초반 2-1~3-2 구간 피 관리를 위한 연승/연패 확실한 노선 선택', '4-1 라운드 7레벨 핵심 딜러 2성작 완료 후 레벨업', '3-2 라운드까지 앞라인 2성과 핵심 아이템을 확정해 중반 템포 확보'],
         lecture,
         fullMarkdown: rawText,
       }
@@ -544,6 +553,16 @@ function generateFallbackMetaFeedback(
 ): MetaCoachFeedback {
   const latest = matches[0] || { placement: 6, level: 8, lastRound: '5-1', goldLeft: 24, units: [], traits: [] }
   const avgPlacement = matches.reduce((acc, m) => acc + m.placement, 0) / (matches.length || 1)
+  const hasAugments = matches.some((m) => (m.augments?.length || 0) > 0)
+
+  const actionPlan = [
+    '매 라운드 준비 시간 초반 5초 동안 상대 필드를 정찰하여 겹친 기물 여부 체크할 것',
+    '아이템 조합 시 딜템 3개 + 탱템 3개 구조를 확정하고 남는 템만 서브 기물에 장착할 것',
+    '4-1 혹은 4-2 라운드 7/8레벨 도달 시점 필드 2성작 상태를 점검하고 피가 낮다면 즉시 롤 다운 진행',
+  ]
+  if (hasAugments) {
+    actionPlan.push('증강체 선택 시 덱 파워를 즉각 올려주는 전투 증강을 최소 1개 이상 확보하여 템포 유지')
+  }
 
   // 겹침/경합 강도에 따른 유연성 점수 (경합 강도가 높을수록 유연성 낮음)
   const contestScores = matches
@@ -565,7 +584,7 @@ function generateFallbackMetaFeedback(
     ? (latest.contestedInfo?.isContested
       ? `로비 내 ${latest.contestedInfo.opponentCount}명의 경쟁자가 동일한 핵심 시너지(${latest.contestedInfo.contestedTraits.join(', ') || '메인 시너지'})를 동시에 기용하여 4~5스테이지 기물 풀 고갈이 발생했습니다. 겹침을 감지하고도 덱을 우회하지 않고 대깨로 밀어붙여 2성작 타이밍이 크게 지연되었습니다.`
       : `로비 내 다른 유저들과 메인 시너지 겹침이 거의 없는 '빈집'을 효과적으로 선점했습니다. 기물 선점 경쟁에서는 매우 유리했으나 중후반 덱 밸류 업그레이드 타이밍이 아쉬웠습니다.`)
-    : `최근 ${matches.length}경기를 종합 분석한 결과, 초반 손패나 증강과 무관하게 선호하는 특정 덱을 강제로 대깨 치는 경향이 ${flexibility < 50 ? '높게' : '낮게'} 나타났습니다. 로비 정찰을 통해 겹친 유저를 확인하고 과감하게 피봇하는 유연성이 절실합니다.`
+    : `최근 ${matches.length}경기를 종합 분석한 결과, 초반 손패와 무관하게 선호하는 특정 덱을 강제로 대깨 치는 경향이 ${flexibility < 50 ? '높게' : '낮게'} 나타났습니다. 로비 정찰을 통해 겹친 유저를 확인하고 과감하게 피봇하는 유연성이 절실합니다.`
 
   return {
     mode,
@@ -585,11 +604,6 @@ function generateFallbackMetaFeedback(
       '메인 캐리 기물 아이템 3신기 우선 완성: 서브 딜러에게 템을 나누지 말고, 메인 캐리 1명에게 완제품 3개를 몰아준 뒤 메인 탱커 3방템을 구축해야 합니다.',
       '체력 관리 기반의 유연한 리롤 전환: 체력이 35 이하로 떨어지는 4~5스테이지 구간에서는 50골드 이자에 집착하지 말고 20~30골드까지 과감히 소모해 필드 파워를 반등시켜야 합니다.',
     ],
-    actionPlan: [
-      '매 라운드 준비 시간 초반 5초 동안 상대 필드를 정찰하여 겹친 기물 여부 체크할 것',
-      '아이템 조합 시 딜템 3개 + 탱템 3개 구조를 확정하고 남는 템만 서브 기물에 장착할 것',
-      '4-1 혹은 4-2 라운드 7/8레벨 도달 시점 필드 2성작 상태를 점검하고 피가 낮다면 즉시 롤 다운 진행',
-      '증강체 선택 시 덱 파워를 즉각 올려주는 전투 증강을 최소 1개 이상 확보하여 템포 유지',
-    ],
+    actionPlan,
   }
 }

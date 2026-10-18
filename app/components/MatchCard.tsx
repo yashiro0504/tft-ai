@@ -521,7 +521,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             </div>
           )}
 
-          {/* 3) 증강 메타 대조 */}
+          {/* 3) 증강 메타 대조 (증강 데이터가 있는 세트에서만) */}
+          {match.augments.length > 0 && (
           <div>
             <p className="text-[11px] font-bold text-muted mb-1.5 flex items-center gap-1.5">
               🎲 증강 메타 대조
@@ -559,6 +560,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <p className="text-[11px] text-subtle">증강 메타 통계가 없습니다. (scripts/buildMetaStats.js 로 생성)</p>
             )}
           </div>
+          )}
 
           <p className="text-[10px] text-subtle border-t border-line/10 pt-2">
             ※ 위 수치가 코드로 계산되어 AI 프롬프트에 ‘제공된 사실 데이터’로 전달됩니다. AI는 이 범위 밖은 단정하지 않습니다.
