@@ -482,6 +482,53 @@ curl -s -X POST http://localhost:3000/api/tft/search -H "Content-Type: applicati
 | `riot_league_fallback` + `status` | 랭크 조회 실패 → null 폴백 (404 는 정상) |
 | `riot.league_fallback.401` 급증 | Riot 키 만료 → 키 교체 루틴 확인 |
 
+## 17. 즐겨찾기 · 최근 검색 (P0-3)
+
+### 동작
+
+| 상태 | 저장 위치 | 개수 |
+| --- | --- | --- |
+| 비로그인 | 브라우저 `localStorage` (`tftlab:recent`) | 최대 5개 |
+| 로그인 | Supabase `public.favorites` (RLS 본인만) | 최대 20개 |
+
+- UI: 검색창 아래 “최근 검색 / 즐겨찾기” 칩. 클릭 시 즉시 재검색, ☆/★ 로 즐겨찾기 토글, × 로 최근 검색 삭제.
+- 최근 검색은 로그인 여부와 무관하게 항상 기록된다. (기기 로컬)
+- 최근 검색에는 개인정보가 서버로 전송되지 않는다.
+
+### API
+
+```
+GET    /api/favorites                          → 200 {favorites:[...], max:20}
+POST   /api/favorites  {gameName, tagLine}     → 201(신규) / 200(이미 있음) / 409(20개 초과)
+DELETE /api/favorites?gameName=..&tagLine=..   → 200 {removed:true|false}
+→ 비로그인 401, Supabase 미설정 GET 은 200(configured:false, 빈 목록)
+```
+
+### 설정
+
+1. Supabase SQL Editor 에서 `supabase/migrations/0003_favorites.sql` 실행
+2. Vercel env(`NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`) 등록 후 재배포
+3. `/` 에서 로그인 → 검색 → 최근 칩의 ☆ → 즐겨찾기 줄에 나타나는지 확인
+
+### 확인 쿼리
+
+```sql
+-- 사용자별 즐겨찾기 수
+select user_id, count(*) from public.favorites group by user_id order by 2 desc;
+
+-- 최근 추가
+select region, game_name, tag_line, created_at
+  from public.favorites order by created_at desc limit 20;
+```
+
+### 주의
+
+- `favorites` 는 **anon 권한이 없다**(로그인 필수). 서버도 `service role key` 를 쓰지 않는다.
+- UPDATE 정책은 의도적으로 없다. 값 수정이 필요하면 삭제 후 추가한다.
+- 개수 상한 20 은 API 레벨 강제다. DB 제약이 아니므로 새 경로를 추가할 때 상한을 다시 적용해야 한다.
+- 마이그레이션 미적용 상태에서는 GET 이 503(`즐겨찾기를 불러오지 못했습니다.`)을 반환하고
+  UI 는 즐겨찾기 줄을 숨긴다. 최근 검색은 정상 동작한다.
+
 
 
 
