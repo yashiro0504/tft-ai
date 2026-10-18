@@ -1,0 +1,71 @@
+name: Ops Check
+
+on:
+  schedule:
+    # 매일 10:30 KST (01:30 UTC) — 10:00 KST 키 교체 루틴 이후
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: '점검 대상 URL'
+        default: 'https://www.tftlab.kr'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Production ops check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Riot key validity (repository secret)
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+        run: |
+          if [ -z "$RIOT_API_KEY" ]; then
+            echo "::error title=RIOT_API_KEY missing::Repository secret RIOT_API_KEY 가 없습니다."
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "X-Riot-Token: $RIOT_API_KEY" \
+            "https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/Hide%20on%20bush/KR1")
+          echo "Riot Account API -> $code"
+          # 200/404/429 = 키 자체는 유효. 401/403 = 만료/무효.
+          if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+            echo "::error title=Riot key expired::개발 키가 만료되었습니다. 오늘 10:00 KST 교체 루틴을 확인하세요."
+            exit 1
+          fi
+          test "$code" = "200" -o "$code" = "404" -o "$code" = "429"
+
+      - name: Ops check (strict)
+        env:
+          OPS_URL: ${{ github.event.inputs.url || 'https://www.tftlab.kr' }}
+        run: |
+          set -o pipefail
+          node scripts/checkOps.js "$OPS_URL" --strict 2>&1 | tee ops.log
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Ops check"
+            echo
+            echo '```'
+            cat ops.log 2>/dev/null || echo "no output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -312,6 +312,33 @@ npm run check:ops -- https://www.tftlab.kr --strict  # 미충족 시 exit 1
 - DeepSeek/Gemini 콘솔에서 **월 하드 스펜드 리밋** 설정
 - `check:ops --strict` 통과를 배포 게이트로 사용
 
+## 13. 일일 운영 점검 (GitHub Actions)
+
+`.github/workflows/ops-check.yml`
+
+- **매일 10:30 KST** (01:30 UTC) — 10:00 KST 키 교체 루틴 이후 실행
+- 수동 실행: Actions → Ops Check → Run workflow (URL 입력 가능)
+
+### 검사 항목
+
+1. **Riot 키 유효성** (repository secret `RIOT_API_KEY`로 Account API 직접 호출)
+   - `200/404/429` → 키 유효
+   - `401/403` → 만료/무효 → **워크플로우 실패** (키 교체 루틴 확인)
+2. **`check:ops --strict`**
+   - health / Redis / Turnstile / 토큰 없는 검색 403 / sitemap·덱 페이지
+3. 결과를 **Job Summary**에 기록
+
+### 알림
+
+- 실패 시 GitHub Actions 알림(메일)이 발송된다. Settings → Notifications 에서
+  Actions 실패 알림이 켜져 있는지 확인.
+- GitHub는 **60일간 레포 활동이 없으면 예약 워크플로우를 비활성화**할 수 있다.
+  (주기적 커밋 또는 수동 Run workflow로 유지)
+
+> 사이트(Vercel)의 키와 GitHub secret은 키 교체 루틴이 함께 갱신한다.
+> 한쪽만 갱신되면 이 워크플로우 또는 `/api/health`에서 차이가 드러난다.
+
+
 
 
 
