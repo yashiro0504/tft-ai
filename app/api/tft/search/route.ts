@@ -5,6 +5,7 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError, turnstileGuard } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
+import { issueBotGate } from '@/lib/botGate'
 import { getAuthUser } from '@/lib/supabase/server'
 import { TftSearchResponse } from '@/lib/types'
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
         cacheSource: cached.source,
         isDemo,
       })
-      return NextResponse.json(cached.value)
+      return issueBotGate(NextResponse.json(cached.value), req)
     }
 
     const data = await loadSummonerData(gameName, tagLine, limit, isDemo)
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       isDemo: data.isDemo,
       matches: data.matches.length,
     })
-    return NextResponse.json(response)
+    return issueBotGate(NextResponse.json(response), req)
   } catch (err) {
     logEvent('error', 'api_search_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'search')

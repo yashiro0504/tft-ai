@@ -12,9 +12,11 @@ import {
   normalizeGameNameTagLine,
   isNextResponse,
   handleApiError,
+  turnstileGuard,
 } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
+import { botGateForbidden, hasBotGate } from '@/lib/botGate'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +34,17 @@ export async function POST(req: NextRequest) {
     const limited = rateLimitGuard(req, 'match', 30, 60_000)
     if (limited) return limited
 
+    const raw = await readJson(req)
+    if (isNextResponse(raw)) return raw
+
+    // 봇 게이트: 검색 통과 쿠키가 있으면 통과, 없으면 Turnstile 토큰을 검증한다.
+    if (!hasBotGate(req)) {
+      const hasToken = typeof raw.turnstileToken === 'string' && raw.turnstileToken.trim().length > 0
+      if (!hasToken) return botGateForbidden()
+      const botCheck = await turnstileGuard(req, raw)
+      if (botCheck) return botCheck
+    }
+
     const daily = await quotaGuard(
       req,
       'analysis',
@@ -40,9 +53,6 @@ export async function POST(req: NextRequest) {
       dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 50)
     )
     if (daily) return daily
-
-    const raw = await readJson(req)
-    if (isNextResponse(raw)) return raw
 
     const matchId = typeof raw.matchId === 'string' ? raw.matchId.trim() : ''
     if (!matchId) {
