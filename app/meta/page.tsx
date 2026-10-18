@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buildMetaPayload } from '@/lib/metaPayload'
+import { toDecksOnly } from '@/lib/metaSlim'
 import { MetaRanking } from '@/app/components/MetaRanking'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
@@ -45,7 +46,7 @@ export default function MetaPage() {
           </p>
         </div>
 
-        <MetaRanking initialData={data} />
+        <MetaRanking initialData={toDecksOnly(data)} deferSections />
 
         <div className="mt-8 text-center">
           <Link href="/" className="text-xs text-muted underline transition hover:text-ink">

@@ -101,13 +101,16 @@ export function MetaDashboard({
   onOpenCoach,
   initialData,
   showTitle = false,
+  deferSections = false,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
   showTitle?: boolean
+  deferSections?: boolean
 }) {
   const [data, setData] = useState<TftMetaResponse | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
+  const [loadedAll, setLoadedAll] = useState(!deferSections)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<TabId>('decks')
   const [tier, setTier] = useState<'전체' | Tier>('전체')
@@ -126,6 +129,7 @@ export function MetaDashboard({
       const json: TftMetaResponse = await res.json()
       if (!res.ok || !json.success) throw new Error(json.error || '메타 데이터를 불러오지 못했습니다.')
       setData(json)
+      setLoadedAll(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : '네트워크 오류')
     } finally {
@@ -325,6 +329,8 @@ export function MetaDashboard({
                     setSelectedId(null)
                     setDetailOpen(false)
                     setModal(null)
+                    // /meta 는 덱 데이터만 SSR 되므로, 다른 탭 첫 진입 시 전체 데이터를 지연 로딩한다.
+                    if (deferSections && !loadedAll && !loading && t.id !== 'decks') void load()
                   }}
                 >
                   {t.label}

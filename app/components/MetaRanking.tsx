@@ -11,12 +11,19 @@ export function MetaRanking({
   onOpenCoach,
   initialData,
   showTitle,
+  deferSections,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
   showTitle?: boolean
+  deferSections?: boolean
 }) {
   return (
-    <MetaDashboard onOpenCoach={onOpenCoach} initialData={initialData} showTitle={showTitle} />
+    <MetaDashboard
+      onOpenCoach={onOpenCoach}
+      initialData={initialData}
+      showTitle={showTitle}
+      deferSections={deferSections}
+    />
   )
 }
