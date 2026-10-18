@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BarChart3, Bot, Moon, Sun, Trophy } from 'lucide-react'
+import { UserMenu } from './UserMenu'
 
 export type SiteTab = 'meta' | 'coach'
 
@@ -93,6 +94,7 @@ export function SiteHeader({
               </button>
             )
           })}
+          <UserMenu />
           <ThemeToggle />
           <Link
             href="/terms"

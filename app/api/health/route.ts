@@ -5,6 +5,7 @@ import { snapshotMetrics, uptimeSeconds } from '@/lib/observability'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getLlmBudgetStatus } from '@/lib/llmBudget'
 import { turnstileStatus } from '@/lib/turnstile'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,9 @@ export async function GET(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_CONTACT_EMAIL) {
     warnings.push('NEXT_PUBLIC_CONTACT_EMAIL 미설정: 약관/개인정보 문의처가 플레이스홀더입니다.')
   }
+  if (!isSupabaseConfigured()) {
+    warnings.push('Supabase 미설정: 계정/플랜 기능이 비활성화됩니다(익명 쿼터로 동작).')
+  }
 
   const budget = await getLlmBudgetStatus()
   const turnstile = turnstileStatus()
@@ -65,6 +69,7 @@ export async function GET(req: NextRequest) {
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
       gemini: Boolean(process.env.GEMINI_API_KEY),
       turnstile,
+      supabase: isSupabaseConfigured(),
     },
     limits: {
       perDay: {

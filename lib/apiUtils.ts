@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
-import { consumeDailyQuota } from './quota'
+import { consumeDailyQuota, type QuotaResult } from './quota'
+import { consumeUserQuota } from './userQuota'
 import { verifyTurnstile } from './turnstile'
 import { incrMetric, logEvent } from './observability'
 import { RiotApiError } from './riot'
@@ -36,23 +37,37 @@ function humanizeRetry(seconds: number): string {
 }
 
 /**
- * IP 기준 일일 쿼터를 1회 소모한다. 초과 시 429 응답을 반환하고, 허용되면 null.
- * 한도 0 이하이면 무제한(가드 비활성).
+ * 일일 쿼터를 1회 소모한다. 초과 시 429 응답을 반환하고, 허용되면 null.
+ * - 로그인 사용자(userId)는 Supabase RPC 로 계정 기준 쿼터를 적용한다.
+ * - 비로그인/미설정/RPC 오류 시 IP 기준(Redis 또는 메모리)으로 폴백한다.
  */
 export async function quotaGuard(
   req: NextRequest,
   bucket: string,
-  limit: number
+  limit: number,
+  userId?: string,
+  proLimit?: number
 ): Promise<NextResponse | null> {
-  if (limit <= 0) return null
+  if (limit <= 0 && !proLimit) return null
 
-  const ip = getClientIp(req.headers)
-  const result = await consumeDailyQuota(bucket, ip, limit)
+  let result: QuotaResult | null = null
+
+  if (userId) {
+    result = await consumeUserQuota(userId, bucket, Math.max(0, limit), proLimit ?? Math.max(0, limit))
+  }
+
+  if (!result) {
+    if (limit <= 0) return null
+    const ip = getClientIp(req.headers)
+    result = await consumeDailyQuota(bucket, ip, limit)
+  }
+
   if (result.allowed) return null
 
   incrMetric(`quota.blocked_response.${bucket}`)
   logEvent('warn', 'quota_blocked', {
     bucket,
+    scope: userId ? 'user' : 'ip',
     limit: result.limit,
     used: result.used,
     resetInSec: result.retryAfterSec,

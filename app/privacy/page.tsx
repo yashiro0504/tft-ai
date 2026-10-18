@@ -23,7 +23,8 @@ export default function PrivacyPage() {
       <LegalSection title="2. 수집하는 정보">
         <LegalList
           items={[
-            '이용자가 입력한 Riot ID(게임명 및 태그). 로그인 계정은 수집하지 않습니다.',
+            '이용자가 입력한 Riot ID(게임명 및 태그)',
+            'Discord 로그인(선택) 시: Discord 사용자 ID, 이메일, 표시 이름, 프로필 이미지 URL',
             '서비스 이용 과정에서 자동 생성되는 정보: IP 주소, 브라우저/기기 정보(User-Agent), 요청 시각, 접속 기록',
             '브라우저 로컬 저장소(localStorage)에 저장되는 테마 설정값(다크/라이트)',
           ]}
@@ -37,6 +38,7 @@ export default function PrivacyPage() {
         <LegalList
           items={[
             'Riot ID를 이용한 전적·메타 데이터 조회 및 AI 분석 리포트 생성',
+            '로그인 사용자의 계정 식별, 플랜(무료/Pro) 관리, 일일 사용 쿼터 산정',
             '서비스 오류 대응, 성능 모니터링, 비정상 트래픽(남용) 방지',
             '이용자 문의 응대 및 분쟁 처리',
           ]}
@@ -51,6 +53,8 @@ export default function PrivacyPage() {
             '소환사 레벨/아이콘 캐시: 최대 6시간',
             '정규화된 매치 데이터 캐시: 최대 30일 (불변 경기 데이터)',
             'AI 분석 리포트 캐시: 최대 24시간',
+            '계정 정보(프로필, 플랜): 회원 탈퇴 또는 삭제 요청 시까지',
+            '일일 사용량 기록: 최대 90일',
             '접속 기록 및 오류 로그: 호스팅 사업자의 보관 정책에 따르며, 운영 목적 달성 시 지체 없이 파기',
           ]}
         />
@@ -72,6 +76,8 @@ export default function PrivacyPage() {
             'Google Gemini — DeepSeek 실패 시 대체 분석 (선택적, 동일 목적)',
             'Vercel — 웹 호스팅 및 접속 로그 처리',
             'Upstash — 캐시 저장 (설정된 경우에 한함)',
+            'Supabase — 로그인 인증 및 계정/사용량 데이터 저장 (로그인 사용 시)',
+            'Discord — OAuth 로그인 인증 (로그인 사용 시)',
           ]}
         />
         <p className="text-xs text-subtle">
@@ -89,8 +95,9 @@ export default function PrivacyPage() {
 
       <LegalSection title="7. 이용자의 권리">
         <p>
-          이용자는 자신의 정보에 대한 열람·정정·삭제·처리 정지를 요청할 수 있습니다. 계정 기반 서비스가
-          아니므로 Riot ID를 함께 알려주시면 캐시 및 관련 기록을 확인 후 처리합니다.
+          이용자는 자신의 정보에 대한 열람·정정·삭제·처리 정지를 요청할 수 있습니다. 로그인 사용자는
+          계정 삭제를 요청할 수 있으며, 비로그인 이용자는 Riot ID를 함께 알려주시면 캐시 및 관련 기록을
+          확인 후 처리합니다.
         </p>
         <LegalList
           items={[

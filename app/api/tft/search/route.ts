@@ -5,6 +5,7 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError, turnstileGuard } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
+import { getAuthUser } from '@/lib/supabase/server'
 import { TftSearchResponse } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,13 @@ export async function POST(req: NextRequest) {
     const limited = rateLimitGuard(req, 'search', 30, 60_000)
     if (limited) return limited
 
-    const daily = await quotaGuard(req, 'search', dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50))
+    const daily = await quotaGuard(
+      req,
+      'search',
+      dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50),
+      (await getAuthUser())?.id,
+      dailyQuotaLimit('QUOTA_SEARCH_PRO_PER_DAY', 200)
+    )
     if (daily) return daily
 
     const raw = await readJson(req)

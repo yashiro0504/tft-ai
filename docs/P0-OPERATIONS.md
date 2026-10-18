@@ -340,6 +340,31 @@ npm run check:ops -- https://www.tftlab.kr --strict  # 미충족 시 exit 1
 > 사이트(Vercel)의 키와 GitHub secret은 키 교체 루틴이 함께 갱신한다.
 > 한쪽만 갱신되면 이 워크플로우 또는 `/api/health`에서 차이가 드러난다.
 
+## 14. 계정 · 플랜 · 사용자 쿼터 (Supabase)
+
+- 로그인: Discord OAuth (Supabase Auth) — **선택 사항**
+- 미설정 시: 로그인 UI 숨김 + 기존 IP 기준 쿼터로 동작
+- 설정 시: 로그인 사용자는 `profiles.plan` 에 따라 free 10 / pro 50 (AI 분석 기준) 적용
+- 사용량은 `usage_daily` 에 KST 일자로 저장, RPC 로 원자적 증가
+
+설정 절차: **`docs/supabase-auth.md`** 참고
+
+환경변수:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+QUOTA_ANALYSIS_PRO_PER_DAY=50
+```
+
+확인:
+
+```powershell
+curl https://www.tftlab.kr/api/me
+# configured/user/plan/usage/limits 확인
+```
+
+
 
 
 

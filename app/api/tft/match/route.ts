@@ -8,6 +8,7 @@ import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observabilit
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
 import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
+import { getAuthUser } from '@/lib/supabase/server'
 import { SlimMatchData, TftMatchAnalysisResponse } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,13 @@ export async function POST(req: NextRequest) {
     const limited = rateLimitGuard(req, 'match', 30, 60_000)
     if (limited) return limited
 
-    const daily = await quotaGuard(req, 'analysis', dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10))
+    const daily = await quotaGuard(
+      req,
+      'analysis',
+      dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10),
+      (await getAuthUser())?.id,
+      dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 50)
+    )
     if (daily) return daily
 
     const raw = await readJson(req)
