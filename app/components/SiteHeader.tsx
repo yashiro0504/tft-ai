@@ -103,6 +103,12 @@ export function SiteHeader({
           <UserMenu />
           <ThemeToggle />
           <Link
+            href="/pro"
+            className="ml-1 hidden rounded-lg px-2 py-2 text-[11px] font-black text-amber-300 transition hover:bg-amber-500/10 lg:inline-block"
+          >
+            PRO
+          </Link>
+          <Link
             href="/terms"
             className="ml-1 hidden rounded-lg px-2 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink lg:inline-block"
           >

@@ -31,6 +31,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...deckEntries,
     {
+      url: `${SITE_URL}/pro`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${SITE_URL}/terms`,
       lastModified: now,
       changeFrequency: 'yearly',

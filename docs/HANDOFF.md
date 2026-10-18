@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 브랜치: `feat/p2-6-mobile-pwa` (P0-1~3 · P1-4~5 · P2-6 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 브랜치: `feat/p2-7-pro-waitlist` (P0-1~3 · P1-4~5 · P2-6~7 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -61,7 +61,7 @@ npm run check:ops -- https://www.tftlab.kr --strict   # 배포 후 운영 게이
    - 검색: Turnstile + IP/계정 쿼터
    - 분석/종합: IP/계정 쿼터 + 일일 LLM 예산
 4. **덱 데이터 교체 시 반드시** `npm run build:decks` → `npm run decks:check` → `npm run build`.
-5. **UI 토큰/디자인을 바꾸면** `/`, `/rank`, `/meta`, `/deck/[id]`, `/profile/...` 를 모두 확인.
+5. **UI 토큰/디자인을 바꾸면** `/`, `/rank`, `/meta`, `/deck/[id]`, `/profile/...`, `/pro` 를 모두 확인.
 6. **main 직접 push 지양**. 브랜치 → PR → CI 통과 → 머지.
 7. **Riot 정책**: 공식 제품으로 오인시키는 표현·로고 금지, "not endorsed by Riot Games" 고지 유지.
 
@@ -198,7 +198,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   | `deck_open` | `app/components/DeckViewTracker.tsx`(덱 페이지), `MetaDashboard`(덱 카드 링크) |
   | `share_click` | `app/components/ShareButton.tsx` (surface: coach_result/deck_page/meta_deck_row) |
   | `login_click` | `app/components/UserMenu.tsx` |
-  | `pro_waitlist_click` | **미배선** — `/pro` 페이지(P2-7) 생성 시 연결 |
+  | `pro_waitlist_click` | `app/pro/ProWaitlistButton.tsx` (surface: `pro_page`) |
 - 완료 조건 충족
   - `/api/events` 204 · 이벤트가 로그/Supabase에 남음 (로컬 검증 완료)
   - `npm run build` + typecheck/eslint 통과, 개인정보처리방침에 수집 항목·보관 기간 추가
@@ -330,13 +330,30 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
     Lighthouse `modern-image-formats`/`uses-responsive-images` 지적이 남아 있다.
   - 아이콘 원본을 바꾸면 `npm run icons` → 생성물 4종 + `app/favicon.ico` 커밋.
 
-### P2-7. Pro 대기자 페이지 (0.5일) — 🔜 **다음 작업** — **결제 아님**
+### P2-7. Pro 대기자 페이지 (0.5일) — ✅ 완료 (2026-10-18) — **결제 아님**
 
-- `/pro` 페이지: 가격(예: ₩3,900/월) + “출시 알림 받기” 버튼
-- 클릭 이벤트만 수집(`pro_waitlist_click`), 결제 연동 없음
-- 유료화 게이트(아래) 통과 전에는 결제를 붙이지 않는다.
+- 구현
+  - `app/pro/page.tsx` — 예정 가격 **₩3,900/월**, 혜택 3종(AI 분석 50회/일·Pro 배지·우선 지원),
+    FAQ, 무료 플랜 CTA. 모든 혜택에 “출시 예정안” 고지
+  - `app/pro/ProWaitlistButton.tsx` — “Pro 출시 알림 받기” 버튼
+    - `pro_waitlist_click` 전송: `{ surface: 'pro_page', priceKrw: 3900, billing: 'monthly' }`
+    - 이메일·Riot ID·결제 정보 수집 없음, `localStorage('tftlab:pro-waitlist')`로 중복 클릭 방지
+    - 클릭 후 `aria-live` 완료 문구 + 새로고침 후에도 완료 상태 유지
+  - 진입 링크 — `SimpleHeader`(모바일 포함), `SiteHeader`(lg+ `PRO`), `SiteFooter`,
+    `UserMenu` 드롭다운(`Pro 플랜 · 준비 중`), `sitemap.xml`(`/pro`, monthly, 0.6)
+- 검증 (2026-10-18)
+  - `npm run build` ✅ — `/pro` Static 2.69 kB
+  - `/pro` 200 · canonical/OG/Twitter 메타 정상 · sitemap에 `/pro` 포함
+  - 360px 헤드리스 Chrome: 다크/라이트 **가로 스크롤 0 · 콘솔 오류 0**
+  - 버튼 클릭 → `POST /api/events` **204**, payload: `pro_waitlist_click` + `surface/priceKrw/billing`
+  - 새로고침 후 “알림 신청 완료” 유지 (localStorage)
+  - Lighthouse mobile `/pro` — accessibility **100** · best-practices **100** · SEO **100** (대비 0건)
+- 하지 않은 것
+  - **결제/PG 연동 없음**, 이메일 수집 없음. P3 게이트 통과 전에는 붙이지 않는다.
+  - “알림”은 현재 사이트 공지로만 안내한다. 이메일 알림이 필요하면 동의·수집·보관 정책을
+    먼저 추가해야 한다.
 
-### P3. 결제 (게이트 통과 후에만)
+### P3. 결제 (게이트 통과 후에만) — ⏸ 대기
 
 최소 기준:
 - D7 리텐션 ≥ 15%
@@ -403,7 +420,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
       개인정보처리방침**을 함께 갱신한다.
     - `props` 에 Riot ID/이메일을 넣지 말 것. 서버가 차단하지만 조용히 사라지므로 디버깅이 어렵다.
     - 보관 90일 권장: `delete from public.events where created_at < now() - interval '90 days';`
-    - `pro_waitlist_click` 은 `/pro` 페이지가 아직 없어 **미배선** 상태다(P2-7에서 연결).
+    - `pro_waitlist_click` 은 `/pro` 의 `ProWaitlistButton` 에서 전송한다(로그인 불필요, PII 없음).
 13. **랭크는 부가 정보다 — 실패해도 검색이 죽으면 안 된다**
     - `getTftLeagueByPuuid` 는 404/429/401/네트워크 오류에서 **null** 을 반환하고 예외를 던지지 않는다.
     - `rank:{platform}:{puuid}` 10분 캐시. `null`(배치 중)도 캐시하므로 미배치 계정도 Riot 을 반복 호출하지 않는다.
@@ -442,7 +459,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 - PR 본문에 **변경 요약 / 검증 명령 결과 / 스크린샷(UI)** 포함
 - CI 그린: lint · typecheck · meta:check · decks:check · build · **SSR smoke**
 - 배포 후: `npm run check:ops -- https://www.tftlab.kr --strict`
-- UI 변경 시: `/`, `/rank`, `/meta`, `/deck/[id]`, `/profile/...` 360px·데스크톱·라이트 테마 확인
+- UI 변경 시: `/`, `/rank`, `/meta`, `/deck/[id]`, `/profile/...`, `/pro` 360px·데스크톱·라이트 테마 확인
 - 문서 갱신: `docs/HANDOFF.md`(이 문서), `docs/P0-OPERATIONS.md`, 필요 시 `docs/supabase-auth.md`
 - **비밀키/토큰 커밋 금지** (문서 예시도 placeholder만)
 
@@ -471,7 +488,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 | 2일 | ✅ P0-2 랭크/티어 API + 프로필 카드 (완료) | `tft/league/v1` 연동, 10분 캐시, `RankBadge` |
 | 3일 | ✅ P0-3 즐겨찾기/최근 검색 (완료) | Supabase/localStorage, 검색 UI |
 
-P1(SSE/품질, 덱 품질)과 P2-6(모바일/PWA)까지 완료. 다음은 P2-7(Pro 대기자) → P3 게이트 순.
+P1(SSE/품질, 덱 품질)과 P2-6~7(모바일/PWA, Pro 대기자)까지 완료. 다음은 P3 유료화 게이트 판정.
 
 ---
 

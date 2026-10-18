@@ -10,6 +10,9 @@ export function SiteFooter() {
           <span className="font-black text-muted">{SITE_NAME}</span> · 시즌 18 메타 랭킹 &amp; AI 코치
         </p>
         <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-subtle">
+          <Link href="/pro" className="font-bold text-amber-300 underline-offset-2 hover:underline">
+            Pro
+          </Link>
           <Link href="/terms" className="underline-offset-2 hover:text-ink hover:underline">
             이용약관
           </Link>

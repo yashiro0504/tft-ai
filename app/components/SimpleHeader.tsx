@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 /** 정책/메타/프로필 페이지용 경량 서버 헤더 */
-export function SimpleHeader({ active }: { active?: 'meta' | 'profile' }) {
+export function SimpleHeader({ active }: { active?: 'meta' | 'profile' | 'pro' }) {
   const linkClass = (isActive: boolean) =>
     `rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
       isActive ? 'bg-elev/10 text-ink' : 'text-muted hover:bg-elev/5 hover:text-ink'
@@ -24,6 +24,16 @@ export function SimpleHeader({ active }: { active?: 'meta' | 'profile' }) {
           </Link>
           <Link href="/" className={linkClass(active === 'profile')}>
             AI 코치
+          </Link>
+          <Link
+            href="/pro"
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-black transition ${
+              active === 'pro'
+                ? 'bg-amber-500/15 text-amber-300'
+                : 'text-amber-300/80 hover:bg-amber-500/10 hover:text-amber-300'
+            }`}
+          >
+            Pro
           </Link>
         </nav>
       </div>

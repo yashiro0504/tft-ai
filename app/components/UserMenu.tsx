@@ -109,6 +109,14 @@ export function UserMenu() {
             </span>
           </div>
           <Link
+            href="/pro"
+            className="mt-2 flex items-center justify-between rounded-lg border border-amber-400/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/15"
+            onClick={() => setOpen(false)}
+          >
+            <span>Pro 플랜</span>
+            <span className="text-[9px] font-black opacity-80">준비 중</span>
+          </Link>
+          <Link
             href="/privacy"
             className="mt-2 block text-[11px] text-muted underline-offset-2 hover:text-ink hover:underline"
             onClick={() => setOpen(false)}
