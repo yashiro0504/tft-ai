@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-3-favorites` (P0-1 계측 · P0-2 랭크 · P0-3 즐겨찾기 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 커밋: `feat/p1-4-stream` (P0-1~3 · P1-4 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -103,6 +103,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `/auth/callback` | Dynamic | Supabase OAuth 콜백 |
 | `/api/tft/search` | Dynamic | Riot 검색 (Turnstile·쿼터) |
 | `/api/tft/match` | Dynamic | 경기 1건 AI 분석 (쿼터·LLM) |
+| `/api/tft/match/stream` | Dynamic | 경기 1건 AI 분석 SSE (stage → result, TTFB 즉시) |
 | `/api/tft/overview` | Dynamic | 종합 분석 (쿼터·LLM) |
 | `/api/tft/meta` | Dynamic | 메타 전체 payload (CDN 캐시 헤더) |
 | `/api/me` | Dynamic | 로그인 사용자·플랜·사용량 |
@@ -135,6 +136,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/userQuota.ts` | 로그인 사용자 RPC 쿼터 |
 | `lib/turnstile.ts` | 검색 봇 차단 |
 | `lib/llm.ts` | DeepSeek/Gemini + 프롬프트 + 예산 가드 |
+| `lib/matchAnalysis.ts` | 경기 1건 분석 파이프라인 (JSON·SSE 공용, 캐시 포함) |
+| `lib/analysisStream.ts` | SSE 파서 + JSON 폴백 (`analyzeMatchStream`/`analyzeMatchJson`) |
 | `lib/eventSchema.ts` | 이벤트 이름 허용 목록 + PII 정제 규칙 (클라·서버 공용) |
 | `lib/analytics.ts` | 클라이언트 `track()` / `trackOnce()` (sessionStorage UUID, keepalive) |
 | `lib/events.ts` | 서버 이벤트 저장 (Supabase insert → 실패 시 구조화 로그) |
@@ -162,6 +165,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   `/profile`·OG 이미지에 티어/LP/승패 표시, 배치 중은 “배치 중”
 - **P0-3 즐겨찾기/최근 검색 완료**: `favorites` 테이블(본인만 CRUD·중복 방지), `/api/favorites`,
   비로그인 최근 검색 5개(localStorage), 검색창 아래 칩 UI
+- **P1-4 AI 분석 스트리밍 완료**: `/api/tft/match/stream`(SSE stage→result), 첫 응답 39ms(기존 8.7s),
+  JSON 폴백 유지, `eval:reports` 신뢰성 게이트 통과
 
 ## 4. 개발 우선순위 (이 순서대로)
 
@@ -239,18 +244,32 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - 남은 확인: Supabase 프로젝트 생성 후 `0003_favorites.sql` 적용 → 로그인 상태에서 실제 CRUD 확인
   (로컬은 Supabase 미설정이라 익명 경로만 실행 검증)
 
-### P1-4. AI 분석 스트리밍 + 품질 (2~3일) — 🔜 **다음 작업**
+### P1-4. AI 분석 스트리밍 + 품질 (2~3일) — ✅ 완료 (2026-10-18)
 
 - 목표: 8초 동기 대기를 줄이고 리포트 품질을 측정한다.
-- 구현
-  - `/api/tft/match` 에 `stream: true` 옵션 또는 `/api/tft/match/stream`
-  - 쿼터는 **요청 시작 시 1회만** 소모, 캐시 히트 시 즉시 반환
-  - `ReadableStream` + `text/event-stream`, 클라이언트는 점진 렌더 + 실패 시 기존 JSON 폴백
-  - `npm run eval:reports -- --runs 2` 로 품질 회귀 확인
-- 완료 조건
-  - 체감 TTFB 개선, 스트림 중단/에러 시 사용자 메시지, 캐시 동작 유지
+- 구현 (완료)
+  - `POST /api/tft/match/stream` (SSE) 신규 — 기존 `/api/tft/match` JSON 은 **그대로 유지**
+    - 이벤트: `stage`(`start`/`match`/`analyzing` + 한국어 문구) → `result`(기존 JSON과 동일 형태) / `error`
+    - 헤더: `text/event-stream`, `no-store, no-transform`, `X-Accel-Buffering: no`
+    - 15초 하트비트(`: ping`)로 프록시/서버리스 유휴 종료 방지
+    - 쿼터·레이트리밋은 **스트림을 열기 전에 1회** 처리 (초과 시 일반 JSON 429)
+  - `lib/matchAnalysis.ts` — JSON·SSE 라우트 공용 파이프라인 (매치 해석 → 캐시 → LLM → 캐시 저장)
+  - `lib/analysisStream.ts` — SSE 파서 + `analyzeMatchJson` 폴백
+  - 클라이언트(`MatchCard`): 스트림 우선 → 진행 문구를 버튼에 표시 → 실패 시 처리
+    - **404/405(구버전 배포)에서만** JSON 으로 폴백 (쿼터 이중 소모 방지)
+    - 카드 언마운트 시 `AbortController` 로 스트림 중단
+- 실측 (로컬, demo 매치)
+  | 경로 | 첫 응답(TTFB) | 전체 |
+  | --- | --- | --- |
+  | `POST /api/tft/match` (JSON) | 8.67s | 8.67s |
+  | `POST /api/tft/match/stream` (SSE, uncached) | **0.039s** (첫 stage) | 8~39s (LLM) |
+  | SSE 캐시 히트 | **0.025s** | 0.027s |
+- 품질 회귀: `npm run eval:reports -- --runs 2` → 성공률 100% · 폴백 0% · grounding 100%(37/37) · 점수=코드 산출 2/2 · **게이트 통과**
+- 설계 메모: 리포트가 **구조화 JSON**이라 토큰 단위 텍스트 렌더 대신 “단계 이벤트 + 최종 결과” 방식으로 구현했다.
+  부분 JSON 파싱 리스크 없이 체감 대기(첫 피드백 39ms)를 없애는 것이 목적이다.
+- 캐시 히트도 쿼터를 소모하는 기존 정책은 **변경하지 않았다**(과금 정책 변경은 별도 결정 사항).
 
-### P1-5. 덱 구성 품질 (1~2일)
+### P1-5. 덱 구성 품질 (1~2일) — 🔜 **다음 작업**
 
 - 목표: 알고리즘 덱이 “실제로 나올 법한” 구성이 되게 한다.
 - 구현
@@ -358,6 +377,13 @@ Supabase 설정 절차: `docs/supabase-auth.md`
     - 삭제는 `ilike` 대신 목록에서 정규화 키로 찾아 **id 기준 삭제**한다.
       (Riot ID 에 `%`/`_` 가 들어가도 안전)
     - Supabase 미설정 시 GET 은 200 + `configured:false`(빈 목록), POST/DELETE 는 401 을 반환한다.
+15. **SSE 스트림은 쿼터를 먼저 소모한다**
+    - `/api/tft/match/stream` 은 스트림을 열기 전에 레이트리밋·쿼터를 처리한다.
+      → **200 이 왔다는 것은 쿼터가 이미 차감됐다는 뜻**이므로, 스트림 중간 실패 시 재요청하면 이중 과금된다.
+      클라이언트는 404/405(구버전 배포)에서만 JSON 으로 폴백한다.
+    - 프록시 버퍼링을 막으려면 `no-transform` + `X-Accel-Buffering: no` 를 유지한다.
+    - 15초 하트비트(`: ping`)를 제거하면 유휴 타임아웃으로 스트림이 끊길 수 있다.
+    - 리포트는 구조화 JSON 이라 토큰 단위 렌더를 하지 않는다. 단계(stage) 이벤트만 보낸다.
 
 ---
 

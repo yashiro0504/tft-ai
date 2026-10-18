@@ -529,6 +529,58 @@ select region, game_name, tag_line, created_at
 - 마이그레이션 미적용 상태에서는 GET 이 503(`즐겨찾기를 불러오지 못했습니다.`)을 반환하고
   UI 는 즐겨찾기 줄을 숨긴다. 최근 검색은 정상 동작한다.
 
+## 18. AI 분석 스트리밍 (P1-4)
+
+경기별 AI 분석은 두 경로를 제공한다. **동작·결과는 동일**하고 전송 방식만 다르다.
+
+| 경로 | 방식 | 특징 |
+| --- | --- | --- |
+| `POST /api/tft/match` | JSON (동기) | 기존 호환. LLM 완료까지 대기(8~40초) |
+| `POST /api/tft/match/stream` | SSE | 첫 이벤트 즉시(수십 ms), 진행 단계 표시 |
+
+### 이벤트
+
+```
+event: stage   {"stage":"start","message":"분석을 준비하는 중..."}
+event: stage   {"stage":"match","message":"경기 데이터를 확인하는 중..."}
+event: stage   {"stage":"analyzing","message":"AI가 리포트를 작성하는 중..."}
+event: result  <기존 JSON 응답과 동일한 TftMatchAnalysisResponse>
+event: error   {"status":404,"error":"..."}
+```
+
+- 15초마다 `: ping` 하트비트.
+- 쿼터·레이트리밋은 **스트림 개시 전** 처리한다(초과 시 일반 JSON 429).
+- 캐시 히트면 `start` → `result` 두 이벤트만 즉시 전송된다.
+
+### 클라이언트 동작
+
+1. 스트림 시도 → `stage` 문구를 분석 버튼에 표시
+2. `result` 수신 → 리포트 렌더
+3. 404/405(구버전 배포)일 때만 JSON 경로로 폴백
+4. `error` 수신 또는 스트림 중단 → 오류 메시지 표시(자동 재요청 없음 = 쿼터 이중 소모 방지)
+
+### 확인
+
+```powershell
+curl -N -X POST http://localhost:3000/api/tft/match/stream `
+  -H "Content-Type: application/json" `
+  -d '{"matchId":"KR_DEMO_001","puuid":"DEMO_PUUID","gameName":"Demo","tagLine":"KR1","isDemo":true}'
+```
+
+### 모니터링
+
+| 로그 | 의미 |
+| --- | --- |
+| `api_match_stream` | 정상 종료 (`ms`, `cacheSource`, `isDemo`) |
+| `api_match_stream_failed` | 스트림 내 오류 (`status`, `errorMessage`) |
+| `api_match` | JSON 경로 로그 (기존과 동일) |
+
+### 주의
+
+- **200 응답 = 쿼터 차감 완료.** 중간에 끊겼다고 자동 재시도하면 사용자 쿼터가 두 번 소모된다.
+- 스트림 응답을 캐시/CDN 에 태우지 말 것(`no-store, no-transform` 유지).
+- 프록시(nginx 등) 뒤에 둘 때 `X-Accel-Buffering: no` 를 제거하면 버퍼링으로 스트림이 한 번에 온다.
+
 
 
 
