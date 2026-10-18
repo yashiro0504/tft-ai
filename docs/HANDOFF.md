@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-1-events` (P0-1 이벤트 계측 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-2-rank` (P0-1 계측 · P0-2 랭크 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -125,6 +125,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/metaPayload.ts` | `/api/tft/meta` + `/meta` 공용 빌더 |
 | `lib/metaSlim.ts` | `/meta` 초기 payload 슬림화 |
 | `lib/decks.ts` | 덱 데이터 정규화/통계 계산 |
+| `lib/rank.ts` | 티어 표시 포맷/색상 헬퍼 (순수 함수) |
+| `app/components/RankBadge.tsx` | 티어·LP·승패·승률 배지 (홈 카드 + 프로필 공용) |
 | `lib/supabase/*` | 서버/브라우저 클라이언트, 세션 |
 | `lib/userQuota.ts` | 로그인 사용자 RPC 쿼터 |
 | `lib/turnstile.ts` | 검색 봇 차단 |
@@ -151,6 +153,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - **P0-1 제품 이벤트 계측 완료**: `/api/events`(204·no-store·IP 레이트리밋), 이벤트 9종 화이트리스트,
   `events` 테이블 마이그레이션(insert-only RLS), Supabase 미설정 시 구조화 로그, `track()`/`trackOnce()`,
   개인정보처리방침에 수집 항목·보관 기간(90일) 반영
+- **P0-2 랭크/티어 표시 완료**: `TFT-LEAGUE-V1` 연동(10분 캐시, 실패 시 null 폴백), 홈 프로필 카드·
+  `/profile`·OG 이미지에 티어/LP/승패 표시, 배치 중은 “배치 중”
 
 ## 4. 개발 우선순위 (이 순서대로)
 
@@ -184,22 +188,27 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   - `npm run build` + typecheck/eslint 통과, 개인정보처리방침에 수집 항목·보관 기간 추가
 - 남은 운영 작업: Supabase 프로젝트 생성 후 `0002_events.sql` 실행 → Vercel env 등록 시 자동으로 DB 저장으로 전환
 
-### P0-2. 랭크/티어 표시 (1~2일) — 🔜 **다음 작업** (가장 큰 가치)
+### P0-2. 랭크/티어 표시 (1~2일) — ✅ 완료 (2026-10-18)
 
 - 목표: “내 위치”를 보여줘 재방문 이유를 만든다.
-- 구현
+- 구현 (완료)
   - `lib/riot.ts` 에 `getTftLeagueByPuuid(puuid, platform)` 추가
     - `GET https://{platform}.api.riotgames.com/tft/league/v1/by-puuid/{puuid}`
-    - 응답 배열에서 `queueType === 'RANKED_TFT'` 선택
-    - 캐시 `rank:{platform}:{puuid}` TTL 10분, 실패 시 null
-  - `/api/tft/search` 응답에 `rank` 추가 (Riot 1콜 증가, 캐시로 완화)
-  - 프로필 카드/`/profile` 페이지에 티어·LP·윈/로스 표시, 없으면 “배치 중”
-  - `check:ops`/health에 영향 없음
-- 완료 조건
-  - 실제 계정으로 티어 표시, 10분 캐시, Riot 429/404 시 앱이 깨지지 않음
+    - 응답 배열에서 `queueType === 'RANKED_TFT'` 선택 → `TftRankInfo` 로 정규화
+    - **404(배치 중)/429/401/네트워크 오류는 모두 `null` 폴백** (앱이 깨지지 않는다)
+  - 캐시 `rank:{platform}:{puuid}` TTL **10분**(`CACHE_TTL.RANK`). 배치 중(`null`)도 캐시해
+    미배치 계정이 매 검색마다 Riot 을 호출하지 않는다.
+  - `lib/tftService.ts` — matchIds 와 **병렬 조회**(지연 증가 없음), `LoadedSummonerData.rank` 추가
+  - `/api/tft/search` 응답의 `summonerProfile.rank` 로 노출 (`calculateProfileStats` 6번째 인자)
+  - UI: `app/components/RankBadge.tsx` (티어 색상·LP·승패·승률) → 홈 프로필 카드 + `/profile` 페이지
+  - `/profile` metadata description 에 티어/LP 포함, 프로필 OG 이미지에 티어 칩 추가
+  - `lib/rank.ts` — 표시 포맷/티어 색상 헬퍼 (서버·클라이언트 공용, 순수 함수)
+- 완료 조건 충족
+  - 랭크 표시 ✅ (데모/실계정 경로 동일 코드), 10분 캐시 ✅, 429/404 시 null 폴백 ✅
   - `TFT-LEAGUE-V1` 사용은 이미 Riot 신청서에 명시됨
+- 남은 확인: **실제 Riot 키로 실계정 티어 표시 확인** (로컬 키 만료로 배포 후 확인 필요)
 
-### P0-3. 즐겨찾기 + 최근 검색 (1일)
+### P0-3. 즐겨찾기 + 최근 검색 (1일) — 🔜 **다음 작업**
 
 - 목표: 매번 Riot ID를 입력하지 않게 한다.
 - 구현
@@ -312,6 +321,13 @@ Supabase 설정 절차: `docs/supabase-auth.md`
     - `props` 에 Riot ID/이메일을 넣지 말 것. 서버가 차단하지만 조용히 사라지므로 디버깅이 어렵다.
     - 보관 90일 권장: `delete from public.events where created_at < now() - interval '90 days';`
     - `pro_waitlist_click` 은 `/pro` 페이지가 아직 없어 **미배선** 상태다(P2-7에서 연결).
+13. **랭크는 부가 정보다 — 실패해도 검색이 죽으면 안 된다**
+    - `getTftLeagueByPuuid` 는 404/429/401/네트워크 오류에서 **null** 을 반환하고 예외를 던지지 않는다.
+    - `rank:{platform}:{puuid}` 10분 캐시. `null`(배치 중)도 캐시하므로 미배치 계정도 Riot 을 반복 호출하지 않는다.
+    - 검색 1회당 Riot 호출이 **+1** 늘었다(matchIds 와 병렬이라 지연은 거의 동일). 키 한도가 빠듯하면
+      `CACHE_TTL.RANK` 를 늘릴 것.
+    - 데모 모드(`isDemo`/키 없음)는 예시 랭크(GOLD II)를 반환한다. 응답의 `isDemo: true` 와 UI의
+      “체험 모드” 배지로 실제 전적과 구분된다.
 
 ---
 
@@ -347,7 +363,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 | 일차 | 작업 | 산출물 |
 | --- | --- | --- |
 | 1일 | ✅ P0-1 이벤트 계측 (완료) | `/api/events`, `events` 테이블/로그, 클라이언트 `track()` |
-| 2일 | P0-2 랭크/티어 API + 프로필 카드 | `tft/league/v1` 연동, 캐시, UI |
+| 2일 | ✅ P0-2 랭크/티어 API + 프로필 카드 (완료) | `tft/league/v1` 연동, 10분 캐시, `RankBadge` |
 | 3일 | P0-3 즐겨찾기/최근 검색 | Supabase/localStorage, 검색 UI |
 
 그 다음 P1(SSE/품질, 덱 품질) → P2(모바일/PWA, Pro 대기자) 순.
