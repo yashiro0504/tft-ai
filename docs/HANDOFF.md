@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-2-rank` (P0-1 계측 · P0-2 랭크 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 커밋: `feat/p0-3-favorites` (P0-1 계측 · P0-2 랭크 · P0-3 즐겨찾기 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -127,6 +127,10 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/decks.ts` | 덱 데이터 정규화/통계 계산 |
 | `lib/rank.ts` | 티어 표시 포맷/색상 헬퍼 (순수 함수) |
 | `app/components/RankBadge.tsx` | 티어·LP·승패·승률 배지 (홈 카드 + 프로필 공용) |
+| `lib/favorites.ts` | 즐겨찾기 검증/CRUD (Supabase RLS 기반, 최대 20개) |
+| `lib/recentSearches.ts` | 비로그인 최근 검색 5개 (localStorage + 갱신 이벤트) |
+| `app/components/SavedSearches.tsx` | 검색창 아래 최근 검색/즐겨찾기 칩 |
+| `app/api/favorites/route.ts` | 즐겨찾기 GET/POST/DELETE (로그인 필요) |
 | `lib/supabase/*` | 서버/브라우저 클라이언트, 세션 |
 | `lib/userQuota.ts` | 로그인 사용자 RPC 쿼터 |
 | `lib/turnstile.ts` | 검색 봇 차단 |
@@ -138,6 +142,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `middleware.ts` | Supabase 세션 쿠키 갱신 |
 | `supabase/migrations/0001_auth_quota.sql` | profiles/usage_daily/RLS/RPC |
 | `supabase/migrations/0002_events.sql` | events 테이블 (insert-only RLS) |
+| `supabase/migrations/0003_favorites.sql` | favorites 테이블 (본인만 CRUD, 중복 방지) |
 
 ### 완료된 상태 (요약)
 
@@ -155,6 +160,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   개인정보처리방침에 수집 항목·보관 기간(90일) 반영
 - **P0-2 랭크/티어 표시 완료**: `TFT-LEAGUE-V1` 연동(10분 캐시, 실패 시 null 폴백), 홈 프로필 카드·
   `/profile`·OG 이미지에 티어/LP/승패 표시, 배치 중은 “배치 중”
+- **P0-3 즐겨찾기/최근 검색 완료**: `favorites` 테이블(본인만 CRUD·중복 방지), `/api/favorites`,
+  비로그인 최근 검색 5개(localStorage), 검색창 아래 칩 UI
 
 ## 4. 개발 우선순위 (이 순서대로)
 
@@ -208,18 +215,31 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   - `TFT-LEAGUE-V1` 사용은 이미 Riot 신청서에 명시됨
 - 남은 확인: **실제 Riot 키로 실계정 티어 표시 확인** (로컬 키 만료로 배포 후 확인 필요)
 
-### P0-3. 즐겨찾기 + 최근 검색 (1일) — 🔜 **다음 작업**
+### P0-3. 즐겨찾기 + 최근 검색 (1일) — ✅ 완료 (2026-10-18)
 
 - 목표: 매번 Riot ID를 입력하지 않게 한다.
-- 구현
-  - 마이그레이션 `0003_favorites.sql`: `favorites(user_id, region, game_name, tag_line, created_at)` + RLS(본인만 CRUD)
-  - `/api/favorites` GET/POST/DELETE (로그인 필요)
-  - 비로그인: `localStorage` 최근 5개
-  - UI: 헤더 계정 메뉴 아래 또는 검색창 아래 “최근/즐겨찾기” 칩
-- 완료 조건
-  - 로그인/비로그인 모두 동작, 중복 방지, 삭제 가능
+- 구현 (완료)
+  - 마이그레이션 `0003_favorites.sql`: `favorites(user_id, region, game_name, tag_line, created_at)`
+    + RLS(본인만 SELECT/INSERT/DELETE, UPDATE 정책 없음)
+    + 유니크 인덱스 `(user_id, region, lower(game_name), upper(tag_line))` → **중복 방지**
+    + `anon` 권한 회수, `authenticated` 에 select/insert/delete 만 부여
+  - `/api/favorites` GET/POST/DELETE (로그인 필요, IP 60회/분 레이트리밋)
+    - GET: 최신순 최대 20개. 미설정 시 200 + `configured:false` + 빈 목록(익명 모드)
+    - POST: `{gameName, tagLine, region?}` — 이미 있으면 200(`created:false`), 20개 초과 409
+    - DELETE: `?gameName=&tagLine=&region=` — 없으면 200(`removed:false`)
+    - 인증은 `getAuthUser()` + anon key + RLS. **service role key 미사용**
+  - 비로그인: `lib/recentSearches.ts` — localStorage 최근 5개(중복 시 맨 앞으로), × 삭제,
+    `RECENT_UPDATED_EVENT` 로 컴포넌트 간 동기화
+  - UI: `app/components/SavedSearches.tsx` — 검색창 아래 “최근 검색 / 즐겨찾기” 칩
+    (최근 칩 ☆ 로 즐겨찾기 추가, 즐겨찾기 칩 ★ 로 해제, 클릭 시 즉시 재검색)
+  - 개인정보처리방침: 즐겨찾기·최근 검색 수집 항목/보관 기간/로컬 저장소 고지 추가
+- 완료 조건 충족
+  - 비로그인 최근 검색 5개 ✅ (브라우저 검증), 로그인 즐겨찾기 CRUD ✅ (코드·API 계약),
+    중복 방지 ✅ (유니크 인덱스 + 앱 레벨 사전 확인), 삭제 ✅
+- 남은 확인: Supabase 프로젝트 생성 후 `0003_favorites.sql` 적용 → 로그인 상태에서 실제 CRUD 확인
+  (로컬은 Supabase 미설정이라 익명 경로만 실행 검증)
 
-### P1-4. AI 분석 스트리밍 + 품질 (2~3일)
+### P1-4. AI 분석 스트리밍 + 품질 (2~3일) — 🔜 **다음 작업**
 
 - 목표: 8초 동기 대기를 줄이고 리포트 품질을 측정한다.
 - 구현
@@ -270,6 +290,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | --- | --- | --- |
 | Supabase 프로젝트 + Discord OAuth + env 등록 | **미완료** — 코드만 준비됨 | 운영자 |
 | Supabase `0002_events.sql` 적용 | **미완료** — 미적용 시 이벤트는 구조화 로그로만 적재(기능 정상) | 운영자 |
+| Supabase `0003_favorites.sql` 적용 | **미완료** — 미적용 시 즐겨찾기 API 503(최근 검색은 정상) | 운영자 |
 | Riot 프로덕션 키 승인 | **Pending Review** | Riot |
 | Vercel Pro 전환 (상업화 전) | 미완료 | 운영자 |
 | DeepSeek/Gemini 월 스펜드 리밋 | 미완료 | 운영자 |
@@ -328,6 +349,15 @@ Supabase 설정 절차: `docs/supabase-auth.md`
       `CACHE_TTL.RANK` 를 늘릴 것.
     - 데모 모드(`isDemo`/키 없음)는 예시 랭크(GOLD II)를 반환한다. 응답의 `isDemo: true` 와 UI의
       “체험 모드” 배지로 실제 전적과 구분된다.
+14. **즐겨찾기는 로그인 사용자 전용**
+    - `favorites` 는 `anon` 권한을 회수했고 `authenticated` 에만 select/insert/delete 를 준다.
+      **UPDATE 정책은 의도적으로 없다**(추가/삭제만 존재).
+    - 중복 방지는 `(user_id, region, lower(game_name), upper(tag_line))` 유니크 인덱스 +
+      앱 레벨 사전 확인. 동시 요청은 `23505` 를 성공으로 처리한다.
+    - 개수 상한(20)은 **애플리케이션**에서만 강제한다. DB 제약이 아니므로 API 를 우회하면 늘어날 수 있다.
+    - 삭제는 `ilike` 대신 목록에서 정규화 키로 찾아 **id 기준 삭제**한다.
+      (Riot ID 에 `%`/`_` 가 들어가도 안전)
+    - Supabase 미설정 시 GET 은 200 + `configured:false`(빈 목록), POST/DELETE 는 401 을 반환한다.
 
 ---
 
@@ -364,7 +394,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 | --- | --- | --- |
 | 1일 | ✅ P0-1 이벤트 계측 (완료) | `/api/events`, `events` 테이블/로그, 클라이언트 `track()` |
 | 2일 | ✅ P0-2 랭크/티어 API + 프로필 카드 (완료) | `tft/league/v1` 연동, 10분 캐시, `RankBadge` |
-| 3일 | P0-3 즐겨찾기/최근 검색 | Supabase/localStorage, 검색 UI |
+| 3일 | ✅ P0-3 즐겨찾기/최근 검색 (완료) | Supabase/localStorage, 검색 UI |
 
 그 다음 P1(SSE/품질, 덱 품질) → P2(모바일/PWA, Pro 대기자) 순.
 

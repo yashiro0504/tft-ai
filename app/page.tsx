@@ -12,7 +12,9 @@ import { SiteHeader } from './components/SiteHeader'
 import { TurnstileWidget } from './components/TurnstileWidget'
 import { ShareButton } from './components/ShareButton'
 import { RankBadge } from './components/RankBadge'
+import { SavedSearches } from './components/SavedSearches'
 import { track, trackOnce } from '@/lib/analytics'
+import { addRecentSearch } from '@/lib/recentSearches'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -97,6 +99,7 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '검색 중 오류가 발생했습니다.')
       }
       setSearch(data)
+      addRecentSearch({ gameName: data.gameName, tagLine: data.tagLine })
       track('search_success', {
         matchCount: data.matches.length,
         isDemo: Boolean(data.isDemo),
@@ -242,6 +245,9 @@ export default function TFTCoachPage() {
               <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
             </div>
           ) : null}
+
+          {/* 최근 검색 / 즐겨찾기 (localStorage + 로그인 시 서버) */}
+          <SavedSearches onPick={(name, tag) => setSample(name, tag)} disabled={isLoading} />
 
           {/* Quick Preset Samples */}
           <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-line/10/80 text-xs text-muted">
