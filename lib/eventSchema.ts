@@ -29,12 +29,20 @@ export type AnalyticsProps = Record<string, AnalyticsPropValue | null | undefine
 export interface AnalyticsEventPayload {
   name: AnalyticsEventName
   sessionId: string
+  /** localStorage 기반 익명 방문자 ID (재방문/리텐션 집계용, PII 아님) */
+  visitorId: string
   props: Record<string, AnalyticsPropValue>
   route: string
 }
 
-/** sessionStorage UUID 형식 (UUID v4 또는 fallback id 모두 허용) */
-export const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
+/**
+ * 익명 식별자(UUID v4 또는 fallback id) 형식.
+ * sessionStorage 세션 ID와 localStorage 방문자 ID에 공통으로 사용한다.
+ */
+export const ANON_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
+
+/** sessionStorage UUID 형식 (하위 호환 alias) */
+export const SESSION_ID_PATTERN = ANON_ID_PATTERN
 
 export const MAX_PROPS = 12
 export const MAX_PROP_STRING = 120

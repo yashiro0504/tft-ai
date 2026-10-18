@@ -1,10 +1,11 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 브랜치: `feat/p2-7-pro-waitlist` (P0-1~3 · P1-4~5 · P2-6~7 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 브랜치: `feat/p3-gate` (P0-1~3 · P1-4~5 · P2-6~7 · P3 게이트 집계 준비 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
-`docs/P0-OPERATIONS.md` → `docs/supabase-auth.md` → `docs/DATA_PIPELINE.md` 순으로 읽으세요.
+`docs/P0-OPERATIONS.md` → `docs/supabase-auth.md` → `docs/DATA_PIPELINE.md` →
+`docs/P3-GATE.md` 순으로 읽으세요.
 
 ---
 
@@ -148,6 +149,9 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `supabase/migrations/0001_auth_quota.sql` | profiles/usage_daily/RLS/RPC |
 | `supabase/migrations/0002_events.sql` | events 테이블 (insert-only RLS) |
 | `supabase/migrations/0003_favorites.sql` | favorites 테이블 (본인만 CRUD, 중복 방지) |
+| `supabase/migrations/0004_events_visitor.sql` | events.visitor_id (익명 방문자, D7 리텐션용) |
+| `supabase/queries/p3_gate.sql` | P3 게이트 집계 SQL (DAU·퍼널·Pro 의향·D1/D7) |
+| `docs/P3-GATE.md` | P3 게이트 지표 정의·표본 기준·판정 절차 |
 
 ### 완료된 상태 (요약)
 
@@ -184,11 +188,12 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   - `POST /api/events` (rate limit 120/분/IP, Turnstile 불필요, `no-store`, 성공 시 **204**)
   - 이벤트 9종: `search_submit`, `search_success`, `analysis_click`, `analysis_success`, `tab_view`,
     `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
-  - payload: `{ name, sessionId, props, route }` — **Riot ID/이메일/PUUID 등 PII 미수집**
+  - payload: `{ name, sessionId, visitorId, props, route }` — **Riot ID/이메일/PUUID 등 PII 미수집**
     (`lib/eventSchema.ts` 가 키 이름 + 값 패턴을 이중 차단, 서버에서 재정제)
-  - 저장: Supabase 설정 시 `events` 테이블(`0002_events.sql`, insert-only RLS),
+    - `visitorId` 는 localStorage 익명 UUID (P3 D7 리텐션 집계용). 구버전은 서버가 `sessionId` 로 폴백.
+  - 저장: Supabase 설정 시 `events` 테이블(`0002_events.sql` + `0004_events_visitor.sql`, insert-only RLS),
     미설정 시 구조화 로그(`analytics_event`)
-  - 클라이언트: `lib/analytics.ts` 의 `track()` / `trackOnce()` (sessionStorage UUID, `keepalive`)
+  - 클라이언트: `lib/analytics.ts` 의 `track()` / `trackOnce()` (sessionStorage 세션 + localStorage 방문자 ID, `keepalive`)
 - 배선 위치
   | 이벤트 | 위치 |
   | --- | --- |
@@ -202,7 +207,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - 완료 조건 충족
   - `/api/events` 204 · 이벤트가 로그/Supabase에 남음 (로컬 검증 완료)
   - `npm run build` + typecheck/eslint 통과, 개인정보처리방침에 수집 항목·보관 기간 추가
-- 남은 운영 작업: Supabase 프로젝트 생성 후 `0002_events.sql` 실행 → Vercel env 등록 시 자동으로 DB 저장으로 전환
+- 남은 운영 작업: Supabase 프로젝트 생성 후 `0002_events.sql` → `0004_events_visitor.sql` 실행 →
+  Vercel env 등록 시 자동으로 DB 저장으로 전환
 
 ### P0-2. 랭크/티어 표시 (1~2일) — ✅ 완료 (2026-10-18)
 
@@ -363,6 +369,13 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - 사전 구매 의향 5명 이상
 → 통과 시 토스페이먼츠(정기결제) + 사업자/통신판매업/환불 정책.
 
+집계 준비:
+- 전체 SQL: `supabase/queries/p3_gate.sql` (데이터 품질 → DAU → 검색→분석 → Pro 의향 → D1/D7 → 게이트 요약)
+- 지표 정의·표본 기준·판정 절차: `docs/P3-GATE.md`
+- 리텐션 전제: `0004_events_visitor.sql` 적용 + 새 클라이언트 배포 후 **최소 13일** 데이터
+- “없으면 아쉽다” 설문은 이벤트로 측정 불가 → 베타 참여자 수동 설문(4~5점 비율)
+- 검증: sqlglot PostgreSQL 파싱 + PGlite 픽스처 실행 (`docs/P3-GATE.md` §5)
+
 ## 5. 현재 미완료 / 사용자(운영자)가 해야 할 일
 
 | 항목 | 상태 | 담당 |
@@ -370,6 +383,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | Supabase 프로젝트 + Discord OAuth + env 등록 | **미완료** — 코드만 준비됨 | 운영자 |
 | Supabase `0002_events.sql` 적용 | **미완료** — 미적용 시 이벤트는 구조화 로그로만 적재(기능 정상) | 운영자 |
 | Supabase `0003_favorites.sql` 적용 | **미완료** — 미적용 시 즐겨찾기 API 503(최근 검색은 정상) | 운영자 |
+| Supabase `0004_events_visitor.sql` 적용 | **미완료** — 미적용 시 이벤트 insert 실패(로그 적재로 폴백), D7 계산 불가 | 운영자 |
 | Riot 프로덕션 키 승인 | **Pending Review** | Riot |
 | Vercel Pro 전환 (상업화 전) | 미완료 | 운영자 |
 | DeepSeek/Gemini 월 스펜드 리밋 | 미완료 | 운영자 |

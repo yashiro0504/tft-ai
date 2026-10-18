@@ -386,7 +386,7 @@ curl https://www.tftlab.kr/api/me
 ```
 POST /api/events
 Content-Type: application/json
-{ "name": "search_submit", "sessionId": "<uuid>", "props": { "surface": "coach" }, "route": "/" }
+{ "name": "search_submit", "sessionId": "<uuid>", "visitorId": "<uuid>", "props": { "surface": "coach" }, "route": "/" }
 
 → 204 No Content (Cache-Control: no-store)
 → 400 알 수 없는 이벤트 / sessionId 형식 오류
@@ -397,6 +397,8 @@ Content-Type: application/json
 - 이벤트 이름은 **화이트리스트**만 허용: `search_submit`, `search_success`, `analysis_click`,
   `analysis_success`, `tab_view`, `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
 - `sessionId` 는 브라우저 sessionStorage 의 UUID (탭 단위, 브라우저 종료 시 소멸)
+- `visitorId` 는 브라우저 localStorage 의 익명 UUID (재방문/리텐션 집계용, 브라우저 데이터 삭제 시 재발급).
+  구버전 클라이언트가 보내지 않으면 서버가 `sessionId` 로 폴백한다.
 - **PII 미수집**: `props` 키 이름 차단 목록 + 이메일 패턴 차단 + 서버 재정제.
   경로는 `/profile/[region]/[name]/[tag]` 로 마스킹된다.
 - Turnstile 은 적용하지 않는다(집계용). 남용은 IP 레이트리밋으로 완화한다.
@@ -405,16 +407,16 @@ Content-Type: application/json
 
 | 조건 | 저장 |
 | --- | --- |
-| Supabase env 설정 + `0002_events.sql` 적용 | `public.events` (insert-only RLS) |
+| Supabase env 설정 + `0002_events.sql` + `0004_events_visitor.sql` 적용 | `public.events` (insert-only RLS) |
 | Supabase 미설정/오류 | 구조화 로그 `analytics_event` (Vercel Log Drain 으로 집계) |
 
-적용: Supabase SQL Editor 에서 `supabase/migrations/0002_events.sql` 실행.
+적용: Supabase SQL Editor 에서 `supabase/migrations/0002_events.sql` → `0004_events_visitor.sql` 순서로 실행.
 
 ### 확인
 
 ```powershell
 curl -i -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
-  -d '{"name":"search_submit","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","props":{"surface":"coach"},"route":"/"}'
+  -d '{"name":"search_submit","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","visitorId":"b2c3d4e5-f6a7-8901-bcde-f12345678901","props":{"surface":"coach"},"route":"/"}'
 # HTTP/1.1 204 No Content, cache-control: no-store
 
 curl -s -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
@@ -425,7 +427,7 @@ curl -s -X POST http://localhost:3000/api/events -H "Content-Type: application/j
 서버 로그(Supabase 미설정 시):
 
 ```json
-{"level":"info","event":"analytics_event","name":"search_submit","sessionId":"...","route":"/","props":{"surface":"coach"}}
+{"level":"info","event":"analytics_event","name":"search_submit","sessionId":"...","visitorId":"...","route":"/","props":{"surface":"coach"}}
 ```
 
 ### 집계 쿼리
@@ -436,17 +438,23 @@ select name, count(*) from public.events
  where created_at > now() - interval '7 days'
  group by name order by 2 desc;
 
--- 일별 세션 수
-select date_trunc('day', created_at) as day, count(distinct session_id) as sessions
+-- 일별 활성 방문자/세션 수 (KST)
+select timezone('Asia/Seoul', created_at)::date as day,
+       count(distinct visitor_id) as visitors,
+       count(distinct session_id) as sessions
   from public.events where created_at > now() - interval '14 days'
   group by 1 order by 1 desc;
 
--- 검색 대비 분석 실행률 (게이트 지표)
+-- 검색 대비 분석 실행률 (간단 버전)
 select
-  count(*) filter (where name = 'search_success') as searches,
-  count(*) filter (where name = 'analysis_click') as analysis_clicks
+  count(distinct session_id) filter (where name = 'search_submit') as search_sessions,
+  count(distinct session_id) filter (where name = 'analysis_click') as analysis_sessions
 from public.events where created_at > now() - interval '7 days';
 ```
+
+**P3 유료화 게이트**(D7 리텐션·검색→분석 전환·Pro 의향·사전 구매 의향) 전체 쿼리는
+`supabase/queries/p3_gate.sql`, 지표 정의·표본 기준·판정 절차는 `docs/P3-GATE.md` 를 참고한다.
+`0004_events_visitor.sql` 배포 후 **최소 13일**이 지나야 D7 을 계산할 수 있다.
 
 ### 보관
 

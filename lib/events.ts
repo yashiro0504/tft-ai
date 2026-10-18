@@ -22,6 +22,7 @@ export async function recordEvent(event: AnalyticsEventPayload): Promise<EventSt
       const { error } = await supabase.from('events').insert({
         name: event.name,
         session_id: event.sessionId,
+        visitor_id: event.visitorId,
         route: event.route || null,
         props: event.props,
       })
@@ -41,6 +42,7 @@ export async function recordEvent(event: AnalyticsEventPayload): Promise<EventSt
   logEvent('info', 'analytics_event', {
     name: event.name,
     sessionId: event.sessionId,
+    visitorId: event.visitorId,
     route: event.route,
     props: event.props,
   })

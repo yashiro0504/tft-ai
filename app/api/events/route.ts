@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isNextResponse, rateLimitGuard, readJson } from '@/lib/apiUtils'
 import {
+  ANON_ID_PATTERN,
   MAX_ROUTE_LENGTH,
   SESSION_ID_PATTERN,
   isAnalyticsEventName,
@@ -47,10 +48,15 @@ export async function POST(req: NextRequest) {
     return badRequest('sessionId 형식이 올바르지 않습니다.')
   }
 
+  // 구버전 클라이언트(visitorId 미전송)는 sessionId 로 폴백한다.
+  // → 배포 전환 중에도 insert 가 실패하지 않고, 새 클라이언트부터 리텐션 집계가 가능하다.
+  const visitorRaw = typeof raw.visitorId === 'string' ? raw.visitorId.trim() : ''
+  const visitorId = ANON_ID_PATTERN.test(visitorRaw) ? visitorRaw : sessionId
+
   const route = typeof raw.route === 'string' ? normalizeRoute(raw.route.slice(0, MAX_ROUTE_LENGTH)) : '/'
   const props = sanitizeProps(raw.props)
 
-  const storage = await recordEvent({ name, sessionId, props, route })
+  const storage = await recordEvent({ name, sessionId, visitorId, props, route })
   incrMetric(`event.${name}`)
   logEvent('debug', 'analytics_event_stored', { name, storage })
 
