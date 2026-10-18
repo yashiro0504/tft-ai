@@ -137,41 +137,7 @@ export default function TFTCoachPage() {
       <main className="relative max-w-6xl mx-auto px-4 py-4 md:py-6">
         {tab === 'meta' ? (
           <section className="space-y-3.5">
-            {/* MetaTFT / LOLCHESS Style Compact Live Meta Header */}
-            <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-panel/90 backdrop-blur-xl p-4 md:px-6 md:py-5 shadow-xl">
-              <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" />
-              <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-cyan-300">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                      Live Meta · Set 18
-                    </span>
-                    <span className="text-[12px] font-medium text-muted">
-                      Riot 실측 래더 표본 데이터 기반
-                    </span>
-                  </div>
-                  <h1 className="mt-1.5 text-2xl font-black tracking-tight text-ink md:text-3xl">
-                    시즌 18{' '}
-                    <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                      메타 티어표 &amp; 추천 덱
-                    </span>
-                  </h1>
-                </div>
-
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <div className="rounded-xl border border-line/10 bg-sunken/60 px-3 py-1.5 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted">기준 등수</p>
-                    <p className="font-mono text-base font-black text-ink">4.50</p>
-                  </div>
-                  <div className="rounded-xl border border-line/10 bg-sunken/60 px-3 py-1.5 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted">표본 품질</p>
-                    <p className="font-mono text-base font-black text-emerald-400">실측</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <MetaRanking onOpenCoach={() => setTab('coach')} />
+            <MetaRanking onOpenCoach={() => setTab('coach')} showTitle />
           </section>
         ) : (
         <section className="max-w-5xl mx-auto">

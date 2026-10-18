@@ -1,5 +1,5 @@
 /* 탭 + 보조 컬럼 (rk-shell 토큰 재사용) */
-.rk-tabs { display: flex; gap: 2px; border: 1px solid var(--rk-line); border-radius: 3px; overflow: hidden; }
+.rk-tabs { display: flex; flex: none; gap: 2px; border: 1px solid var(--rk-line); border-radius: 3px; overflow: hidden; }
 .rk-tab {
   border: 0;
   border-right: 1px solid var(--rk-line);
@@ -9,6 +9,8 @@
   font-size: 12.5px;
   padding: 5px 12px;
   cursor: pointer;
+  white-space: nowrap;
+  flex: none;
 }
 .rk-tab:last-child { border-right: 0; }
 .rk-tab:hover { color: var(--rk-ink); }
@@ -46,6 +48,9 @@
 .rk-delta.up { color: var(--rk-good); }
 .rk-delta.down { color: var(--rk-bad); }
 
+.rk-toolbar { flex-wrap: wrap; row-gap: 8px; }
+.rk-sorted { white-space: nowrap; }
+.rk-search { flex: 0 1 240px; min-width: 150px; }
 .rk-shell.no-detail { grid-template-columns: 186px minmax(0, 1fr); }
 @media (max-width: 1180px) { .rk-shell.no-detail { grid-template-columns: 160px minmax(0, 1fr); } }
 @media (max-width: 760px) {
