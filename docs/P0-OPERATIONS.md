@@ -267,6 +267,52 @@ npm run build:deck-preview
 3. **교체 시점**: 디자인 작업이 끝난 뒤 `lib/decksData.json` 을 프리뷰로 교체하고
    `npm run ci`(lint/typecheck/meta:check/build)로 검증한다.
 
+## 12. Go-live 게이트 (운영 설정 점검)
+
+배포 후 아래 명령으로 Riot/LLM/Redis/Turnstile/sitemap/덱 페이지를 한 번에 점검한다.
+
+```powershell
+npm run check:ops -- https://www.tftlab.kr           # 리포트 모드
+npm run check:ops -- https://www.tftlab.kr --strict  # 미충족 시 exit 1
+```
+
+현재 프로덕션 진단 결과(2026-10-18):
+
+- ✅ health / Riot / LLM / sitemap(38 URLs, 덱 34) / 덱 페이지
+- ❌ **Redis 미설정** → 쿼터·LLM 예산이 인스턴스별로만 동작
+- ❌ **Turnstile 미설정** → 검색 봇 차단 없음
+
+### Redis (5분)
+
+1. https://console.upstash.com → Create Database (리전: 서울/도쿄 권장)
+2. REST URL / REST TOKEN 복사
+3. Vercel → Settings → Environment Variables (Production + Preview)
+   ```
+   UPSTASH_REDIS_REST_URL=...
+   UPSTASH_REDIS_REST_TOKEN=...
+   ```
+4. Redeploy → `/api/health` 의 `cache.backend` 가 `redis+memory` 인지 확인
+
+### Turnstile (10분)
+
+1. Cloudflare Dashboard → Turnstile → Add site
+   - Hostnames: `www.tftlab.kr`, `tftlab.kr`, `localhost`
+   - Widget mode: Managed
+2. Vercel 환경변수 등록 후 **재배포** (site key는 빌드 타임에 인라인)
+   ```
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
+   TURNSTILE_SECRET_KEY=...
+   ```
+3. `npm run check:ops -- https://www.tftlab.kr --strict`
+   - 토큰 없는 검색이 **403**으로 차단되는지 자동 확인
+
+### 상업화 전
+
+- Vercel **Pro** 플랜 (Hobby는 상업적 이용 금지)
+- DeepSeek/Gemini 콘솔에서 **월 하드 스펜드 리밋** 설정
+- `check:ops --strict` 통과를 배포 게이트로 사용
+
+
 
 
 
