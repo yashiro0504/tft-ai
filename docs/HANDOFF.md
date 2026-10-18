@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `feat/p1-5-deck-quality` (P0-1~3 · P1-4~5 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 브랜치: `feat/p2-6-mobile-pwa` (P0-1~3 · P1-4~5 · P2-6 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -299,15 +299,38 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   - 24덱 유지 ✅, `decks:check` 통과 ✅ (경고 1건: 카직스 BIS 1개 — 표본 부족), `/deck/[id]` 24개 200 ✅
   - 덱 ID 20개 유지 · 4개 교체(`auto-amumu/diana/morgana/scuttlecrab` → `auto-ivern/draven/khazix/maokai`)
 
-### P2-6. 모바일/라이트/PWA (1~2일) — 🔜 **다음 작업**
+### P2-6. 모바일/라이트/PWA (1~2일) — ✅ 완료 (2026-10-18)
 
-- 360px 실기기에서 표·바텀시트·모달 확인 (이미 1차 구현됨)
-- 라이트 테마 실사용 점검(대비/그림자/오버레이)
-- `app/manifest.ts` + 아이콘 + `theme-color` (설치형 웹앱)
-- 완료 조건
-  - Lighthouse 모바일 90+ 목표(성능/접근성), 360px 가로 스크롤 없음
+- 구현
+  - `app/manifest.ts` — `standalone`, 테마/배경색, 192·512·maskable 아이콘, 바로가기 2종
+    (`/rank`, `/?tab=coach`)
+  - `scripts/generateIcons.js` (`npm run icons`) — `app/icon.svg` 원본 → PNG 4종
+    (192/512/maskable/apple-touch) + `app/favicon.ico`(16/32/48) 생성
+  - `app/layout.tsx` — `manifest`·`applicationName`·`appleWebApp`·`icons`, viewport
+    `themeColor`(라이트/다크 media query)
+  - `lib/themeColor.ts` + `SiteHeader` — 테마 토글 시 `meta[name="theme-color"]`를 실제 테마와 동기화
+  - `app/globals.css` — `--subtle` 대비 상향(다크 4.86+, 라이트 4.84+), 스크롤바 색 토큰화
+  - `app/rank/rank.css` — muted 대비 4.25 → **5.24(다크) / 5.08(라이트)**, 푸터 색 토큰화
+  - `SiteHeader` — 360px에서 로고/탭 `shrink-0`·`whitespace-nowrap`으로 헤더 줄바꿈 방지
+  - preconnect — `ddragon.leagueoflegends.com`, `raw.communitydragon.org`,
+    `fonts.gstatic.com`
+- 검증 (2026-10-18, 로컬 + 라이브)
+  - `npm run typecheck` ✅ · `npm run build` ✅ (37 pages, `/manifest.webmanifest`·`/icon.svg` 라우트 생성)
+  - `/manifest.webmanifest` 200 `application/manifest+json`, 아이콘 192/512/maskable/apple-touch 200
+  - Chrome CDP `Page.getInstallabilityErrors` → **`[]`** (설치 가능), manifest 파싱 오류 0
+  - 360px 헤드리스 Chrome: `/`, `/rank`, `/meta`, `/deck/auto-ezreal`, `/login`, `/privacy`,
+    `/terms` × 다크/라이트 → **가로 스크롤 0 · 콘솔 오류 0**
+  - Lighthouse mobile (라이브 `https://www.tftlab.kr`) — performance **94** · SEO **100**,
+    accessibility 96(대비 30건) → 색상 보정 후 로컬 accessibility **100**(대비 0건)
+  - 로컬 `next start`의 performance 70은 CDN/압축이 없는 환경 때문이다. 프로덕션(Vercel)에서는 90+.
+- 남은 메모
+  - **service worker/오프라인 캐시는 미구현**. 설치형 웹앱 요건(매니페스트·아이콘·standalone)은 충족.
+    오프라인이 필요해지면 별도 작업으로 추가한다.
+  - 이미지 최적화(`next/image`·WebP)는 후속. 현재 DDragon PNG를 26px로 축소 표시해
+    Lighthouse `modern-image-formats`/`uses-responsive-images` 지적이 남아 있다.
+  - 아이콘 원본을 바꾸면 `npm run icons` → 생성물 4종 + `app/favicon.ico` 커밋.
 
-### P2-7. Pro 대기자 페이지 (0.5일) — **결제 아님**
+### P2-7. Pro 대기자 페이지 (0.5일) — 🔜 **다음 작업** — **결제 아님**
 
 - `/pro` 페이지: 가격(예: ₩3,900/월) + “출시 알림 받기” 버튼
 - 클릭 이벤트만 수집(`pro_waitlist_click`), 결제 연동 없음
@@ -448,7 +471,7 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 | 2일 | ✅ P0-2 랭크/티어 API + 프로필 카드 (완료) | `tft/league/v1` 연동, 10분 캐시, `RankBadge` |
 | 3일 | ✅ P0-3 즐겨찾기/최근 검색 (완료) | Supabase/localStorage, 검색 UI |
 
-그 다음 P1(SSE/품질, 덱 품질) → P2(모바일/PWA, Pro 대기자) 순.
+P1(SSE/품질, 덱 품질)과 P2-6(모바일/PWA)까지 완료. 다음은 P2-7(Pro 대기자) → P3 게이트 순.
 
 ---
 

@@ -7,7 +7,8 @@
   --rk-line-strong: rgba(255, 255, 255, 0.14);
   --rk-ink: #e9ecef;
   --rk-ink2: #a8b0b8;
-  --rk-muted: #6e767f;
+  /* WCAG AA: bg #0a0c0f 5.24 / surface2 #151a1f 4.69 */
+  --rk-muted: #7d858e;
   --rk-accent: #e0b15c;
   --rk-good: #5fb88a;
   --rk-bad: #d96a6a;
@@ -29,7 +30,8 @@
   --rk-line-strong: rgba(15, 23, 42, 0.18);
   --rk-ink: #0f172a;
   --rk-ink2: #334155;
-  --rk-muted: #64748b;
+  /* WCAG AA: bg #f6f7f9 5.08 / surface2 #f1f3f6 4.89 */
+  --rk-muted: #5b6b80;
   --rk-accent: #8a6413;
   --rk-good: #0f766e;
   --rk-bad: #b91c1c;
@@ -394,7 +396,11 @@
   margin: 0 auto;
   padding: 14px 28px;
   font-size: 11.5px;
-  color: #6e767f;
+  color: #7d858e;
+}
+
+[data-theme='light'] .rk-footer {
+  color: #5b6b80;
 }
 
 /* 반응형 */

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BarChart3, Bot, Moon, Sun, Trophy } from 'lucide-react'
 import { UserMenu } from './UserMenu'
+import { syncThemeColor } from '@/lib/themeColor'
 
 export type SiteTab = 'meta' | 'coach'
 
@@ -14,12 +15,15 @@ function ThemeToggle() {
   useEffect(() => {
     const t = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
     setTheme(t)
+    // 첫 페인트 전에 적용된 실제 테마와 theme-color 를 맞춘다.
+    syncThemeColor(t)
   }, [])
 
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
     document.documentElement.dataset.theme = next
+    syncThemeColor(next)
     try {
       localStorage.setItem('tft-theme', next)
     } catch {
@@ -61,12 +65,12 @@ export function SiteHeader({
         <button
           type="button"
           onClick={() => onChange('meta')}
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex shrink-0 items-center gap-2 cursor-pointer"
         >
           <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-600/20">
             <Trophy className="w-4 h-4 text-white" />
           </span>
-          <span className="font-black text-ink tracking-tight text-[15px]">
+          <span className="font-black text-ink tracking-tight text-[15px] whitespace-nowrap">
             TFT <span className="text-cyan-400">LAB</span>
           </span>
           <span className="hidden sm:inline text-[11px] font-bold text-muted border border-line/15 rounded px-1.5 py-0.5">
@@ -83,14 +87,16 @@ export function SiteHeader({
                 key={item.id}
                 type="button"
                 onClick={() => onChange(item.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`inline-flex shrink-0 items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition border cursor-pointer ${
                   isActive
                     ? 'bg-elev/10 text-ink border-line/10 shadow-sm'
                     : 'text-muted hover:text-ink hover:bg-elev/5 border-transparent'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
               </button>
             )
           })}
