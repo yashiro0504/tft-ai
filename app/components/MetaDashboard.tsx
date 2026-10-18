@@ -51,12 +51,24 @@ function tierClass(tier: string) {
   return ['S', 'A', 'B', 'C', 'D'].includes(t) ? `rk-tier rk-t${t}` : 'rk-tier rk-tC'
 }
 
+/** 수집 시각은 서버(UTC)·클라이언트(KST) 렌더 결과가 같아야 하므로 KST 고정 */
+const DATE_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
 function fmtDate(iso?: string) {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  const parts = DATE_FMT.formatToParts(d)
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || ''
+  return `${get('year')}.${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`
 }
 
 interface Row {
@@ -207,7 +219,6 @@ export function MetaDashboard({
     [rows, selectedId, tab],
   )
 
-  const totalSample = useMemo(() => (data?.decks ?? []).reduce((s, d) => s + (d.sampleSize || 0), 0), [data])
   const countOf = (t: '전체' | Tier) => (t === '전체' ? rowsAll.length : rowsAll.filter((r) => r.tier === t).length)
 
   const colClass = tab === 'comps' ? 'cols-bis' : tab === 'champions' ? 'cols-champ' : 'cols-stat'
@@ -217,12 +228,13 @@ export function MetaDashboard({
       <div className={`rk-shell ${tab === 'decks' ? '' : 'no-detail'}`}>
         <aside className="rk-rail">
           <div className="rk-group">
-            <p className="rk-label">티어</p>
+            <p className="rk-label" title="현재 표 안에서의 상대 순위">상대 티어</p>
             {TIERS.filter((t) => t === '전체' || countOf(t) > 0).map((t) => (
               <button
                 key={t}
                 type="button"
                 className={`rk-filter ${tier === t ? 'on' : ''}`}
+                aria-pressed={tier === t}
                 onClick={() => setTier(t)}
               >
                 <span>{t}</span>
@@ -237,6 +249,7 @@ export function MetaDashboard({
                 key={k}
                 type="button"
                 className={`rk-filter ${sort === k ? 'on' : ''}`}
+                aria-pressed={sort === k}
                 onClick={() => setSort(k)}
               >
                 <span>{SORT_LABEL[k]}</span>
@@ -254,7 +267,7 @@ export function MetaDashboard({
             <p>
               {data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}
               <span className="rk-sep">/</span>
-              표본 {totalSample.toLocaleString()}판
+              기물 {(data?.champions ?? []).length}종
               <span className="rk-sep">/</span>
               덱 {(data?.decks ?? []).length}개
               {data?.generatedAt ? (
@@ -263,6 +276,8 @@ export function MetaDashboard({
                   수집 {fmtDate(data.generatedAt)}
                 </>
               ) : null}
+              <span className="rk-sep">/</span>
+              티어는 표 내 상대 순위
             </p>
           </header>
 

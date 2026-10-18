@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Trophy, Compass, RefreshCw, AlertCircle, Info, Layers, BarChart3, Sparkles,
 } from 'lucide-react'
@@ -32,6 +32,24 @@ export default function TFTCoachPage() {
   const [isOverviewLoading, setIsOverviewLoading] = useState(false)
   const [overviewFeedback, setOverviewFeedback] = useState<MetaCoachFeedback | null>(null)
   const [overviewError, setOverviewError] = useState<string | null>(null)
+
+  // /rank 등에서 '/?tab=coach' 로 진입한 경우 코치 탭을 연다.
+  // (useSearchParams 는 Suspense 경계가 필요하므로 window 에서 직접 읽는다)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tab') === 'coach') setTab('coach')
+  }, [])
+
+  /** 탭 전환 + URL 쿼리 동기화 (공유/새로고침 시 현재 탭 유지) */
+  const handleTabChange = (next: 'meta' | 'coach') => {
+    setTab(next)
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (next === 'coach') url.searchParams.set('tab', 'coach')
+    else url.searchParams.delete('tab')
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+  }
 
   const handleSearch = async (overrideName?: string, overrideTag?: string) => {
     const targetName = (overrideName || gameName).trim()
@@ -120,7 +138,7 @@ export default function TFTCoachPage() {
 
   return (
     <div className="min-h-screen bg-app text-ink selection:bg-blue-500 selection:text-ink pb-20">
-      <SiteHeader active={tab} onChange={setTab} />
+      <SiteHeader active={tab} onChange={handleTabChange} />
 
       {/* Background Ambience - Sleek MetaTFT dark grid */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -137,7 +155,7 @@ export default function TFTCoachPage() {
       <main className="relative max-w-6xl mx-auto px-4 py-4 md:py-6">
         {tab === 'meta' ? (
           <section className="space-y-3.5">
-            <MetaRanking onOpenCoach={() => setTab('coach')} showTitle />
+            <MetaRanking onOpenCoach={() => handleTabChange('coach')} showTitle />
           </section>
         ) : (
         <section className="max-w-5xl mx-auto">
