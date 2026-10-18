@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info, Database,
 } from 'lucide-react'
 import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
 import { track } from '@/lib/analytics'
+import { AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -28,6 +29,16 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [wasCached, setWasCached] = useState(false)
+  /** 스트리밍 진행 문구 (예: "AI가 리포트를 작성하는 중...") */
+  const [stageMessage, setStageMessage] = useState('')
+  const abortRef = useRef<AbortController | null>(null)
+
+  // 카드가 사라지면 진행 중인 스트림을 끊는다.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   // 접지 근거 표시용 계산 지표 (LLM에 제공되는 값과 동일)
   const twoStarPlus = match.units.filter((u) => (u.tier || 1) >= 2).length
@@ -71,15 +82,33 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     if (isAnalyzing) return
     setIsAnalyzing(true)
     setAnalyzeError(null)
+    setStageMessage('분석을 준비하는 중...')
     track('analysis_click', { scope: 'match', placement: match.placement })
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo }
+
     try {
-      const res = await fetch('/api/tft/match', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId: match.matchId, puuid, gameName, tagLine, isDemo }),
-      })
-      const data: TftMatchAnalysisResponse = await res.json()
-      if (!res.ok || !data.success || !data.feedback) {
+      let data: TftMatchAnalysisResponse
+      try {
+        // 1순위: SSE (진행 상황 표시 + TTFB 개선)
+        data = await analyzeMatchStream({
+          body,
+          signal: controller.signal,
+          onStage: setStageMessage,
+        })
+      } catch (err) {
+        // 스트리밍 미지원 배포에서만 기존 JSON 경로로 폴백한다.
+        // (그 외 오류는 쿼터가 이미 소모된 상태이므로 재요청하지 않는다)
+        if (err instanceof AnalysisStreamUnavailableError) {
+          data = await analyzeMatchJson({ body, signal: controller.signal })
+        } else {
+          throw err
+        }
+      }
+
+      if (!data.success || !data.feedback) {
         throw new Error(data.error || '이 경기 분석 중 오류가 발생했습니다.')
       }
       setFeedback(data.feedback)
@@ -90,9 +119,12 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         cached: Boolean(data.cached),
       })
     } catch (err) {
+      if (controller.signal.aborted) return
       const message = err instanceof Error ? err.message : '이 경기 분석 중 오류가 발생했습니다.'
       setAnalyzeError(message)
     } finally {
+      abortRef.current = null
+      setStageMessage('')
       setIsAnalyzing(false)
     }
   }
@@ -326,7 +358,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isAnalyzing ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>이 경기 AI 분석 중...</span>
+                  <span>{stageMessage || '이 경기 AI 분석 중...'}</span>
                 </>
               ) : (
                 <>
