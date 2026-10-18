@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
 import type {
@@ -13,6 +14,7 @@ import type {
   TftMetaResponse,
 } from '@/lib/types'
 import { DetailModal } from './MetaDetailModal'
+import { ShareButton } from './ShareButton'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -502,6 +504,13 @@ function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
         <span className="rk-sep">·</span>
         커버리지 {Math.round((deck.coverage || 0) * 100)}%
       </p>
+
+      <div className="rk-dactions">
+        <Link href={`/deck/${deck.id}`} className="rk-dlink">
+          덱 페이지
+        </Link>
+        <ShareButton path={`/deck/${deck.id}`} label="공유" />
+      </div>
 
       <div className="rk-kpis">
         <div>

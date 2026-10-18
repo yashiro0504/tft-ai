@@ -303,6 +303,26 @@
 .rk-dhead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .rk-dhead h2 { margin: 0; font-size: 16px; font-weight: 750; letter-spacing: -0.02em; }
 .rk-dmeta { margin: 0 0 18px; font-size: 12px; color: var(--rk-muted); }
+
+.rk-dactions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  flex-wrap: wrap;
+}
+.rk-dlink {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border: 1px solid var(--rk-line);
+  border-radius: 3px;
+  color: var(--rk-ink2);
+  font-size: 12px;
+  text-decoration: none;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.rk-dlink:hover { border-color: var(--rk-line-strong); color: var(--rk-ink); }
 .rk-kpis {
   display: grid;
   grid-template-columns: 1fr 1fr;

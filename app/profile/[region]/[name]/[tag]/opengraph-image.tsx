@@ -1,46 +1,12 @@
 import { ImageResponse } from 'next/og'
 import { calculateProfileStats } from '@/lib/profile'
 import { loadProfile } from '@/lib/profileData'
+import { loadKoreanFont } from '@/lib/ogFont'
 
 export const alt = 'TFT LAB 소환사 전적 카드'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 300
-
-const FONT_UA = 'Mozilla/5.0 (Linux; U; Android 2.2; en-us; Nexus One Build/FRF91) AppleWebKit/533.1'
-
-let fontCache: { text: string; data: ArrayBuffer } | null = null
-
-/**
- * Google Fonts 의 text= 서브셋을 TTF 로 받아온다.
- * (전체 한글 폰트는 수 MB라 OG 생성마다 부담 → 이미지에 실제로 쓰는 글자만 요청)
- * 실패하면 null 을 반환하고 기본 폰트로 렌더링한다.
- */
-async function loadKoreanFont(text: string): Promise<ArrayBuffer | null> {
-  if (fontCache && fontCache.text === text) return fontCache.data
-
-  try {
-    const cssUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700&text=${encodeURIComponent(text)}`
-    const css = await fetch(cssUrl, {
-      headers: { 'User-Agent': FONT_UA },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(4000),
-    }).then((res) => res.text())
-
-    const match = css.match(/src:\s*url\(([^)]+)\)/)
-    if (!match) return null
-
-    const data = await fetch(match[1], {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(6000),
-    }).then((res) => res.arrayBuffer())
-
-    fontCache = { text, data }
-    return data
-  } catch {
-    return null
-  }
-}
 
 function decodeParam(value: string): string {
   try {
