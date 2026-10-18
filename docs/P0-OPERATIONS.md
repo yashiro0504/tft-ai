@@ -242,20 +242,31 @@ npm run test:augment                          # 집계 회귀 테스트 (외부 
 
 - 캐리: `metaStats.champions` 중 표본 200판 이상, 코스트 2~5
 - BIS: `metaStats.combos` 에서 표본 20판 이상, 평균등수 상위 3개 (상징/엠블럼 제외)
-- 주변 유닛: 캐리와 시너지가 겹치는 기물을 겹침 수 → 평균등수 순으로 최대 8유닛
+- 주변 유닛: **breakpoint 인지 그리디** — 다음 발동 단계를 정확히 채우는 유닛을 우선 선택,
+  이미 최대 단계인 시너지는 가산을 거의 주지 않아 초과 기용을 막는다
+- 표시 시너지: **실제로 발동된 것만**(count ≥ 첫 breakpoint). 고유 시너지(breakpoint 1)는 제외
 - 활성 시너지가 2개 미만인 덱은 제외
 - 보드 좌표(`index`)는 **null** → 덱 페이지/상세는 **"구성" 그리드**로 렌더링
+
+### 시너지 breakpoint
+
+- `lib/traitBreakpoints.json` — 세트 18 시너지 35종의 발동 단위 (예: 나무정령 3/5/7/9/11)
+- 소스: Community Dragon (`cdragon/tft/{ko_kr,en_us}.json`). Data Dragon `tft-trait.json` 에는
+  `effects` 가 없어 breakpoint 를 얻을 수 없다.
+- 재생성: `npm run build:traits` (세트 변경 시 `SET=18 npm run build:traits`)
 
 ### 데이터 소스
 
 - `lib/metaStats.json` — Riot 실측 집계
 - `lib/tftData.json` — 이름/아이콘(Data Dragon)
 - `lib/championTraits.json` — 기물→시너지 **사실 관계** 매핑(67종, `extract:traits`로 재생성)
+- `lib/traitBreakpoints.json` — 시너지 발동 단위 (`build:traits`로 재생성)
 - 큐레이션된 덱 구성은 사용하지 않음
 
 ### 재생성 / 검증
 
 ```powershell
+npm run build:traits       # lib/traitBreakpoints.json (세트 변경 시)
 npm run build:decks        # lib/decksData.json 라이브 교체
 npm run build:deck-preview # lib/decksData.preview.json (검토용)
 npm run decks:check        # 무결성 검사 (CI에서도 실행)
@@ -265,8 +276,9 @@ npm run extract:traits     # championTraits.json 재추출
 ### 현재 결과
 
 - 덱 24개, 유닛 매칭률 **0.97**, 중복 유닛 조합 0
-- 활성 시너지 2~4개, 유닛 코스트 합 14~30
-- 아이콘/이름/아이템 누락 0
+- 활성 시너지 **4개/덱** (전부 발동), 유닛 8개, 코스트 합 18~29
+- **미발동 시너지 0** (개선 전 8) · 최대 단계 초과 0 (개선 전 1)
+- 아이콘/이름/아이템 누락 0 (카직스 BIS 1개 — 표본 부족 경고)
 - 티어: 대시보드는 **표 내 상대 순위**, 덱 페이지는 평균등수 절대 기준
 
 
