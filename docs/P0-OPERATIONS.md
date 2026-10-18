@@ -11,6 +11,7 @@
 | Riot | `lib/riot.ts` 타임아웃(5s) · 429/5xx 재시도(2회) · `Retry-After` 준수 · 전역 동시성 5 |
 | 캐시 | `lib/cache.ts` L1 메모리 + L2 Redis(Upstash/Vercel KV REST, 선택). Redis 장애는 fail-open |
 | Riot 호출 절감 | Account(24h) · Summoner(6h) · matchIds(45s) · 매치 상세(30d, 불변) 캐시 |
+| 랭크 | `TFT-LEAGUE-V1` by-puuid 조회, `rank:{platform}:{puuid}` **10분 캐시**, 실패 시 `null` 폴백 |
 | 분석 캐시 | `analysis:{matchId}:{puuid}:{mode}:{COACH_PROMPT_VERSION}` — 재분석 LLM 호출 0회 |
 | meta | `/api/tft/meta` 5분 메모 + `Cache-Control: public, s-maxage=300, stale-while-revalidate=3600` |
 | LLM | Gemini 모델을 `gemini-2.5-flash`로 교체(1.5-flash 종료), 45s 타임아웃, 토큰/비용 계측 |
@@ -241,20 +242,31 @@ npm run test:augment                          # 집계 회귀 테스트 (외부 
 
 - 캐리: `metaStats.champions` 중 표본 200판 이상, 코스트 2~5
 - BIS: `metaStats.combos` 에서 표본 20판 이상, 평균등수 상위 3개 (상징/엠블럼 제외)
-- 주변 유닛: 캐리와 시너지가 겹치는 기물을 겹침 수 → 평균등수 순으로 최대 8유닛
+- 주변 유닛: **breakpoint 인지 그리디** — 다음 발동 단계를 정확히 채우는 유닛을 우선 선택,
+  이미 최대 단계인 시너지는 가산을 거의 주지 않아 초과 기용을 막는다
+- 표시 시너지: **실제로 발동된 것만**(count ≥ 첫 breakpoint). 고유 시너지(breakpoint 1)는 제외
 - 활성 시너지가 2개 미만인 덱은 제외
 - 보드 좌표(`index`)는 **null** → 덱 페이지/상세는 **"구성" 그리드**로 렌더링
+
+### 시너지 breakpoint
+
+- `lib/traitBreakpoints.json` — 세트 18 시너지 35종의 발동 단위 (예: 나무정령 3/5/7/9/11)
+- 소스: Community Dragon (`cdragon/tft/{ko_kr,en_us}.json`). Data Dragon `tft-trait.json` 에는
+  `effects` 가 없어 breakpoint 를 얻을 수 없다.
+- 재생성: `npm run build:traits` (세트 변경 시 `SET=18 npm run build:traits`)
 
 ### 데이터 소스
 
 - `lib/metaStats.json` — Riot 실측 집계
 - `lib/tftData.json` — 이름/아이콘(Data Dragon)
 - `lib/championTraits.json` — 기물→시너지 **사실 관계** 매핑(67종, `extract:traits`로 재생성)
+- `lib/traitBreakpoints.json` — 시너지 발동 단위 (`build:traits`로 재생성)
 - 큐레이션된 덱 구성은 사용하지 않음
 
 ### 재생성 / 검증
 
 ```powershell
+npm run build:traits       # lib/traitBreakpoints.json (세트 변경 시)
 npm run build:decks        # lib/decksData.json 라이브 교체
 npm run build:deck-preview # lib/decksData.preview.json (검토용)
 npm run decks:check        # 무결성 검사 (CI에서도 실행)
@@ -264,8 +276,9 @@ npm run extract:traits     # championTraits.json 재추출
 ### 현재 결과
 
 - 덱 24개, 유닛 매칭률 **0.97**, 중복 유닛 조합 0
-- 활성 시너지 2~4개, 유닛 코스트 합 14~30
-- 아이콘/이름/아이템 누락 0
+- 활성 시너지 **4개/덱** (전부 발동), 유닛 8개, 코스트 합 18~29
+- **미발동 시너지 0** (개선 전 8) · 최대 단계 초과 0 (개선 전 1)
+- 아이콘/이름/아이템 누락 0 (카직스 BIS 1개 — 표본 부족 경고)
 - 티어: 대시보드는 **표 내 상대 순위**, 덱 페이지는 평균등수 절대 기준
 
 
@@ -363,6 +376,232 @@ QUOTA_ANALYSIS_PRO_PER_DAY=50
 curl https://www.tftlab.kr/api/me
 # configured/user/plan/usage/limits 확인
 ```
+
+## 15. 제품 이벤트 계측 (P0-1)
+
+검색 → 분석 → 공유/로그인 전환을 숫자로 보기 위한 자체 계측이다. 외부 분석 SDK 는 쓰지 않는다.
+
+### 계약
+
+```
+POST /api/events
+Content-Type: application/json
+{ "name": "search_submit", "sessionId": "<uuid>", "visitorId": "<uuid>", "props": { "surface": "coach" }, "route": "/" }
+
+→ 204 No Content (Cache-Control: no-store)
+→ 400 알 수 없는 이벤트 / sessionId 형식 오류
+→ 429 IP당 120회/분 초과
+→ 405 POST 외 메서드
+```
+
+- 이벤트 이름은 **화이트리스트**만 허용: `search_submit`, `search_success`, `analysis_click`,
+  `analysis_success`, `tab_view`, `deck_open`, `share_click`, `login_click`, `pro_waitlist_click`
+- `sessionId` 는 브라우저 sessionStorage 의 UUID (탭 단위, 브라우저 종료 시 소멸)
+- `visitorId` 는 브라우저 localStorage 의 익명 UUID (재방문/리텐션 집계용, 브라우저 데이터 삭제 시 재발급).
+  구버전 클라이언트가 보내지 않으면 서버가 `sessionId` 로 폴백한다.
+- **PII 미수집**: `props` 키 이름 차단 목록 + 이메일 패턴 차단 + 서버 재정제.
+  경로는 `/profile/[region]/[name]/[tag]` 로 마스킹된다.
+- Turnstile 은 적용하지 않는다(집계용). 남용은 IP 레이트리밋으로 완화한다.
+
+### 저장 위치
+
+| 조건 | 저장 |
+| --- | --- |
+| Supabase env 설정 + `0002_events.sql` + `0004_events_visitor.sql` 적용 | `public.events` (insert-only RLS) |
+| Supabase 미설정/오류 | 구조화 로그 `analytics_event` (Vercel Log Drain 으로 집계) |
+
+적용: Supabase SQL Editor 에서 `supabase/migrations/0002_events.sql` → `0004_events_visitor.sql` 순서로 실행.
+
+### 확인
+
+```powershell
+curl -i -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
+  -d '{"name":"search_submit","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","visitorId":"b2c3d4e5-f6a7-8901-bcde-f12345678901","props":{"surface":"coach"},"route":"/"}'
+# HTTP/1.1 204 No Content, cache-control: no-store
+
+curl -s -X POST http://localhost:3000/api/events -H "Content-Type: application/json" `
+  -d '{"name":"nope","sessionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
+# {"success":false,"error":"알 수 없는 이벤트입니다."}
+```
+
+서버 로그(Supabase 미설정 시):
+
+```json
+{"level":"info","event":"analytics_event","name":"search_submit","sessionId":"...","visitorId":"...","route":"/","props":{"surface":"coach"}}
+```
+
+### 집계 쿼리
+
+```sql
+-- 이벤트별 최근 7일 건수
+select name, count(*) from public.events
+ where created_at > now() - interval '7 days'
+ group by name order by 2 desc;
+
+-- 일별 활성 방문자/세션 수 (KST)
+select timezone('Asia/Seoul', created_at)::date as day,
+       count(distinct visitor_id) as visitors,
+       count(distinct session_id) as sessions
+  from public.events where created_at > now() - interval '14 days'
+  group by 1 order by 1 desc;
+
+-- 검색 대비 분석 실행률 (간단 버전)
+select
+  count(distinct session_id) filter (where name = 'search_submit') as search_sessions,
+  count(distinct session_id) filter (where name = 'analysis_click') as analysis_sessions
+from public.events where created_at > now() - interval '7 days';
+```
+
+**P3 유료화 게이트**(D7 리텐션·검색→분석 전환·Pro 의향·사전 구매 의향) 전체 쿼리는
+`supabase/queries/p3_gate.sql`, 지표 정의·표본 기준·판정 절차는 `docs/P3-GATE.md` 를 참고한다.
+`0004_events_visitor.sql` 배포 후 **최소 13일**이 지나야 D7 을 계산할 수 있다.
+
+### 보관
+
+90일 보관을 권장한다. pg_cron 이 없으면 운영자가 주기적으로 실행한다.
+
+```sql
+delete from public.events where created_at < now() - interval '90 days';
+```
+
+### 이벤트 추가 절차
+
+1. `lib/eventSchema.ts` 의 `ANALYTICS_EVENT_NAMES` 에 이름 추가
+2. 배선할 컴포넌트에서 `track('새_이벤트', { ... })` 호출
+3. `app/privacy/page.tsx` 수집 항목/목적에 반영 (필요 시)
+4. `npm run typecheck && npx eslint <변경 파일> && npm run build`
+
+## 16. 랭크/티어 표시 (P0-2)
+
+- 엔드포인트: `GET https://{platform}.api.riotgames.com/tft/league/v1/by-puuid/{puuid}` (TFT-LEAGUE-V1)
+- 큐: 응답 배열에서 `queueType === 'RANKED_TFT'` 만 사용
+- 캐시: `rank:{platform}:{puuid}` **10분**(`CACHE_TTL.RANK`). 배치 중(`null`)도 캐시한다.
+- 폴백: **404(배치 미완료) / 429 / 401 / 타임아웃 / 네트워크 오류 → `null`**.
+  랭크는 부가 정보이므로 실패해도 검색·프로필은 정상 동작하고 UI는 “배치 중”을 표시한다.
+- 노출 위치: `/api/tft/search` → `summonerProfile.rank`, 홈 프로필 카드, `/profile` 페이지,
+  `/profile/.../opengraph-image` (티어 칩)
+- 비용: 검색 1회당 Riot 호출 **+1** (matchIds 와 병렬 조회라 체감 지연은 거의 동일)
+
+### 확인
+
+```powershell
+# 배치 중/미조회 계정은 rank: null, UI 는 "배치 중"
+curl -s -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/json" `
+  -d '{"gameName":"Hide on bush","tagLine":"KR1","limit":2}' | Select-String rank
+
+# 데모(키 없음/isDemo) 는 예시 랭크를 반환하며 isDemo:true 로 구분된다
+curl -s -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/json" `
+  -d '{"gameName":"Demo","tagLine":"KR1","isDemo":true,"limit":1}'
+```
+
+### 모니터링
+
+| 로그/카운터 | 의미 |
+| --- | --- |
+| `riot.cache_hit.rank` | 캐시 히트 (10분 TTL) |
+| `riot_league_fallback` + `status` | 랭크 조회 실패 → null 폴백 (404 는 정상) |
+| `riot.league_fallback.401` 급증 | Riot 키 만료 → 키 교체 루틴 확인 |
+
+## 17. 즐겨찾기 · 최근 검색 (P0-3)
+
+### 동작
+
+| 상태 | 저장 위치 | 개수 |
+| --- | --- | --- |
+| 비로그인 | 브라우저 `localStorage` (`tftlab:recent`) | 최대 5개 |
+| 로그인 | Supabase `public.favorites` (RLS 본인만) | 최대 20개 |
+
+- UI: 검색창 아래 “최근 검색 / 즐겨찾기” 칩. 클릭 시 즉시 재검색, ☆/★ 로 즐겨찾기 토글, × 로 최근 검색 삭제.
+- 최근 검색은 로그인 여부와 무관하게 항상 기록된다. (기기 로컬)
+- 최근 검색에는 개인정보가 서버로 전송되지 않는다.
+
+### API
+
+```
+GET    /api/favorites                          → 200 {favorites:[...], max:20}
+POST   /api/favorites  {gameName, tagLine}     → 201(신규) / 200(이미 있음) / 409(20개 초과)
+DELETE /api/favorites?gameName=..&tagLine=..   → 200 {removed:true|false}
+→ 비로그인 401, Supabase 미설정 GET 은 200(configured:false, 빈 목록)
+```
+
+### 설정
+
+1. Supabase SQL Editor 에서 `supabase/migrations/0003_favorites.sql` 실행
+2. Vercel env(`NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`) 등록 후 재배포
+3. `/` 에서 로그인 → 검색 → 최근 칩의 ☆ → 즐겨찾기 줄에 나타나는지 확인
+
+### 확인 쿼리
+
+```sql
+-- 사용자별 즐겨찾기 수
+select user_id, count(*) from public.favorites group by user_id order by 2 desc;
+
+-- 최근 추가
+select region, game_name, tag_line, created_at
+  from public.favorites order by created_at desc limit 20;
+```
+
+### 주의
+
+- `favorites` 는 **anon 권한이 없다**(로그인 필수). 서버도 `service role key` 를 쓰지 않는다.
+- UPDATE 정책은 의도적으로 없다. 값 수정이 필요하면 삭제 후 추가한다.
+- 개수 상한 20 은 API 레벨 강제다. DB 제약이 아니므로 새 경로를 추가할 때 상한을 다시 적용해야 한다.
+- 마이그레이션 미적용 상태에서는 GET 이 503(`즐겨찾기를 불러오지 못했습니다.`)을 반환하고
+  UI 는 즐겨찾기 줄을 숨긴다. 최근 검색은 정상 동작한다.
+
+## 18. AI 분석 스트리밍 (P1-4)
+
+경기별 AI 분석은 두 경로를 제공한다. **동작·결과는 동일**하고 전송 방식만 다르다.
+
+| 경로 | 방식 | 특징 |
+| --- | --- | --- |
+| `POST /api/tft/match` | JSON (동기) | 기존 호환. LLM 완료까지 대기(8~40초) |
+| `POST /api/tft/match/stream` | SSE | 첫 이벤트 즉시(수십 ms), 진행 단계 표시 |
+
+### 이벤트
+
+```
+event: stage   {"stage":"start","message":"분석을 준비하는 중..."}
+event: stage   {"stage":"match","message":"경기 데이터를 확인하는 중..."}
+event: stage   {"stage":"analyzing","message":"AI가 리포트를 작성하는 중..."}
+event: result  <기존 JSON 응답과 동일한 TftMatchAnalysisResponse>
+event: error   {"status":404,"error":"..."}
+```
+
+- 15초마다 `: ping` 하트비트.
+- 쿼터·레이트리밋은 **스트림 개시 전** 처리한다(초과 시 일반 JSON 429).
+- 캐시 히트면 `start` → `result` 두 이벤트만 즉시 전송된다.
+
+### 클라이언트 동작
+
+1. 스트림 시도 → `stage` 문구를 분석 버튼에 표시
+2. `result` 수신 → 리포트 렌더
+3. 404/405(구버전 배포)일 때만 JSON 경로로 폴백
+4. `error` 수신 또는 스트림 중단 → 오류 메시지 표시(자동 재요청 없음 = 쿼터 이중 소모 방지)
+
+### 확인
+
+```powershell
+curl -N -X POST http://localhost:3000/api/tft/match/stream `
+  -H "Content-Type: application/json" `
+  -d '{"matchId":"KR_DEMO_001","puuid":"DEMO_PUUID","gameName":"Demo","tagLine":"KR1","isDemo":true}'
+```
+
+### 모니터링
+
+| 로그 | 의미 |
+| --- | --- |
+| `api_match_stream` | 정상 종료 (`ms`, `cacheSource`, `isDemo`) |
+| `api_match_stream_failed` | 스트림 내 오류 (`status`, `errorMessage`) |
+| `api_match` | JSON 경로 로그 (기존과 동일) |
+
+### 주의
+
+- **200 응답 = 쿼터 차감 완료.** 중간에 끊겼다고 자동 재시도하면 사용자 쿼터가 두 번 소모된다.
+- 스트림 응답을 캐시/CDN 에 태우지 말 것(`no-store, no-transform` 유지).
+- 프록시(nginx 등) 뒤에 둘 때 `X-Accel-Buffering: no` 를 제거하면 버퍼링으로 스트림이 한 번에 온다.
+
+
 
 
 

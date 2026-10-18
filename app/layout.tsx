@@ -6,6 +6,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // 모바일 브라우저 상단바 색. 테마 토글 시 ThemeToggle 이 이 값을 함께 갱신한다.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f3f5f9' },
+    { media: '(prefers-color-scheme: dark)', color: '#080c15' },
+  ],
 }
 
 export const metadata: Metadata = {
@@ -32,6 +37,23 @@ export const metadata: Metadata = {
     title: 'TFT LAB — 시즌 18 메타 랭킹 & AI 코치',
     description: '실측 매치 표본 기반 TFT 메타 티어표와 경기별 AI 전략 코칭',
   },
+  manifest: '/manifest.webmanifest',
+  applicationName: SITE_NAME,
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: { telephone: false, address: false, email: false },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+    shortcut: ['/favicon.ico'],
+  },
 }
 
 export default function RootLayout({
@@ -49,6 +71,9 @@ export default function RootLayout({
           }}
         />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+        <link rel="preconnect" href="https://ddragon.leagueoflegends.com" />
+        <link rel="preconnect" href="https://raw.communitydragon.org" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
           rel="stylesheet"

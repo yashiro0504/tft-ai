@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-18T11:52:35.705Z",
+  "generatedAt": "2026-10-18T13:28:48.581Z",
   "source": "riot-meta-aggregate",
   "sourceUrl": null,
   "patch": "set18",
@@ -10,22 +10,34 @@
   "decks": [
     {
       "id": "auto-alune",
-      "name": "주문술사 알룬",
+      "name": "달빛 알룬",
       "gold": null,
       "unitCost": 25,
       "unitCount": 8,
       "traits": [
         {
-          "key": "Spellweaver",
-          "name": "주문술사",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png",
-          "count": 6
-        },
-        {
           "key": "Lunar",
           "name": "달빛",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
           "count": 3
+        },
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Defender",
+          "name": "엄호대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
+          "count": 2
+        },
+        {
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
         }
       ],
       "units": [
@@ -101,6 +113,105 @@
           }
         },
         {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
+          "traits": [
+            "Adaptor",
+            "Inferno",
+            "Ravager"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
+          }
+        },
+        {
           "lolchessKey": "aphelios",
           "name": "아펠리오스",
           "cost": 4,
@@ -118,44 +229,135 @@
             "top4Rate": 0.534,
             "sampleSize": 494
           }
+        }
+      ],
+      "avgPlacement": 3.5,
+      "top4Rate": 0.666,
+      "coverage": 1,
+      "sampleSize": 422,
+      "tier": "S",
+      "carryKey": "Alune"
+    },
+    {
+      "id": "auto-ivern",
+      "name": "적응가 아이번",
+      "gold": null,
+      "unitCost": 26,
+      "unitCount": 8,
+      "traits": [
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
         },
         {
-          "lolchessKey": "veigar",
-          "name": "베이가",
-          "cost": 1,
+          "key": "Defender",
+          "name": "엄호대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
+          "count": 2
+        },
+        {
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 2
+        }
+      ],
+      "units": [
+        {
+          "lolchessKey": "ivern",
+          "name": "아이번",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
-          "matchedKey": "Veigar",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+          "matchedKey": "Ivern",
           "traits": [
-            "Eldritch",
-            "Spellweaver",
-            "Sprykin"
+            "Greenfather"
           ],
-          "items": [],
+          "items": [
+            {
+              "key": "DA_SpearOfShojin",
+              "name": "쇼진의 창",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_SpearOfShojin.png",
+              "stat": {
+                "avgPlacement": 2.68,
+                "top4Rate": 0.815,
+                "sampleSize": 65
+              }
+            },
+            {
+              "key": "DA_AdaptiveHelm",
+              "name": "적응형 투구",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_AdaptiveHelm.png",
+              "stat": {
+                "avgPlacement": 2.76,
+                "top4Rate": 0.848,
+                "sampleSize": 33
+              }
+            },
+            {
+              "key": "DA_GuinsoosRageblade",
+              "name": "구인수의 격노검",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_GuinsoosRageblade.png",
+              "stat": {
+                "avgPlacement": 2.91,
+                "top4Rate": 0.735,
+                "sampleSize": 34
+              }
+            }
+          ],
           "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.521,
-            "sampleSize": 428
+            "avgPlacement": 3.61,
+            "top4Rate": 0.644,
+            "sampleSize": 407
           }
         },
         {
-          "lolchessKey": "ahri",
-          "name": "아리",
-          "cost": 4,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
-          "matchedKey": "Ahri",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Blossom",
+            "Attuned",
+            "Lunar",
             "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.519,
-            "sampleSize": 412
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "fiddlesticks",
+          "name": "피들스틱",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+          "matchedKey": "Fiddlesticks",
+          "traits": [
+            "Defender",
+            "FloraFatalis",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.35,
+            "top4Rate": 0.545,
+            "sampleSize": 883
           }
         },
         {
@@ -179,75 +381,122 @@
           }
         },
         {
-          "lolchessKey": "leblanc",
-          "name": "르블랑",
-          "cost": 2,
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
-          "matchedKey": "LeBlanc",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
           "traits": [
-            "Elderwood",
-            "Spellweaver"
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.57,
-            "top4Rate": 0.492,
-            "sampleSize": 537
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
           }
         },
         {
-          "lolchessKey": "cassiopeia",
-          "name": "카시오페아",
-          "cost": 3,
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
-          "matchedKey": "Cassiopeia",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
           "traits": [
-            "Coven",
-            "Spellweaver"
+            "Adaptor",
+            "Inferno",
+            "Ravager"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.79,
-            "top4Rate": 0.467,
-            "sampleSize": 270
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
           }
         }
       ],
-      "avgPlacement": 3.5,
-      "top4Rate": 0.666,
+      "avgPlacement": 3.61,
+      "top4Rate": 0.644,
       "coverage": 1,
-      "sampleSize": 422,
+      "sampleSize": 407,
       "tier": "S",
-      "carryKey": "Alune"
+      "carryKey": "Ivern"
     },
     {
       "id": "auto-gnar",
       "name": "싸움꾼 나르",
       "gold": null,
-      "unitCost": 19,
+      "unitCost": 24,
       "unitCount": 8,
       "traits": [
         {
           "key": "Brawler",
           "name": "싸움꾼",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
-          "count": 4
+          "count": 3
         },
         {
           "key": "Elderwood",
           "name": "나무정령",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
-          "count": 4
+          "count": 3
         },
         {
           "key": "Sprykin",
           "name": "날렵이",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
-          "count": 4
+          "count": 3
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
         }
       ],
       "units": [
@@ -322,22 +571,63 @@
           }
         },
         {
-          "lolchessKey": "alistar",
-          "name": "알리스타",
-          "cost": 2,
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
-          "matchedKey": "Alistar",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
           "traits": [
-            "Brawler",
-            "Elderwood"
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.49,
-            "top4Rate": 0.494,
-            "sampleSize": 557
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
+          "traits": [
+            "Eldritch",
+            "Executioner",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
           }
         },
         {
@@ -360,80 +650,42 @@
           }
         },
         {
-          "lolchessKey": "teemo",
-          "name": "티모",
+          "lolchessKey": "alistar",
+          "name": "알리스타",
           "cost": 2,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
-          "matchedKey": "Teemo",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
+          "matchedKey": "Alistar",
           "traits": [
-            "Invoker",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.39,
-            "top4Rate": 0.547,
-            "sampleSize": 179
-          }
-        },
-        {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
-          "traits": [
-            "Defender",
+            "Brawler",
             "Elderwood"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
+            "avgPlacement": 4.49,
+            "top4Rate": 0.494,
+            "sampleSize": 557
           }
         },
         {
-          "lolchessKey": "veigar",
-          "name": "베이가",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
-          "matchedKey": "Veigar",
-          "traits": [
-            "Eldritch",
-            "Spellweaver",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.521,
-            "sampleSize": 428
-          }
-        },
-        {
-          "lolchessKey": "krug",
-          "name": "돌거북",
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
           "traits": [
-            "Brawler",
-            "Riftbeast"
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
           }
         }
       ],
@@ -448,20 +700,32 @@
       "id": "auto-kennen",
       "name": "지옥불 케넨",
       "gold": null,
-      "unitCost": 24,
+      "unitCost": 20,
       "unitCount": 8,
       "traits": [
         {
           "key": "Inferno",
           "name": "지옥불",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
-          "count": 5
+          "count": 4
+        },
+        {
+          "key": "Summoner",
+          "name": "소환사",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Summoner.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
         },
         {
           "key": "Executioner",
           "name": "처형자",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png",
-          "count": 4
+          "count": 2
         }
       ],
       "units": [
@@ -516,44 +780,6 @@
           }
         },
         {
-          "lolchessKey": "ezreal",
-          "name": "이즈리얼",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
-          "matchedKey": "Ezreal",
-          "traits": [
-            "Elderwood",
-            "Executioner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.587,
-            "sampleSize": 537
-          }
-        },
-        {
-          "lolchessKey": "soraka",
-          "name": "소라카",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
-          "matchedKey": "Soraka",
-          "traits": [
-            "Executioner",
-            "FloraFatalis"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.23,
-            "top4Rate": 0.556,
-            "sampleSize": 583
-          }
-        },
-        {
           "lolchessKey": "azir",
           "name": "아지르",
           "cost": 3,
@@ -571,25 +797,6 @@
             "avgPlacement": 4.39,
             "top4Rate": 0.527,
             "sampleSize": 520
-          }
-        },
-        {
-          "lolchessKey": "amumu",
-          "name": "아무무",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
-          "matchedKey": "Amumu",
-          "traits": [
-            "Inferno",
-            "Juggernaut"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.504,
-            "sampleSize": 832
           }
         },
         {
@@ -613,22 +820,42 @@
           }
         },
         {
-          "lolchessKey": "shen",
-          "name": "쉔",
+          "lolchessKey": "warwick",
+          "name": "워윅",
           "cost": 2,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
-          "matchedKey": "Shen",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Warwick.png",
+          "matchedKey": "Warwick",
           "traits": [
-            "Defender",
-            "Inferno"
+            "Eldritch",
+            "Ravager"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.54,
-            "top4Rate": 0.481,
-            "sampleSize": 158
+            "avgPlacement": 4.94,
+            "top4Rate": 0.449,
+            "sampleSize": 89
+          }
+        },
+        {
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
+          "traits": [
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
           }
         },
         {
@@ -649,6 +876,45 @@
             "top4Rate": 0.464,
             "sampleSize": 364
           }
+        },
+        {
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
+          "traits": [
+            "Blossom",
+            "Juggernaut",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.65,
+            "top4Rate": 0.475,
+            "sampleSize": 587
+          }
+        },
+        {
+          "lolchessKey": "amumu",
+          "name": "아무무",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+          "matchedKey": "Amumu",
+          "traits": [
+            "Inferno",
+            "Juggernaut"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.504,
+            "sampleSize": 832
+          }
         }
       ],
       "avgPlacement": 3.8,
@@ -659,22 +925,263 @@
       "carryKey": "Kennen"
     },
     {
+      "id": "auto-draven",
+      "name": "적응가 드레이븐",
+      "gold": null,
+      "unitCost": 26,
+      "unitCount": 8,
+      "traits": [
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Defender",
+          "name": "엄호대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
+          "count": 2
+        },
+        {
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 2
+        }
+      ],
+      "units": [
+        {
+          "lolchessKey": "draven",
+          "name": "드레이븐",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
+          "matchedKey": "Draven",
+          "traits": [
+            "BountySeeker"
+          ],
+          "items": [
+            {
+              "key": "DA_RedBuff",
+              "name": "태양불꽃 망토",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_RedBuff.png",
+              "stat": {
+                "avgPlacement": 2.96,
+                "top4Rate": 0.692,
+                "sampleSize": 26
+              }
+            },
+            {
+              "key": "DA_Deathblade",
+              "name": "죽음의 검",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_Deathblade.png",
+              "stat": {
+                "avgPlacement": 3.42,
+                "top4Rate": 0.625,
+                "sampleSize": 48
+              }
+            },
+            {
+              "key": "DA_GuinsoosRageblade",
+              "name": "구인수의 격노검",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_GuinsoosRageblade.png",
+              "stat": {
+                "avgPlacement": 3.77,
+                "top4Rate": 0.588,
+                "sampleSize": 204
+              }
+            }
+          ],
+          "stat": {
+            "avgPlacement": 3.81,
+            "top4Rate": 0.574,
+            "sampleSize": 237
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "fiddlesticks",
+          "name": "피들스틱",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+          "matchedKey": "Fiddlesticks",
+          "traits": [
+            "Defender",
+            "FloraFatalis",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.35,
+            "top4Rate": 0.545,
+            "sampleSize": 883
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
+          "traits": [
+            "Adaptor",
+            "Inferno",
+            "Ravager"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
+          }
+        }
+      ],
+      "avgPlacement": 3.81,
+      "top4Rate": 0.574,
+      "coverage": 1,
+      "sampleSize": 237,
+      "tier": "S",
+      "carryKey": "Draven"
+    },
+    {
       "id": "auto-elderdragon",
       "name": "협곡야수 장로 드래곤",
       "gold": null,
-      "unitCost": 23,
+      "unitCost": 29,
       "unitCount": 8,
       "traits": [
         {
           "key": "Riftbeast",
           "name": "협곡야수",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 8
+          "count": 5
+        },
+        {
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "count": 3
         },
         {
           "key": "Invoker",
           "name": "기원자",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 2
+        },
+        {
+          "key": "Rapidfire",
+          "name": "기동타격대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Quickstriker.png",
           "count": 2
         }
       ],
@@ -730,25 +1237,6 @@
           }
         },
         {
-          "lolchessKey": "brambleback",
-          "name": "덩굴정령",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
-          "matchedKey": "Brambleback",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.31,
-            "top4Rate": 0.556,
-            "sampleSize": 412
-          }
-        },
-        {
           "lolchessKey": "sentinel",
           "name": "감시자",
           "cost": 4,
@@ -766,6 +1254,84 @@
             "avgPlacement": 4.41,
             "top4Rate": 0.513,
             "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "sentry",
+          "name": "조약돌",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+          "matchedKey": "Sentry",
+          "traits": [
+            "Invoker",
+            "Riftbeast"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.47,
+            "top4Rate": 0.504,
+            "sampleSize": 577
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "brambleback",
+          "name": "덩굴정령",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
+          "matchedKey": "Brambleback",
+          "traits": [
+            "Ravager",
+            "Riftbeast"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.31,
+            "top4Rate": 0.556,
+            "sampleSize": 412
           }
         },
         {
@@ -789,79 +1355,22 @@
           }
         },
         {
-          "lolchessKey": "krug",
-          "name": "돌거북",
-          "cost": 3,
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
           "traits": [
-            "Brawler",
-            "Riftbeast"
+            "Lunar",
+            "Rapidfire"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
-        },
-        {
-          "lolchessKey": "sentry",
-          "name": "조약돌",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
-          "matchedKey": "Sentry",
-          "traits": [
-            "Invoker",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.47,
-            "top4Rate": 0.504,
-            "sampleSize": 577
-          }
-        },
-        {
-          "lolchessKey": "scuttlecrab",
-          "name": "바위 게",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
-          "matchedKey": "Scuttlecrab",
-          "traits": [
-            "Juggernaut",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.55,
-            "top4Rate": 0.486,
-            "sampleSize": 420
-          }
-        },
-        {
-          "lolchessKey": "cinderling",
-          "name": "불타는 묘목",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_cinderling/tft18_cinderling_square.png",
-          "matchedKey": "Cinderling",
-          "traits": [
-            "Hunter",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.6,
-            "top4Rate": 0.478,
-            "sampleSize": 226
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
           }
         }
       ],
@@ -876,19 +1385,31 @@
       "id": "auto-taric",
       "name": "선봉대 타릭",
       "gold": null,
-      "unitCost": 23,
+      "unitCost": 26,
       "unitCount": 8,
       "traits": [
         {
           "key": "Vanguard",
           "name": "선봉대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png",
-          "count": 6
+          "count": 4
         },
         {
-          "key": "Lunar",
-          "name": "달빛",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
           "count": 2
         }
       ],
@@ -964,22 +1485,43 @@
           }
         },
         {
-          "lolchessKey": "hecarim",
-          "name": "헤카림",
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
-          "matchedKey": "Hecarim",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
           "traits": [
-            "Elderwood",
-            "Vanguard"
+            "Adaptor",
+            "Caustic",
+            "Invoker"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.527,
-            "sampleSize": 611
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
+          "traits": [
+            "Adaptor",
+            "Inferno",
+            "Ravager"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
           }
         },
         {
@@ -1023,38 +1565,112 @@
           }
         },
         {
-          "lolchessKey": "elise",
-          "name": "엘리스",
-          "cost": 2,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Elise.png",
-          "matchedKey": "Elise",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Coven",
-            "Vanguard"
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.98,
-            "top4Rate": 0.436,
-            "sampleSize": 172
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
           }
         },
         {
-          "lolchessKey": "lux",
-          "name": "럭스",
-          "cost": null,
+          "lolchessKey": "amumu",
+          "name": "아무무",
+          "cost": 4,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lux.png",
-          "matchedKey": "Lux18_Base",
-          "traits": [],
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+          "matchedKey": "Amumu",
+          "traits": [
+            "Inferno",
+            "Juggernaut"
+          ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.49,
-            "top4Rate": 0.663,
-            "sampleSize": 380
+            "avgPlacement": 4.41,
+            "top4Rate": 0.504,
+            "sampleSize": 832
+          }
+        }
+      ],
+      "avgPlacement": 3.9,
+      "top4Rate": 0.596,
+      "coverage": 1,
+      "sampleSize": 726,
+      "tier": "S",
+      "carryKey": "Taric"
+    },
+    {
+      "id": "auto-khazix",
+      "name": "적응가 카직스",
+      "gold": null,
+      "unitCost": 24,
+      "unitCount": 8,
+      "traits": [
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Defender",
+          "name": "엄호대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
+          "count": 2
+        },
+        {
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 2
+        }
+      ],
+      "units": [
+        {
+          "lolchessKey": "khazix",
+          "name": "카직스",
+          "cost": 3,
+          "star": 3,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
+          "matchedKey": "KhaZix",
+          "traits": [
+            "Rival"
+          ],
+          "items": [
+            {
+              "key": "DA_RabadonsDeathcap",
+              "name": "라바돈의 죽음모자",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_RabadonsDeathcap.png",
+              "stat": {
+                "avgPlacement": 3.91,
+                "top4Rate": 0.611,
+                "sampleSize": 113
+              }
+            }
+          ],
+          "stat": {
+            "avgPlacement": 4.03,
+            "top4Rate": 0.583,
+            "sampleSize": 216
           }
         },
         {
@@ -1076,38 +1692,393 @@
             "top4Rate": 0.666,
             "sampleSize": 422
           }
+        },
+        {
+          "lolchessKey": "fiddlesticks",
+          "name": "피들스틱",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+          "matchedKey": "Fiddlesticks",
+          "traits": [
+            "Defender",
+            "FloraFatalis",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.35,
+            "top4Rate": 0.545,
+            "sampleSize": 883
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
+          "traits": [
+            "Adaptor",
+            "Inferno",
+            "Ravager"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
+          }
         }
       ],
-      "avgPlacement": 3.9,
-      "top4Rate": 0.596,
+      "avgPlacement": 4.03,
+      "top4Rate": 0.583,
       "coverage": 1,
-      "sampleSize": 726,
-      "tier": "S",
-      "carryKey": "Taric"
+      "sampleSize": 216,
+      "tier": "A",
+      "carryKey": "KhaZix"
+    },
+    {
+      "id": "auto-maokai",
+      "name": "전쟁기계 마오카이",
+      "gold": null,
+      "unitCost": 25,
+      "unitCount": 8,
+      "traits": [
+        {
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Summoner",
+          "name": "소환사",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Summoner.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
+        },
+        {
+          "key": "Juggernaut",
+          "name": "전쟁기계",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
+          "count": 2
+        }
+      ],
+      "units": [
+        {
+          "lolchessKey": "maokai",
+          "name": "마오카이",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+          "matchedKey": "Maokai",
+          "traits": [
+            "Juggernaut",
+            "OldGrowth"
+          ],
+          "items": [
+            {
+              "key": "DA_WarmogsArmor",
+              "name": "워모그의 갑옷",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_WarmogsArmor.png",
+              "stat": {
+                "avgPlacement": 3.01,
+                "top4Rate": 0.752,
+                "sampleSize": 109
+              }
+            },
+            {
+              "key": "DA_DragonsClaw",
+              "name": "용의 발톱",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_DragonsClaw.png",
+              "stat": {
+                "avgPlacement": 3.04,
+                "top4Rate": 0.731,
+                "sampleSize": 26
+              }
+            },
+            {
+              "key": "DA_GargoyleStoneplate",
+              "name": "가고일 돌갑옷",
+              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_GargoyleStoneplate.png",
+              "stat": {
+                "avgPlacement": 3.32,
+                "top4Rate": 0.679,
+                "sampleSize": 134
+              }
+            }
+          ],
+          "stat": {
+            "avgPlacement": 4.05,
+            "top4Rate": 0.551,
+            "sampleSize": 396
+          }
+        },
+        {
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
+          "traits": [
+            "Blossom",
+            "Juggernaut",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.65,
+            "top4Rate": 0.475,
+            "sampleSize": 587
+          }
+        },
+        {
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
+          "traits": [
+            "Eldritch",
+            "Executioner",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
+          }
+        },
+        {
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
+          "traits": [
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
+          "traits": [
+            "Lunar",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        }
+      ],
+      "avgPlacement": 4.05,
+      "top4Rate": 0.551,
+      "coverage": 1,
+      "sampleSize": 396,
+      "tier": "A",
+      "carryKey": "Maokai"
     },
     {
       "id": "auto-ezreal",
       "name": "나무정령 이즈리얼",
       "gold": null,
-      "unitCost": 27,
+      "unitCost": 25,
       "unitCount": 8,
       "traits": [
         {
           "key": "Elderwood",
           "name": "나무정령",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
-          "count": 5
+          "count": 3
+        },
+        {
+          "key": "Sprykin",
+          "name": "날렵이",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
         },
         {
           "key": "Executioner",
           "name": "처형자",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png",
-          "count": 4
-        },
-        {
-          "key": "Brawler",
-          "name": "싸움꾼",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
           "count": 2
         }
       ],
@@ -1163,64 +2134,6 @@
           }
         },
         {
-          "lolchessKey": "gnar",
-          "name": "나르",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
-          "matchedKey": "Gnar",
-          "traits": [
-            "Brawler",
-            "Elderwood",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.63,
-            "top4Rate": 0.661,
-            "sampleSize": 575
-          }
-        },
-        {
-          "lolchessKey": "kennen",
-          "name": "케넨",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
-          "matchedKey": "Kennen",
-          "traits": [
-            "Executioner",
-            "Inferno"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.8,
-            "top4Rate": 0.614,
-            "sampleSize": 500
-          }
-        },
-        {
-          "lolchessKey": "soraka",
-          "name": "소라카",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
-          "matchedKey": "Soraka",
-          "traits": [
-            "Executioner",
-            "FloraFatalis"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.23,
-            "top4Rate": 0.556,
-            "sampleSize": 583
-          }
-        },
-        {
           "lolchessKey": "azir",
           "name": "아지르",
           "cost": 3,
@@ -1241,60 +2154,123 @@
           }
         },
         {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
           "traits": [
-            "Defender",
-            "Elderwood"
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
           ],
           "items": [],
           "stat": {
             "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
+            "top4Rate": 0.52,
+            "sampleSize": 98
           }
         },
         {
-          "lolchessKey": "hecarim",
-          "name": "헤카림",
+          "lolchessKey": "xayah",
+          "name": "자야",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
+          "matchedKey": "Xayah",
+          "traits": [
+            "Elderwood",
+            "Fae",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.71,
+            "top4Rate": 0.475,
+            "sampleSize": 219
+          }
+        },
+        {
+          "lolchessKey": "gnar",
+          "name": "나르",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
+          "matchedKey": "Gnar",
+          "traits": [
+            "Brawler",
+            "Elderwood",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.63,
+            "top4Rate": 0.661,
+            "sampleSize": 575
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "tristana",
+          "name": "트리스타나",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
-          "matchedKey": "Hecarim",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
+          "matchedKey": "Tristana",
           "traits": [
-            "Elderwood",
-            "Vanguard"
+            "Fae",
+            "Hunter",
+            "Sprykin"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.527,
-            "sampleSize": 611
+            "avgPlacement": 5,
+            "top4Rate": 0.468,
+            "sampleSize": 62
           }
         },
         {
-          "lolchessKey": "alistar",
-          "name": "알리스타",
-          "cost": 2,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
-          "matchedKey": "Alistar",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Brawler",
-            "Elderwood"
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.49,
-            "top4Rate": 0.494,
-            "sampleSize": 557
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
           }
         }
       ],
@@ -1309,25 +2285,31 @@
       "id": "auto-soraka",
       "name": "처형자 소라카",
       "gold": null,
-      "unitCost": 26,
+      "unitCost": 22,
       "unitCount": 8,
       "traits": [
         {
           "key": "Executioner",
           "name": "처형자",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png",
-          "count": 5
+          "count": 3
         },
         {
-          "key": "FloraFatalis",
-          "name": "치명적인 꽃",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png",
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Defender",
+          "name": "엄호대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
           "count": 2
         },
         {
-          "key": "Spellweaver",
-          "name": "주문술사",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png",
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
           "count": 2
         }
       ],
@@ -1383,44 +2365,6 @@
           }
         },
         {
-          "lolchessKey": "kennen",
-          "name": "케넨",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
-          "matchedKey": "Kennen",
-          "traits": [
-            "Executioner",
-            "Inferno"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.8,
-            "top4Rate": 0.614,
-            "sampleSize": 500
-          }
-        },
-        {
-          "lolchessKey": "ezreal",
-          "name": "이즈리얼",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
-          "matchedKey": "Ezreal",
-          "traits": [
-            "Elderwood",
-            "Executioner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.587,
-            "sampleSize": 537
-          }
-        },
-        {
           "lolchessKey": "fiddlesticks",
           "name": "피들스틱",
           "cost": 3,
@@ -1461,58 +2405,100 @@
           }
         },
         {
-          "lolchessKey": "yunara",
-          "name": "유나라",
-          "cost": 2,
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
-          "matchedKey": "Yunara",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
           "traits": [
-            "Blossom",
-            "Executioner"
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.7,
-            "top4Rate": 0.472,
-            "sampleSize": 316
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
           }
         },
         {
-          "lolchessKey": "lux",
-          "name": "럭스",
-          "cost": null,
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lux.png",
-          "matchedKey": "Lux18_Base",
-          "traits": [],
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
+          "traits": [
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
+          ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.49,
-            "top4Rate": 0.663,
-            "sampleSize": 380
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
           }
         },
         {
-          "lolchessKey": "alune",
-          "name": "알룬",
+          "lolchessKey": "kennen",
+          "name": "케넨",
           "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
-          "matchedKey": "Alune",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+          "matchedKey": "Kennen",
           "traits": [
-            "Attuned",
-            "Lunar",
-            "Spellweaver"
+            "Executioner",
+            "Inferno"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.5,
-            "top4Rate": 0.666,
-            "sampleSize": 422
+            "avgPlacement": 3.8,
+            "top4Rate": 0.614,
+            "sampleSize": 500
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
+          }
+        },
+        {
+          "lolchessKey": "varus",
+          "name": "바루스",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
+          "matchedKey": "Varus",
+          "traits": [
+            "Inferno",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.65,
+            "top4Rate": 0.464,
+            "sampleSize": 364
           }
         }
       ],
@@ -1527,20 +2513,32 @@
       "id": "auto-brambleback",
       "name": "협곡야수 덩굴정령",
       "gold": null,
-      "unitCost": 23,
+      "unitCost": 21,
       "unitCount": 8,
       "traits": [
         {
           "key": "Riftbeast",
           "name": "협곡야수",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 6
+          "count": 5
         },
         {
           "key": "Ravager",
           "name": "약탈자",
           "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Ravager_normal_1783670134-Ravager.svg",
           "count": 4
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 3
+        },
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
         }
       ],
       "units": [
@@ -1595,60 +2593,43 @@
           }
         },
         {
-          "lolchessKey": "murkwolf",
-          "name": "어스름늑대",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
-          "matchedKey": "Murkwolf",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.63,
-            "top4Rate": 0.475,
-            "sampleSize": 354
-          }
-        },
-        {
-          "lolchessKey": "elderdragon",
-          "name": "장로 드래곤",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
-          "matchedKey": "ElderDragon",
-          "traits": [
-            "ApexPredator",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.85,
-            "top4Rate": 0.627,
-            "sampleSize": 413
-          }
-        },
-        {
-          "lolchessKey": "camille",
-          "name": "카밀",
+          "lolchessKey": "akali",
+          "name": "아칼리",
           "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
-          "matchedKey": "Camille",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
           "traits": [
-            "Coven",
+            "Adaptor",
+            "Inferno",
             "Ravager"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.509,
-            "sampleSize": 108
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
           }
         },
         {
@@ -1672,6 +2653,64 @@
           }
         },
         {
+          "lolchessKey": "sentry",
+          "name": "조약돌",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+          "matchedKey": "Sentry",
+          "traits": [
+            "Invoker",
+            "Riftbeast"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.47,
+            "top4Rate": 0.504,
+            "sampleSize": 577
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "murkwolf",
+          "name": "어스름늑대",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
+          "matchedKey": "Murkwolf",
+          "traits": [
+            "Ravager",
+            "Riftbeast"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.63,
+            "top4Rate": 0.475,
+            "sampleSize": 354
+          }
+        },
+        {
           "lolchessKey": "crimsonraptor",
           "name": "어미 부리",
           "cost": 3,
@@ -1690,45 +2729,6 @@
             "top4Rate": 0.52,
             "sampleSize": 98
           }
-        },
-        {
-          "lolchessKey": "akali",
-          "name": "아칼리",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
-          "matchedKey": "Akali_AD",
-          "traits": [
-            "Adaptor",
-            "Inferno",
-            "Ravager"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.504,
-            "sampleSize": 129
-          }
-        },
-        {
-          "lolchessKey": "krug",
-          "name": "돌거북",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
-          "traits": [
-            "Brawler",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
         }
       ],
       "avgPlacement": 4.31,
@@ -1742,20 +2742,32 @@
       "id": "auto-kayle",
       "name": "기동타격대 케일",
       "gold": null,
-      "unitCost": 14,
+      "unitCost": 22,
       "unitCount": 8,
       "traits": [
         {
           "key": "Rapidfire",
           "name": "기동타격대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Quickstriker.png",
-          "count": 5
+          "count": 4
         },
         {
-          "key": "Solar",
-          "name": "햇빛",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Solar.TFT_Set18.png",
-          "count": 3
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
+        },
+        {
+          "key": "Fae",
+          "name": "요정",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Fae.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "count": 2
         }
       ],
       "units": [
@@ -1810,25 +2822,6 @@
           }
         },
         {
-          "lolchessKey": "aphelios",
-          "name": "아펠리오스",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
-          "matchedKey": "Aphelios",
-          "traits": [
-            "Lunar",
-            "Rapidfire"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.37,
-            "top4Rate": 0.534,
-            "sampleSize": 494
-          }
-        },
-        {
           "lolchessKey": "crimsonraptor",
           "name": "어미 부리",
           "cost": 3,
@@ -1846,63 +2839,6 @@
             "avgPlacement": 4.42,
             "top4Rate": 0.52,
             "sampleSize": 98
-          }
-        },
-        {
-          "lolchessKey": "leona",
-          "name": "레오나",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
-          "matchedKey": "Leona",
-          "traits": [
-            "Defender",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.507,
-            "sampleSize": 418
-          }
-        },
-        {
-          "lolchessKey": "sejuani",
-          "name": "세주아니",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
-          "matchedKey": "Sejuani",
-          "traits": [
-            "Juggernaut",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.56,
-            "top4Rate": 0.491,
-            "sampleSize": 456
-          }
-        },
-        {
-          "lolchessKey": "varus",
-          "name": "바루스",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
-          "matchedKey": "Varus",
-          "traits": [
-            "Inferno",
-            "Rapidfire"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.65,
-            "top4Rate": 0.464,
-            "sampleSize": 364
           }
         },
         {
@@ -1926,19 +2862,102 @@
           }
         },
         {
-          "lolchessKey": "lux",
-          "name": "럭스",
-          "cost": null,
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lux.png",
-          "matchedKey": "Lux18_Base",
-          "traits": [],
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
+          "traits": [
+            "Eldritch",
+            "Executioner",
+            "Summoner"
+          ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.49,
-            "top4Rate": 0.663,
-            "sampleSize": 380
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
+          "traits": [
+            "Lunar",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
+          }
+        },
+        {
+          "lolchessKey": "tristana",
+          "name": "트리스타나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
+          "matchedKey": "Tristana",
+          "traits": [
+            "Fae",
+            "Hunter",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 5,
+            "top4Rate": 0.468,
+            "sampleSize": 62
           }
         }
       ],
@@ -1953,25 +2972,31 @@
       "id": "auto-fiddlesticks",
       "name": "엄호대 피들스틱",
       "gold": null,
-      "unitCost": 23,
+      "unitCost": 25,
       "unitCount": 8,
       "traits": [
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
+        },
         {
           "key": "Defender",
           "name": "엄호대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
-          "count": 4
+          "count": 2
         },
         {
-          "key": "Spellweaver",
-          "name": "주문술사",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png",
-          "count": 4
+          "key": "Inferno",
+          "name": "지옥불",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
+          "count": 2
         },
         {
-          "key": "FloraFatalis",
-          "name": "치명적인 꽃",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_FloraFatalis.TFT_Set18.png",
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
           "count": 2
         }
       ],
@@ -2048,6 +3073,105 @@
           }
         },
         {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
+          "traits": [
+            "Adaptor",
+            "Inferno",
+            "Ravager"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.504,
+            "sampleSize": 129
+          }
+        },
+        {
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "shen",
+          "name": "쉔",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+          "matchedKey": "Shen",
+          "traits": [
+            "Defender",
+            "Inferno"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.54,
+            "top4Rate": 0.481,
+            "sampleSize": 158
+          }
+        },
+        {
           "lolchessKey": "soraka",
           "name": "소라카",
           "cost": 4,
@@ -2065,102 +3189,6 @@
             "top4Rate": 0.556,
             "sampleSize": 583
           }
-        },
-        {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
-          "traits": [
-            "Defender",
-            "Elderwood"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
-          }
-        },
-        {
-          "lolchessKey": "lillia",
-          "name": "릴리아",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
-          "matchedKey": "Lillia",
-          "traits": [
-            "Defender",
-            "Fae"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.52,
-            "sampleSize": 327
-          }
-        },
-        {
-          "lolchessKey": "veigar",
-          "name": "베이가",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
-          "matchedKey": "Veigar",
-          "traits": [
-            "Eldritch",
-            "Spellweaver",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.521,
-            "sampleSize": 428
-          }
-        },
-        {
-          "lolchessKey": "ahri",
-          "name": "아리",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
-          "matchedKey": "Ahri",
-          "traits": [
-            "Blossom",
-            "Spellweaver"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.519,
-            "sampleSize": 412
-          }
-        },
-        {
-          "lolchessKey": "leona",
-          "name": "레오나",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
-          "matchedKey": "Leona",
-          "traits": [
-            "Defender",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.507,
-            "sampleSize": 418
-          }
         }
       ],
       "avgPlacement": 4.35,
@@ -2172,22 +3200,34 @@
     },
     {
       "id": "auto-aphelios",
-      "name": "기동타격대 아펠리오스",
+      "name": "달빛 아펠리오스",
       "gold": null,
-      "unitCost": 19,
+      "unitCost": 21,
       "unitCount": 8,
       "traits": [
-        {
-          "key": "Rapidfire",
-          "name": "기동타격대",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Quickstriker.png",
-          "count": 5
-        },
         {
           "key": "Lunar",
           "name": "달빛",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
           "count": 3
+        },
+        {
+          "key": "Rapidfire",
+          "name": "기동타격대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Quickstriker.png",
+          "count": 3
+        },
+        {
+          "key": "Fae",
+          "name": "요정",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Fae.TFT_Set18.png",
+          "count": 2
+        },
+        {
+          "key": "Juggernaut",
+          "name": "전쟁기계",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
+          "count": 2
         }
       ],
       "units": [
@@ -2262,25 +3302,6 @@
           }
         },
         {
-          "lolchessKey": "kayle",
-          "name": "케일",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
-          "matchedKey": "Kayle",
-          "traits": [
-            "Rapidfire",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.32,
-            "top4Rate": 0.53,
-            "sampleSize": 368
-          }
-        },
-        {
           "lolchessKey": "crimsonraptor",
           "name": "어미 부리",
           "cost": 3,
@@ -2321,25 +3342,6 @@
           }
         },
         {
-          "lolchessKey": "varus",
-          "name": "바루스",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
-          "matchedKey": "Varus",
-          "traits": [
-            "Inferno",
-            "Rapidfire"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.65,
-            "top4Rate": 0.464,
-            "sampleSize": 364
-          }
-        },
-        {
           "lolchessKey": "xayah",
           "name": "자야",
           "cost": 1,
@@ -2360,19 +3362,63 @@
           }
         },
         {
-          "lolchessKey": "lux",
-          "name": "럭스",
-          "cost": null,
+          "lolchessKey": "rakan",
+          "name": "라칸",
+          "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lux.png",
-          "matchedKey": "Lux18_Base",
-          "traits": [],
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
+          "matchedKey": "Rakan",
+          "traits": [
+            "Fae",
+            "Juggernaut",
+            "Vanguard"
+          ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.49,
-            "top4Rate": 0.663,
-            "sampleSize": 380
+            "avgPlacement": 4.82,
+            "top4Rate": 0.439,
+            "sampleSize": 367
+          }
+        },
+        {
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
+          "traits": [
+            "Blossom",
+            "Juggernaut",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.65,
+            "top4Rate": 0.475,
+            "sampleSize": 587
+          }
+        },
+        {
+          "lolchessKey": "fiddlesticks",
+          "name": "피들스틱",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+          "matchedKey": "Fiddlesticks",
+          "traits": [
+            "Defender",
+            "FloraFatalis",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.35,
+            "top4Rate": 0.545,
+            "sampleSize": 883
           }
         }
       ],
@@ -2385,21 +3431,15 @@
     },
     {
       "id": "auto-azir",
-      "name": "처형자 아지르",
+      "name": "소환사 아지르",
       "gold": null,
-      "unitCost": 28,
+      "unitCost": 21,
       "unitCount": 8,
       "traits": [
         {
-          "key": "Executioner",
-          "name": "처형자",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png",
-          "count": 4
-        },
-        {
-          "key": "Eldritch",
-          "name": "검은 가시",
-          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
           "count": 3
         },
         {
@@ -2407,6 +3447,18 @@
           "name": "소환사",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Summoner.TFT_Set18.png",
           "count": 3
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
+          "count": 2
+        },
+        {
+          "key": "Juggernaut",
+          "name": "전쟁기계",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
+          "count": 2
         }
       ],
       "units": [
@@ -2462,63 +3514,6 @@
           }
         },
         {
-          "lolchessKey": "kennen",
-          "name": "케넨",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
-          "matchedKey": "Kennen",
-          "traits": [
-            "Executioner",
-            "Inferno"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.8,
-            "top4Rate": 0.614,
-            "sampleSize": 500
-          }
-        },
-        {
-          "lolchessKey": "ezreal",
-          "name": "이즈리얼",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
-          "matchedKey": "Ezreal",
-          "traits": [
-            "Elderwood",
-            "Executioner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.587,
-            "sampleSize": 537
-          }
-        },
-        {
-          "lolchessKey": "soraka",
-          "name": "소라카",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
-          "matchedKey": "Soraka",
-          "traits": [
-            "Executioner",
-            "FloraFatalis"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.23,
-            "top4Rate": 0.556,
-            "sampleSize": 583
-          }
-        },
-        {
           "lolchessKey": "crimsonraptor",
           "name": "어미 부리",
           "cost": 3,
@@ -2559,41 +3554,102 @@
           }
         },
         {
-          "lolchessKey": "zyra",
-          "name": "자이라",
-          "cost": 4,
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
-          "matchedKey": "Zyra",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
           "traits": [
-            "Summoner",
-            "Thornmaiden"
+            "Blossom",
+            "Juggernaut",
+            "Summoner"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.54,
-            "top4Rate": 0.514,
-            "sampleSize": 432
+            "avgPlacement": 4.65,
+            "top4Rate": 0.475,
+            "sampleSize": 587
           }
         },
         {
-          "lolchessKey": "malphite",
-          "name": "말파이트",
-          "cost": 4,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
-          "matchedKey": "Malphite",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Eldritch",
-            "Monolith"
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.59,
-            "top4Rate": 0.469,
-            "sampleSize": 226
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
+          "traits": [
+            "Lunar",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
+          }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "rakan",
+          "name": "라칸",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
+          "matchedKey": "Rakan",
+          "traits": [
+            "Fae",
+            "Juggernaut",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.82,
+            "top4Rate": 0.439,
+            "sampleSize": 367
           }
         }
       ],
@@ -2606,17 +3662,11 @@
     },
     {
       "id": "auto-sentinel",
-      "name": "협곡야수 감시자",
+      "name": "기원자 감시자",
       "gold": null,
-      "unitCost": 27,
+      "unitCost": 24,
       "unitCount": 8,
       "traits": [
-        {
-          "key": "Riftbeast",
-          "name": "협곡야수",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 6
-        },
         {
           "key": "Invoker",
           "name": "기원자",
@@ -2624,9 +3674,21 @@
           "count": 3
         },
         {
-          "key": "Vanguard",
-          "name": "선봉대",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png",
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Riftbeast",
+          "name": "협곡야수",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
           "count": 2
         }
       ],
@@ -2702,82 +3764,6 @@
           }
         },
         {
-          "lolchessKey": "elderdragon",
-          "name": "장로 드래곤",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
-          "matchedKey": "ElderDragon",
-          "traits": [
-            "ApexPredator",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.85,
-            "top4Rate": 0.627,
-            "sampleSize": 413
-          }
-        },
-        {
-          "lolchessKey": "taric",
-          "name": "타릭",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
-          "matchedKey": "Taric",
-          "traits": [
-            "EmeraldAspect",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.9,
-            "top4Rate": 0.596,
-            "sampleSize": 726
-          }
-        },
-        {
-          "lolchessKey": "brambleback",
-          "name": "덩굴정령",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
-          "matchedKey": "Brambleback",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.31,
-            "top4Rate": 0.556,
-            "sampleSize": 412
-          }
-        },
-        {
-          "lolchessKey": "teemo",
-          "name": "티모",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
-          "matchedKey": "Teemo",
-          "traits": [
-            "Invoker",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.39,
-            "top4Rate": 0.547,
-            "sampleSize": 179
-          }
-        },
-        {
           "lolchessKey": "crimsonraptor",
           "name": "어미 부리",
           "cost": 3,
@@ -2798,139 +3784,43 @@
           }
         },
         {
-          "lolchessKey": "krug",
-          "name": "돌거북",
+          "lolchessKey": "diana",
+          "name": "다이애나",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
           "traits": [
-            "Brawler",
-            "Riftbeast"
+            "Lunar",
+            "Ravager",
+            "Vanguard"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
-        }
-      ],
-      "avgPlacement": 4.41,
-      "top4Rate": 0.513,
-      "coverage": 1,
-      "sampleSize": 1219,
-      "tier": "C",
-      "carryKey": "Sentinel"
-    },
-    {
-      "id": "auto-amumu",
-      "name": "지옥불 아무무",
-      "gold": null,
-      "unitCost": 22,
-      "unitCount": 8,
-      "traits": [
-        {
-          "key": "Inferno",
-          "name": "지옥불",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Inferno.TFT_Set18.png",
-          "count": 5
-        },
-        {
-          "key": "Juggernaut",
-          "name": "전쟁기계",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
-          "count": 4
-        }
-      ],
-      "units": [
-        {
-          "lolchessKey": "amumu",
-          "name": "아무무",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
-          "matchedKey": "Amumu",
-          "traits": [
-            "Inferno",
-            "Juggernaut"
-          ],
-          "items": [
-            {
-              "key": "DA_IonicSpark",
-              "name": "이온 충격기",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_IonicSpark.png",
-              "stat": {
-                "avgPlacement": 3.75,
-                "top4Rate": 0.65,
-                "sampleSize": 20
-              }
-            },
-            {
-              "key": "DA_ThiefsGloves",
-              "name": "도적의 장갑",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_ThiefsGloves.png",
-              "stat": {
-                "avgPlacement": 3.92,
-                "top4Rate": 0.595,
-                "sampleSize": 37
-              }
-            },
-            {
-              "key": "DA_BrambleVest",
-              "name": "덤불 조끼",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_BrambleVest.png",
-              "stat": {
-                "avgPlacement": 4.21,
-                "top4Rate": 0.558,
-                "sampleSize": 43
-              }
-            }
-          ],
-          "stat": {
-            "avgPlacement": 4.41,
+            "avgPlacement": 4.49,
             "top4Rate": 0.504,
-            "sampleSize": 832
+            "sampleSize": 776
           }
         },
         {
-          "lolchessKey": "kennen",
-          "name": "케넨",
-          "cost": 5,
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
-          "matchedKey": "Kennen",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
           "traits": [
-            "Executioner",
-            "Inferno"
+            "Adaptor",
+            "Caustic",
+            "Invoker"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.8,
-            "top4Rate": 0.614,
-            "sampleSize": 500
-          }
-        },
-        {
-          "lolchessKey": "maokai",
-          "name": "마오카이",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
-          "matchedKey": "Maokai",
-          "traits": [
-            "Juggernaut",
-            "OldGrowth"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.551,
-            "sampleSize": 396
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
           }
         },
         {
@@ -2954,112 +3844,81 @@
           }
         },
         {
-          "lolchessKey": "shen",
-          "name": "쉔",
-          "cost": 2,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
-          "matchedKey": "Shen",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Defender",
-            "Inferno"
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.54,
-            "top4Rate": 0.481,
-            "sampleSize": 158
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
           }
         },
         {
-          "lolchessKey": "scuttlecrab",
-          "name": "바위 게",
-          "cost": 2,
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
-          "matchedKey": "Scuttlecrab",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
           "traits": [
-            "Juggernaut",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.55,
-            "top4Rate": 0.486,
-            "sampleSize": 420
-          }
-        },
-        {
-          "lolchessKey": "sejuani",
-          "name": "세주아니",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
-          "matchedKey": "Sejuani",
-          "traits": [
-            "Juggernaut",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.56,
-            "top4Rate": 0.491,
-            "sampleSize": 456
-          }
-        },
-        {
-          "lolchessKey": "varus",
-          "name": "바루스",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
-          "matchedKey": "Varus",
-          "traits": [
-            "Inferno",
+            "Lunar",
             "Rapidfire"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.65,
-            "top4Rate": 0.464,
-            "sampleSize": 364
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
           }
         }
       ],
       "avgPlacement": 4.41,
-      "top4Rate": 0.504,
+      "top4Rate": 0.513,
       "coverage": 1,
-      "sampleSize": 832,
+      "sampleSize": 1219,
       "tier": "C",
-      "carryKey": "Amumu"
+      "carryKey": "Sentinel"
     },
     {
       "id": "auto-lillia",
       "name": "엄호대 릴리아",
       "gold": null,
-      "unitCost": 16,
+      "unitCost": 27,
       "unitCount": 8,
       "traits": [
+        {
+          "key": "Rapidfire",
+          "name": "기동타격대",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Quickstriker.png",
+          "count": 3
+        },
         {
           "key": "Defender",
           "name": "엄호대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
-          "count": 6
+          "count": 2
+        },
+        {
+          "key": "Executioner",
+          "name": "처형자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Executioner.TFT_Set18.png",
+          "count": 2
         },
         {
           "key": "Fae",
           "name": "요정",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Fae.TFT_Set18.png",
-          "count": 3
-        },
-        {
-          "key": "Elderwood",
-          "name": "나무정령",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
           "count": 2
         }
       ],
@@ -3135,82 +3994,6 @@
           }
         },
         {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
-          "traits": [
-            "Defender",
-            "Elderwood"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
-          }
-        },
-        {
-          "lolchessKey": "leona",
-          "name": "레오나",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
-          "matchedKey": "Leona",
-          "traits": [
-            "Defender",
-            "Solar"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.507,
-            "sampleSize": 418
-          }
-        },
-        {
-          "lolchessKey": "rammus",
-          "name": "람머스",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
-          "matchedKey": "Rammus",
-          "traits": [
-            "Defender",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.53,
-            "top4Rate": 0.508,
-            "sampleSize": 266
-          }
-        },
-        {
-          "lolchessKey": "shen",
-          "name": "쉔",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
-          "matchedKey": "Shen",
-          "traits": [
-            "Defender",
-            "Inferno"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.54,
-            "top4Rate": 0.481,
-            "sampleSize": 158
-          }
-        },
-        {
           "lolchessKey": "xayah",
           "name": "자야",
           "cost": 1,
@@ -3231,23 +4014,101 @@
           }
         },
         {
-          "lolchessKey": "rakan",
-          "name": "라칸",
-          "cost": 1,
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
-          "matchedKey": "Rakan",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
           "traits": [
-            "Fae",
-            "Juggernaut",
-            "Vanguard"
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.82,
-            "top4Rate": 0.439,
-            "sampleSize": 367
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "aphelios",
+          "name": "아펠리오스",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+          "matchedKey": "Aphelios",
+          "traits": [
+            "Lunar",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.37,
+            "top4Rate": 0.534,
+            "sampleSize": 494
+          }
+        },
+        {
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
+          "traits": [
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
+          }
+        },
+        {
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
+          "traits": [
+            "Eldritch",
+            "Executioner",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
+          }
+        },
+        {
+          "lolchessKey": "soraka",
+          "name": "소라카",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
+          "matchedKey": "Soraka",
+          "traits": [
+            "Executioner",
+            "FloraFatalis"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.23,
+            "top4Rate": 0.556,
+            "sampleSize": 583
           }
         }
       ],
@@ -3260,22 +4121,34 @@
     },
     {
       "id": "auto-ahri",
-      "name": "주문술사 아리",
+      "name": "개화 아리",
       "gold": null,
-      "unitCost": 25,
+      "unitCost": 24,
       "unitCount": 8,
       "traits": [
         {
-          "key": "Spellweaver",
-          "name": "주문술사",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Spellweaver.TFT_Set18.png",
-          "count": 6
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 3
         },
         {
           "key": "Blossom",
           "name": "개화",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Blossom.TFT_Set18.png",
-          "count": 4
+          "count": 3
+        },
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 2
+        },
+        {
+          "key": "Lunar",
+          "name": "달빛",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
+          "count": 2
         }
       ],
       "units": [
@@ -3330,25 +4203,6 @@
           }
         },
         {
-          "lolchessKey": "karma",
-          "name": "카르마",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
-          "matchedKey": "Karma",
-          "traits": [
-            "Blossom",
-            "Spellweaver"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.79,
-            "top4Rate": 0.448,
-            "sampleSize": 413
-          }
-        },
-        {
           "lolchessKey": "alune",
           "name": "알룬",
           "cost": 5,
@@ -3369,100 +4223,122 @@
           }
         },
         {
-          "lolchessKey": "ashe",
-          "name": "애쉬",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
-          "matchedKey": "Ashe",
-          "traits": [
-            "Blossom",
-            "Hunter"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.97,
-            "top4Rate": 0.578,
-            "sampleSize": 192
-          }
-        },
-        {
-          "lolchessKey": "fiddlesticks",
-          "name": "피들스틱",
+          "lolchessKey": "diana",
+          "name": "다이애나",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
-          "matchedKey": "Fiddlesticks",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
           "traits": [
-            "Defender",
-            "FloraFatalis",
-            "Spellweaver"
+            "Lunar",
+            "Ravager",
+            "Vanguard"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.35,
-            "top4Rate": 0.545,
-            "sampleSize": 883
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
           }
         },
         {
-          "lolchessKey": "veigar",
-          "name": "베이가",
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
+          "lolchessKey": "akali",
+          "name": "아칼리",
           "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
-          "matchedKey": "Veigar",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+          "matchedKey": "Akali_AD",
           "traits": [
-            "Eldritch",
-            "Spellweaver",
-            "Sprykin"
+            "Adaptor",
+            "Inferno",
+            "Ravager"
           ],
           "items": [],
           "stat": {
             "avgPlacement": 4.44,
-            "top4Rate": 0.521,
-            "sampleSize": 428
+            "top4Rate": 0.504,
+            "sampleSize": 129
           }
         },
         {
-          "lolchessKey": "sett",
-          "name": "세트",
-          "cost": 4,
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
-          "matchedKey": "Sett",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
+          "traits": [
+            "Adaptor",
+            "Caustic",
+            "Invoker"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
+          }
+        },
+        {
+          "lolchessKey": "masteryi",
+          "name": "마스터 이",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/MasterYi.png",
+          "matchedKey": "MasterYi_AD",
+          "traits": [
+            "Adaptor",
+            "Blossom"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.75,
+            "top4Rate": 0.418,
+            "sampleSize": 134
+          }
+        },
+        {
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
           "traits": [
             "Blossom",
-            "Brawler"
+            "Juggernaut",
+            "Summoner"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.51,
-            "top4Rate": 0.5,
-            "sampleSize": 542
-          }
-        },
-        {
-          "lolchessKey": "leblanc",
-          "name": "르블랑",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
-          "matchedKey": "LeBlanc",
-          "traits": [
-            "Elderwood",
-            "Spellweaver"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.57,
-            "top4Rate": 0.492,
-            "sampleSize": 537
+            "avgPlacement": 4.65,
+            "top4Rate": 0.475,
+            "sampleSize": 587
           }
         }
       ],
@@ -3477,31 +4353,31 @@
       "id": "auto-krug",
       "name": "협곡야수 돌거북",
       "gold": null,
-      "unitCost": 26,
+      "unitCost": 24,
       "unitCount": 8,
       "traits": [
+        {
+          "key": "Invoker",
+          "name": "기원자",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "count": 3
+        },
         {
           "key": "Riftbeast",
           "name": "협곡야수",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 6
-        },
-        {
-          "key": "Brawler",
-          "name": "싸움꾼",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
           "count": 3
         },
         {
           "key": "Sprykin",
           "name": "날렵이",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
-          "count": 2
+          "count": 3
         },
         {
-          "key": "Invoker",
-          "name": "기원자",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
+          "key": "Brawler",
+          "name": "싸움꾼",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
           "count": 2
         }
       ],
@@ -3577,44 +4453,6 @@
           }
         },
         {
-          "lolchessKey": "elderdragon",
-          "name": "장로 드래곤",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
-          "matchedKey": "ElderDragon",
-          "traits": [
-            "ApexPredator",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.85,
-            "top4Rate": 0.627,
-            "sampleSize": 413
-          }
-        },
-        {
-          "lolchessKey": "brambleback",
-          "name": "덩굴정령",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
-          "matchedKey": "Brambleback",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.31,
-            "top4Rate": 0.556,
-            "sampleSize": 412
-          }
-        },
-        {
           "lolchessKey": "sentinel",
           "name": "감시자",
           "cost": 4,
@@ -3635,45 +4473,6 @@
           }
         },
         {
-          "lolchessKey": "crimsonraptor",
-          "name": "어미 부리",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
-          "matchedKey": "CrimsonRaptor",
-          "traits": [
-            "Rapidfire",
-            "Riftbeast",
-            "Summoner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.52,
-            "sampleSize": 98
-          }
-        },
-        {
-          "lolchessKey": "kobuko",
-          "name": "코부코",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
-          "matchedKey": "Kobuko",
-          "traits": [
-            "Brawler",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.522,
-            "sampleSize": 69
-          }
-        },
-        {
           "lolchessKey": "sentry",
           "name": "조약돌",
           "cost": 1,
@@ -3691,6 +4490,85 @@
             "top4Rate": 0.504,
             "sampleSize": 577
           }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "teemo",
+          "name": "티모",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
+          "matchedKey": "Teemo",
+          "traits": [
+            "Invoker",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.39,
+            "top4Rate": 0.547,
+            "sampleSize": 179
+          }
         }
       ],
       "avgPlacement": 4.45,
@@ -3702,22 +4580,28 @@
     },
     {
       "id": "auto-hecarim",
-      "name": "나무정령 헤카림",
+      "name": "선봉대 헤카림",
       "gold": null,
-      "unitCost": 27,
+      "unitCost": 22,
       "unitCount": 8,
       "traits": [
-        {
-          "key": "Elderwood",
-          "name": "나무정령",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
-          "count": 5
-        },
         {
           "key": "Vanguard",
           "name": "선봉대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png",
           "count": 4
+        },
+        {
+          "key": "Elderwood",
+          "name": "나무정령",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Adaptor",
+          "name": "적응가",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Adaptor.TFT_Set18.png",
+          "count": 2
         },
         {
           "key": "Brawler",
@@ -3778,6 +4662,26 @@
           }
         },
         {
+          "lolchessKey": "sentinel",
+          "name": "감시자",
+          "cost": 4,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+          "matchedKey": "Sentinel",
+          "traits": [
+            "Invoker",
+            "Riftbeast",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.41,
+            "top4Rate": 0.513,
+            "sampleSize": 1219
+          }
+        },
+        {
           "lolchessKey": "gnar",
           "name": "나르",
           "cost": 5,
@@ -3798,103 +4702,6 @@
           }
         },
         {
-          "lolchessKey": "taric",
-          "name": "타릭",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
-          "matchedKey": "Taric",
-          "traits": [
-            "EmeraldAspect",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.9,
-            "top4Rate": 0.596,
-            "sampleSize": 726
-          }
-        },
-        {
-          "lolchessKey": "ezreal",
-          "name": "이즈리얼",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
-          "matchedKey": "Ezreal",
-          "traits": [
-            "Elderwood",
-            "Executioner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.587,
-            "sampleSize": 537
-          }
-        },
-        {
-          "lolchessKey": "sentinel",
-          "name": "감시자",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
-          "matchedKey": "Sentinel",
-          "traits": [
-            "Invoker",
-            "Riftbeast",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.513,
-            "sampleSize": 1219
-          }
-        },
-        {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
-          "traits": [
-            "Defender",
-            "Elderwood"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
-          }
-        },
-        {
-          "lolchessKey": "diana",
-          "name": "다이애나",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
-          "matchedKey": "Diana",
-          "traits": [
-            "Lunar",
-            "Ravager",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.49,
-            "top4Rate": 0.504,
-            "sampleSize": 776
-          }
-        },
-        {
           "lolchessKey": "alistar",
           "name": "알리스타",
           "cost": 2,
@@ -3912,213 +4719,25 @@
             "top4Rate": 0.494,
             "sampleSize": 557
           }
-        }
-      ],
-      "avgPlacement": 4.46,
-      "top4Rate": 0.527,
-      "coverage": 1,
-      "sampleSize": 611,
-      "tier": "C",
-      "carryKey": "Hecarim"
-    },
-    {
-      "id": "auto-diana",
-      "name": "약탈자 다이애나",
-      "gold": null,
-      "unitCost": 27,
-      "unitCount": 8,
-      "traits": [
-        {
-          "key": "Ravager",
-          "name": "약탈자",
-          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Ravager_normal_1783670134-Ravager.svg",
-          "count": 4
         },
         {
-          "key": "Lunar",
-          "name": "달빛",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Lunar.TFT_Set18.png",
-          "count": 3
-        },
-        {
-          "key": "Vanguard",
-          "name": "선봉대",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png",
-          "count": 3
-        },
-        {
-          "key": "Riftbeast",
-          "name": "협곡야수",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 2
-        }
-      ],
-      "units": [
-        {
-          "lolchessKey": "diana",
-          "name": "다이애나",
+          "lolchessKey": "kogmaw",
+          "name": "코그모",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
-          "matchedKey": "Diana",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+          "matchedKey": "KogMaw18_AD",
           "traits": [
-            "Lunar",
-            "Ravager",
-            "Vanguard"
-          ],
-          "items": [
-            {
-              "key": "DA_JeweledGauntlet",
-              "name": "보석 건틀릿",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_JeweledGauntlet.png",
-              "stat": {
-                "avgPlacement": 3,
-                "top4Rate": 0.824,
-                "sampleSize": 34
-              }
-            },
-            {
-              "key": "DA_RabadonsDeathcap",
-              "name": "라바돈의 죽음모자",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_RabadonsDeathcap.png",
-              "stat": {
-                "avgPlacement": 3.08,
-                "top4Rate": 0.833,
-                "sampleSize": 24
-              }
-            },
-            {
-              "key": "DA_Bloodthirster",
-              "name": "피바라기",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_Bloodthirster.png",
-              "stat": {
-                "avgPlacement": 3.59,
-                "top4Rate": 0.727,
-                "sampleSize": 22
-              }
-            }
-          ],
-          "stat": {
-            "avgPlacement": 4.49,
-            "top4Rate": 0.504,
-            "sampleSize": 776
-          }
-        },
-        {
-          "lolchessKey": "alune",
-          "name": "알룬",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
-          "matchedKey": "Alune",
-          "traits": [
-            "Attuned",
-            "Lunar",
-            "Spellweaver"
+            "Adaptor",
+            "Caustic",
+            "Invoker"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 3.5,
-            "top4Rate": 0.666,
-            "sampleSize": 422
-          }
-        },
-        {
-          "lolchessKey": "taric",
-          "name": "타릭",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
-          "matchedKey": "Taric",
-          "traits": [
-            "EmeraldAspect",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.9,
-            "top4Rate": 0.596,
-            "sampleSize": 726
-          }
-        },
-        {
-          "lolchessKey": "brambleback",
-          "name": "덩굴정령",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
-          "matchedKey": "Brambleback",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.31,
-            "top4Rate": 0.556,
-            "sampleSize": 412
-          }
-        },
-        {
-          "lolchessKey": "aphelios",
-          "name": "아펠리오스",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
-          "matchedKey": "Aphelios",
-          "traits": [
-            "Lunar",
-            "Rapidfire"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.37,
-            "top4Rate": 0.534,
-            "sampleSize": 494
-          }
-        },
-        {
-          "lolchessKey": "camille",
-          "name": "카밀",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
-          "matchedKey": "Camille",
-          "traits": [
-            "Coven",
-            "Ravager"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.509,
-            "sampleSize": 108
-          }
-        },
-        {
-          "lolchessKey": "sentinel",
-          "name": "감시자",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
-          "matchedKey": "Sentinel",
-          "traits": [
-            "Invoker",
-            "Riftbeast",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.513,
-            "sampleSize": 1219
+            "avgPlacement": 4.78,
+            "top4Rate": 0.441,
+            "sampleSize": 401
           }
         },
         {
@@ -4140,38 +4759,84 @@
             "top4Rate": 0.504,
             "sampleSize": 129
           }
+        },
+        {
+          "lolchessKey": "diana",
+          "name": "다이애나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+          "matchedKey": "Diana",
+          "traits": [
+            "Lunar",
+            "Ravager",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.49,
+            "top4Rate": 0.504,
+            "sampleSize": 776
+          }
+        },
+        {
+          "lolchessKey": "rakan",
+          "name": "라칸",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
+          "matchedKey": "Rakan",
+          "traits": [
+            "Fae",
+            "Juggernaut",
+            "Vanguard"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.82,
+            "top4Rate": 0.439,
+            "sampleSize": 367
+          }
         }
       ],
-      "avgPlacement": 4.49,
-      "top4Rate": 0.504,
+      "avgPlacement": 4.46,
+      "top4Rate": 0.527,
       "coverage": 1,
-      "sampleSize": 776,
+      "sampleSize": 611,
       "tier": "C",
-      "carryKey": "Diana"
+      "carryKey": "Hecarim"
     },
     {
       "id": "auto-alistar",
-      "name": "싸움꾼 알리스타",
+      "name": "나무정령 알리스타",
       "gold": null,
       "unitCost": 23,
       "unitCount": 8,
       "traits": [
         {
-          "key": "Brawler",
-          "name": "싸움꾼",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
-          "count": 5
-        },
-        {
           "key": "Elderwood",
           "name": "나무정령",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
-          "count": 5
+          "count": 3
         },
         {
           "key": "Sprykin",
           "name": "날렵이",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Brawler",
+          "name": "싸움꾼",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
+          "count": 2
+        },
+        {
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
           "count": 2
         }
       ],
@@ -4247,117 +4912,123 @@
           }
         },
         {
-          "lolchessKey": "ezreal",
-          "name": "이즈리얼",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
-          "matchedKey": "Ezreal",
-          "traits": [
-            "Elderwood",
-            "Executioner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.587,
-            "sampleSize": 537
-          }
-        },
-        {
-          "lolchessKey": "ornn",
-          "name": "오른",
+          "lolchessKey": "xayah",
+          "name": "자야",
           "cost": 1,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
+          "matchedKey": "Xayah",
           "traits": [
-            "Defender",
-            "Elderwood"
+            "Elderwood",
+            "Fae",
+            "Rapidfire"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
+            "avgPlacement": 4.71,
+            "top4Rate": 0.475,
+            "sampleSize": 219
           }
         },
         {
-          "lolchessKey": "krug",
-          "name": "돌거북",
+          "lolchessKey": "tristana",
+          "name": "트리스타나",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
+          "matchedKey": "Tristana",
           "traits": [
-            "Brawler",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
-        },
-        {
-          "lolchessKey": "kobuko",
-          "name": "코부코",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
-          "matchedKey": "Kobuko",
-          "traits": [
-            "Brawler",
+            "Fae",
+            "Hunter",
             "Sprykin"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.522,
-            "sampleSize": 69
+            "avgPlacement": 5,
+            "top4Rate": 0.468,
+            "sampleSize": 62
           }
         },
         {
-          "lolchessKey": "hecarim",
-          "name": "헤카림",
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
           "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
-          "matchedKey": "Hecarim",
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
           "traits": [
-            "Elderwood",
-            "Vanguard"
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.46,
-            "top4Rate": 0.527,
-            "sampleSize": 611
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
           }
         },
         {
-          "lolchessKey": "sett",
-          "name": "세트",
-          "cost": 4,
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
-          "matchedKey": "Sett",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
           "traits": [
-            "Blossom",
-            "Brawler"
+            "Eldritch",
+            "Executioner",
+            "Summoner"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.51,
-            "top4Rate": 0.5,
-            "sampleSize": 542
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
           }
         }
       ],
@@ -4370,33 +5041,33 @@
     },
     {
       "id": "auto-sett",
-      "name": "싸움꾼 세트",
+      "name": "개화 세트",
       "gold": null,
-      "unitCost": 25,
+      "unitCost": 24,
       "unitCount": 8,
       "traits": [
-        {
-          "key": "Brawler",
-          "name": "싸움꾼",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
-          "count": 5
-        },
         {
           "key": "Blossom",
           "name": "개화",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Blossom.TFT_Set18.png",
-          "count": 4
+          "count": 3
         },
         {
-          "key": "Elderwood",
-          "name": "나무정령",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
+          "key": "Summoner",
+          "name": "소환사",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Summoner.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Brawler",
+          "name": "싸움꾼",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
           "count": 2
         },
         {
-          "key": "Sprykin",
-          "name": "날렵이",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
+          "key": "Eldritch",
+          "name": "검은 가시",
+          "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg",
           "count": 2
         }
       ],
@@ -4472,101 +5143,6 @@
           }
         },
         {
-          "lolchessKey": "ashe",
-          "name": "애쉬",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
-          "matchedKey": "Ashe",
-          "traits": [
-            "Blossom",
-            "Hunter"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.97,
-            "top4Rate": 0.578,
-            "sampleSize": 192
-          }
-        },
-        {
-          "lolchessKey": "ahri",
-          "name": "아리",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
-          "matchedKey": "Ahri",
-          "traits": [
-            "Blossom",
-            "Spellweaver"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.519,
-            "sampleSize": 412
-          }
-        },
-        {
-          "lolchessKey": "krug",
-          "name": "돌거북",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
-          "traits": [
-            "Brawler",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
-        },
-        {
-          "lolchessKey": "kobuko",
-          "name": "코부코",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
-          "matchedKey": "Kobuko",
-          "traits": [
-            "Brawler",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.522,
-            "sampleSize": 69
-          }
-        },
-        {
-          "lolchessKey": "alistar",
-          "name": "알리스타",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
-          "matchedKey": "Alistar",
-          "traits": [
-            "Brawler",
-            "Elderwood"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.49,
-            "top4Rate": 0.494,
-            "sampleSize": 557
-          }
-        },
-        {
           "lolchessKey": "yorick",
           "name": "요릭",
           "cost": 1,
@@ -4585,6 +5161,105 @@
             "top4Rate": 0.475,
             "sampleSize": 587
           }
+        },
+        {
+          "lolchessKey": "azir",
+          "name": "아지르",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+          "matchedKey": "Azir",
+          "traits": [
+            "Eldritch",
+            "Executioner",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.39,
+            "top4Rate": 0.527,
+            "sampleSize": 520
+          }
+        },
+        {
+          "lolchessKey": "yunara",
+          "name": "유나라",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
+          "matchedKey": "Yunara",
+          "traits": [
+            "Blossom",
+            "Executioner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.7,
+            "top4Rate": 0.472,
+            "sampleSize": 316
+          }
+        },
+        {
+          "lolchessKey": "veigar",
+          "name": "베이가",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+          "matchedKey": "Veigar",
+          "traits": [
+            "Eldritch",
+            "Spellweaver",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.44,
+            "top4Rate": 0.521,
+            "sampleSize": 428
+          }
+        },
+        {
+          "lolchessKey": "alune",
+          "name": "알룬",
+          "cost": 5,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+          "matchedKey": "Alune",
+          "traits": [
+            "Attuned",
+            "Lunar",
+            "Spellweaver"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 3.5,
+            "top4Rate": 0.666,
+            "sampleSize": 422
+          }
+        },
+        {
+          "lolchessKey": "crimsonraptor",
+          "name": "어미 부리",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+          "matchedKey": "CrimsonRaptor",
+          "traits": [
+            "Rapidfire",
+            "Riftbeast",
+            "Summoner"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.42,
+            "top4Rate": 0.52,
+            "sampleSize": 98
+          }
         }
       ],
       "avgPlacement": 4.51,
@@ -4598,31 +5273,31 @@
       "id": "auto-rammus",
       "name": "날렵이 람머스",
       "gold": null,
-      "unitCost": 20,
+      "unitCost": 18,
       "unitCount": 8,
       "traits": [
         {
           "key": "Sprykin",
           "name": "날렵이",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Sprykin.TFT_Set18.png",
-          "count": 5
+          "count": 4
         },
         {
           "key": "Defender",
           "name": "엄호대",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Defender.png",
-          "count": 4
-        },
-        {
-          "key": "Brawler",
-          "name": "싸움꾼",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
-          "count": 2
+          "count": 3
         },
         {
           "key": "Elderwood",
           "name": "나무정령",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Elderwood.TFT_Set18.png",
+          "count": 3
+        },
+        {
+          "key": "Brawler",
+          "name": "싸움꾼",
+          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_Brawler.png",
           "count": 2
         }
       ],
@@ -4678,26 +5353,6 @@
           }
         },
         {
-          "lolchessKey": "gnar",
-          "name": "나르",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
-          "matchedKey": "Gnar",
-          "traits": [
-            "Brawler",
-            "Elderwood",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.63,
-            "top4Rate": 0.661,
-            "sampleSize": 575
-          }
-        },
-        {
           "lolchessKey": "fiddlesticks",
           "name": "피들스틱",
           "cost": 3,
@@ -4715,63 +5370,6 @@
             "avgPlacement": 4.35,
             "top4Rate": 0.545,
             "sampleSize": 883
-          }
-        },
-        {
-          "lolchessKey": "teemo",
-          "name": "티모",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
-          "matchedKey": "Teemo",
-          "traits": [
-            "Invoker",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.39,
-            "top4Rate": 0.547,
-            "sampleSize": 179
-          }
-        },
-        {
-          "lolchessKey": "ornn",
-          "name": "오른",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
-          "matchedKey": "Ornn",
-          "traits": [
-            "Defender",
-            "Elderwood"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.521,
-            "sampleSize": 702
-          }
-        },
-        {
-          "lolchessKey": "lillia",
-          "name": "릴리아",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
-          "matchedKey": "Lillia",
-          "traits": [
-            "Defender",
-            "Fae"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.44,
-            "top4Rate": 0.52,
-            "sampleSize": 327
           }
         },
         {
@@ -4795,22 +5393,101 @@
           }
         },
         {
-          "lolchessKey": "kobuko",
-          "name": "코부코",
-          "cost": 1,
+          "lolchessKey": "gnar",
+          "name": "나르",
+          "cost": 5,
           "star": 2,
           "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
-          "matchedKey": "Kobuko",
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
+          "matchedKey": "Gnar",
           "traits": [
             "Brawler",
+            "Elderwood",
             "Sprykin"
           ],
           "items": [],
           "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.522,
-            "sampleSize": 69
+            "avgPlacement": 3.63,
+            "top4Rate": 0.661,
+            "sampleSize": 575
+          }
+        },
+        {
+          "lolchessKey": "reksai",
+          "name": "렉사이",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
+          "matchedKey": "RekSai",
+          "traits": [
+            "Brawler",
+            "Eldritch"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.74,
+            "top4Rate": 0.462,
+            "sampleSize": 351
+          }
+        },
+        {
+          "lolchessKey": "tristana",
+          "name": "트리스타나",
+          "cost": 3,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
+          "matchedKey": "Tristana",
+          "traits": [
+            "Fae",
+            "Hunter",
+            "Sprykin"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 5,
+            "top4Rate": 0.468,
+            "sampleSize": 62
+          }
+        },
+        {
+          "lolchessKey": "xayah",
+          "name": "자야",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
+          "matchedKey": "Xayah",
+          "traits": [
+            "Elderwood",
+            "Fae",
+            "Rapidfire"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.71,
+            "top4Rate": 0.475,
+            "sampleSize": 219
+          }
+        },
+        {
+          "lolchessKey": "ornn",
+          "name": "오른",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+          "matchedKey": "Ornn",
+          "traits": [
+            "Defender",
+            "Elderwood"
+          ],
+          "items": [],
+          "stat": {
+            "avgPlacement": 4.42,
+            "top4Rate": 0.521,
+            "sampleSize": 702
           }
         }
       ],
@@ -4820,446 +5497,6 @@
       "sampleSize": 266,
       "tier": "C",
       "carryKey": "Rammus"
-    },
-    {
-      "id": "auto-morgana",
-      "name": "기원자 모르가나",
-      "gold": null,
-      "unitCost": 20,
-      "unitCount": 8,
-      "traits": [
-        {
-          "key": "Invoker",
-          "name": "기원자",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Invoker.png",
-          "count": 5
-        },
-        {
-          "key": "Coven",
-          "name": "악의 여단",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Coven.TFT_Set18.png",
-          "count": 4
-        },
-        {
-          "key": "Riftbeast",
-          "name": "협곡야수",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 2
-        },
-        {
-          "key": "Vanguard",
-          "name": "선봉대",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Vanguard.TFT_Set18.png",
-          "count": 2
-        }
-      ],
-      "units": [
-        {
-          "lolchessKey": "morgana",
-          "name": "모르가나",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
-          "matchedKey": "Morgana",
-          "traits": [
-            "Coven",
-            "Invoker"
-          ],
-          "items": [
-            {
-              "key": "DA_HextechGunblade",
-              "name": "마법공학 총검",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_HextechGunblade.png",
-              "stat": {
-                "avgPlacement": 4.04,
-                "top4Rate": 0.574,
-                "sampleSize": 54
-              }
-            },
-            {
-              "key": "DA_JeweledGauntlet",
-              "name": "보석 건틀릿",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_JeweledGauntlet.png",
-              "stat": {
-                "avgPlacement": 4.33,
-                "top4Rate": 0.583,
-                "sampleSize": 36
-              }
-            },
-            {
-              "key": "DA_RabadonsDeathcap",
-              "name": "라바돈의 죽음모자",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_RabadonsDeathcap.png",
-              "stat": {
-                "avgPlacement": 4.36,
-                "top4Rate": 0.472,
-                "sampleSize": 36
-              }
-            }
-          ],
-          "stat": {
-            "avgPlacement": 4.55,
-            "top4Rate": 0.494,
-            "sampleSize": 399
-          }
-        },
-        {
-          "lolchessKey": "teemo",
-          "name": "티모",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
-          "matchedKey": "Teemo",
-          "traits": [
-            "Invoker",
-            "Sprykin"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.39,
-            "top4Rate": 0.547,
-            "sampleSize": 179
-          }
-        },
-        {
-          "lolchessKey": "camille",
-          "name": "카밀",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
-          "matchedKey": "Camille",
-          "traits": [
-            "Coven",
-            "Ravager"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.509,
-            "sampleSize": 108
-          }
-        },
-        {
-          "lolchessKey": "sentinel",
-          "name": "감시자",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
-          "matchedKey": "Sentinel",
-          "traits": [
-            "Invoker",
-            "Riftbeast",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.513,
-            "sampleSize": 1219
-          }
-        },
-        {
-          "lolchessKey": "sentry",
-          "name": "조약돌",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
-          "matchedKey": "Sentry",
-          "traits": [
-            "Invoker",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.47,
-            "top4Rate": 0.504,
-            "sampleSize": 577
-          }
-        },
-        {
-          "lolchessKey": "kogmaw",
-          "name": "코그모",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
-          "matchedKey": "KogMaw18_AD",
-          "traits": [
-            "Adaptor",
-            "Caustic",
-            "Invoker"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.78,
-            "top4Rate": 0.441,
-            "sampleSize": 401
-          }
-        },
-        {
-          "lolchessKey": "cassiopeia",
-          "name": "카시오페아",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
-          "matchedKey": "Cassiopeia",
-          "traits": [
-            "Coven",
-            "Spellweaver"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.79,
-            "top4Rate": 0.467,
-            "sampleSize": 270
-          }
-        },
-        {
-          "lolchessKey": "elise",
-          "name": "엘리스",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Elise.png",
-          "matchedKey": "Elise",
-          "traits": [
-            "Coven",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.98,
-            "top4Rate": 0.436,
-            "sampleSize": 172
-          }
-        }
-      ],
-      "avgPlacement": 4.55,
-      "top4Rate": 0.494,
-      "coverage": 1,
-      "sampleSize": 399,
-      "tier": "C",
-      "carryKey": "Morgana"
-    },
-    {
-      "id": "auto-scuttlecrab",
-      "name": "협곡야수 바위 게",
-      "gold": null,
-      "unitCost": 30,
-      "unitCount": 8,
-      "traits": [
-        {
-          "key": "Riftbeast",
-          "name": "협곡야수",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Riftbeast.TFT_Set18.png",
-          "count": 6
-        },
-        {
-          "key": "Juggernaut",
-          "name": "전쟁기계",
-          "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
-          "count": 3
-        }
-      ],
-      "units": [
-        {
-          "lolchessKey": "scuttlecrab",
-          "name": "바위 게",
-          "cost": 2,
-          "star": 3,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
-          "matchedKey": "Scuttlecrab",
-          "traits": [
-            "Juggernaut",
-            "Riftbeast"
-          ],
-          "items": [
-            {
-              "key": "DA_Crownguard",
-              "name": "크라운가드",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_Crownguard.png",
-              "stat": {
-                "avgPlacement": 4.36,
-                "top4Rate": 0.545,
-                "sampleSize": 22
-              }
-            },
-            {
-              "key": "DA_WarmogsArmor",
-              "name": "워모그의 갑옷",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_WarmogsArmor.png",
-              "stat": {
-                "avgPlacement": 4.83,
-                "top4Rate": 0.426,
-                "sampleSize": 47
-              }
-            },
-            {
-              "key": "DA_GargoyleStoneplate",
-              "name": "가고일 돌갑옷",
-              "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-item/TFT_Item_GargoyleStoneplate.png",
-              "stat": {
-                "avgPlacement": 4.91,
-                "top4Rate": 0.382,
-                "sampleSize": 89
-              }
-            }
-          ],
-          "stat": {
-            "avgPlacement": 4.55,
-            "top4Rate": 0.486,
-            "sampleSize": 420
-          }
-        },
-        {
-          "lolchessKey": "elderdragon",
-          "name": "장로 드래곤",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
-          "matchedKey": "ElderDragon",
-          "traits": [
-            "ApexPredator",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 3.85,
-            "top4Rate": 0.627,
-            "sampleSize": 413
-          }
-        },
-        {
-          "lolchessKey": "maokai",
-          "name": "마오카이",
-          "cost": 5,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
-          "matchedKey": "Maokai",
-          "traits": [
-            "Juggernaut",
-            "OldGrowth"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.05,
-            "top4Rate": 0.551,
-            "sampleSize": 396
-          }
-        },
-        {
-          "lolchessKey": "brambleback",
-          "name": "덩굴정령",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
-          "matchedKey": "Brambleback",
-          "traits": [
-            "Ravager",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.31,
-            "top4Rate": 0.556,
-            "sampleSize": 412
-          }
-        },
-        {
-          "lolchessKey": "sentinel",
-          "name": "감시자",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
-          "matchedKey": "Sentinel",
-          "traits": [
-            "Invoker",
-            "Riftbeast",
-            "Vanguard"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.513,
-            "sampleSize": 1219
-          }
-        },
-        {
-          "lolchessKey": "amumu",
-          "name": "아무무",
-          "cost": 4,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
-          "matchedKey": "Amumu",
-          "traits": [
-            "Inferno",
-            "Juggernaut"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.41,
-            "top4Rate": 0.504,
-            "sampleSize": 832
-          }
-        },
-        {
-          "lolchessKey": "crimsonraptor",
-          "name": "어미 부리",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
-          "matchedKey": "CrimsonRaptor",
-          "traits": [
-            "Rapidfire",
-            "Riftbeast",
-            "Summoner"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.42,
-            "top4Rate": 0.52,
-            "sampleSize": 98
-          }
-        },
-        {
-          "lolchessKey": "krug",
-          "name": "돌거북",
-          "cost": 3,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
-          "matchedKey": "Krug",
-          "traits": [
-            "Brawler",
-            "Riftbeast"
-          ],
-          "items": [],
-          "stat": {
-            "avgPlacement": 4.45,
-            "top4Rate": 0.513,
-            "sampleSize": 751
-          }
-        }
-      ],
-      "avgPlacement": 4.55,
-      "top4Rate": 0.486,
-      "coverage": 1,
-      "sampleSize": 420,
-      "tier": "C",
-      "carryKey": "Scuttlecrab"
     }
   ]
 }

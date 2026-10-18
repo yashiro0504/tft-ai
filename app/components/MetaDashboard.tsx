@@ -15,6 +15,7 @@ import type {
 } from '@/lib/types'
 import { DetailModal } from './MetaDetailModal'
 import { ShareButton } from './ShareButton'
+import { track } from '@/lib/analytics'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -325,6 +326,7 @@ export function MetaDashboard({
                   aria-selected={tab === t.id}
                   className={`rk-tab ${tab === t.id ? 'on' : ''}`}
                   onClick={() => {
+                    if (tab !== t.id) track('tab_view', { tab: t.id, surface: 'meta' })
                     setTab(t.id)
                     setSelectedId(null)
                     setDetailOpen(false)
@@ -512,10 +514,14 @@ function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
       </p>
 
       <div className="rk-dactions">
-        <Link href={`/deck/${deck.id}`} className="rk-dlink">
+        <Link
+          href={`/deck/${deck.id}`}
+          className="rk-dlink"
+          onClick={() => track('deck_open', { surface: 'meta_deck_row' })}
+        >
           덱 페이지
         </Link>
-        <ShareButton path={`/deck/${deck.id}`} label="공유" />
+        <ShareButton path={`/deck/${deck.id}`} label="공유" surface="meta_deck_row" />
       </div>
 
       <div className="rk-kpis">

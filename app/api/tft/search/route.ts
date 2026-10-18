@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
       data.gameName,
       data.tagLine,
       data.summonerLevel,
-      data.profileIconId
+      data.profileIconId,
+      data.rank
     )
 
     const response: TftSearchResponse = {

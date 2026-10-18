@@ -7,9 +7,10 @@
  *  - 이 스크립트는 라이브 파일을 건드리지 않고 lib/decksData.preview.json 만 생성한다.
  *
  * 데이터 소스:
- *  - lib/metaStats.json      : Riot 래더 표본 집계(기물/아이템/조합)
- *  - lib/tftData.json        : 이름/아이콘(Data Dragon)
- *  - lib/championTraits.json : 기물→시너지 "사실 관계" 매핑 (큐레이션 덱 미사용)
+ *  - lib/metaStats.json        : Riot 래더 표본 집계(기물/아이템/조합)
+ *  - lib/tftData.json          : 이름/아이콘(Data Dragon)
+ *  - lib/championTraits.json   : 기물→시너지 "사실 관계" 매핑 (큐레이션 덱 미사용)
+ *  - lib/traitBreakpoints.json : 시너지 발동 단위(breakpoint) — 실제로 켜지는 조합만 남긴다
  *
  * 사용법:
  *  node scripts/buildDeckCompsFromStats.js            # lib/decksData.preview.json
@@ -22,6 +23,7 @@ const path = require('path')
 const stats = require('../lib/metaStats.json')
 const tftData = require('../lib/tftData.json')
 const reference = require('../lib/championTraits.json')
+const breakpointData = require('../lib/traitBreakpoints.json')
 
 const WRITE_LIVE = process.argv.includes('--write') || process.env.WRITE_LIVE === '1'
 
@@ -85,6 +87,23 @@ function traitMeta(key) {
 
 function itemMeta(key) {
   return itemLookup.get(norm(key)) || itemMap[key] || null
+}
+
+/** 시너지 breakpoint 조회 (영문 apiName/영문명 → 한글명 순으로 시도) */
+function traitBreakpoints(trait) {
+  const direct = breakpointData.traits[norm(trait)]
+  if (direct) return direct
+  const korean = traitRefMap.get(norm(trait))?.name
+  if (korean && breakpointData.traits[korean]) return breakpointData.traits[korean]
+  return null
+}
+
+/**
+ * 조합형 시너지 여부.
+ * 고유 시너지(breakpoint 1)는 해당 기물 1명으로 항상 켜지므로 덱 구성 요소로 세지 않는다.
+ */
+function isCompositional(entry) {
+  return Boolean(entry && entry.breakpoints[0] >= 2)
 }
 
 /** 기물 → 시너지/코스트 참조 맵 (championTraits 의 사실 관계만 사용) */
@@ -157,14 +176,92 @@ function buildBisMap() {
   return map
 }
 
-function traitCounts(units) {
+/**
+ * 활성 시너지만 집계한다.
+ * breakpoint 에 못 미치는 시너지는 아무 효과가 없으므로 덱의 "시너지"로 표시하지 않는다.
+ */
+function activeTraits(units) {
   const counts = new Map()
   for (const unit of units) {
     for (const trait of unit.traits) counts.set(trait, (counts.get(trait) || 0) + 1)
   }
-  return [...counts.entries()]
-    .filter(([, count]) => count >= 2)
-    .sort((a, b) => b[1] - a[1])
+
+  const out = []
+  for (const [trait, count] of counts) {
+    const bp = traitBreakpoints(trait)
+    if (!bp) continue // breakpoint 데이터 없음 → 판단 불가, 제외
+    if (!isCompositional(bp)) continue // 고유 시너지 제외
+    if (count < bp.breakpoints[0]) continue // 미발동
+    out.push({ trait, count, bp })
+  }
+  return out.sort((a, b) => b.count - a.count || a.trait.localeCompare(b.trait))
+}
+
+/**
+ * 캐리 기준 주변 유닛 선택 (breakpoint 인지 그리디).
+ *
+ * 점수 규칙
+ *  - 다음 breakpoint 를 "정확히 채우는" 유닛이 최고점 (낭비 없이 한 단계 상승)
+ *  - 이미 최대 단계인 시너지는 가산이 거의 없다 (초과 기용 방지)
+ *  - 캐리와 시너지 겹침, 표본 평균등수를 소폭 가산
+ */
+function pickMates(carry, pool) {
+  const members = [carry]
+  const chosen = new Set([carry.key])
+  const counts = new Map()
+
+  const apply = (unit, delta) => {
+    for (const trait of unit.traits) counts.set(trait, (counts.get(trait) || 0) + delta)
+  }
+  apply(carry, 1)
+
+  while (members.length < UNITS_PER_DECK) {
+    let best = null
+    let bestScore = -Infinity
+
+    for (const unit of pool) {
+      if (chosen.has(unit.key)) continue
+
+      let score = 0
+      for (const trait of unit.traits) {
+        const bp = traitBreakpoints(trait)
+        const current = counts.get(trait) || 0
+
+        if (!bp) {
+          score += 0.1 // 데이터 없음: 중립
+          continue
+        }
+
+        const next = bp.breakpoints.find((b) => b > current)
+        if (!next) {
+          score += 0.02 // 이미 최대 단계
+          continue
+        }
+
+        const gap = next - current
+        if (current === 0) score += 0.45 // 새 시너지 시작
+        else if (gap === 1) score += 1.0 // breakpoint 완성
+        else if (gap === 2) score += 0.55
+        else score += 0.2
+      }
+
+      const shared = unit.traits.filter((trait) => carry.traits.includes(trait)).length
+      score += shared * 0.35
+      score += (5 - Math.min(Math.max(unit.avgPlacement, 1), 8)) * 0.12
+
+      if (score > bestScore) {
+        bestScore = score
+        best = unit
+      }
+    }
+
+    if (!best) break
+    members.push(best)
+    chosen.add(best.key)
+    apply(best, 1)
+  }
+
+  return members
 }
 
 function tierFromAvgPlacement(avg) {
@@ -176,22 +273,11 @@ function tierFromAvgPlacement(avg) {
 }
 
 function buildDeck(carry, pool, bisMap) {
-  const shared = (unit) => unit.traits.filter((trait) => carry.traits.includes(trait)).length
+  const members = pickMates(carry, pool)
 
-  const mates = pool
-    .filter((unit) => unit.key !== carry.key)
-    .map((unit) => ({ unit, shared: shared(unit) }))
-    .sort((a, b) => {
-      if (b.shared !== a.shared) return b.shared - a.shared
-      return a.unit.avgPlacement - b.unit.avgPlacement
-    })
-    .slice(0, Math.max(0, UNITS_PER_DECK - 1))
-    .map((entry) => entry.unit)
-
-  const members = [carry, ...mates]
-  const traits = traitCounts(members)
+  const traits = activeTraits(members)
     .slice(0, 4)
-    .map(([trait, count]) => {
+    .map(({ trait, count }) => {
       const meta = traitMeta(trait)
       return { key: trait, name: meta?.name || trait, iconUrl: meta?.iconUrl || '', count }
     })

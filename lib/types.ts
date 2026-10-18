@@ -178,6 +178,19 @@ export interface SlimMatchData {
   augmentAnalysis?: AugmentAnalysis
 }
 
+// 소환사 랭크(티어) 정보 — TFT League v1 `RANKED_TFT` 큐
+export interface TftRankInfo {
+  queueType: 'RANKED_TFT'
+  /** IRON | BRONZE | SILVER | GOLD | PLATINUM | EMERALD | DIAMOND | MASTER | GRANDMASTER | CHALLENGER */
+  tier: string
+  /** I~IV (MASTER 이상은 'I' 고정) */
+  rank: string
+  leaguePoints: number
+  wins: number
+  losses: number
+  hotStreak?: boolean
+}
+
 // 소환사 프로필 요약 카드 정보
 export interface SummonerProfile {
   gameName: string
@@ -188,6 +201,8 @@ export interface SummonerProfile {
   winRate: number // 1등 비율 (%)
   top4Rate: number // 순방 비율 (%)
   totalGames: number
+  /** 랭크 정보. 배치 중/미조회/API 오류 시 null */
+  rank?: TftRankInfo | null
 }
 
 /** LLM 서술의 수치 근거 검증 결과 (코드 산출) */

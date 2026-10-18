@@ -5,6 +5,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { track } from '@/lib/analytics'
 
 interface MeResponse {
   configured: boolean
@@ -55,6 +56,7 @@ export function UserMenu() {
     return (
       <Link
         href="/login"
+        onClick={() => track('login_click', { surface: 'header' })}
         className="ml-1 rounded-lg border border-line/15 px-2.5 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink"
       >
         로그인
@@ -106,6 +108,14 @@ export function UserMenu() {
               {analysisUsed}/{analysisLimit}
             </span>
           </div>
+          <Link
+            href="/pro"
+            className="mt-2 flex items-center justify-between rounded-lg border border-amber-400/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/15"
+            onClick={() => setOpen(false)}
+          >
+            <span>Pro 플랜</span>
+            <span className="text-[9px] font-black opacity-80">준비 중</span>
+          </Link>
           <Link
             href="/privacy"
             className="mt-2 block text-[11px] text-muted underline-offset-2 hover:text-ink hover:underline"

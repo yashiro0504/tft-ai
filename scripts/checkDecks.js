@@ -4,6 +4,11 @@
  * 사용:
  *   node scripts/checkDecks.js
  *   node scripts/checkDecks.js --file lib/decksData.preview.json
+ *
+ * P1-5 강화 항목:
+ *  - 시너지 count 가 유닛 구성과 일치하는지 재계산 대조
+ *  - 시너지 breakpoint 준수 (미발동 / 최대 단계 초과)
+ *  - unitCost · unitCount 필드 정합성
  */
 const fs = require('fs')
 const path = require('path')
@@ -15,9 +20,41 @@ const FILE =
     ? path.resolve(args[fileIdx + 1])
     : path.join(__dirname, '..', 'lib', 'decksData.json')
 
+const breakpointData = require('../lib/traitBreakpoints.json')
+const reference = require('../lib/championTraits.json')
+
 const failures = []
+const warnings = []
 function check(label, condition, detail = '') {
   if (!condition) failures.push(detail ? `${label} (${detail})` : label)
+}
+function warn(label, condition, detail = '') {
+  if (!condition) warnings.push(detail ? `${label} (${detail})` : label)
+}
+
+/** 기물/시너지 ID 정규화 (buildDeckCompsFromStats.js 와 동일 규칙) */
+function norm(id) {
+  return String(id || '')
+    .replace(/^TFT\d*_/i, '')
+    .replace(/^DA_\d*_/i, '')
+    .replace(/^DA_/i, '')
+    .replace(/^TFTTutorial_/i, '')
+    .replace(/_Base$/i, '')
+    .replace(/Base$/i, '')
+    .replace(/_(AP|AD)$/i, '')
+    .replace(/\d+$/i, '')
+    .toLowerCase()
+}
+
+const traitRef = reference.traits || {}
+
+/** 시너지 breakpoint 조회 (영문 → 한글명 순) */
+function traitBreakpoints(trait) {
+  const direct = breakpointData.traits[norm(trait)]
+  if (direct) return direct
+  const korean = traitRef[norm(trait)]?.name
+  if (korean && breakpointData.traits[korean]) return breakpointData.traits[korean]
+  return null
 }
 
 function main() {
@@ -75,7 +112,52 @@ function main() {
     for (const trait of deck.traits || []) {
       check(`${tag}: 시너지 키/이름/아이콘`, Boolean(trait.key && trait.name && trait.iconUrl), trait.key)
       check(`${tag}: 시너지 count`, trait.count >= 1, `${trait.key}=${trait.count}`)
+
+      const bp = traitBreakpoints(trait.key)
+      if (!bp) {
+        warn(`${tag}: 시너지 breakpoint 데이터 없음`, false, trait.key)
+        continue
+      }
+      check(
+        `${tag}: 시너지 미발동(breakpoint 미달)`,
+        trait.count >= bp.breakpoints[0],
+        `${trait.key}=${trait.count} < ${bp.breakpoints[0]}`
+      )
+      check(
+        `${tag}: 시너지 최대 단계 초과`,
+        trait.count <= bp.max,
+        `${trait.key}=${trait.count} > ${bp.max}`
+      )
     }
+
+    // 선언된 시너지 count 가 실제 유닛 구성과 일치하는지 재계산 대조
+    const recomputed = new Map()
+    for (const unit of units) {
+      for (const trait of unit.traits || []) {
+        recomputed.set(trait, (recomputed.get(trait) || 0) + 1)
+      }
+    }
+    for (const trait of deck.traits || []) {
+      check(
+        `${tag}: 시너지 count 불일치`,
+        recomputed.get(trait.key) === trait.count,
+        `${trait.key}: 선언 ${trait.count} vs 계산 ${recomputed.get(trait.key) ?? 0}`
+      )
+    }
+
+    // 비용/개수 필드 정합성
+    check(
+      `${tag}: unitCost 불일치`,
+      deck.unitCost === units.reduce((sum, unit) => sum + (unit.cost || 0), 0),
+      `선언 ${deck.unitCost}`
+    )
+    if (typeof deck.unitCount === 'number') {
+      check(`${tag}: unitCount 불일치`, deck.unitCount === units.length, `${deck.unitCount} vs ${units.length}`)
+    }
+
+    // 캐리는 BIS 아이템이 2개 이상이어야 덱으로서 의미가 있다 (데이터 부족은 경고)
+    const carry = units.find((unit) => unit.lolchessKey === norm(deck.carryKey)) || units[0]
+    warn(`${tag}: 캐리 BIS 부족`, (carry?.items?.length || 0) >= 2, `${carry?.name || '?'} ${carry?.items?.length || 0}개`)
 
     const signature = units.map((unit) => unit.lolchessKey).sort().join(',')
     check(`${tag}: 유닛 조합 중복`, !signatures.has(signature))
@@ -85,6 +167,12 @@ function main() {
   console.log(`파일: ${path.relative(path.join(__dirname, '..'), FILE)}`)
   console.log(`출처: ${data.source} · 패치: ${data.patch} · 갱신: ${data.generatedAt}`)
   console.log(`덱 ${decks.length}개 · 유닛 매칭률 ${data.unitMatchRate} · 중복 조합 0`)
+
+  if (warnings.length > 0) {
+    console.warn(`\n⚠️ 경고 ${warnings.length}건`)
+    warnings.slice(0, 10).forEach((warning) => console.warn(`  - ${warning}`))
+    if (warnings.length > 10) console.warn(`  ... 외 ${warnings.length - 10}건`)
+  }
 
   if (failures.length > 0) {
     console.error(`\n❌ 덱 데이터 검사 실패 ${failures.length}건`)

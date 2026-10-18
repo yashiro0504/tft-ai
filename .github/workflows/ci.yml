@@ -67,7 +67,7 @@ jobs:
             exit 1
           fi
 
-          for path in / /rank /meta /terms /privacy /robots.txt /sitemap.xml; do
+          for path in / /rank /meta /pro /terms /privacy /manifest.webmanifest /icon.svg /icons/icon-192.png /robots.txt /sitemap.xml; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$path")
             echo "$path -> $code"
             test "$code" = "200"

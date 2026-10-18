@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { calculateProfileStats } from '@/lib/profile'
 import { loadProfile } from '@/lib/profileData'
+import { formatRankLabel, formatRankLp } from '@/lib/rank'
 import { loadKoreanFont } from '@/lib/ogFont'
 
 export const alt = 'TFT LAB 소환사 전적 카드'
@@ -31,7 +32,8 @@ export default async function Image({ params }: { params: Promise<{ region: stri
       data.gameName,
       data.tagLine,
       data.summonerLevel,
-      data.profileIconId
+      data.profileIconId,
+      data.rank
     )
     placements = data.matches.map((m) => m.placement)
   } catch {
@@ -44,10 +46,14 @@ export default async function Image({ params }: { params: Promise<{ region: stri
   const top4 = stats ? `${stats.top4Rate}%` : '-'
   const win = stats ? `${stats.winRate}%` : '-'
   const total = stats ? stats.totalGames : 0
+  const rankLabel = formatRankLabel(stats?.rank)
+  const rankLp = formatRankLp(stats?.rank)
 
   const fontText = [
     'TFT LAB', 'SET 18', 'AI COACH', '소환사 전적', '평균 등수', '순방률', 'TOP 4', '1등', '승률',
     '최근', '경기', '기준', '전적을 불러오지 못했습니다', '위', '%', '#', '·', '—', '-',
+    '아이언', '브론즈', '실버', '골드', '플래티넘', '에메랄드', '다이아몬드', '마스터', '그랜드마스터',
+    '챌린저', '배치 중', 'LP', 'I', 'II', 'III', 'IV', rankLabel, rankLp,
     displayName, displayTag, String(avg), String(top4), String(win), String(total),
     ...placements.map((p) => `#${p}`),
   ].join('')
@@ -118,6 +124,23 @@ export default async function Image({ params }: { params: Promise<{ region: stri
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
             <div style={{ fontSize: 72, fontWeight: 700, letterSpacing: -2 }}>{displayName}</div>
             <div style={{ fontSize: 36, color: '#94a3b8', fontWeight: 700 }}>{`#${displayTag}`}</div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginLeft: 6,
+                padding: '8px 18px',
+                borderRadius: 999,
+                border: '1px solid rgba(251,191,36,0.5)',
+                background: 'rgba(251,191,36,0.14)',
+                color: '#fbbf24',
+                fontSize: 24,
+                fontWeight: 700,
+              }}
+            >
+              {`${rankLabel} · ${rankLp}`}
+            </div>
           </div>
           <div style={{ display: 'flex', marginTop: 10, fontSize: 22, color: '#94a3b8' }}>
             {stats ? `최근 ${total}경기 기준 · 평균 등수 ${avg}위` : '전적을 불러오지 못했습니다'}

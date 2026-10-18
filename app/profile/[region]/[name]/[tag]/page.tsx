@@ -3,8 +3,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { isValidProfileParams, loadProfile } from '@/lib/profileData'
 import { calculateProfileStats } from '@/lib/profile'
+import { formatRankLabel, formatRankLp } from '@/lib/rank'
 import { RiotApiError } from '@/lib/riot'
 import { MatchCard } from '@/app/components/MatchCard'
+import { RankBadge } from '@/app/components/RankBadge'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
@@ -61,10 +63,12 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     data.gameName,
     data.tagLine,
     data.summonerLevel,
-    data.profileIconId
+    data.profileIconId,
+    data.rank
   )
   const title = `${stats.gameName}#${stats.tagLine} 전적 — 평균 ${stats.avgPlacement}위 · TOP4 ${stats.top4Rate}%`
-  const description = `최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}위, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
+  const rankPart = stats.rank ? `${formatRankLabel(stats.rank)} ${formatRankLp(stats.rank)}` : '배치 중'
+  const description = `${rankPart} · 최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}위, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
 
   return {
     title,
@@ -124,7 +128,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     data.gameName,
     data.tagLine,
     data.summonerLevel,
-    data.profileIconId
+    data.profileIconId,
+    data.rank
   )
   const sharePath = `/profile/kr/${encodeURIComponent(data.gameName)}/${encodeURIComponent(data.tagLine)}`
 
@@ -166,6 +171,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   <span>{stats.gameName}</span>
                   <span className="font-mono text-sm font-bold text-muted">#{stats.tagLine}</span>
                 </h1>
+                <div className="mt-1.5">
+                  <RankBadge rank={stats.rank} />
+                </div>
                 <p className="mt-1 text-xs font-medium text-muted">
                   최근 <strong className="font-mono text-cyan-400">{stats.totalGames}경기</strong> 기준
                 </p>
