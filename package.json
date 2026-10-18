@@ -23,6 +23,7 @@
     "build:decks": "node scripts/buildDeckCompsFromStats.js --write",
     "build:deck-preview": "node scripts/buildDeckCompsFromStats.js",
     "extract:traits": "node scripts/extractChampionTraits.js",
+    "build:traits": "node scripts/buildTraitBreakpoints.js",
     "decks:check": "node scripts/checkDecks.js",
     "test:augment": "node scripts/testAugmentAggregation.js",
     "inspect:match": "node scripts/inspectMatch.js",

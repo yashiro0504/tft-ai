@@ -1,6 +1,6 @@
 # TFT LAB 개발 핸드오프 (WorkBody AI용)
 
-최종 갱신: 2026-10-18 · 기준 커밋: `feat/p1-4-stream` (P0-1~3 · P1-4 완료) · 라이브: https://www.tftlab.kr
+최종 갱신: 2026-10-18 · 기준 커밋: `feat/p1-5-deck-quality` (P0-1~3 · P1-4~5 완료) · 라이브: https://www.tftlab.kr
 
 이 문서는 **다른 개발 에이전트가 이 저장소를 이어받아 작업**할 수 있도록 현재 상태,
 아키텍처, 우선순위, 금지사항, 검증 절차를 정리한 것입니다. 먼저 이 문서 →
@@ -126,6 +126,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/metaPayload.ts` | `/api/tft/meta` + `/meta` 공용 빌더 |
 | `lib/metaSlim.ts` | `/meta` 초기 payload 슬림화 |
 | `lib/decks.ts` | 덱 데이터 정규화/통계 계산 |
+| `lib/traitBreakpoints.json` | 세트 18 시너지 발동 단위(breakpoint) — 덱 생성·검증 공용 |
+| `scripts/buildTraitBreakpoints.js` | breakpoint 생성기 (Community Dragon) |
 | `lib/rank.ts` | 티어 표시 포맷/색상 헬퍼 (순수 함수) |
 | `app/components/RankBadge.tsx` | 티어·LP·승패·승률 배지 (홈 카드 + 프로필 공용) |
 | `lib/favorites.ts` | 즐겨찾기 검증/CRUD (Supabase RLS 기반, 최대 20개) |
@@ -167,6 +169,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   비로그인 최근 검색 5개(localStorage), 검색창 아래 칩 UI
 - **P1-4 AI 분석 스트리밍 완료**: `/api/tft/match/stream`(SSE stage→result), 첫 응답 39ms(기존 8.7s),
   JSON 폴백 유지, `eval:reports` 신뢰성 게이트 통과
+- **P1-5 덱 구성 품질 완료**: `traitBreakpoints.json`(35종) + breakpoint 인지 그리디로 덱 재생성,
+  미발동 시너지 8 → **0**, `decks:check` 에 breakpoint·정합성 검사 추가
 
 ## 4. 개발 우선순위 (이 순서대로)
 
@@ -269,17 +273,33 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   부분 JSON 파싱 리스크 없이 체감 대기(첫 피드백 39ms)를 없애는 것이 목적이다.
 - 캐시 히트도 쿼터를 소모하는 기존 정책은 **변경하지 않았다**(과금 정책 변경은 별도 결정 사항).
 
-### P1-5. 덱 구성 품질 (1~2일) — 🔜 **다음 작업**
+### P1-5. 덱 구성 품질 (1~2일) — ✅ 완료 (2026-10-18)
 
 - 목표: 알고리즘 덱이 “실제로 나올 법한” 구성이 되게 한다.
-- 구현
-  - 시너지 breakpoint 데이터 추가(`lib/traitBreakpoints.json` 등) 후 유닛 선택 시 상한 적용
-  - 캐리/탱커 역할 구분이 없으면 최소한 코스트 분포·시너지 수 상한만 적용
-  - `decks:check` 기준 강화(시너지 breakpoint 위반, 코스트 0 등)
-- 완료 조건
-  - 24덱 유지, `decks:check`/CI 통과, `/deck/[id]` 구성 UI 정상
+- 구현 (완료)
+  - `lib/traitBreakpoints.json` 신규 — 세트 18 시너지 **발동 단위(breakpoint)** 35종
+    - 소스: Community Dragon `cdragon/tft/{ko_kr,en_us}.json` (DDragon `tft-trait.json` 에는 `effects` 가 없다)
+    - 키를 3중 등록(정규화 apiName / 영문명 / 한글명) → `championTraits.json` 의 표기 차이 흡수
+    - 생성: `npm run build:traits` (`scripts/buildTraitBreakpoints.js`, 별칭 3건 하드코딩)
+  - `scripts/buildDeckCompsFromStats.js` — **breakpoint 인지 그리디**로 교체
+    - 다음 breakpoint 를 정확히 채우는 유닛 최고점, 이미 최대 단계인 시너지는 가산 최소(초과 기용 방지)
+    - 표시 시너지는 **발동된 것만**(count ≥ 첫 breakpoint), 고유 시너지(breakpoint 1)는 제외
+  - `scripts/checkDecks.js` 강화
+    - 시너지 **미발동(count < 첫 breakpoint)** / **최대 단계 초과(count > max)** → 실패
+    - 시너지 count 재계산 대조, `unitCost`·`unitCount` 정합성 검사
+    - 캐리 BIS 2개 미만 → 경고(데이터 부족), breakpoint 미등록 시너지 → 경고
+- 개선 효과 (재생성 전후 실측)
+  | 지표 | 이전 | 이후 |
+  | --- | --- | --- |
+  | 시너지 항목 수 | 67 | 96 |
+  | 미발동 시너지(죽은 유닛) | **8** | **0** |
+  | 최대 단계 초과 | 1 | 0 |
+  | 덱당 표시 시너지 | 2~3 | 4 (전부 발동) |
+- 완료 조건 충족
+  - 24덱 유지 ✅, `decks:check` 통과 ✅ (경고 1건: 카직스 BIS 1개 — 표본 부족), `/deck/[id]` 24개 200 ✅
+  - 덱 ID 20개 유지 · 4개 교체(`auto-amumu/diana/morgana/scuttlecrab` → `auto-ivern/draven/khazix/maokai`)
 
-### P2-6. 모바일/라이트/PWA (1~2일)
+### P2-6. 모바일/라이트/PWA (1~2일) — 🔜 **다음 작업**
 
 - 360px 실기기에서 표·바텀시트·모달 확인 (이미 1차 구현됨)
 - 라이트 테마 실사용 점검(대비/그림자/오버레이)
@@ -384,6 +404,12 @@ Supabase 설정 절차: `docs/supabase-auth.md`
     - 프록시 버퍼링을 막으려면 `no-transform` + `X-Accel-Buffering: no` 를 유지한다.
     - 15초 하트비트(`: ping`)를 제거하면 유휴 타임아웃으로 스트림이 끊길 수 있다.
     - 리포트는 구조화 JSON 이라 토큰 단위 렌더를 하지 않는다. 단계(stage) 이벤트만 보낸다.
+16. **덱 재생성은 breakpoint 를 거쳐야 한다**
+    - `lib/traitBreakpoints.json` 이 없거나 낡으면 “발동도 안 되는 시너지”가 덱에 들어간다.
+      세트가 바뀌면 `npm run build:traits` 로 재생성하고, `npm run build:decks` → `npm run decks:check` → `npm run build`.
+    - `decks:check` 는 이제 **미발동(count < 첫 breakpoint)** 과 **최대 단계 초과**를 실패로 처리한다.
+    - 재생성하면 덱 ID(`auto-<carry>`)가 일부 바뀔 수 있다. 구 URL 은 404 가 되므로
+      sitemap·외부 공유 링크를 함께 확인한다. (2026-10-18 재생성 시 20개 유지 · 4개 교체)
 
 ---
 
