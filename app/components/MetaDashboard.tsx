@@ -537,7 +537,7 @@ function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
         </div>
       </div>
 
-      <p className="rk-label">보드</p>
+      <p className="rk-label">구성</p>
       <div className="rk-board">
         {deck.units.slice(0, 8).map((u) => (
           <div key={`b-${u.key}-${u.index}`} className={`rk-cell c${u.cost ?? 1}`}>

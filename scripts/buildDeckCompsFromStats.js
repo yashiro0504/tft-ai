@@ -7,12 +7,13 @@
  *  - 이 스크립트는 라이브 파일을 건드리지 않고 lib/decksData.preview.json 만 생성한다.
  *
  * 데이터 소스:
- *  - lib/metaStats.json  : Riot 래더 표본 집계(기물/아이템/조합)
- *  - lib/tftData.json    : 이름/아이콘(Data Dragon)
- *  - lib/decksData.json  : 기물→시너지 "사실 관계" 매핑 (큐레이션 데이터는 사용하지 않음)
+ *  - lib/metaStats.json      : Riot 래더 표본 집계(기물/아이템/조합)
+ *  - lib/tftData.json        : 이름/아이콘(Data Dragon)
+ *  - lib/championTraits.json : 기물→시너지 "사실 관계" 매핑 (큐레이션 덱 미사용)
  *
  * 사용법:
- *  node scripts/buildDeckCompsFromStats.js
+ *  node scripts/buildDeckCompsFromStats.js            # lib/decksData.preview.json
+ *  node scripts/buildDeckCompsFromStats.js --write    # lib/decksData.json (라이브 교체)
  *  MIN_CARRY_SAMPLE=150 MAX_DECKS=20 node scripts/buildDeckCompsFromStats.js
  */
 const fs = require('fs')
@@ -20,7 +21,9 @@ const path = require('path')
 
 const stats = require('../lib/metaStats.json')
 const tftData = require('../lib/tftData.json')
-const reference = require('../lib/decksData.json')
+const reference = require('../lib/championTraits.json')
+
+const WRITE_LIVE = process.argv.includes('--write') || process.env.WRITE_LIVE === '1'
 
 const MIN_CARRY_SAMPLE = Number(process.env.MIN_CARRY_SAMPLE || 200)
 const MIN_ITEM_SAMPLE = Number(process.env.MIN_ITEM_SAMPLE || 20)
@@ -58,14 +61,11 @@ function buildLookup(map) {
   return lookup
 }
 
-/** decksData 의 시너지 한글명/아이콘 (DDragon 에 없는 시너지 보완용) */
+/** championTraits 의 시너지 한글명/아이콘 (DDragon 에 없는 시너지 보완용) */
 function buildTraitRefMap() {
   const map = new Map()
-  for (const deck of reference.decks || []) {
-    for (const trait of deck.traits || []) {
-      const key = norm(trait.key)
-      if (key && !map.has(key)) map.set(key, { name: trait.name, iconUrl: trait.iconUrl })
-    }
+  for (const [key, entry] of Object.entries(reference.traits || {})) {
+    if (key && !map.has(key)) map.set(key, { name: entry.name, iconUrl: entry.iconUrl })
   }
   return map
 }
@@ -87,23 +87,18 @@ function itemMeta(key) {
   return itemLookup.get(norm(key)) || itemMap[key] || null
 }
 
-/** 기물 → 시너지/코스트 참조 맵 (decksData 의 사실 관계만 사용) */
+/** 기물 → 시너지/코스트 참조 맵 (championTraits 의 사실 관계만 사용) */
 function buildReferenceMap() {
   const map = new Map()
-  for (const deck of reference.decks || []) {
-    for (const unit of deck.units || []) {
-      const key = norm(unit.matchedKey || unit.lolchessKey)
-      if (!key) continue
-      const entry = map.get(key) || {
-        key,
-        name: unit.name || champMeta(key)?.name || key,
-        cost: unit.cost,
-        imgUrl: champMeta(key)?.iconUrl || unit.imgUrl || '',
-        traits: new Set(),
-      }
-      for (const trait of unit.traits || []) entry.traits.add(trait)
-      map.set(key, entry)
-    }
+  for (const [key, entry] of Object.entries(reference.champions || {})) {
+    if (!key) continue
+    map.set(key, {
+      key,
+      name: entry.name || champMeta(key)?.name || key,
+      cost: entry.cost ?? null,
+      imgUrl: champMeta(key)?.iconUrl || entry.imgUrl || '',
+      traits: new Set(entry.traits || []),
+    })
   }
   return map
 }
@@ -281,7 +276,8 @@ function main() {
   for (const carry of carries) {
     if (decks.length >= MAX_DECKS) break
     const deck = buildDeck(carry, pool, bisMap)
-    if (deck.units.length < 6) continue
+    // 유닛 6개 미만이거나 활성 시너지가 2개 미만이면 덱으로 보기 어렵다.
+    if (deck.units.length < 6 || deck.traits.length < 2) continue
 
     const signature = deck.units.map((unit) => unit.lolchessKey).sort().join(',')
     if (seen.has(signature)) continue
@@ -295,22 +291,29 @@ function main() {
     source: 'riot-meta-aggregate',
     sourceUrl: null,
     patch: stats.patch || 'unknown',
-    traitReference: 'lib/decksData.json (기물-시너지 사실 관계만 사용)',
+    traitReference: reference.source,
     deckCount: decks.length,
     unitMatchRate: pool.length ? r2(withTraits.length / pool.length) : 0,
     decks,
   }
 
-  const outPath = path.join(__dirname, '..', 'lib', 'decksData.preview.json')
+  const outPath = path.join(
+    __dirname,
+    '..',
+    'lib',
+    WRITE_LIVE ? 'decksData.json' : 'decksData.preview.json'
+  )
   fs.writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf-8')
 
-  console.log(`✅ 프리뷰 생성 → ${outPath}`)
+  console.log(`✅ ${WRITE_LIVE ? '라이브 교체' : '프리뷰 생성'} → ${outPath}`)
   console.log(`   후보 기물 ${pool.length}종 (시너지 매핑 ${withTraits.length}종) · 캐리 후보 ${carries.length}종`)
   console.log(`   생성 덱 ${decks.length}개 · 패치 ${output.patch}`)
   decks.slice(0, 5).forEach((deck) => {
     console.log(`   - ${deck.name} [${deck.tier}] 평균 ${deck.avgPlacement}위 · ${deck.units.length}유닛 · ${deck.unitCost}코`)
   })
-  console.log('\n※ 라이브 데이터(lib/decksData.json)는 변경하지 않았습니다.')
+  if (!WRITE_LIVE) {
+    console.log('\n※ 라이브 데이터(lib/decksData.json)는 변경하지 않았습니다.')
+  }
 }
 
 main()

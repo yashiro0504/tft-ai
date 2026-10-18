@@ -73,18 +73,23 @@ jobs:
       - name: Validate collected data
         run: npm run meta:check
 
+      - name: Rebuild decks from stats
+        run: |
+          npm run build:decks
+          npm run decks:check
+
       - name: Show rank delta summary
         run: npm run meta:summary
 
-      - name: Commit updated meta stats
+      - name: Commit updated data
         if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- lib/metaStats.json; then
+          if git diff --quiet -- lib/metaStats.json lib/decksData.json; then
             echo "변경 사항이 없어 커밋하지 않습니다."
             exit 0
           fi
-          git add lib/metaStats.json
-          git commit -m "chore(meta): 래더 표본 자동 갱신 ($(date -u +%Y-%m-%d))"
+          git add lib/metaStats.json lib/decksData.json
+          git commit -m "chore(meta): 래더 표본·덱 자동 갱신 ($(date -u +%Y-%m-%d))"
           git push

@@ -38,6 +38,9 @@ jobs:
       - name: Meta data sanity
         run: npm run meta:check
 
+      - name: Deck data sanity
+        run: npm run decks:check
+
       - name: Build
         run: npm run build
         env:

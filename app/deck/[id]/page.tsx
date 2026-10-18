@@ -122,23 +122,38 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
           </header>
 
           <section>
-            <p className="rk-label">보드</p>
-            <div className="rk-deck-board">
-              {cells.map((unit, index) => (
-                <div
-                  key={unit ? `${unit.lolchessKey}-${index}` : `empty-${index}`}
-                  className={`rk-deck-cell${unit ? ` c${unit.cost ?? 1}` : ' empty'}`}
-                >
-                  {unit ? (
-                    <>
+            <p className="rk-label">{useIndex ? '보드' : '구성'}</p>
+            {useIndex ? (
+              <div className="rk-deck-board">
+                {cells.map((unit, index) => (
+                  <div
+                    key={unit ? `${unit.lolchessKey}-${index}` : `empty-${index}`}
+                    className={`rk-deck-cell${unit ? ` c${unit.cost ?? 1}` : ' empty'}`}
+                  >
+                    {unit ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={unit.imgUrl} alt={unit.name} loading="lazy" />
+                        {unit.star >= 2 ? <em>{`★${unit.star}`}</em> : null}
+                      </>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rk-deck-comp">
+                {deck.units.map((unit) => (
+                  <div key={`${unit.lolchessKey}-${unit.index ?? 'x'}`} className="rk-deck-comp-unit">
+                    <div className={`rk-deck-comp-icon c${unit.cost ?? 1}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={unit.imgUrl} alt={unit.name} loading="lazy" />
                       {unit.star >= 2 ? <em>{`★${unit.star}`}</em> : null}
-                    </>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+                    </div>
+                    <span>{unit.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           <section>

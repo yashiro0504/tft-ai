@@ -3,8 +3,8 @@ import metaStatsData from './metaStats.json'
 import { tierFromAvgPlacement } from './meta'
 
 /**
- * 메타 덱(보드 조합) — 롤체지지 추천 덱을 정규화한 decksData.json 을
- * 우리 실측 메타 통계(lib/metaStats.json)와 결합한다.
+ * 메타 덱(구성) — lib/decksData.json 을 정규화한다.
+ * 데이터는 Riot 래더 표본을 자체 집계해 생성한다(scripts/buildDeckCompsFromStats.js).
  */
 
 interface RawUnitItem {

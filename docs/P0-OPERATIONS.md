@@ -232,40 +232,42 @@ npm run test:augment                          # 집계 회귀 테스트 (외부 
 | `필드 존재 0명` | 스키마 변경 | `AUGMENT_FIELDS`에 새 필드명 추가 |
 | `슬롯 > 0` | 정상 수집 | `augments` 객체가 채워지고 LLM/UI 자동 반영 |
 
-## 11. 덱 데이터 자체 집계 (프리뷰)
+## 11. 덱 데이터 자체 집계 (교체 완료)
 
-현재 `lib/decksData.json` 은 외부 사이트(롤체지지) 추천 덱을 정규화한 데이터다.
-상업화 전에는 우리 표본으로 덱을 구성해야 하므로, **라이브 파일을 건드리지 않는**
-프리뷰 생성기를 추가했다.
-
-```powershell
-npm run build:deck-preview
-# → lib/decksData.preview.json (gitignore 대상, 로컬 검토용)
-```
+`lib/decksData.json` 은 더 이상 외부 사이트 추천 덱이 아니라, **Riot 래더 표본을 자체 집계**해
+생성한 데이터다. (2026-10-18 교체 · `source: riot-meta-aggregate` · 24덱)
 
 ### 구성 방식
 
 - 캐리: `metaStats.champions` 중 표본 200판 이상, 코스트 2~5
 - BIS: `metaStats.combos` 에서 표본 20판 이상, 평균등수 상위 3개 (상징/엠블럼 제외)
 - 주변 유닛: 캐리와 시너지가 겹치는 기물을 겹침 수 → 평균등수 순으로 최대 8유닛
-- 시너지: 선택 유닛 기준 2개 이상 겹친 시너지만 표시
-- 보드 좌표(`index`)는 **null**: 디자인/UX 확정 후 별도 규칙 필요
+- 활성 시너지가 2개 미만인 덱은 제외
+- 보드 좌표(`index`)는 **null** → 덱 페이지/상세는 **"구성" 그리드**로 렌더링
 
-### 현재 결과 (2026-10-18 표본)
+### 데이터 소스
 
-- 후보 기물 64종(시너지 매핑 62종) → **덱 24개** 생성
-- 아이콘 누락 0, 아이템 누락 0, 중복 유닛 조합 0
-- 예: `주문술사 알룬`, `자연의 아버지 아이번`, `싸움꾼 나르`, `지옥불 케넨`
+- `lib/metaStats.json` — Riot 실측 집계
+- `lib/tftData.json` — 이름/아이콘(Data Dragon)
+- `lib/championTraits.json` — 기물→시너지 **사실 관계** 매핑(67종, `extract:traits`로 재생성)
+- 큐레이션된 덱 구성은 사용하지 않음
 
-### 교체 전 확인 사항
+### 재생성 / 검증
 
-1. **시너지 참조**: 세트 18의 기물→시너지 매핑은 Data Dragon/Community Dragon에 없다.
-   현재는 `decksData.json` 의 **사실 관계(기물이 어떤 시너지를 갖는지)** 만 참조한다.
-   (큐레이션된 덱 구성은 사용하지 않음)
-2. **보드 좌표**: `index: null` 이므로 기존 보드 UI에 그대로 꽂으면 배치가 비어 보일 수 있다.
-   디자인 개편 후 `index` 규칙을 정하거나 UI에서 좌표 없이 렌더링해야 한다.
-3. **교체 시점**: 디자인 작업이 끝난 뒤 `lib/decksData.json` 을 프리뷰로 교체하고
-   `npm run ci`(lint/typecheck/meta:check/build)로 검증한다.
+```powershell
+npm run build:decks        # lib/decksData.json 라이브 교체
+npm run build:deck-preview # lib/decksData.preview.json (검토용)
+npm run decks:check        # 무결성 검사 (CI에서도 실행)
+npm run extract:traits     # championTraits.json 재추출
+```
+
+### 현재 결과
+
+- 덱 24개, 유닛 매칭률 **0.97**, 중복 유닛 조합 0
+- 활성 시너지 2~4개, 유닛 코스트 합 14~30
+- 아이콘/이름/아이템 누락 0
+- 티어: 대시보드는 **표 내 상대 순위**, 덱 페이지는 평균등수 절대 기준
+
 
 ## 12. Go-live 게이트 (운영 설정 점검)
 

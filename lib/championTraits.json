@@ -1,0 +1,715 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-18T11:51:50.714Z",
+  "source": "lib/decksData.json (기물-시너지 사실 관계만 추출)",
+  "championCount": 67,
+  "traitCount": 25,
+  "champions": {
+    "khazix": {
+      "name": "카직스",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Khazix.png",
+      "traits": [
+        "Rival"
+      ]
+    },
+    "hecarim": {
+      "name": "헤카림",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Hecarim.png",
+      "traits": [
+        "Elderwood",
+        "Vanguard"
+      ]
+    },
+    "diana": {
+      "name": "다이애나",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Diana.png",
+      "traits": [
+        "Lunar",
+        "Ravager",
+        "Vanguard"
+      ]
+    },
+    "stonebarktree": {
+      "name": "돌껍질 나무",
+      "cost": 0,
+      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/StonebarkTree_1785316566-StonebarkTree.png",
+      "traits": []
+    },
+    "fiddlesticks": {
+      "name": "피들스틱",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Fiddlesticks.png",
+      "traits": [
+        "Defender",
+        "FloraFatalis",
+        "Spellweaver"
+      ]
+    },
+    "ornn": {
+      "name": "오른",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ornn.png",
+      "traits": [
+        "Defender",
+        "Elderwood"
+      ]
+    },
+    "ezreal": {
+      "name": "이즈리얼",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ezreal.png",
+      "traits": [
+        "Elderwood",
+        "Executioner"
+      ]
+    },
+    "alune": {
+      "name": "알룬",
+      "cost": 5,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_alune/tft18_alune_square.png",
+      "traits": [
+        "Attuned",
+        "Lunar",
+        "Spellweaver"
+      ]
+    },
+    "soraka": {
+      "name": "소라카",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Soraka.png",
+      "traits": [
+        "Executioner",
+        "FloraFatalis"
+      ]
+    },
+    "lifebloom": {
+      "name": "생명꽃",
+      "cost": 0,
+      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lifebloom_1785316584-Lifebloom.png",
+      "traits": []
+    },
+    "rammus": {
+      "name": "람머스",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rammus.png",
+      "traits": [
+        "Defender",
+        "Sprykin"
+      ]
+    },
+    "teemo": {
+      "name": "티모",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Teemo.png",
+      "traits": [
+        "Invoker",
+        "Sprykin"
+      ]
+    },
+    "kennen": {
+      "name": "케넨",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kennen.png",
+      "traits": [
+        "Executioner",
+        "Inferno"
+      ]
+    },
+    "azir": {
+      "name": "아지르",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Azir.png",
+      "traits": [
+        "Eldritch",
+        "Executioner",
+        "Summoner"
+      ]
+    },
+    "zyra": {
+      "name": "자이라",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Zyra.png",
+      "traits": [
+        "Summoner",
+        "Thornmaiden"
+      ]
+    },
+    "veigar": {
+      "name": "베이가",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Veigar.png",
+      "traits": [
+        "Eldritch",
+        "Spellweaver",
+        "Sprykin"
+      ]
+    },
+    "krug": {
+      "name": "돌거북",
+      "cost": 3,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_krug/tft18_krug_square.png",
+      "traits": [
+        "Brawler",
+        "Riftbeast"
+      ]
+    },
+    "elderdragon": {
+      "name": "장로 드래곤",
+      "cost": 5,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_elderdragon/tft18_elderdragon_square.png",
+      "traits": [
+        "ApexPredator",
+        "Riftbeast"
+      ]
+    },
+    "gnar": {
+      "name": "나르",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Gnar.png",
+      "traits": [
+        "Brawler",
+        "Elderwood",
+        "Sprykin"
+      ]
+    },
+    "taric": {
+      "name": "타릭",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Taric.png",
+      "traits": [
+        "EmeraldAspect",
+        "Vanguard"
+      ]
+    },
+    "brambleback": {
+      "name": "덩굴정령",
+      "cost": 4,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_brambleback/tft18_brambleback_square.png",
+      "traits": [
+        "Ravager",
+        "Riftbeast"
+      ]
+    },
+    "murkwolf": {
+      "name": "어스름늑대",
+      "cost": 2,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_murkwolf/tft18_murkwolf_square.png",
+      "traits": [
+        "Ravager",
+        "Riftbeast"
+      ]
+    },
+    "sentinel": {
+      "name": "감시자",
+      "cost": 4,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentinel/tft18_sentinel_square.png",
+      "traits": [
+        "Invoker",
+        "Riftbeast",
+        "Vanguard"
+      ]
+    },
+    "sentry": {
+      "name": "조약돌",
+      "cost": 1,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_sentry/tft18_sentry_square.png",
+      "traits": [
+        "Invoker",
+        "Riftbeast"
+      ]
+    },
+    "amumu": {
+      "name": "아무무",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Amumu.png",
+      "traits": [
+        "Inferno",
+        "Juggernaut"
+      ]
+    },
+    "vi": {
+      "name": "바이",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Vi.png",
+      "traits": [
+        "Juggernaut",
+        "Primal"
+      ]
+    },
+    "nidalee": {
+      "name": "니달리",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Nidalee.png",
+      "traits": [
+        "Adaptor",
+        "Primal"
+      ]
+    },
+    "aphelios": {
+      "name": "아펠리오스",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Aphelios.png",
+      "traits": [
+        "Lunar",
+        "Rapidfire"
+      ]
+    },
+    "kogmaw": {
+      "name": "코그모",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/KogMaw.png",
+      "traits": [
+        "Adaptor",
+        "Caustic",
+        "Invoker"
+      ]
+    },
+    "varus": {
+      "name": "바루스",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Varus.png",
+      "traits": [
+        "Inferno",
+        "Rapidfire"
+      ]
+    },
+    "maokai": {
+      "name": "마오카이",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Maokai.png",
+      "traits": [
+        "Juggernaut",
+        "OldGrowth"
+      ]
+    },
+    "ivern": {
+      "name": "아이번",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ivern.png",
+      "traits": [
+        "Greenfather"
+      ]
+    },
+    "draven": {
+      "name": "드레이븐",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Draven.png",
+      "traits": [
+        "BountySeeker"
+      ]
+    },
+    "alistar": {
+      "name": "알리스타",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Alistar.png",
+      "traits": [
+        "Brawler",
+        "Elderwood"
+      ]
+    },
+    "leblanc": {
+      "name": "르블랑",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leblanc.png",
+      "traits": [
+        "Elderwood",
+        "Spellweaver"
+      ]
+    },
+    "cassiopeia": {
+      "name": "카시오페아",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Cassiopeia.png",
+      "traits": [
+        "Coven",
+        "Spellweaver"
+      ]
+    },
+    "reksai": {
+      "name": "렉사이",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/RekSai.png",
+      "traits": [
+        "Brawler",
+        "Eldritch"
+      ]
+    },
+    "sett": {
+      "name": "세트",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sett.png",
+      "traits": [
+        "Blossom",
+        "Brawler"
+      ]
+    },
+    "morgana": {
+      "name": "모르가나",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Morgana.png",
+      "traits": [
+        "Coven",
+        "Invoker"
+      ]
+    },
+    "karma": {
+      "name": "카르마",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Karma.png",
+      "traits": [
+        "Blossom",
+        "Spellweaver"
+      ]
+    },
+    "ahri": {
+      "name": "아리",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
+      "traits": [
+        "Blossom",
+        "Spellweaver"
+      ]
+    },
+    "lillia": {
+      "name": "릴리아",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Lillia.png",
+      "traits": [
+        "Defender",
+        "Fae"
+      ]
+    },
+    "rakan": {
+      "name": "라칸",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
+      "traits": [
+        "Fae",
+        "Juggernaut",
+        "Vanguard"
+      ]
+    },
+    "luxlunar": {
+      "name": "럭스 (달빛)",
+      "cost": 5,
+      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/Lux_1783676806-Lux.jpg",
+      "traits": [
+        "Avatar",
+        "Lunar"
+      ]
+    },
+    "elise": {
+      "name": "엘리스",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Elise.png",
+      "traits": [
+        "Coven",
+        "Vanguard"
+      ]
+    },
+    "sejuani": {
+      "name": "세주아니",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
+      "traits": [
+        "Juggernaut",
+        "Solar"
+      ]
+    },
+    "leona": {
+      "name": "레오나",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Leona.png",
+      "traits": [
+        "Defender",
+        "Solar"
+      ]
+    },
+    "shen": {
+      "name": "쉔",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Shen.png",
+      "traits": [
+        "Defender",
+        "Inferno"
+      ]
+    },
+    "kayle": {
+      "name": "케일",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Kayle.png",
+      "traits": [
+        "Rapidfire",
+        "Solar"
+      ]
+    },
+    "crimsonraptor": {
+      "name": "어미 부리",
+      "cost": 3,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_raptor/hud/tft18_raptor_square.png",
+      "traits": [
+        "Rapidfire",
+        "Riftbeast",
+        "Summoner"
+      ]
+    },
+    "camille": {
+      "name": "카밀",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Camille.png",
+      "traits": [
+        "Coven",
+        "Ravager"
+      ]
+    },
+    "akali": {
+      "name": "아칼리",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Akali.png",
+      "traits": [
+        "Adaptor",
+        "Inferno",
+        "Ravager"
+      ]
+    },
+    "malphite": {
+      "name": "말파이트",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Malphite.png",
+      "traits": [
+        "Eldritch",
+        "Monolith"
+      ]
+    },
+    "yorick": {
+      "name": "요릭",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+      "traits": [
+        "Blossom",
+        "Juggernaut",
+        "Summoner"
+      ]
+    },
+    "yunara": {
+      "name": "유나라",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yunara.png",
+      "traits": [
+        "Blossom",
+        "Executioner"
+      ]
+    },
+    "deepwoodprotector": {
+      "name": "깊은숲 수호자",
+      "cost": 0,
+      "imgUrl": "https://cdn.lolchess.gg/upload/images/champions/DeepwoodProtector_1785316572-DeepwoodProtector.png",
+      "traits": []
+    },
+    "xayah": {
+      "name": "자야",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Xayah.png",
+      "traits": [
+        "Elderwood",
+        "Fae",
+        "Rapidfire"
+      ]
+    },
+    "scuttlecrab": {
+      "name": "바위 게",
+      "cost": 2,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_scuttlecrab/tft18_scuttlecrab_square.png",
+      "traits": [
+        "Juggernaut",
+        "Riftbeast"
+      ]
+    },
+    "sivir": {
+      "name": "시비르",
+      "cost": 4,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sivir.png",
+      "traits": [
+        "Hunter",
+        "Primal"
+      ]
+    },
+    "ashe": {
+      "name": "애쉬",
+      "cost": 5,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ashe.png",
+      "traits": [
+        "Blossom",
+        "Hunter"
+      ]
+    },
+    "rengar": {
+      "name": "렝가",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rengar.png",
+      "traits": [
+        "Rival"
+      ]
+    },
+    "masteryi": {
+      "name": "마스터 이",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/MasterYi.png",
+      "traits": [
+        "Adaptor",
+        "Blossom"
+      ]
+    },
+    "warwick": {
+      "name": "워윅",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Warwick.png",
+      "traits": [
+        "Eldritch",
+        "Ravager"
+      ]
+    },
+    "caitlyn": {
+      "name": "케이틀린",
+      "cost": 2,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Caitlyn.png",
+      "traits": [
+        "Coven",
+        "Hunter"
+      ]
+    },
+    "tristana": {
+      "name": "트리스타나",
+      "cost": 3,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Tristana.png",
+      "traits": [
+        "Fae",
+        "Hunter",
+        "Sprykin"
+      ]
+    },
+    "cinderling": {
+      "name": "불타는 묘목",
+      "cost": 1,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_cinderling/tft18_cinderling_square.png",
+      "traits": [
+        "Hunter",
+        "Riftbeast"
+      ]
+    },
+    "kobuko": {
+      "name": "코부코",
+      "cost": 1,
+      "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Braum.png",
+      "traits": [
+        "Brawler",
+        "Sprykin"
+      ]
+    }
+  },
+  "traits": {
+    "elderwood": {
+      "name": "나무정령",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Elderwood_normal_1783669750-Elderwood.svg"
+    },
+    "vanguard": {
+      "name": "선봉대",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Vanguard_normal_1783670081-Vanguard.svg"
+    },
+    "lunar": {
+      "name": "달빛",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Lunar_normal_1783669790-Lunar.svg"
+    },
+    "defender": {
+      "name": "엄호대",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Defender_normal_1783670166-Defender.svg"
+    },
+    "florafatalis": {
+      "name": "치명적인 꽃",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/FloraFatalis_normal_1783669955-FloraFatalis.svg"
+    },
+    "spellweaver": {
+      "name": "주문술사",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Spellweaver_normal_1783670207-Spellweaver.svg"
+    },
+    "sprykin": {
+      "name": "날렵이",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Sprykin_normal_1783669772-Sprykin.svg"
+    },
+    "executioner": {
+      "name": "처형자",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Executioner_normal_1783670220-Executioner.svg"
+    },
+    "eldritch": {
+      "name": "검은 가시",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Eldritch_normal_1783669827-Eldritch.svg"
+    },
+    "riftbeast": {
+      "name": "협곡야수",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Riftbeast_normal_1783670023-Riftbeast.svg"
+    },
+    "brawler": {
+      "name": "싸움꾼",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Brawler_normal_1783670121-Brawler.svg"
+    },
+    "ravager": {
+      "name": "약탈자",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Ravager_normal_1783670134-Ravager.svg"
+    },
+    "invoker": {
+      "name": "기원자",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Invoker_normal_1783670055-Invoker.svg"
+    },
+    "inferno": {
+      "name": "지옥불",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Inferno_normal_1783669929-Inferno.svg"
+    },
+    "juggernaut": {
+      "name": "전쟁기계",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Juggernaut_normal_1783670193-Juggernaut.svg"
+    },
+    "primal": {
+      "name": "원시",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Primal_normal_1783669969-Primal.svg"
+    },
+    "blossom": {
+      "name": "개화",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Blossom_normal_1783669682-Blossom.svg"
+    },
+    "fae": {
+      "name": "요정",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Fae_normal_1783669880-Fae.svg"
+    },
+    "coven": {
+      "name": "악의 여단",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Coven_normal_1783669849-Coven.svg"
+    },
+    "solar": {
+      "name": "햇빛",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Solar_normal_1783669982-Solar.svg"
+    },
+    "rapidfire": {
+      "name": "속사포",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Rapidfire_normal_1783670107-Rapidfire.svg"
+    },
+    "summoner": {
+      "name": "소환사",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Summoner_normal_1783670095-Summoner.svg"
+    },
+    "hunter": {
+      "name": "사냥꾼",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Hunter_normal_1783670069-Hunter.svg"
+    },
+    "adaptor": {
+      "name": "적응가",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Adaptor_normal_1783670179-Adaptor.svg"
+    },
+    "rival": {
+      "name": "경쟁자",
+      "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Rival_normal_1783669720-Rival.svg"
+    }
+  }
+}
