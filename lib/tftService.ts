@@ -1,9 +1,9 @@
-import { getAccountByRiotId, getTftMatchIds, getTftMatchDetail, getSummonerByPuuid, RiotApiError } from './riot'
+import { getAccountByRiotId, getTftLeagueByPuuid, getTftMatchIds, getTftMatchDetail, getSummonerByPuuid, RiotApiError } from './riot'
 import { cacheGet, cacheSet, CACHE_TTL } from './cache'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { extractSlimMatchData } from './summarize'
 import { getDemoMatches } from './demo'
-import { RiotAccount, SlimMatchData } from './types'
+import { RiotAccount, SlimMatchData, TftRankInfo } from './types'
 
 /** 한 번에 로드 가능한 최대 매치 수 */
 export const MAX_MATCH_LIMIT = 20
@@ -12,6 +12,16 @@ export const DEFAULT_MATCH_LIMIT = 10
 const REGION = process.env.RIOT_REGION || 'asia'
 const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
 
+/** 데모 모드에서 보여줄 예시 랭크. (응답에 isDemo=true 가 함께 나가므로 실제 전적으로 오인되지 않는다) */
+const DEMO_RANK: TftRankInfo = {
+  queueType: 'RANKED_TFT',
+  tier: 'GOLD',
+  rank: 'II',
+  leaguePoints: 45,
+  wins: 32,
+  losses: 28,
+}
+
 
 export interface LoadedSummonerData {
   gameName: string
@@ -19,8 +29,15 @@ export interface LoadedSummonerData {
   puuid: string
   summonerLevel: number
   profileIconId: number
+  /** 랭크(티어/LP). 배치 중·조회 실패 시 null */
+  rank: TftRankInfo | null
   matches: SlimMatchData[]
   isDemo: boolean
+}
+
+/** 랭크 캐시 값. `null`(배치 중)도 캐시하기 위해 래퍼로 감싼다. */
+interface RankCacheEntry {
+  rank: TftRankInfo | null
 }
 
 /**
@@ -50,6 +67,7 @@ export async function loadSummonerData(
       puuid: 'DEMO_PUUID',
       summonerLevel: 120,
       profileIconId: 7193,
+      rank: DEMO_RANK,
       matches,
       isDemo: !hasApiKey || isDemo,
     }
@@ -77,14 +95,33 @@ export async function loadSummonerData(
   }
 
   // 3. 최근 TFT 매치 ID 목록 — 새 경기 반영을 위해 짧게 캐시
-  const matchIdsKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}`
-  let matchIds = await cacheGet<string[]>(matchIdsKey)
-  if (matchIds) {
-    incrMetric('riot.cache_hit.match_ids')
-  } else {
-    matchIds = await getTftMatchIds(acct.puuid, normalizedLimit, REGION)
-    if (matchIds.length > 0) await cacheSet(matchIdsKey, matchIds, CACHE_TTL.MATCH_IDS)
-  }
+  //    랭크(TFT-LEAGUE-V1)는 부가 정보이므로 matchIds 와 병렬로 조회해 지연을 늘리지 않는다.
+  const matchIdsPromise = (async () => {
+    const matchIdsKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}`
+    const cachedIds = await cacheGet<string[]>(matchIdsKey)
+    if (cachedIds) {
+      incrMetric('riot.cache_hit.match_ids')
+      return cachedIds
+    }
+    const ids = await getTftMatchIds(acct.puuid, normalizedLimit, REGION)
+    if (ids.length > 0) await cacheSet(matchIdsKey, ids, CACHE_TTL.MATCH_IDS)
+    return ids
+  })()
+
+  const rankPromise = (async (): Promise<TftRankInfo | null> => {
+    const rankKey = `rank:${PLATFORM}:${acct.puuid}`
+    const cachedRank = await cacheGet<RankCacheEntry>(rankKey)
+    if (cachedRank) {
+      incrMetric('riot.cache_hit.rank')
+      return cachedRank.rank
+    }
+    const rank = await getTftLeagueByPuuid(acct.puuid, PLATFORM)
+    // 배치 중(null)도 캐시해 미배치 계정이 매 검색마다 Riot 을 호출하지 않게 한다.
+    await cacheSet<RankCacheEntry>(rankKey, { rank }, CACHE_TTL.RANK)
+    return rank
+  })()
+
+  const [matchIds, rank] = await Promise.all([matchIdsPromise, rankPromise])
 
   if (matchIds.length === 0) {
     throw new RiotApiError(
@@ -128,6 +165,7 @@ export async function loadSummonerData(
     puuid: acct.puuid,
     summonerLevel: summonerInfo.summonerLevel,
     profileIconId: summonerInfo.profileIconId,
+    rank,
     matches,
     isDemo: false,
   }

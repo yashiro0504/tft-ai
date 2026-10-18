@@ -11,6 +11,7 @@
 | Riot | `lib/riot.ts` 타임아웃(5s) · 429/5xx 재시도(2회) · `Retry-After` 준수 · 전역 동시성 5 |
 | 캐시 | `lib/cache.ts` L1 메모리 + L2 Redis(Upstash/Vercel KV REST, 선택). Redis 장애는 fail-open |
 | Riot 호출 절감 | Account(24h) · Summoner(6h) · matchIds(45s) · 매치 상세(30d, 불변) 캐시 |
+| 랭크 | `TFT-LEAGUE-V1` by-puuid 조회, `rank:{platform}:{puuid}` **10분 캐시**, 실패 시 `null` 폴백 |
 | 분석 캐시 | `analysis:{matchId}:{puuid}:{mode}:{COACH_PROMPT_VERSION}` — 재분석 LLM 호출 0회 |
 | meta | `/api/tft/meta` 5분 메모 + `Cache-Control: public, s-maxage=300, stale-while-revalidate=3600` |
 | LLM | Gemini 모델을 `gemini-2.5-flash`로 교체(1.5-flash 종료), 45s 타임아웃, 토큰/비용 계측 |
@@ -449,6 +450,38 @@ delete from public.events where created_at < now() - interval '90 days';
 2. 배선할 컴포넌트에서 `track('새_이벤트', { ... })` 호출
 3. `app/privacy/page.tsx` 수집 항목/목적에 반영 (필요 시)
 4. `npm run typecheck && npx eslint <변경 파일> && npm run build`
+
+## 16. 랭크/티어 표시 (P0-2)
+
+- 엔드포인트: `GET https://{platform}.api.riotgames.com/tft/league/v1/by-puuid/{puuid}` (TFT-LEAGUE-V1)
+- 큐: 응답 배열에서 `queueType === 'RANKED_TFT'` 만 사용
+- 캐시: `rank:{platform}:{puuid}` **10분**(`CACHE_TTL.RANK`). 배치 중(`null`)도 캐시한다.
+- 폴백: **404(배치 미완료) / 429 / 401 / 타임아웃 / 네트워크 오류 → `null`**.
+  랭크는 부가 정보이므로 실패해도 검색·프로필은 정상 동작하고 UI는 “배치 중”을 표시한다.
+- 노출 위치: `/api/tft/search` → `summonerProfile.rank`, 홈 프로필 카드, `/profile` 페이지,
+  `/profile/.../opengraph-image` (티어 칩)
+- 비용: 검색 1회당 Riot 호출 **+1** (matchIds 와 병렬 조회라 체감 지연은 거의 동일)
+
+### 확인
+
+```powershell
+# 배치 중/미조회 계정은 rank: null, UI 는 "배치 중"
+curl -s -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/json" `
+  -d '{"gameName":"Hide on bush","tagLine":"KR1","limit":2}' | Select-String rank
+
+# 데모(키 없음/isDemo) 는 예시 랭크를 반환하며 isDemo:true 로 구분된다
+curl -s -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/json" `
+  -d '{"gameName":"Demo","tagLine":"KR1","isDemo":true,"limit":1}'
+```
+
+### 모니터링
+
+| 로그/카운터 | 의미 |
+| --- | --- |
+| `riot.cache_hit.rank` | 캐시 히트 (10분 TTL) |
+| `riot_league_fallback` + `status` | 랭크 조회 실패 → null 폴백 (404 는 정상) |
+| `riot.league_fallback.401` 급증 | Riot 키 만료 → 키 교체 루틴 확인 |
+
 
 
 

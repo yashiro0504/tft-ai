@@ -1,4 +1,4 @@
-import { RiotAccount, RawTFTMatch } from './types'
+import { RiotAccount, RawTFTMatch, TftRankInfo } from './types'
 import { errorFields, incrMetric, logEvent } from './observability'
 
 /**
@@ -232,6 +232,62 @@ export async function getSummonerByPuuid(
     incrMetric('riot.summoner_fallback')
     logEvent('warn', 'riot_summoner_fallback', errorFields(err))
     return { profileIconId: 7193, summonerLevel: 100 }
+  }
+}
+
+/** Riot `tft/league/v1/by-puuid` 원본 응답 항목 (필요한 필드만) */
+interface RiotTftLeagueEntry {
+  queueType?: string
+  tier?: string
+  rank?: string
+  leaguePoints?: number
+  wins?: number
+  losses?: number
+  hotStreak?: boolean
+}
+
+/**
+ * PUUID로 TFT 랭크(티어) 정보 조회 — `TFT-LEAGUE-V1`.
+ *
+ * - 응답은 큐별 배열이며 `queueType === 'RANKED_TFT'` 항목만 사용한다.
+ * - 배치 미완료(404), 레이트리밋(429), 키 만료(401), 네트워크 오류는 모두 **null** 로 폴백한다.
+ *   → 랭크는 부가 정보이므로 실패해도 검색/프로필 자체는 정상 동작해야 한다.
+ */
+export async function getTftLeagueByPuuid(
+  puuid: string,
+  platform: string = DEFAULT_PLATFORM
+): Promise<TftRankInfo | null> {
+  if (!RIOT_API_KEY || !puuid) return null
+
+  try {
+    const url = `https://${platform}.api.riotgames.com/tft/league/v1/by-puuid/${encodeURIComponent(puuid)}`
+    const response = await riotFetch(url, 'tft.league.by-puuid')
+
+    if (!response.ok) {
+      incrMetric(`riot.league_fallback.${response.status}`)
+      logEvent('warn', 'riot_league_fallback', { status: response.status })
+      return null
+    }
+
+    const entries = (await response.json()) as RiotTftLeagueEntry[]
+    if (!Array.isArray(entries)) return null
+
+    const ranked = entries.find((entry) => entry.queueType === 'RANKED_TFT')
+    if (!ranked || !ranked.tier) return null
+
+    return {
+      queueType: 'RANKED_TFT',
+      tier: String(ranked.tier).toUpperCase(),
+      rank: String(ranked.rank || 'I').toUpperCase(),
+      leaguePoints: Number(ranked.leaguePoints) || 0,
+      wins: Number(ranked.wins) || 0,
+      losses: Number(ranked.losses) || 0,
+      hotStreak: ranked.hotStreak === true,
+    }
+  } catch (err) {
+    incrMetric('riot.league_fallback')
+    logEvent('warn', 'riot_league_fallback', errorFields(err))
+    return null
   }
 }
 

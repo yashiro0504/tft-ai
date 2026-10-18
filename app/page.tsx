@@ -11,6 +11,7 @@ import { MetaRanking } from './components/MetaRanking'
 import { SiteHeader } from './components/SiteHeader'
 import { TurnstileWidget } from './components/TurnstileWidget'
 import { ShareButton } from './components/ShareButton'
+import { RankBadge } from './components/RankBadge'
 import { track, trackOnce } from '@/lib/analytics'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
@@ -329,6 +330,9 @@ export default function TFTCoachPage() {
                       <span>{search.summonerProfile.gameName}</span>
                       <span className="text-sm font-bold text-muted font-mono">#{search.summonerProfile.tagLine}</span>
                     </h2>
+                    <div className="mt-1.5">
+                      <RankBadge rank={search.summonerProfile.rank} />
+                    </div>
                     <p className="text-xs text-muted mt-1 font-medium">
                       최근 <strong className="text-cyan-400 font-mono">{search.summonerProfile.totalGames}경기</strong> 전적 통계 기준
                     </p>
