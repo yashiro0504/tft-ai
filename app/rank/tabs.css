@@ -56,9 +56,23 @@
 @media (max-width: 760px) {
   .rk-tabs { flex-wrap: wrap; }
   .rk-tab { padding: 4px 8px; font-size: 12px; }
-  .rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 26px 26px minmax(0,1fr) 72px 68px; }
-  .rk-thead.cols-champ .rk-num:nth-child(6), .rk-row.cols-champ .rk-num:nth-child(6) { display: none; }
-  .rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 26px minmax(0,1fr) 72px 68px; }
-  .rk-thead.cols-bis .rk-bis, .rk-row.cols-bis .rk-bis { display: none; }
-  .rk-thead.cols-bis .rk-num:nth-child(5), .rk-row.cols-bis .rk-num:nth-child(5) { display: none; }
+
+  .rk-thead, .rk-row { padding: 0 14px; gap: 8px; min-height: 60px; }
+  .rk-thead.cols-stat, .rk-row.cols-stat { grid-template-columns: 24px 24px minmax(0, 1fr) 64px; }
+  .rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 28px minmax(0, 1fr) 64px; }
+  .rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 24px 24px minmax(0, 1fr) 64px; }
+
+  /* 모바일 공통: 평균등수만 남기고 5번째 이후 숫자 열은 숨긴다. */
+  .rk-thead .num:nth-child(n+5),
+  .rk-row .rk-num:nth-child(n+5) { display: none; }
+
+  /* BIS: 아이콘 열을 숨기고 #·이름·평균만 표시 */
+  .rk-thead.cols-bis .rk-bis,
+  .rk-row.cols-bis .rk-bis { display: none; }
+
+  /* 기물: 3성률(4번째)을 숨기고 평균등수(5번째)를 4번째 열로 올린다. */
+  .rk-thead.cols-champ .num:nth-child(4),
+  .rk-row.cols-champ .rk-num:nth-child(4) { display: none; }
+  .rk-thead.cols-champ .num:nth-child(5) { display: block; }
+  .rk-row.cols-champ .rk-num:nth-child(5) { display: flex; }
 }

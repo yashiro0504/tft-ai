@@ -75,6 +75,11 @@ function fmtDate(iso?: string) {
   return `${get('year')}.${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`
 }
 
+/** 모바일에서는 덱 상세를 바텀시트로 띄운다. */
+function isMobileViewport() {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
+}
+
 interface Row {
   key: string
   name: string
@@ -107,6 +112,7 @@ export function MetaDashboard({
   const [sort, setSort] = useState<SortKey>('avg')
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [itemClass, setItemClass] = useState<ItemClass>('all')
   const [modal, setModal] = useState<ModalTarget | null>(null)
 
@@ -130,6 +136,21 @@ export function MetaDashboard({
     // initialData 는 /meta 정적 페이지에서 주입된다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 모바일 바텀시트: 열려 있으면 스크롤을 잠그고, 데스크톱 폭으로 커지면 닫는다.
+  useEffect(() => {
+    if (!detailOpen) return
+    const onResize = () => {
+      if (!isMobileViewport()) setDetailOpen(false)
+    }
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('resize', onResize)
+    return () => {
+      document.body.style.overflow = previous
+      window.removeEventListener('resize', onResize)
+    }
+  }, [detailOpen])
 
   const rowsAll = useMemo<Row[]>(() => {
     if (!data) return []
@@ -300,6 +321,7 @@ export function MetaDashboard({
                   onClick={() => {
                     setTab(t.id)
                     setSelectedId(null)
+                    setDetailOpen(false)
                     setModal(null)
                   }}
                 >
@@ -375,8 +397,10 @@ export function MetaDashboard({
                   type="button"
                   className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''}`}
                   onClick={() => {
-                    if (tab === 'decks') setSelectedId(r.key)
-                    else if (tab === 'items') setModal({ type: 'item', key: r.key })
+                    if (tab === 'decks') {
+                      setSelectedId(r.key)
+                      if (isMobileViewport()) setDetailOpen(true)
+                    } else if (tab === 'items') setModal({ type: 'item', key: r.key })
                     else if (tab === 'traits') setModal({ type: 'trait', key: r.key })
                     else setModal({ type: 'champion', key: r.key })
                   }}
@@ -433,9 +457,28 @@ export function MetaDashboard({
         </main>
 
         {tab === 'decks' ? (
-          <aside className="rk-detail">
-            {selected ? <DeckDetail deck={selected} /> : <p className="rk-empty">덱을 선택하세요.</p>}
-          </aside>
+          <>
+            {detailOpen ? (
+              <button
+                type="button"
+                className="rk-sheet-backdrop"
+                aria-label="덱 상세 닫기"
+                onClick={() => setDetailOpen(false)}
+              />
+            ) : null}
+            <aside className={`rk-detail ${detailOpen ? 'open' : ''}`} aria-label="덱 상세">
+              <div className="rk-sheet-grab" aria-hidden="true" />
+              <button
+                type="button"
+                className="rk-sheet-close"
+                aria-label="덱 상세 닫기"
+                onClick={() => setDetailOpen(false)}
+              >
+                ×
+              </button>
+              {selected ? <DeckDetail deck={selected} /> : <p className="rk-empty">덱을 선택하세요.</p>}
+            </aside>
+          </>
         ) : null}
 
         {modal && data ? <DetailModal data={data} target={modal} onClose={() => setModal(null)} /> : null}
