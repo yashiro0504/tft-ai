@@ -94,6 +94,59 @@ function cleanName(id) {
     .trim()
 }
 
+/** 증강 필드 후보 (Riot 스키마 변경 대응) */
+const AUGMENT_FIELDS = ['augments', 'augment_names', 'augmentNames', 'augment']
+
+/** 참가자 객체에서 증강 이름 배열을 최대한 방어적으로 추출한다. */
+function extractAugmentNames(participant) {
+  for (const field of AUGMENT_FIELDS) {
+    const value = participant && participant[field]
+    if (Array.isArray(value)) {
+      return value
+        .map((entry) => {
+          if (typeof entry === 'string') return entry
+          if (entry && typeof entry === 'object') return entry.name || entry.id || entry.augmentName || ''
+          return ''
+        })
+        .filter(Boolean)
+    }
+    if (typeof value === 'string' && value) return [value]
+  }
+  return []
+}
+
+/** 참가자 객체에 증강 관련 필드가 존재하는지 */
+function hasAugmentField(participant) {
+  return AUGMENT_FIELDS.some((field) =>
+    Object.prototype.hasOwnProperty.call(participant || {}, field)
+  )
+}
+
+/**
+ * 증강 수집 진단 문자열.
+ * 0건일 때 "코드 미구현"인지 "Riot 데이터 부재"인지 구분하기 위한 로그.
+ */
+function describeAugmentDiagnostics(state) {
+  const participants = state.augParticipants || 0
+  const fieldPresent = state.augFieldPresent || 0
+  const nonEmpty = state.augNonEmptyParticipants || 0
+  const slots = state.augSlots || 0
+
+  let hint = ''
+  if (participants > 0 && fieldPresent === 0) {
+    hint = 'Riot 응답에 증강 필드 자체가 없습니다. (스키마 변경 또는 해당 세트 미제공)'
+  } else if (fieldPresent > 0 && nonEmpty === 0) {
+    hint = '증강 필드는 있으나 값이 모두 비어 있습니다. (해당 세트 증강 미운영 가능성)'
+  } else if (slots === 0) {
+    hint = '증강 슬롯이 수집되지 않았습니다.'
+  }
+
+  return {
+    text: `참가자 ${participants}명 · 필드 존재 ${fieldPresent}명 · 값 있음 ${nonEmpty}명 · 슬롯 ${slots}개`,
+    hint,
+  }
+}
+
 /** lib/constants.ts normalizeTftId() 와 동일한 기물 ID 정규화 */
 function normalizeChampId(id) {
   if (!id) return ''
@@ -116,6 +169,9 @@ function createState() {
     items: {},   // item      -> { games, placementSum, top4 }
     combos: {},  // champ|item-> { games, placementSum, top4 }
     augSlots: 0,
+    augParticipants: 0,
+    augFieldPresent: 0,
+    augNonEmptyParticipants: 0,
     patch: 'unknown',
   }
 }
@@ -134,8 +190,12 @@ function aggregateMatch(match, state) {
   for (const p of match?.info?.participants || []) {
     const placement = p.placement
 
-    // 1) 증강 (세트 18은 Riot 미제공 가능성 있음)
-    for (const raw of p.augments || []) {
+    // 1) 증강 — 필드명/값 형태가 달라도 추출하고, 진단 카운터를 함께 기록한다.
+    state.augParticipants++
+    if (hasAugmentField(p)) state.augFieldPresent++
+    const augmentNames = extractAugmentNames(p)
+    if (augmentNames.length > 0) state.augNonEmptyParticipants++
+    for (const raw of augmentNames) {
       const name = cleanName(raw)
       if (!name) continue
       state.augSlots++
@@ -391,7 +451,9 @@ async function main() {
   const { augments, champions, traits, items, combos } = buildOutput(state)
 
   if (Object.keys(augments).length === 0) {
-    console.warn('\n⚠️ 증강 통계 0건 — Riot이 세트 18 매치에 augment 데이터를 제공하지 않습니다. (증강은 빈 값으로 저장)')
+    const diag = describeAugmentDiagnostics(state)
+    console.warn(`\n⚠️ 증강 통계 0건 — ${diag.text}`)
+    if (diag.hint) console.warn(`   원인 추정: ${diag.hint}`)
   }
 
   const total =
@@ -427,6 +489,7 @@ async function main() {
   console.log(`\n✅ 저장 완료 → ${outPath}`)
   console.log(`   총 수집 매치: ${seen.size}건 / 총 증강 슬롯: ${state.augSlots}건`)
   console.log(`   챔피언: ${Object.keys(champions).length}종 | 시너지: ${Object.keys(traits).length}종 | 아이템: ${Object.keys(items).length}종 | 조합: ${Object.keys(combos).length}건 | 증강: ${Object.keys(augments).length}종`)
+  console.log(`   증강 진단: ${describeAugmentDiagnostics(state).text}`)
 }
 
 if (require.main === module) {
@@ -440,6 +503,9 @@ module.exports = {
   createState,
   aggregateMatch,
   buildOutput,
+  extractAugmentNames,
+  hasAugmentField,
+  describeAugmentDiagnostics,
   riotGet,
   sleep,
   normalizeChampId,

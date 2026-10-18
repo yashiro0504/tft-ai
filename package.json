@@ -19,6 +19,8 @@
     "collect:check": "node scripts/collectContestSamples.js --check",
     "meta:check": "node scripts/checkMetaStats.js",
     "meta:summary": "node scripts/printMetaDeltas.js",
+    "test:augment": "node scripts/testAugmentAggregation.js",
+    "inspect:match": "node scripts/inspectMatch.js",
     "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"

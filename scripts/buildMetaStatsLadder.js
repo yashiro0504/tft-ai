@@ -21,6 +21,7 @@ const {
   createState,
   aggregateMatch,
   buildOutput,
+  describeAugmentDiagnostics,
   riotGet,
   attachDeltas,
   readPrevStats,
@@ -136,6 +137,9 @@ async function main() {
   console.log(
     `   기물 ${Object.keys(champions).length}종 | 시너지 ${Object.keys(traits).length}종 | 아이템 ${Object.keys(items).length}종 | 조합 ${Object.keys(combos).length}건 | 증강 ${Object.keys(augments).length}종`
   )
+  const augDiag = describeAugmentDiagnostics(state)
+  console.log(`   증강 진단: ${augDiag.text}`)
+  if (augDiag.hint) console.warn(`   ⚠️ ${augDiag.hint}`)
 }
 
 main().catch((e) => {

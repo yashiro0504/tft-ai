@@ -5,6 +5,7 @@ import {
   getItemRankings,
   getComboRankings,
   getCompSets,
+  hasMetaStats,
 } from './meta'
 import { translateChampion, translateTrait, translateItem, getChampionCost } from './constants'
 import { getDeckViews, getDeckMetaInfo } from './decks'
@@ -167,7 +168,7 @@ export function buildMetaPayload(): TftMetaResponse {
     source: info.source,
     generatedAt: info.generatedAt,
     prevGeneratedAt: info.prevGeneratedAt,
-    hasAugmentMeta: false,
+    hasAugmentMeta: hasMetaStats(),
     champions,
     traits,
     items,
