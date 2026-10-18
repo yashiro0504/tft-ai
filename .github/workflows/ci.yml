@@ -47,6 +47,40 @@ jobs:
           DEEPSEEK_API_KEY: ""
           GEMINI_API_KEY: ""
 
+      - name: Smoke test (SSR routes)
+        run: |
+          set -e
+          npm run start -- -p 3100 > smoke.log 2>&1 &
+          trap 'pkill -f "next start" || true' EXIT
+
+          ready=0
+          for i in $(seq 1 45); do
+            if curl -sf http://127.0.0.1:3100/api/health > /dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          if [ "$ready" != "1" ]; then
+            echo "::error::next start 가 90초 안에 뜨지 않았습니다."
+            cat smoke.log
+            exit 1
+          fi
+
+          for path in / /rank /meta /terms /privacy /robots.txt /sitemap.xml; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$path")
+            echo "$path -> $code"
+            test "$code" = "200"
+          done
+
+          deck=$(curl -s http://127.0.0.1:3100/sitemap.xml | grep -o '/deck/[a-f0-9]*' | head -1)
+          if [ -z "$deck" ]; then
+            echo "::error::sitemap 에 덱 URL 이 없습니다."
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$deck")
+          echo "$deck -> $code"
+          test "$code" = "200"
+
+          echo "smoke ok"
+
   eval:
     name: AI Reliability Eval
     runs-on: ubuntu-latest
