@@ -73,7 +73,7 @@ jobs:
             test "$code" = "200"
           done
 
-          deck=$(curl -s http://127.0.0.1:3100/sitemap.xml | grep -o '/deck/[a-f0-9]*' | head -1)
+          deck=$(curl -s http://127.0.0.1:3100/sitemap.xml | grep -oE '/deck/[A-Za-z0-9_-]+' | head -1)
           if [ -z "$deck" ]; then
             echo "::error::sitemap 에 덱 URL 이 없습니다."
             exit 1
