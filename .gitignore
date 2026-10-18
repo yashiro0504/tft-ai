@@ -48,3 +48,6 @@ next-env.d.ts
 
 # 수집 스냅샷 아카이브 (로컬 보관)
 /data/metaHistory/
+
+# 자체 집계 덱 프리뷰 (생성물)
+/lib/decksData.preview.json
