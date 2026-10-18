@@ -409,3 +409,160 @@
   .rk-row .rk-num:nth-child(6) { display: none; }
   .rk-name { font-size: 13.5px; }
 }
+
+/* 아이템 분류 칩 */
+.rk-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rk-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  border: 1px solid var(--rk-line);
+  border-radius: 2px;
+  background: none;
+  color: var(--rk-ink2);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.rk-chip span {
+  color: var(--rk-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.rk-chip:hover { border-color: var(--rk-line-strong); color: var(--rk-ink); }
+.rk-chip.on {
+  border-color: var(--rk-line-strong);
+  background: var(--rk-surface2);
+  color: var(--rk-ink);
+  font-weight: 600;
+}
+.rk-chip.on span { color: var(--rk-accent); }
+
+/* 상세 모달 */
+.rk-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(4, 6, 9, 0.72);
+  backdrop-filter: blur(3px);
+}
+.rk-modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
+  padding: 22px;
+  background: var(--rk-surface);
+  border: 1px solid var(--rk-line-strong);
+  border-radius: 6px;
+  color: var(--rk-ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+.rk-modal h2 {
+  margin: 0 0 14px;
+  padding-right: 32px;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.rk-modal-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: none;
+  color: var(--rk-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rk-modal-x:hover { color: var(--rk-ink); }
+
+.rk-mcat {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--rk-line-strong);
+  border-radius: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--rk-muted);
+  vertical-align: middle;
+}
+
+.rk-mstats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.rk-mstats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--rk-line);
+  border-radius: 3px;
+}
+.rk-mstats span { font-size: 10.5px; color: var(--rk-muted); }
+.rk-mstats b { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.rk-mitems,
+.rk-musers,
+.rk-mdecks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.rk-mrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--rk-line);
+  border-radius: 3px;
+  font-size: 12.5px;
+}
+.rk-mrow img {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 2px;
+  background: var(--rk-surface2);
+  flex: none;
+}
+.rk-mrow .rk-mname {
+  color: var(--rk-ink);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rk-mrow .rk-mval {
+  margin-left: auto;
+  color: var(--rk-ink2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rk-mempty { margin: 0 0 16px; color: var(--rk-muted); font-size: 12.5px; }
+
+@media (max-width: 760px) {
+  .rk-toolbar { flex-wrap: wrap; row-gap: 8px; }
+  .rk-chips { order: 3; width: 100%; }
+}
+@media (max-width: 520px) {
+  .rk-mstats { grid-template-columns: repeat(2, 1fr); }
+}

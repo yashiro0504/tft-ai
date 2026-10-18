@@ -12,6 +12,15 @@ import type {
   MetaTraitRanking,
   TftMetaResponse,
 } from '@/lib/types'
+import { DetailModal } from './MetaDetailModal'
+import {
+  ITEM_CLASSES,
+  ITEM_CLASS_LABEL,
+  classifyItem,
+  type ItemClass,
+  type ModalTarget,
+  tierClass,
+} from './metaShared'
 import '../rank/rank.css'
 import '../rank/tabs.css'
 
@@ -44,11 +53,6 @@ function assignTiers(avgs: number[]): Tier[] {
     out[it.i] = p < 0.1 ? 'S' : p < 0.3 ? 'A' : p < 0.6 ? 'B' : p < 0.85 ? 'C' : 'D'
   })
   return out
-}
-
-function tierClass(tier: string) {
-  const t = (tier || '').toUpperCase()
-  return ['S', 'A', 'B', 'C', 'D'].includes(t) ? `rk-tier rk-t${t}` : 'rk-tier rk-tC'
 }
 
 /** 수집 시각은 서버(UTC)·클라이언트(KST) 렌더 결과가 같아야 하므로 KST 고정 */
@@ -103,6 +107,8 @@ export function MetaDashboard({
   const [sort, setSort] = useState<SortKey>('avg')
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [itemClass, setItemClass] = useState<ItemClass>('all')
+  const [modal, setModal] = useState<ModalTarget | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -205,14 +211,15 @@ export function MetaDashboard({
     const filtered = rowsAll.filter((r) => {
       const tierOk = tier === '전체' || r.tier === tier
       const qOk = !q || r.name.toLowerCase().includes(q)
-      return tierOk && qOk
+      const classOk = tab !== 'items' || itemClass === 'all' || classifyItem(r.key) === itemClass
+      return tierOk && qOk && classOk
     })
     return [...filtered].sort((a, b) => {
       if (sort === 'top4') return b.top4 - a.top4
       if (sort === 'sample') return b.sample - a.sample
       return a.avg - b.avg
     })
-  }, [rowsAll, tier, sort, query])
+  }, [rowsAll, tier, sort, query, tab, itemClass])
 
   const selected = useMemo(
     () => (tab === 'decks' ? rows.find((r) => r.key === selectedId)?.deck || rows[0]?.deck || null : null),
@@ -293,12 +300,32 @@ export function MetaDashboard({
                   onClick={() => {
                     setTab(t.id)
                     setSelectedId(null)
+                    setModal(null)
                   }}
                 >
                   {t.label}
                 </button>
               ))}
             </div>
+            {tab === 'items' ? (
+              <div className="rk-chips" role="group" aria-label="아이템 분류">
+                {ITEM_CLASSES.map((c) => {
+                  const items = data?.items ?? []
+                  const count = c === 'all' ? items.length : items.filter((it) => classifyItem(it.key) === c).length
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`rk-chip ${itemClass === c ? 'on' : ''}`}
+                      aria-pressed={itemClass === c}
+                      onClick={() => setItemClass(c)}
+                    >
+                      {ITEM_CLASS_LABEL[c]} <span>{count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
             <label className="rk-search">
               <Search className="h-3.5 w-3.5" />
               <input
@@ -347,7 +374,12 @@ export function MetaDashboard({
                   key={r.key}
                   type="button"
                   className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''}`}
-                  onClick={() => (tab === 'decks' ? setSelectedId(r.key) : null)}
+                  onClick={() => {
+                    if (tab === 'decks') setSelectedId(r.key)
+                    else if (tab === 'items') setModal({ type: 'item', key: r.key })
+                    else if (tab === 'traits') setModal({ type: 'trait', key: r.key })
+                    else setModal({ type: 'champion', key: r.key })
+                  }}
                 >
                   <span className="rk-rank">{String(i + 1).padStart(2, '0')}</span>
                   <span className={tierClass(r.tier)}>{r.tier}</span>
@@ -405,6 +437,8 @@ export function MetaDashboard({
             {selected ? <DeckDetail deck={selected} /> : <p className="rk-empty">덱을 선택하세요.</p>}
           </aside>
         ) : null}
+
+        {modal && data ? <DetailModal data={data} target={modal} onClose={() => setModal(null)} /> : null}
       </div>
     </>
   )
