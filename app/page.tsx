@@ -316,7 +316,7 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} placements={search.matches.map((m) => m.placement)} />
+              <SummonerSummary profile={search.summonerProfile} matches={search.matches} />
             )}
 
             {/* 2. 종합 AI 분석 (선택) */}
