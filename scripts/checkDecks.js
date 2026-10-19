@@ -123,7 +123,8 @@ function main() {
         trait.count >= bp.breakpoints[0],
         `${trait.key}=${trait.count} < ${bp.breakpoints[0]}`
       )
-      check(
+      // 실측 덱은 최대 단계보다 많이 쌓은 실제 보드가 있을 수 있어 경고로만 남긴다
+      warn(
         `${tag}: 시너지 최대 단계 초과`,
         trait.count <= bp.max,
         `${trait.key}=${trait.count} > ${bp.max}`

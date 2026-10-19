@@ -14,7 +14,7 @@ import type {
   TftMetaResponse,
 } from '@/lib/types'
 import { DetailModal } from './MetaDetailModal'
-import { EvidenceChip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
+import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import { ShareButton } from './ShareButton'
 import { track } from '@/lib/analytics'
 import {
@@ -458,7 +458,12 @@ export function MetaDashboard({
                     </i>
                   </span>
                   <span className="rk-num">{Math.round(r.top4 * 100)}%</span>
-                  <span className="rk-num dim">{r.sample.toLocaleString()}</span>
+                  <span className="rk-num dim">
+                    {r.sample.toLocaleString()}
+                    {r.deck?.playRate != null ? (
+                      <small className="rk-sub">픽률 {(r.deck.playRate * 100).toFixed(1)}%</small>
+                    ) : null}
+                  </span>
                 </button>
               ))}
               {!rows.length && !loading ? <p className="rk-empty">조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.</p> : null}
@@ -513,8 +518,19 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
 
       {/* 근거 칩: 이 수치를 믿을 수 있는 이유 */}
       <div className="rk-evidence">
-        <EvidenceChip title="이 덱 기물들의 실측 매치 표본 수">표본 {deck.sampleSize.toLocaleString()}판</EvidenceChip>
-        <EvidenceChip title="덱 기물 중 실측 통계가 있는 비율">실측 커버리지 {Math.round((deck.coverage || 0) * 100)}%</EvidenceChip>
+        {deck.games != null ? (
+          <>
+            <EvidenceChip title="이 덱으로 분류된 실제 래더 보드 수">래더 실측 {deck.games.toLocaleString()}판</EvidenceChip>
+            {deck.playRate != null ? (
+              <EvidenceChip title="수집한 전체 보드 중 이 덱 비율">픽률 {(deck.playRate * 100).toFixed(1)}%</EvidenceChip>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <EvidenceChip title="이 덱 기물들의 실측 매치 표본 수">표본 {deck.sampleSize.toLocaleString()}판</EvidenceChip>
+            <EvidenceChip title="덱 기물 중 실측 통계가 있는 비율">실측 커버리지 {Math.round((deck.coverage || 0) * 100)}%</EvidenceChip>
+          </>
+        )}
         {patch ? <EvidenceChip>패치 {patch}</EvidenceChip> : null}
       </div>
 
@@ -539,14 +555,27 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
           <b>{deck.top4Rate != null ? `${Math.round(deck.top4Rate * 100)}%` : '-'}</b>
         </div>
         <div>
-          <span>표본</span>
-          <b>{deck.sampleSize.toLocaleString()}</b>
+          <span>{deck.games != null ? '1등' : '표본'}</span>
+          <b>
+            {deck.games != null && deck.winRate != null
+              ? `${Math.round(deck.winRate * 100)}%`
+              : deck.sampleSize.toLocaleString()}
+          </b>
         </div>
         <div>
-          <span>시너지</span>
-          <b>{deck.traits.length}</b>
+          <span>{deck.games != null ? '판수' : '시너지'}</span>
+          <b>{deck.games != null ? deck.games.toLocaleString() : deck.traits.length}</b>
         </div>
       </div>
+
+      {deck.placementDist ? (
+        <>
+          <p className="rk-label">등수 분포</p>
+          <div className="rk-dist">
+            <PlacementStrip counts={deck.placementDist} />
+          </div>
+        </>
+      ) : null}
 
       <p className="rk-label">구성</p>
       <div className="rk-board">
