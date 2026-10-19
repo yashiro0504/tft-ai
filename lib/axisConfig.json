@@ -1,16 +1,36 @@
 {
-  "_comment": "6축 진단·metaScore 공식 파라미터. 값을 바꾸면 version 을 올리고 `node scripts/testAxes.js` 로 영향 케이스를 확인한 뒤 `--update` 로 스냅샷을 갱신하세요. version 은 분석 캐시 키에 들어가 기존 리포트를 자동 무효화합니다.",
-  "version": "v2",
-  "expectedLevelByStage": { "1": 4, "2": 5, "3": 6, "4": 7, "5": 8, "default": 9 },
-  "earlyGame": { "minStage": 3, "minUnits": 4, "minGameSec": 900 },
+  "_comment": "6축 진단·metaScore 공식 파라미터. 값을 바꾸면 version 을 올리고 `node scripts/testAxes.js` 로 영향 케이스를 확인한 뒤 `--update` 로 스냅샷을 갱신하세요. version 은 분석 캐시 키에 들어가 기존 리포트를 자동 무효화합니다. v3(2026-10-19): 골든셋 25판 등수 상관 기준 보정 — 경합은 등급(빈집/보통/경합/심각)별, 시너지는 활성 시너지 단계 합(상위권 중앙값 10 · 하위권 7)과 넓은 이상 범위, 경제는 1등 잔여 골드 제외.",
+  "version": "v3",
+  "expectedLevelByStage": {
+    "1": 4,
+    "2": 5,
+    "3": 6,
+    "4": 7,
+    "5": 8,
+    "default": 9
+  },
+  "earlyGame": {
+    "minStage": 3,
+    "minUnits": 4,
+    "minGameSec": 900
+  },
   "axes": {
     "economy": {
-      "idleGoldFree": 50,
-      "idleGoldPenaltyPerGold": 1.2,
+      "idleGoldFree": 10,
+      "idleGoldPenaltyPerGold": 1.5,
+      "idleGoldExemptPlacements": [
+        1
+      ],
       "levelGapPenaltyPerLevel": 12,
       "earlyExitPenalty": [
-        { "maxStage": 2, "penalty": 30 },
-        { "maxStage": 3, "penalty": 15 }
+        {
+          "maxStage": 2,
+          "penalty": 30
+        },
+        {
+          "maxStage": 3,
+          "penalty": 15
+        }
       ]
     },
     "itemization": {
@@ -30,14 +50,33 @@
       "threeStarMax": 3
     },
     "synergy": {
-      "minTraitUnits": 2,
-      "idealActiveTraits": 3,
-      "spreadPenaltyPerTrait": 15,
-      "depthTargetUnits": 4,
-      "spreadWeight": 0.55,
-      "depthWeight": 0.45
+      "excludeUniqueTraits": true,
+      "idealActiveMin": 4,
+      "idealActiveMax": 8,
+      "spreadPenaltyPerTrait": 12,
+      "tierTotalTarget": 11,
+      "spreadWeight": 0.3,
+      "tierWeight": 0.7
     },
     "contest": {
+      "byLevel": {
+        "빈집": {
+          "top4": 75,
+          "bottom4": 75
+        },
+        "보통": {
+          "top4": 85,
+          "bottom4": 65
+        },
+        "경합": {
+          "top4": 95,
+          "bottom4": 50
+        },
+        "심각": {
+          "top4": 100,
+          "bottom4": 45
+        }
+      },
       "uncontested": 70,
       "contestedTop4": 95,
       "contestedBottom4": 45,
@@ -45,14 +84,34 @@
     }
   },
   "metaScore": {
-    "weights": { "placement": 0.4, "completion": 0.25, "items": 0.2, "contest": 0.15 },
+    "weights": {
+      "placement": 0.4,
+      "completion": 0.25,
+      "items": 0.2,
+      "contest": 0.15
+    },
     "boardItemsMax": 9,
     "tiers": [
-      { "min": 90, "tier": "S" },
-      { "min": 80, "tier": "A" },
-      { "min": 70, "tier": "B" },
-      { "min": 60, "tier": "C" },
-      { "min": 0, "tier": "D" }
+      {
+        "min": 90,
+        "tier": "S"
+      },
+      {
+        "min": 80,
+        "tier": "A"
+      },
+      {
+        "min": 70,
+        "tier": "B"
+      },
+      {
+        "min": 60,
+        "tier": "C"
+      },
+      {
+        "min": 0,
+        "tier": "D"
+      }
     ]
   }
 }

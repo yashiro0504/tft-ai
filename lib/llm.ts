@@ -18,7 +18,7 @@ import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-19.1'
+export const COACH_PROMPT_VERSION = '2026-10-19.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -151,7 +151,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 2) why: 그 원리가 왜 이기는지 인과 설명 (1~2문장)
 3) evidence: 이 유저 데이터에서 원리가 어긋난 지점 (제공된 수치 최소 2개 직접 인용)
 4) alternative: 그 순간의 더 나은 선택 (행동 + 타이밍 + 판단 기준 수치)
-5) drill: 다음 3판 동안 지킬 연습 과제 1개 (측정 가능하게, 예: "4-1에 8레벨 도달 시 골드 30 이상 유지")
+5) drill: 다음 3판 동안 지킬 연습 과제 1개 (측정 가능하게, 형식: "<라운드>에 <레벨> 도달 시 <지표> <기준값>")
+   - 기준값 숫자는 [6축 진단]의 세부 지표·감점 항목에서 가져온다. 이 지시문에 있는 형식 자체를 숫자 예시로 쓰지 마라.
 6) checklist: 실전 체크리스트 3~5개 (짧은 명령문, 중복 금지)
 
 [진단 6축]
@@ -163,7 +164,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - TFT 메타 '기억'은 현재 패치와 다를 수 있다. 오직 프롬프트에 '제공된 수치/사실'만 근거로 쓴다.
 - 제공되지 않은 메타 티어리스트·증강 승률·패치 내용을 지어내지 마라. 근거가 없으면 "메타 통계 미제공으로 단정 불가"라고 밝혀라.
 - [메타 실측 통계] 블록에 있는 수치만 인용 가능. 표본(n)이 작으면 "표본이 적어 참고용"이라고 밝혀라.
-- 인용 수치는 표기 그대로 쓴다(예: 평균등수 3.44, 표본 n=21, 골드 42, 5-2 탈락). 새로 계산한 근사치를 만들지 마라.
+- 인용 수치는 제공된 표기 그대로 쓴다(평균등수·표본 n·골드·탈락 라운드 등). 새로 계산한 근사치를 만들지 마라.
 - metaScore/metaTier 는 코드 산출값을 그대로 반환한다.
 
 ★★★ 이름/코스트 환각 금지 ★★★
@@ -178,9 +179,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 
 반드시 아래 JSON 형식으로만 응답하라(마크다운 코드블록 허용):
 {
-  "metaScore": 75,
-  "metaTier": "B+",
-  "flexibilityScore": 40,
+  "metaScore": <[코드 산출 점수]의 metaScore 정수>,
+  "metaTier": "<[코드 산출 점수]의 metaTier>",
+  "flexibilityScore": <0~100 정수>,
   "playstyle": "성향 한 줄",
   "overview": "서로 다른 축 3개를 각각 한 문장으로 요약 (3문장)",
   "lecture": {
@@ -645,7 +646,20 @@ export async function generateMetaCoachFeedback(
     `- 기본 개념 문장(참고): ${plan.drillTemplate}`,
     '',
     '[6축 진단 — 코드 산출 점수, 그대로 사용]',
-    ...plan.axes.map((a) => `- ${a.key}(${a.label}): ${a.score}/100 · ${a.detail}`),
+    ...plan.axes.map((a) => {
+      const effects = (a.effects || [])
+        .filter((e) => e.points !== 0)
+        .map((e) => `${e.label} ${e.points > 0 ? '+' : ''}${e.points}`)
+        .join(', ')
+      const metrics = (a.metrics || []).map((m) => `${m.label} ${m.value}${m.unit ?? ''}`).join(', ')
+      return [
+        `- ${a.key}(${a.label}): ${a.score}/100 · ${a.detail}`,
+        metrics ? `  · 지표: ${metrics}` : '',
+        effects ? `  · 점수 구성: ${effects}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    }),
     '※ axes 배열에는 위 6개 key 를 모두 넣고, score/점수는 위 코드 값을 그대로 인용하라.',
     '※ 초점 축이 contest 가 아니라면 로비 경합은 axes 의 한 줄 + contestAnalysis 로만 다루고, lecture 주제로 삼지 마라.',
     ...(plan.sampleWarning ? [`- 표본: ${plan.sampleWarning}`] : []),

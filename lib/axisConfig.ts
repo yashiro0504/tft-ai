@@ -17,6 +17,8 @@ export interface AxisConfig {
     economy: {
       idleGoldFree: number
       idleGoldPenaltyPerGold: number
+      /** 이 등수는 잔여 골드를 보지 않는다 (1등은 게임이 끝나 남은 골드가 낭비가 아님) */
+      idleGoldExemptPlacements: number[]
       levelGapPenaltyPerLevel: number
       earlyExitPenalty: { maxStage: number; penalty: number }[]
     }
@@ -24,14 +26,25 @@ export interface AxisConfig {
     tempo: { unknownStageScore: number; levelGapPenaltyPerLevel: number }
     completion: { fillBase: number; twoPlusBonus: number; threeStarBonusEach: number; threeStarMax: number }
     synergy: {
-      minTraitUnits: number
-      idealActiveTraits: number
+      /** 1명으로 켜지는 고유 시너지는 활성 개수에서 뺀다 */
+      excludeUniqueTraits: boolean
+      /** 이 범위 안의 활성 시너지 개수는 감점하지 않는다 */
+      idealActiveMin: number
+      idealActiveMax: number
       spreadPenaltyPerTrait: number
-      depthTargetUnits: number
+      /** 활성 시너지 단계(tier_current) 합이 이 값이면 만점 — 세트별 보정값 */
+      tierTotalTarget: number
       spreadWeight: number
-      depthWeight: number
+      tierWeight: number
     }
-    contest: { uncontested: number; contestedTop4: number; contestedBottom4: number; focusMinGap: number }
+    contest: {
+      /** 경합 등급별 조건 점수 (등급이 없는 옛 데이터는 아래 3개 값으로 판정) */
+      byLevel: Record<string, { top4: number; bottom4: number }>
+      uncontested: number
+      contestedTop4: number
+      contestedBottom4: number
+      focusMinGap: number
+    }
   }
   metaScore: {
     weights: { placement: number; completion: number; items: number; contest: number }

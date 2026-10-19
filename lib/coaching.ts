@@ -8,6 +8,14 @@ import type {
 } from './types'
 import { expectedLevel, isEarlyGame, lowSampleReason, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
+import breakpointData from './traitBreakpoints.json'
+
+/** 시너지 이름 → 브레이크포인트 (예: 나무정령 [3,5,7,9,11]) */
+const BREAKPOINTS: Record<string, number[]> = Object.fromEntries(
+  Object.values((breakpointData as { traits: Record<string, { name: string; breakpoints: number[] }> }).traits).map(
+    (t) => [t.name, t.breakpoints]
+  )
+)
 
 /**
  * 강의형 코칭 진단 (결정론적)
@@ -39,8 +47,11 @@ export interface PerMatchMetrics {
   three: number
   activeTraits: number
   bestTraitCount: number
+  /** 켠 시너지 단계(tier_current)의 합 — 고유 시너지 포함 */
+  traitTierTotal: number
   contested: boolean
   contestScore: number
+  contestLevel?: string
   compKey: string
 }
 
@@ -50,7 +61,11 @@ export function readMatch(m: SlimMatchData): PerMatchMetrics {
   const carry = withCost
     .slice()
     .sort((a, b) => b.cost - a.cost || b.u.items.length - a.u.items.length)[0]
-  const traits = (m.traits || []).filter((t) => (t.count || 0) >= AXIS_CONFIG.axes.synergy.minTraitUnits)
+  const syn = AXIS_CONFIG.axes.synergy
+  const allTraits = m.traits || []
+  const traits = syn.excludeUniqueTraits
+    ? allTraits.filter((t) => (BREAKPOINTS[t.name]?.[0] ?? 2) > 1 && (t.count || 0) >= 2)
+    : allTraits
   return {
     placement: Math.min(Math.max(m.placement || 8, 1), 8),
     top4: (m.placement || 8) <= 4,
@@ -64,8 +79,10 @@ export function readMatch(m: SlimMatchData): PerMatchMetrics {
     three: units.filter((u) => u.tier === 3).length,
     activeTraits: traits.length,
     bestTraitCount: traits.reduce((s, t) => Math.max(s, t.count || 0), 0),
+    traitTierTotal: allTraits.reduce((s, t) => s + (t.tier || 0), 0),
     contested: Boolean(m.contestedInfo?.isContested),
     contestScore: m.contestedInfo?.contestScore ?? 0,
+    contestLevel: m.contestedInfo?.level,
     compKey: units
       .map((u) => u.name)
       .sort()
@@ -92,8 +109,8 @@ const EFFECT_LABEL: Record<string, string> = {
   boardFill: '보드 충원',
   twoPlus: '2성 이상 비율',
   threeStar: '3성 보너스',
-  spread: '시너지 분산(활성 개수)',
-  depth: '주력 시너지 깊이',
+  spread: '활성 시너지 개수',
+  depth: '시너지 단계 합',
   condition: '경합 조건 점수',
 }
 
@@ -103,9 +120,10 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
   const c = AXIS_CONFIG.axes.economy
   const levelGap = Math.max(0, expectedLevel(m.stage) - m.level)
   const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
+  const idle = c.idleGoldExemptPlacements.includes(m.placement) ? 0 : Math.max(0, m.goldLeft - c.idleGoldFree)
   const effects = {
     base: 100,
-    idleGold: -Math.max(0, m.goldLeft - c.idleGoldFree) * c.idleGoldPenaltyPerGold,
+    idleGold: -idle * c.idleGoldPenaltyPerGold,
     levelGap: -levelGap * c.levelGapPenaltyPerLevel,
     earlyExit: -(early?.penalty ?? 0),
   }
@@ -149,18 +167,31 @@ export function completionAxis(m: Pick<PerMatchMetrics, 'units' | 'level' | 'sta
 }
 
 function synergyAxis(m: PerMatchMetrics): AxisResult {
-  // 활성 시너지 idealActiveTraits 개 근처가 이상적, depthTargetUnits 명 이상 겹치는 주력 시너지에 가점
+  // 활성 시너지가 이상 범위(idealActiveMin~Max) 밖이면 개당 감점 + 켠 시너지 단계 합(tierTotalTarget=만점)
+  // v2 는 "3개가 이상 + 주력 인원"이라 상위권의 넓은 보드를 깎았다 (골든셋 등수 상관 -0.21).
+  // 단계 합은 골든셋에서 등수 상관이 가장 높았다 (0.52, 최대 단계 하나만 보면 -0.28).
   const c = AXIS_CONFIG.axes.synergy
-  const spread = clamp(100 - Math.abs(m.activeTraits - c.idealActiveTraits) * c.spreadPenaltyPerTrait)
-  const depth = clamp((m.bestTraitCount / c.depthTargetUnits) * 100)
-  const effects = { spread: spread * c.spreadWeight, depth: depth * c.depthWeight }
+  const outside = Math.max(0, c.idealActiveMin - m.activeTraits, m.activeTraits - c.idealActiveMax)
+  const spread = clamp(100 - outside * c.spreadPenaltyPerTrait)
+  const tiers = clamp((m.traitTierTotal / c.tierTotalTarget) * 100)
+  const effects = { spread: spread * c.spreadWeight, depth: tiers * c.tierWeight }
   return { score: clamp(sum(effects)), effects }
 }
 
 /** 경합은 원인이 아니라 조건: 경합 없음 / 경합+순방 / 경합+하위권. metaScore 의 경합 대응과 공용. */
-export function contestAxis(m: Pick<PerMatchMetrics, 'contested' | 'top4'>): AxisResult {
+export function contestAxis(m: Pick<PerMatchMetrics, 'contested' | 'top4' | 'contestLevel'>): AxisResult {
+  // 겹친 기물이 하나라도 있으면 isContested=true 라 상위 티어 판은 거의 다 '경합'이 된다 → 등급으로 나눈다.
   const c = AXIS_CONFIG.axes.contest
-  const score = !m.contested ? c.uncontested : m.top4 ? c.contestedTop4 : c.contestedBottom4
+  const byLevel = m.contestLevel ? c.byLevel[m.contestLevel] : undefined
+  const score = byLevel
+    ? m.top4
+      ? byLevel.top4
+      : byLevel.bottom4
+    : !m.contested
+      ? c.uncontested
+      : m.top4
+        ? c.contestedTop4
+        : c.contestedBottom4
   return { score, effects: { condition: score } }
 }
 
@@ -249,7 +280,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[]): AxisMetr
       return [
         { key: 'level', label: '최종 레벨', value: mean((m) => m.level) },
         { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage) : m.level)) },
-        { key: 'levelGap', label: '표준 대비 격차', value: mean(gap), unit: '레벨' },
+        { key: 'levelGap', label: '표준 대비 격차(절대값)', value: mean((m) => Math.abs(gap(m))), unit: '레벨' },
       ]
     case 'completion':
       return [
@@ -261,6 +292,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[]): AxisMetr
       return [
         { key: 'activeTraits', label: '활성 시너지', value: mean((m) => m.activeTraits), unit: '개' },
         { key: 'bestTraitCount', label: '주력 시너지 인원', value: mean((m) => m.bestTraitCount), unit: '명' },
+        { key: 'traitTierTotal', label: '시너지 단계 합', value: mean((m) => m.traitTierTotal), unit: `/${AXIS_CONFIG.axes.synergy.tierTotalTarget}` },
       ]
     case 'contest':
       return [

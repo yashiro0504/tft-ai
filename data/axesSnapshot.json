@@ -1,56 +1,56 @@
 {
-  "scoringVersion": "v2",
-  "generatedAt": "2026-10-19T13:34:02.332Z",
+  "scoringVersion": "v3",
+  "generatedAt": "2026-10-19T13:59:45.729Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 85,
         "itemization": 100,
         "tempo": 73,
         "completion": 80,
-        "synergy": 79,
-        "contest": 70
+        "synergy": 87,
+        "contest": 80
       },
-      "metaScore": 71,
+      "metaScore": 72,
       "metaTier": "B",
       "components": {
         "placement": 50,
         "completion": 80,
         "items": 100,
-        "contest": 70
+        "contest": 80
       }
     },
     "Seed01 최근 5경기": {
-      "focus": "synergy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 92,
         "itemization": 89,
         "tempo": 82,
         "completion": 81,
-        "synergy": 76,
-        "contest": 75
+        "synergy": 90,
+        "contest": 83
       },
-      "metaScore": 77,
+      "metaScore": 78,
       "metaTier": "B",
       "components": {
         "placement": 63,
         "completion": 81,
         "items": 100,
-        "contest": 75
+        "contest": 83
       }
     },
     "Seed02 최근 5경기": {
-      "focus": "synergy",
+      "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 98,
+        "economy": 89,
         "itemization": 89,
         "tempo": 93,
         "completion": 90,
-        "synergy": 74,
+        "synergy": 95,
         "contest": 95
       },
       "metaScore": 84,
@@ -63,34 +63,34 @@
       }
     },
     "Seed03 최근 5경기": {
-      "focus": "synergy",
+      "focus": "tempo",
       "lowSample": false,
       "axes": {
         "economy": 95,
         "itemization": 93,
         "tempo": 86,
         "completion": 90,
-        "synergy": 60,
-        "contest": 95
+        "synergy": 90,
+        "contest": 91
       },
-      "metaScore": 89,
+      "metaScore": 88,
       "metaTier": "A",
       "components": {
         "placement": 80,
         "completion": 90,
         "items": 100,
-        "contest": 95
+        "contest": 91
       }
     },
     "Seed04 최근 5경기": {
-      "focus": "synergy",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 99,
+        "economy": 100,
         "itemization": 100,
         "tempo": 96,
         "completion": 87,
-        "synergy": 78,
+        "synergy": 91,
         "contest": 75
       },
       "metaScore": 82,
@@ -103,14 +103,14 @@
       }
     },
     "Seed01 win 1등 7-1": {
-      "focus": "synergy",
+      "focus": "itemization",
       "lowSample": false,
       "axes": {
         "economy": 88,
         "itemization": 82,
         "tempo": 82,
         "completion": 85,
-        "synergy": 56,
+        "synergy": 100,
         "contest": 95
       },
       "metaScore": 96,
@@ -123,14 +123,14 @@
       }
     },
     "Seed02 win 1등 6-5": {
-      "focus": "synergy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
         "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 84,
-        "synergy": 75,
+        "synergy": 100,
         "contest": 95
       },
       "metaScore": 95,
@@ -143,14 +143,14 @@
       }
     },
     "Seed03 win 1등 6-6": {
-      "focus": "synergy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
         "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 91,
-        "synergy": 84,
+        "synergy": 94,
         "contest": 95
       },
       "metaScore": 97,
@@ -163,43 +163,43 @@
       }
     },
     "Seed01 bottom 7등 5-2": {
-      "focus": "contest",
+      "focus": "itemization",
       "lowSample": false,
       "axes": {
         "economy": 100,
         "itemization": 63,
         "tempo": 100,
         "completion": 85,
-        "synergy": 84,
-        "contest": 45
+        "synergy": 81,
+        "contest": 65
       },
-      "metaScore": 54,
+      "metaScore": 57,
       "metaTier": "D",
       "components": {
         "placement": 14,
         "completion": 85,
         "items": 100,
-        "contest": 45
+        "contest": 65
       }
     },
     "Seed02 bottom 8등 5-2": {
-      "focus": "contest",
+      "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 85,
         "itemization": 63,
         "tempo": 82,
         "completion": 92,
-        "synergy": 92,
-        "contest": 45
+        "synergy": 48,
+        "contest": 65
       },
-      "metaScore": 50,
+      "metaScore": 53,
       "metaTier": "D",
       "components": {
         "placement": 0,
         "completion": 92,
         "items": 100,
-        "contest": 45
+        "contest": 65
       }
     },
     "Seed05 bottom 8등 4-6": {
@@ -210,27 +210,27 @@
         "itemization": 45,
         "tempo": 82,
         "completion": 78,
-        "synergy": 64,
-        "contest": 45
+        "synergy": 94,
+        "contest": 65
       },
-      "metaScore": 46,
+      "metaScore": 49,
       "metaTier": "D",
       "components": {
         "placement": 0,
         "completion": 78,
         "items": 100,
-        "contest": 45
+        "contest": 65
       }
     },
     "Seed01 contested-top4 4등 5-6": {
-      "focus": "synergy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
         "economy": 100,
         "itemization": 100,
         "tempo": 82,
         "completion": 80,
-        "synergy": 75,
+        "synergy": 100,
         "contest": 95
       },
       "metaScore": 77,
@@ -250,7 +250,7 @@
         "itemization": 100,
         "tempo": 100,
         "completion": 96,
-        "synergy": 67,
+        "synergy": 87,
         "contest": 95
       },
       "metaScore": 87,
@@ -270,7 +270,7 @@
         "itemization": 63,
         "tempo": 82,
         "completion": 94,
-        "synergy": 84,
+        "synergy": 81,
         "contest": 95
       },
       "metaScore": 86,
@@ -283,23 +283,23 @@
       }
     },
     "Seed01 contested-bot4 5등 6-1": {
-      "focus": "contest",
+      "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 76,
+        "economy": 70,
         "itemization": 100,
         "tempo": 64,
         "completion": 79,
-        "synergy": 84,
-        "contest": 45
+        "synergy": 75,
+        "contest": 65
       },
-      "metaScore": 64,
+      "metaScore": 67,
       "metaTier": "C",
       "components": {
         "placement": 43,
         "completion": 79,
         "items": 100,
-        "contest": 45
+        "contest": 65
       }
     },
     "Seed04 contested-bot4 5등 5-5": {
@@ -310,16 +310,16 @@
         "itemization": 100,
         "tempo": 82,
         "completion": 85,
-        "synergy": 61,
-        "contest": 45
+        "synergy": 100,
+        "contest": 50
       },
-      "metaScore": 65,
+      "metaScore": 66,
       "metaTier": "C",
       "components": {
         "placement": 43,
         "completion": 85,
         "items": 100,
-        "contest": 45
+        "contest": 50
       }
     },
     "Seed05 contested-bot4 5등 5-3": {
@@ -330,36 +330,36 @@
         "itemization": 100,
         "tempo": 100,
         "completion": 89,
-        "synergy": 84,
-        "contest": 45
+        "synergy": 75,
+        "contest": 50
       },
-      "metaScore": 66,
+      "metaScore": 67,
       "metaTier": "C",
       "components": {
         "placement": 43,
         "completion": 89,
         "items": 100,
-        "contest": 45
+        "contest": 50
       }
     },
     "Seed01 early 1등 2-2": {
-      "focus": "completion",
+      "focus": "synergy",
       "lowSample": true,
       "axes": {
         "economy": 58,
         "itemization": 47,
         "tempo": 82,
         "completion": 22,
-        "synergy": 30,
-        "contest": 70
+        "synergy": 16,
+        "contest": 75
       },
-      "metaScore": 60,
+      "metaScore": 61,
       "metaTier": "C",
       "components": {
         "placement": 100,
         "completion": 22,
         "items": 22,
-        "contest": 70
+        "contest": 75
       }
     },
     "Seed08 early 2등 6-2": {
@@ -370,16 +370,16 @@
         "itemization": 85,
         "tempo": 82,
         "completion": 28,
-        "synergy": 61,
-        "contest": 95
+        "synergy": 32,
+        "contest": 85
       },
-      "metaScore": 69,
+      "metaScore": 68,
       "metaTier": "C",
       "components": {
         "placement": 86,
         "completion": 28,
         "items": 67,
-        "contest": 95
+        "contest": 85
       }
     },
     "Seed01 early 1등 1-2": {
@@ -390,8 +390,8 @@
         "itemization": 0,
         "tempo": 64,
         "completion": 0,
-        "synergy": 30,
-        "contest": 70
+        "synergy": 16,
+        "contest": 75
       },
       "metaScore": 51,
       "metaTier": "D",
@@ -399,7 +399,7 @@
         "placement": 100,
         "completion": 0,
         "items": 0,
-        "contest": 70
+        "contest": 75
       }
     }
   }

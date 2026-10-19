@@ -63,6 +63,54 @@ if (sample) {
 }
 console.log(failures ? `  불변식 실패 ${failures}건` : '  ✅ 통과')
 
+// ── 타당도 리포트 (게이트 아님): 정상 경기 단건마다 축 점수와 등수의 스피어만 상관 ──
+// 좋은 운영 지표라면 점수가 높을수록 등수가 좋아야 한다 (ρ > 0). 음수면 공식이 거꾸로 동작한다는 신호.
+{
+  const rank = (a) => {
+    const s = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0])
+    const r = []
+    for (let i = 0; i < s.length; ) {
+      let j = i
+      while (j + 1 < s.length && s[j + 1][0] === s[i][0]) j++
+      for (let k = i; k <= j; k++) r[s[k][1]] = (i + j) / 2
+      i = j + 1
+    }
+    return r
+  }
+  const spearman = (a, b) => {
+    const ra = rank(a)
+    const rb = rank(b)
+    const mean = (x) => x.reduce((p, q) => p + q, 0) / x.length
+    const ma = mean(ra)
+    const mb = mean(rb)
+    let num = 0
+    let da = 0
+    let db = 0
+    for (let i = 0; i < a.length; i++) {
+      num += (ra[i] - ma) * (rb[i] - mb)
+      da += (ra[i] - ma) ** 2
+      db += (rb[i] - mb) ** 2
+    }
+    return da && db ? num / Math.sqrt(da * db) : 0
+  }
+  const unique = new Map()
+  for (const c of cases) for (const m of c.matches) unique.set(`${c.gameName}:${m.matchId}`, m)
+  const singles = [...unique.values()].map((m) => ({ m, plan: buildCoachingPlan([m]) })).filter((x) => !x.plan.lowSample)
+  if (singles.length >= 5) {
+    const place = singles.map((x) => -x.m.placement)
+    const parts = singles[0].plan.axes.map((a) => {
+      const scores = singles.map((x) => x.plan.axes.find((y) => y.key === a.key).score)
+      const mean = Math.round(scores.reduce((p, q) => p + q, 0) / scores.length)
+      return `${a.key} ρ=${spearman(scores, place).toFixed(2)} 평균 ${mean}`
+    })
+    const focus = {}
+    for (const x of singles) focus[x.plan.focus] = (focus[x.plan.focus] || 0) + 1
+    console.log(`타당도 (정상 경기 ${singles.length}판, 등수 상관 ρ)`)
+    console.log(`  ${parts.join(' · ')}`)
+    console.log(`  강의 주제 분포 ${JSON.stringify(focus)}`)
+  }
+}
+
 // ── 스냅샷 비교 ──
 if (UPDATE || !fs.existsSync(SNAPSHOT)) {
   fs.writeFileSync(
