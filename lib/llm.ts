@@ -25,6 +25,16 @@ const INTRO_PROMPT_VERSION = '2026-10-19.1'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+/**
+ * DeepSeek 모델 ID. 레거시 별칭 `deepseek-chat` 도 현재 V4.1-Flash 로 라우팅되지만
+ * 문서에서 빠졌으므로 정식 ID 를 기본값으로 쓴다. (`deepseek-v4-pro` 등으로 교체 가능)
+ */
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-flash'
+/**
+ * V4.x 는 thinking 모드가 기본값이다. 켜면 reasoning 토큰이 max_tokens 를 먼저 소모해
+ * JSON 이 잘리거나 인트로가 비므로 기본은 끈다. (`DEEPSEEK_THINKING=enabled` 로 켤 수 있음)
+ */
+const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === 'enabled' ? 'enabled' : 'disabled'
 
 function numEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name])
@@ -32,11 +42,37 @@ function numEnv(name: string, fallback: number): number {
 }
 
 const LLM_TIMEOUT_MS = Math.floor(numEnv('LLM_TIMEOUT_MS', 45_000))
-/** 대략적 단가(USD / 1M tokens). 과금 변동 시 env 로 보정한다. */
-const DEEPSEEK_PRICE_INPUT_PER_M = numEnv('DEEPSEEK_PRICE_INPUT_PER_M', 0.27)
-const DEEPSEEK_PRICE_OUTPUT_PER_M = numEnv('DEEPSEEK_PRICE_OUTPUT_PER_M', 1.1)
+/**
+ * 대략적 단가(USD / 1M tokens). 과금 변동 시 env 로 보정한다.
+ * DeepSeek 기본값은 deepseek-flash 피크 단가(2026-10 기준, 오프피크는 절반) — 예산 가드가 보수적으로 동작하도록.
+ */
+const DEEPSEEK_PRICE_INPUT_PER_M = numEnv('DEEPSEEK_PRICE_INPUT_PER_M', 0.3)
+const DEEPSEEK_PRICE_CACHED_INPUT_PER_M = numEnv('DEEPSEEK_PRICE_CACHED_INPUT_PER_M', 0.006)
+const DEEPSEEK_PRICE_OUTPUT_PER_M = numEnv('DEEPSEEK_PRICE_OUTPUT_PER_M', 1.2)
 const GEMINI_PRICE_INPUT_PER_M = numEnv('GEMINI_PRICE_INPUT_PER_M', 0.3)
 const GEMINI_PRICE_OUTPUT_PER_M = numEnv('GEMINI_PRICE_OUTPUT_PER_M', 2.5)
+
+/** OpenAI 호환 usage — DeepSeek 는 프롬프트 캐시 히트 토큰을 별도로 준다. */
+interface DeepSeekUsage {
+  prompt_tokens?: number
+  completion_tokens?: number
+  prompt_cache_hit_tokens?: number
+}
+
+/** DeepSeek 공통 요청 바디 (모델/thinking 설정을 한 곳에서 관리) */
+function deepSeekBody(system: string, prompt: string, maxTokens: number, extra: Record<string, unknown>) {
+  return JSON.stringify({
+    model: DEEPSEEK_MODEL,
+    thinking: { type: DEEPSEEK_THINKING },
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.2,
+    max_tokens: maxTokens,
+    ...extra,
+  })
+}
 
 /** LLM 호출 비용을 카운터/로그로 남긴다 (마이크로 USD 정수로 누적 → 정밀도 손실 방지). */
 function recordLlmUsage(
@@ -45,11 +81,18 @@ function recordLlmUsage(
   inputTokens: number,
   outputTokens: number,
   inputPricePerM: number,
-  outputPricePerM: number
+  outputPricePerM: number,
+  cachedInputTokens = 0,
+  cachedInputPricePerM = inputPricePerM
 ): void {
-  const usd = (inputTokens / 1_000_000) * inputPricePerM + (outputTokens / 1_000_000) * outputPricePerM
+  const cached = Math.min(Math.max(cachedInputTokens, 0), inputTokens)
+  const usd =
+    ((inputTokens - cached) / 1_000_000) * inputPricePerM +
+    (cached / 1_000_000) * cachedInputPricePerM +
+    (outputTokens / 1_000_000) * outputPricePerM
   incrMetric(`llm.call.${provider}`)
   if (inputTokens > 0) incrMetric('llm.tokens.input', inputTokens)
+  if (cached > 0) incrMetric('llm.tokens.input_cached', cached)
   if (outputTokens > 0) incrMetric('llm.tokens.output', outputTokens)
   incrMetric('llm.cost_usd_micros', Math.round(usd * 1_000_000))
   // 일일 예산 누적(전역 Redis 또는 인메모리). 실패해도 호출 자체는 계속된다.
@@ -58,9 +101,24 @@ function recordLlmUsage(
     provider,
     model,
     inputTokens,
+    cachedInputTokens: cached,
     outputTokens,
     estimatedUsd: Number(usd.toFixed(6)),
   })
+}
+
+/** DeepSeek usage 를 비용 기록으로 넘긴다. */
+function recordDeepSeekUsage(usage: DeepSeekUsage | undefined, inputFallback = 0, outputFallback = 0): void {
+  recordLlmUsage(
+    'deepseek',
+    DEEPSEEK_MODEL,
+    usage?.prompt_tokens || inputFallback,
+    usage?.completion_tokens || outputFallback,
+    DEEPSEEK_PRICE_INPUT_PER_M,
+    DEEPSEEK_PRICE_OUTPUT_PER_M,
+    usage?.prompt_cache_hit_tokens || 0,
+    DEEPSEEK_PRICE_CACHED_INPUT_PER_M
+  )
 }
 
 /** Promise 에 타임아웃을 건다 (SDK가 자체 시그널을 지원하지 않을 때 사용). */
@@ -159,7 +217,7 @@ const INTRO_SYSTEM_INSTRUCTION = `너는 TFT 아카데미 코치다. 주어진 �
 - 점수/등급은 코드 값을 그대로 쓴다`
 
 /**
- * DeepSeek API 호출 (deepseek-chat)
+ * DeepSeek API 호출 (DEEPSEEK_MODEL, JSON 모드)
  */
 async function callDeepSeek(prompt: string): Promise<string> {
   const controller = new AbortController()
@@ -172,16 +230,7 @@ async function callDeepSeek(prompt: string): Promise<string> {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: SYSTEM_INSTRUCTION },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.2,
-        max_tokens: 3400,
-        response_format: { type: 'json_object' },
-      }),
+      body: deepSeekBody(SYSTEM_INSTRUCTION, prompt, 3400, { response_format: { type: 'json_object' } }),
       signal: controller.signal,
     })
 
@@ -192,18 +241,18 @@ async function callDeepSeek(prompt: string): Promise<string> {
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>
-      usage?: { prompt_tokens?: number; completion_tokens?: number }
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>
+      usage?: DeepSeekUsage
     }
 
-    recordLlmUsage(
-      'deepseek',
-      'deepseek-chat',
-      data.usage?.prompt_tokens || 0,
-      data.usage?.completion_tokens || 0,
-      DEEPSEEK_PRICE_INPUT_PER_M,
-      DEEPSEEK_PRICE_OUTPUT_PER_M
-    )
+    recordDeepSeekUsage(data.usage)
+
+    // max_tokens 에 걸려 잘린 JSON 은 파싱이 깨지거나 일부 필드가 빠진다 → 실패로 보고 다음 제공자로 넘긴다.
+    const finishReason = data.choices?.[0]?.finish_reason
+    if (finishReason === 'length') {
+      incrMetric('llm.truncated.deepseek')
+      throw new Error(`DeepSeek 응답이 max_tokens 에서 잘림 (completion_tokens=${data.usage?.completion_tokens ?? '?'})`)
+    }
 
     return data.choices?.[0]?.message?.content || ''
   } catch (err) {
@@ -277,7 +326,7 @@ async function callDeepSeekStream(
   onDelta: ((text: string) => void) | undefined,
   maxTokens: number,
   signal?: AbortSignal
-): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
+): Promise<{ text: string; usage: DeepSeekUsage; finishReason: string }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
   const onAbort = () => controller.abort()
@@ -290,17 +339,7 @@ async function callDeepSeekStream(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.2,
-        max_tokens: maxTokens,
-        stream: true,
-        stream_options: { include_usage: true },
-      }),
+      body: deepSeekBody(system, prompt, maxTokens, { stream: true, stream_options: { include_usage: true } }),
       signal: controller.signal,
     })
 
@@ -314,8 +353,8 @@ async function callDeepSeekStream(
     const decoder = new TextDecoder()
     let buffer = ''
     let text = ''
-    let inputTokens = 0
-    let outputTokens = 0
+    let usage: DeepSeekUsage = {}
+    let finishReason = ''
 
     while (true) {
       const { done, value } = await reader.read()
@@ -335,8 +374,8 @@ async function callDeepSeekStream(
           if (!data || data === '[DONE]') continue
           try {
             const obj = JSON.parse(data) as {
-              choices?: Array<{ delta?: { content?: string } }>
-              usage?: { prompt_tokens?: number; completion_tokens?: number }
+              choices?: Array<{ delta?: { content?: string }; finish_reason?: string | null }>
+              usage?: DeepSeekUsage
             }
             const delta = obj.choices?.[0]?.delta?.content
             if (typeof delta === 'string' && delta) {
@@ -347,10 +386,9 @@ async function callDeepSeekStream(
                 /* 클라이언트가 끊겨도 스트림 읽기는 계속한다 */
               }
             }
-            if (obj.usage) {
-              inputTokens = obj.usage.prompt_tokens || inputTokens
-              outputTokens = obj.usage.completion_tokens || outputTokens
-            }
+            const reason = obj.choices?.[0]?.finish_reason
+            if (reason) finishReason = reason
+            if (obj.usage) usage = obj.usage
           } catch {
             /* 형식이 깨진 청크는 무시 */
           }
@@ -358,7 +396,7 @@ async function callDeepSeekStream(
       }
     }
 
-    return { text, inputTokens, outputTokens }
+    return { text, usage, finishReason }
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', onAbort)
@@ -457,16 +495,12 @@ ${facts}
       )
       flush()
       const text = result.text.trim()
+      // 잘린 인트로는 이미 화면에 흘려보냈으므로 그대로 쓰되, 캐시에는 남기지 않는다.
+      const truncated = result.finishReason === 'length'
+      if (truncated) incrMetric('llm.truncated.deepseek_intro')
       if (text) {
-        recordLlmUsage(
-          'deepseek',
-          'deepseek-chat',
-          result.inputTokens || Math.ceil(prompt.length / 3),
-          result.outputTokens || Math.ceil(text.length / 2),
-          DEEPSEEK_PRICE_INPUT_PER_M,
-          DEEPSEEK_PRICE_OUTPUT_PER_M
-        )
-        if (cacheKey) void cacheSet(cacheKey, text, CACHE_TTL.INTRO).catch(() => {})
+        recordDeepSeekUsage(result.usage, Math.ceil(prompt.length / 3), Math.ceil(text.length / 2))
+        if (cacheKey && !truncated) void cacheSet(cacheKey, text, CACHE_TTL.INTRO).catch(() => {})
         return text
       }
     } catch (err) {
@@ -710,7 +744,7 @@ ${qualityFacts}
       matches: matches.length,
       mode,
     })
-    return finalize(generateFallbackMetaFeedback(gameName, matches), true)
+    return finalize(generateFallbackMetaFeedback(gameName, matches, mode), true)
   }
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용
@@ -721,7 +755,7 @@ ${qualityFacts}
       if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
       incrMetric('llm.fallback.deepseek_error')
-      logEvent('warn', 'llm_provider_failed', { provider: 'deepseek', model: 'deepseek-chat', ...errorFields(err) })
+      logEvent('warn', 'llm_provider_failed', { provider: 'deepseek', model: DEEPSEEK_MODEL, ...errorFields(err) })
     }
   }
 
@@ -759,7 +793,7 @@ ${qualityFacts}
 
   // 3. 지능형 메타 코칭 폴백
   incrMetric('llm.fallback')
-  return finalize(generateFallbackMetaFeedback(gameName, matches), true)
+  return finalize(generateFallbackMetaFeedback(gameName, matches, mode), true)
 }
 
 /**

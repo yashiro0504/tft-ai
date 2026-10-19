@@ -4,7 +4,7 @@
 [![Collect Ladder Meta](https://github.com/yashiro0504/tft-ai/actions/workflows/collect-ladder.yml/badge.svg)](https://github.com/yashiro0504/tft-ai/actions/workflows/collect-ladder.yml)
 
 > **"내 플레이가 현재 메타와 얼마나 맞았을까? 대깨였을까, 빈집 유연 운영이었을까?"**  
-> 롤체지지(LOLCHESS) / OP.GG 스타일의 실시간 전적 및 로비 8명 순위 조회와 함께, **DeepSeek V3 AI**가 현재 정석 메타 적합도와 결정적인 개선 포인트를 정밀 코칭해주는 웹앱입니다.
+> 롤체지지(LOLCHESS) / OP.GG 스타일의 실시간 전적 및 로비 8명 순위 조회와 함께, **DeepSeek V4.1 Flash AI**가 현재 정석 메타 적합도와 결정적인 개선 포인트를 정밀 코칭해주는 웹앱입니다.
 
 ---
 
