@@ -1,0 +1,79 @@
+name: Collect Matches to DB
+
+# 데이터 플랫폼 v2 Phase A — Riot 랭크 판을 Supabase 에 누적한다 (docs/DATA-PLATFORM.md)
+# 필요한 Repository secrets: RIOT_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY
+# 선택 Repository variables: RIOT_MIN_INTERVAL_MS (프로덕션 키 승인 후 34), MAX_MATCHES, SEED_TIERS, MASTER_LIMIT, KEEP_PATCHES
+# Supabase 시크릿이 없으면 수집 단계는 안내만 남기고 성공으로 끝난다.
+
+on:
+  schedule:
+    # 매시 17분. 21시(UTC)는 기존 JSON 수집(collect-ladder, 06:00 KST)과 같은 키를 쓰므로 건너뛴다.
+    - cron: '17 0-20,22-23 * * *'
+  workflow_dispatch:
+    inputs:
+      max_minutes:
+        description: '최대 실행 시간(분)'
+        default: '50'
+        required: false
+      dry_run:
+        description: 'true 이면 DB 에 쓰지 않고 Riot 호출만 검증합니다'
+        default: 'false'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect-db
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Riot → Supabase (tft_matches / tft_boards)
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collector tests
+        run: npm run test:collect
+
+      - name: Collect
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TFT_SEED_KEY: ${{ secrets.TFT_SEED_KEY }}
+          RIOT_REGION: asia
+          RIOT_PLATFORM: kr
+          # 개발 키(100/2분)는 앱 검색과 나눠 쓰므로 절반만 쓴다. 프로덕션 키 승인 후 변수로 34 (한도 60%).
+          RIOT_MIN_INTERVAL_MS: ${{ vars.RIOT_MIN_INTERVAL_MS || '2500' }}
+          MAX_MINUTES: ${{ github.event.inputs.max_minutes || '50' }}
+          MAX_MATCHES: ${{ vars.MAX_MATCHES || '200' }}
+          SEED_TIERS: ${{ vars.SEED_TIERS || 'challenger,grandmaster,master' }}
+          MASTER_LIMIT: ${{ vars.MASTER_LIMIT || '1000' }}
+          KEEP_PATCHES: ${{ vars.KEEP_PATCHES || '1' }}
+          MAX_RAW_MB: ${{ vars.MAX_RAW_MB || '400' }}
+        run: |
+          if [ -z "$RIOT_API_KEY" ]; then
+            echo "::error title=RIOT_API_KEY missing::Repository secret RIOT_API_KEY 를 설정하세요."
+            exit 1
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm run collect:db -- --dry-run
+          else
+            npm run collect:db
+          fi
