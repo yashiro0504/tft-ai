@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     'analysis',
     dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10),
     (await getAuthUser())?.id,
-    dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 50)
+    dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10)
   )
   if (daily) return daily
 

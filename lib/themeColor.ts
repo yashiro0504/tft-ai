@@ -6,8 +6,8 @@
  * 시스템 설정과 무관하게 실제 테마와 일치시킨다.
  */
 export const THEME_COLOR = {
-  dark: '#080c15',
-  light: '#f3f5f9',
+  dark: '#0E1320',
+  light: '#F5F7FB',
 } as const
 
 export function syncThemeColor(theme: 'dark' | 'light'): void {

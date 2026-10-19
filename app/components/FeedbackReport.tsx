@@ -1,9 +1,10 @@
 'use client'
 
 import {
-  Award, Users, Swords, Shield, TrendingUp, Lightbulb, CheckCircle2, Zap, Sparkles,
+  Users, Swords, Shield, TrendingUp, Lightbulb, CheckCircle2, Zap,
   GraduationCap, BookOpen, Target, ClipboardCheck, ArrowRight, Gauge,
 } from 'lucide-react'
+import { useState } from 'react'
 import type { CoachingAxis, MetaCoachFeedback } from '@/lib/types'
 
 interface FeedbackReportProps {
@@ -18,59 +19,41 @@ interface FeedbackReportProps {
 
 /** 6축 진단 프로 게이머 HUD 바 */
 function AxisRow({ axis, isFocus }: { axis: CoachingAxis; isFocus: boolean }) {
-  const gradient =
-    axis.score >= 80
-      ? 'from-emerald-400 to-teal-400'
-      : axis.score >= 65
-      ? 'from-cyan-400 to-blue-400'
-      : axis.score >= 50
-      ? 'from-amber-400 to-orange-400'
-      : 'from-rose-500 to-red-500'
-
-  const text =
-    axis.score >= 80
-      ? 'text-emerald-400'
-      : axis.score >= 65
-      ? 'text-cyan-400'
-      : axis.score >= 50
-      ? 'text-amber-400'
-      : 'text-rose-400'
-
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border p-3 transition-all ${
+      className={`relative overflow-hidden rounded-card border p-3 transition-all ${
         isFocus
-          ? 'border-amber-400/50 bg-gradient-to-br from-amber-500/10 via-panel to-panel shadow-md shadow-amber-950/20 ring-1 ring-amber-400/30'
-          : 'border-line/10 bg-sunken/60 hover:border-line/20'
+          ? 'border-accent bg-accent-bg'
+          : 'border-line bg-sunken hover:border-line'
       }`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="truncate text-xs font-black text-ink">{axis.label}</span>
           {isFocus ? (
-            <span className="shrink-0 rounded-full border border-amber-400/60 bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-black text-amber-300 animate-pulse">
+            <span className="shrink-0 rounded-chip border border-accent bg-panel px-1.5 py-0.2 text-xs font-black text-accent animate-pulse">
               🎯 핵심 교정
             </span>
           ) : null}
         </div>
         <div className="flex items-baseline gap-0.5 shrink-0">
-          <span className={`font-mono text-base font-black ${text}`}>{axis.score}</span>
-          <span className="text-[10px] text-muted">/100</span>
+          <span className="font-mono text-base font-black text-ink">{axis.score}</span>
+          <span className="text-xs text-muted">/100</span>
         </div>
       </div>
 
       {/* 스탯 프로그레스 게이지 */}
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800/80">
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-sunken">
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-500 shadow-sm`}
+          className="h-full rounded-full bg-accent transition-all duration-500"
           style={{ width: `${Math.max(axis.score, 4)}%` }}
         />
       </div>
 
-      <p className="mt-2 text-[11px] font-semibold leading-relaxed text-ink-soft">
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-ink-soft">
         {axis.verdict || axis.lesson}
       </p>
-      <p className="mt-0.5 text-[10px] text-muted font-mono">{axis.detail}</p>
+      <p className="mt-0.5 text-xs text-muted font-mono">{axis.detail}</p>
     </div>
   )
 }
@@ -83,13 +66,12 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 via-panel to-panel p-5 shadow-xl md:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="relative flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-300">
+      <div className="relative overflow-hidden rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
+        <div className="relative flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-accent">
           <GraduationCap className="h-4 w-4" />
           <span>오늘의 강의</span>
           {plan ? (
-            <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] tracking-normal">
+            <span className="rounded-chip border border-accent/30 bg-accent-bg px-2 py-0.5 text-xs tracking-normal">
               {plan.focusLabel}
             </span>
           ) : null}
@@ -99,23 +81,23 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
         </h3>
 
         <div className="relative mt-4 space-y-3">
-          <div className="rounded-xl border border-line/10 bg-sunken/60 p-3.5">
-            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+          <div className="rounded-card border border-line bg-sunken p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
               <BookOpen className="h-3.5 w-3.5" /> 개념 · 원리
             </p>
             <p className="text-[14px] leading-relaxed text-ink-soft">{lec.concept}</p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{lec.why}</p>
           </div>
 
-          <div className="rounded-xl border border-line/10 bg-sunken/60 p-3.5">
-            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-300">
+          <div className="rounded-card border border-line bg-sunken p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
               <Gauge className="h-3.5 w-3.5" /> 이 데이터에서의 근거
             </p>
             <p className="text-[14px] leading-relaxed text-ink-soft">{lec.evidence}</p>
           </div>
 
-          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3.5">
-            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+          <div className="rounded-card border border-accent/25 bg-accent-bg p-3.5">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
               <ArrowRight className="h-3.5 w-3.5" /> 그 순간의 더 나은 선택
             </p>
             <p className="text-[14px] leading-relaxed text-ink-soft">{lec.alternative}</p>
@@ -124,21 +106,21 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+        <div className="rounded-card border border-accent/25 bg-accent-bg p-4">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
             <Target className="h-3.5 w-3.5" /> 다음 3판 연습 과제
           </p>
-          <p className="mt-1.5 text-[14px] leading-relaxed text-emerald-100">{lec.drill}</p>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-ink">{lec.drill}</p>
         </div>
 
-        <div className="rounded-2xl border border-line/10 bg-panel/90 p-4">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted">
+        <div className="rounded-card border border-line bg-panel p-4">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
             <ClipboardCheck className="h-3.5 w-3.5" /> 실전 체크리스트
           </p>
           <ul className="mt-2 space-y-1.5">
             {lec.checklist.map((c, i) => (
               <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-soft">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-good" />
                 <span>{c}</span>
               </li>
             ))}
@@ -147,9 +129,9 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
       </div>
 
       {plan ? (
-        <div className="rounded-2xl border border-line/10 bg-panel/90 p-4">
+        <div className="rounded-card border border-line bg-panel p-4">
           <p className="mb-2 flex items-center gap-1.5 text-[13px] font-black text-ink">
-            <Gauge className="h-4 w-4 text-cyan-400" /> 6축 진단 (코드 산출)
+            <Gauge className="h-4 w-4 text-accent" /> 6축 진단 (코드 산출)
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {plan.axes.map((a) => (
@@ -168,84 +150,108 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
  */
 export function FeedbackReport({ feedback, title, matchCount, compact = false }: FeedbackReportProps) {
   const flexScore = feedback.flexibilityScore
-  const flexColor =
-    flexScore >= 65 ? 'text-emerald-400' : flexScore >= 45 ? 'text-amber-400' : 'text-rose-400'
   const flexBadge =
     flexScore >= 65
-      ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300'
+      ? 'bg-good/10 border-good/80 text-good'
       : flexScore >= 45
-      ? 'bg-amber-950/60 border-amber-800/80 text-amber-300'
-      : 'bg-rose-950/60 border-rose-800/80 text-rose-300'
+      ? 'bg-gold/10 border-gold/80 text-gold'
+      : 'bg-bad/10 border-bad/80 text-bad'
 
   const pad = compact ? 'p-5 md:p-6' : 'p-6 md:p-8'
+  const [showAll, setShowAll] = useState(false)
+  const [showEvidence, setShowEvidence] = useState(false)
 
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'}>
-      {/* Hero Score Card (메타 점수 + 유연성 성향 - Tactical HUD Style) */}
-      <div className={`relative overflow-hidden bg-panel/90 backdrop-blur-xl border border-line/15 rounded-2xl ${pad} shadow-2xl`}>
-        <div className="absolute top-0 right-0 transform translate-x-10 -translate-y-10 w-60 h-60 bg-gradient-to-br from-cyan-500/15 via-blue-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+      {/* 요약: 리포트 헤더 → 총평 → 점수 3개 → 핵심 교정 3개. 나머지는 펼쳐서 본다 */}
+      <div className={`space-y-4 rounded-card border border-line bg-panel ${pad} shadow-card`}>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-subtle">
+          <span className="tracking-wide text-accent">REPORT</span>
+          <span>{feedback.mode === 'single' ? '단일 경기' : `${matchCount ?? ''}경기 종합`}</span>
+          {feedback.provenance?.patch ? <span>· 패치 {feedback.provenance.patch}</span> : null}
+          {title ? <span className="font-medium">· {title}</span> : null}
+        </p>
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider mb-2">
-              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-              <Award className="w-4 h-4 text-cyan-400" />
-              <span>{title || (feedback.mode === 'single' ? '단일 경기 정밀 코칭 총평' : `최근 ${matchCount ?? ''}경기 종합 메타 총평`)}</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-ink leading-snug flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-300" />
-              <span>AI 전략 코치 종합 진단</span>
-            </h2>
-            <p className="mt-2.5 text-ink-soft text-sm md:text-base leading-relaxed max-w-2xl bg-sunken/40 p-3 rounded-xl border border-line/10">
-              {feedback.overview}
+        <p className="max-w-[820px] text-base font-medium leading-relaxed text-ink sm:text-lg">{feedback.overview}</p>
+
+        <div className="flex flex-wrap gap-3">
+          <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+            <p className="text-xs text-subtle">전술 점수</p>
+            <p className="text-2xl font-bold text-ink">
+              {feedback.metaScore}
+              <span className="ml-1 text-sm font-medium text-subtle">/100</span>
             </p>
+            <span className="mt-1 inline-block rounded-chip bg-accent-bg px-1.5 py-0.5 text-xs font-semibold text-accent">
+              등급 {feedback.metaTier}
+            </span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3 bg-sunken/80 border border-line/15 rounded-2xl p-4 shrink-0 shadow-lg">
-            {/* 메타 스코어 다이얼 */}
-            <div className="text-center px-4 py-1">
-              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">전술 점수</p>
-              <div className="my-1">
-                <span className="text-3xl md:text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.3)]">
-                  {feedback.metaScore}
-                </span>
-                <span className="text-xs text-muted font-mono ml-1 font-semibold">/100</span>
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-md border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-black text-cyan-300">
-                <span>등급: {feedback.metaTier}</span>
-              </div>
-            </div>
-
-            <div className="w-[1px] h-14 bg-line/15 hidden sm:block" />
-
-            {/* 유연성 지수 */}
-            <div className="text-center px-4 py-1">
-              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">유연성 지수</p>
-              <div className="my-1">
-                <span className={`text-3xl md:text-4xl font-black font-mono ${flexColor} drop-shadow-md`}>
-                  {flexScore}%
-                </span>
-              </div>
-              <span className={`text-[11px] font-black px-2 py-0.5 rounded-md border ${flexBadge}`}>
-                {feedback.playstyle}
+          <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+            <p className="text-xs text-subtle">유연성 지수</p>
+            <p className="text-2xl font-bold text-ink">{flexScore}%</p>
+            <span className={`mt-1 inline-block rounded-chip border px-1.5 py-0.5 text-xs font-semibold ${flexBadge}`}>
+              {feedback.playstyle}
+            </span>
+          </div>
+          {feedback.grounding ? (
+            <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+              <p className="text-xs text-subtle">근거 검증</p>
+              <p className="text-2xl font-bold text-ink">{feedback.grounding.score}%</p>
+              <span className="mt-1 inline-block text-xs text-subtle">
+                수치 {feedback.grounding.supported}/{feedback.grounding.total} 확인
               </span>
             </div>
-          </div>
+          ) : null}
+        </div>
+
+        {feedback.improvements.length ? (
+          <ol className="grid list-none grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 p-0">
+            {feedback.improvements.slice(0, 3).map((item, i) => (
+              <li key={i} className="flex gap-2.5 rounded-control bg-sunken px-3.5 py-3">
+                <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-chip bg-accent-bg text-xs font-bold text-accent">
+                  {i + 1}
+                </span>
+                <span className="line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-ink">{item}</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+            className="cursor-pointer rounded-control border border-line bg-sunken px-4 py-2 text-sm text-ink transition hover:border-accent"
+          >
+            {showAll ? '전체 리포트 접기' : '전체 리포트 펼치기'}
+          </button>
+          {feedback.grounding || feedback.scoreBreakdown || feedback.provenance || feedback.isFallback ? (
+            <button
+              type="button"
+              onClick={() => setShowEvidence((v) => !v)}
+              aria-expanded={showEvidence}
+              className="cursor-pointer rounded-control border border-line bg-sunken px-4 py-2 text-sm text-ink transition hover:border-accent"
+            >
+              {showEvidence ? '분석 근거 접기' : '분석 근거 보기'}
+            </button>
+          ) : null}
         </div>
       </div>
 
+      {showEvidence ? (
+        <>
       {/* 리포트 신뢰도/근거 검증 (코드 산출) */}
       {(feedback.grounding || feedback.provenance || feedback.isFallback) && (
-        <div className="rounded-xl border border-line/10 bg-sunken/70 px-4 py-3">
+        <div className="rounded-card border border-line bg-sunken px-4 py-3">
           <div className="flex flex-wrap items-center gap-2 text-[12px]">
             {feedback.grounding ? (
               <span
-                className={`rounded-full border px-2 py-0.5 font-bold ${
+                className={`rounded-chip border px-2 py-0.5 font-bold ${
                   feedback.grounding.score >= 85
-                    ? 'border-emerald-700/60 bg-emerald-950/40 text-emerald-300'
+                    ? 'border-good/60 bg-good/10 text-good'
                     : feedback.grounding.score >= 65
-                    ? 'border-amber-700/60 bg-amber-950/40 text-amber-300'
-                    : 'border-rose-700/60 bg-rose-950/40 text-rose-300'
+                    ? 'border-gold/60 bg-gold/10 text-gold'
+                    : 'border-bad/60 bg-bad/10 text-bad'
                 }`}
               >
                 근거 검증 {feedback.grounding.supported}/{feedback.grounding.total} ·{' '}
@@ -253,17 +259,17 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               </span>
             ) : null}
             {feedback.isFallback && (
-              <span className="rounded-full border border-line/15 bg-slate-800/60 px-2 py-0.5 font-bold text-muted">
+              <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-bold text-muted">
                 규칙 기반 분석 (AI 미사용)
               </span>
             )}
             {feedback.provenance?.patch && (
-              <span className="rounded-full border border-line/10 bg-panel/90 px-2 py-0.5 font-mono text-muted">
+              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 font-mono text-muted">
                 패치 {feedback.provenance.patch}
               </span>
             )}
             {feedback.provenance?.source && (
-              <span className="rounded-full border border-line/10 bg-panel/90 px-2 py-0.5 text-muted">
+              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">
                 {feedback.provenance.source === 'riot-ladder' ? '래더 실측' : feedback.provenance.source}
               </span>
             )}
@@ -281,7 +287,7 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               </p>
             </details>
           )}
-          <p className="mt-2 text-[11px] leading-relaxed text-subtle">
+          <p className="mt-2 text-xs leading-relaxed text-subtle">
             ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 낮을수록
             창작(환각) 가능성이 큽니다.
           </p>
@@ -290,10 +296,10 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
 
       {/* 점수 산출 근거 (코드 계산) */}
       {feedback.scoreBreakdown && (
-        <div className="rounded-xl border border-line/10 bg-sunken/70 px-4 py-3">
+        <div className="rounded-card border border-line bg-sunken px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-bold text-muted">점수 산출 근거 (코드 계산)</p>
-            <span className="font-mono text-[11px] text-muted">
+            <span className="font-mono text-xs text-muted">
               {feedback.scoreBreakdown.matches}경기 평균 · {feedback.scoreBreakdown.version}
             </span>
           </div>
@@ -301,45 +307,50 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
             {feedback.scoreBreakdown.components.map((c) => (
               <div key={c.key} className="flex items-center gap-2">
                 <span className="w-[74px] shrink-0 text-[12px] text-muted">{c.label}</span>
-                <span className="w-8 shrink-0 text-right font-mono text-[11px] text-muted">
+                <span className="w-8 shrink-0 text-right font-mono text-xs text-muted">
                   {Math.round(c.weight * 100)}%
                 </span>
-                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-elev/5">
+                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-sunken">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400"
+                    className="h-full rounded-full bg-accent"
                     style={{ width: `${c.score}%` }}
                   />
                 </div>
                 <span className="w-7 shrink-0 text-right font-mono text-[12px] text-ink-soft">
                   {c.score}
                 </span>
-                <span className="hidden w-14 shrink-0 text-right font-mono text-[11px] text-muted sm:block">
+                <span className="hidden w-14 shrink-0 text-right font-mono text-xs text-muted sm:block">
                   +{c.contribution}
                 </span>
               </div>
             ))}
           </div>
-          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1 border-t border-line/10/60 pt-2">
-            <span className="text-[11px] text-muted">
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1 border-t border-line pt-2">
+            <span className="text-xs text-muted">
               {feedback.scoreBreakdown.components.map((c) => c.detail).join(' · ')}
             </span>
-            <span className="font-mono text-[12px] font-black text-cyan-300">
+            <span className="font-mono text-[12px] font-black text-accent">
               {feedback.scoreBreakdown.total}점 · {feedback.scoreBreakdown.tier}
             </span>
           </div>
         </div>
       )}
 
+        </>
+      ) : null}
+
+      {showAll ? (
+        <>
       {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
       <LectureBlock feedback={feedback} />
 
       {/* 로비 수렴도 (6축 중 1개 — 보조 지표) */}
-      <div className="rounded-2xl border border-line/10 bg-panel/90 p-5 shadow-xl md:p-6">
-        <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-cyan-300">
-          <Users className="h-4 w-4 text-cyan-400" />
+      <div className="rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
+        <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-accent">
+          <Users className="h-4 w-4 text-accent" />
           <span>로비 수렴도 (보조 지표)</span>
         </div>
-        <div className="rounded-xl border border-line/10 bg-sunken/70 p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
+        <div className="rounded-card border border-line bg-sunken p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
           {feedback.contestAnalysis}
         </div>
       </div>
@@ -348,25 +359,25 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       <div>
         <h3 className="text-[15px] font-bold text-muted mb-3">3대 핵심 세부 영역 평가</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-panel/90 border border-line/10 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase mb-2">
-              <Swords className="w-4 h-4 text-amber-400" />
+          <div className="bg-panel border border-line rounded-card p-5">
+            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+              <Swords className="w-4 h-4 text-accent" />
               <span>아이템 최적화 (BIS)</span>
             </div>
             <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.itemAnalysis}</p>
           </div>
 
-          <div className="bg-panel/90 border border-line/10 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase mb-2">
-              <Shield className="w-4 h-4 text-cyan-400" />
+          <div className="bg-panel border border-line rounded-card p-5">
+            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+              <Shield className="w-4 h-4 text-accent" />
               <span>앞/뒷라인 밸런스</span>
             </div>
             <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.synergyAnalysis}</p>
           </div>
 
-          <div className="bg-panel/90 border border-line/10 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase mb-2">
-              <TrendingUp className="w-4 h-4 text-indigo-400" />
+          <div className="bg-panel border border-line rounded-card p-5">
+            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+              <TrendingUp className="w-4 h-4 text-accent" />
               <span>레벨업 & 골드 운영</span>
             </div>
             <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.economyAnalysis}</p>
@@ -375,18 +386,18 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       </div>
 
       {/* 개선 포인트 */}
-      <div className="bg-panel/90 border border-line/10 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 text-amber-400 font-extrabold text-[15px] uppercase tracking-wider mb-4">
-          <Lightbulb className="w-5 h-5 text-amber-400" />
+      <div className="bg-panel border border-line rounded-card p-6 shadow-card">
+        <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
+          <Lightbulb className="w-5 h-5 text-accent" />
           <span>결정적 개선 포인트 (Key Improvements)</span>
         </div>
         <div className="space-y-3">
           {feedback.improvements.map((item, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 p-4 rounded-xl bg-sunken/70 border border-line/10/80 text-[15px] leading-relaxed text-ink-soft"
+              className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
             >
-              <span className="font-bold text-amber-300 bg-amber-950/70 border border-amber-800/60 rounded-md w-6 h-6 flex items-center justify-center shrink-0 text-xs mt-0.5">
+              <span className="font-bold text-accent bg-accent-bg border border-accent/60 rounded-chip w-6 h-6 flex items-center justify-center shrink-0 text-xs mt-0.5">
                 {i + 1}
               </span>
               <span className="flex-1 whitespace-pre-line">{item}</span>
@@ -396,23 +407,25 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       </div>
 
       {/* 액션 플랜 */}
-      <div className="bg-panel/90 border border-line/10 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-[15px] uppercase tracking-wider mb-4">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+      <div className="bg-panel border border-line rounded-card p-6 shadow-card">
+        <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
+          <CheckCircle2 className="w-5 h-5 text-accent" />
           <span>다음 경기 즉시 적용 지침 (Practical Action Plan)</span>
         </div>
         <div className="space-y-3">
           {feedback.actionPlan.map((action, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40 text-[15px] leading-relaxed text-emerald-100"
+              className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
             >
-              <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <Zap className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <span className="flex-1 whitespace-pre-line">{action}</span>
             </div>
           ))}
         </div>
       </div>
+        </>
+      ) : null}
     </div>
   )
 }

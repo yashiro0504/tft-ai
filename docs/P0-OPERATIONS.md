@@ -367,7 +367,7 @@ npm run check:ops -- https://www.tftlab.kr --strict  # 미충족 시 exit 1
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-QUOTA_ANALYSIS_PRO_PER_DAY=50
+QUOTA_ANALYSIS_PRO_PER_DAY=10
 ```
 
 확인:

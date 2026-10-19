@@ -8,8 +8,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   // 모바일 브라우저 상단바 색. 테마 토글 시 ThemeToggle 이 이 값을 함께 갱신한다.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f3f5f9' },
-    { media: '(prefers-color-scheme: dark)', color: '#080c15' },
+    { media: '(prefers-color-scheme: light)', color: '#F5F7FB' },
+    { media: '(prefers-color-scheme: dark)', color: '#0E1320' },
   ],
 }
 
@@ -65,25 +65,20 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <script
-          // 저장된 테마(또는 시스템 설정)를 첫 페인트 전에 적용해 깜빡임 방지
+          // 저장된 테마를 첫 페인트 전에 적용해 깜빡임 방지 (저장값이 없으면 다크가 기본)
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('tft-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('tft-theme');if(t!=='light'&&t!=='dark'){t='dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
           }}
         />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
         <link rel="preconnect" href="https://ddragon.leagueoflegends.com" />
         <link rel="preconnect" href="https://raw.communitydragon.org" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
           rel="stylesheet"
         />
-        <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className="font-pretendard bg-app text-ink antialiased min-h-screen selection:bg-rose-500 selection:text-white">
+      <body className="font-pretendard bg-app text-ink antialiased min-h-screen selection:bg-accent selection:text-on-accent">
         {children}
       </body>
     </html>

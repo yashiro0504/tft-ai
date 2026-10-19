@@ -57,7 +57,7 @@ export function UserMenu() {
       <Link
         href="/login"
         onClick={() => track('login_click', { surface: 'header' })}
-        className="ml-1 rounded-lg border border-line/15 px-2.5 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink"
+        className="ml-1 rounded-control border border-line bg-sunken px-2.5 py-2 text-xs font-bold text-ink transition hover:border-accent"
       >
         로그인
       </Link>
@@ -81,28 +81,28 @@ export function UserMenu() {
         onClick={() => setOpen((value) => !value)}
         aria-label="계정 메뉴"
         aria-expanded={open}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line/10 px-1.5 py-1.5 text-xs font-bold text-muted transition hover:bg-elev/5 hover:text-ink"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-line px-1.5 py-1.5 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink"
       >
         {me.user.avatarUrl ? (
           <img src={me.user.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
         ) : (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600/30 text-[10px] text-cyan-300">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-bg text-xs text-accent">
             {name.slice(0, 1)}
           </span>
         )}
         <span className="hidden max-w-[80px] truncate sm:inline">{name}</span>
         {me.plan === 'pro' ? (
-          <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1 py-0.5 text-[9px] font-black text-amber-300">
+          <span className="rounded-chip border border-accent/40 bg-accent-bg px-1 py-0.5 text-xs font-black text-accent">
             PRO
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-line/15 bg-panel p-3 text-xs shadow-2xl">
+        <div className="absolute right-0 z-50 mt-2 w-56 rounded-card border border-line bg-panel p-3 text-xs shadow-card">
           <p className="truncate font-bold text-ink">{name}</p>
-          <p className="mt-0.5 truncate text-[11px] text-subtle">{me.user.email || 'Discord 계정'}</p>
-          <div className="mt-2 flex items-center justify-between rounded-lg border border-line/10 bg-sunken/60 px-2.5 py-1.5">
+          <p className="mt-0.5 truncate text-xs text-subtle">{me.user.email || 'Discord 계정'}</p>
+          <div className="mt-2 flex items-center justify-between rounded-control border border-line bg-sunken px-2.5 py-1.5">
             <span className="text-muted">오늘 AI 분석</span>
             <span className="font-mono font-bold text-ink">
               {analysisUsed}/{analysisLimit}
@@ -110,15 +110,15 @@ export function UserMenu() {
           </div>
           <Link
             href="/pro"
-            className="mt-2 flex items-center justify-between rounded-lg border border-amber-400/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-bold text-amber-300 transition hover:bg-amber-500/15"
+            className="mt-2 flex items-center justify-between rounded-control border border-accent/30 bg-accent-bg px-2.5 py-1.5 text-xs font-bold text-accent transition hover:bg-accent-bg"
             onClick={() => setOpen(false)}
           >
             <span>Pro 플랜</span>
-            <span className="text-[9px] font-black opacity-80">준비 중</span>
+            <span className="text-xs font-black opacity-80">준비 중</span>
           </Link>
           <Link
             href="/privacy"
-            className="mt-2 block text-[11px] text-muted underline-offset-2 hover:text-ink hover:underline"
+            className="mt-2 block text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
             onClick={() => setOpen(false)}
           >
             개인정보처리방침
@@ -126,7 +126,7 @@ export function UserMenu() {
           <button
             type="button"
             onClick={signOut}
-            className="mt-2 w-full cursor-pointer rounded-lg border border-line/15 px-2 py-1.5 text-[11px] font-bold text-muted transition hover:border-rose-400/40 hover:text-rose-300"
+            className="mt-2 w-full cursor-pointer rounded-control border border-line bg-sunken px-2 py-1.5 text-xs font-bold text-ink transition hover:border-bad/40 hover:text-bad"
           >
             로그아웃
           </button>

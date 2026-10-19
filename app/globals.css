@@ -3,47 +3,89 @@
 @tailwind utilities;
 
 @layer base {
-  /* 다크(기본) */
+  /* 디자인 가이드 1장 — 라이트(기본) */
   :root {
-    --app-bg: 8 12 21;
-    --panel: 11 18 32;
-    --sunken: 7 10 18;
-    --elev: 255 255 255;
-    --ink: 248 250 252;
-    --ink-soft: 226 232 240;
-    --muted: 148 163 184;
-    /* WCAG AA(4.5:1) 확보: 패널/배경 어디서든 4.86 이상 */
-    --subtle: 116 131 154;
-    --line: 255 255 255;
-    --scroll-track: 15 23 42;
-    --scroll-thumb: 51 65 85;
-    --scroll-thumb-hover: 71 85 105;
-    color-scheme: dark;
-  }
+    --bg: #F5F7FB;        /* 페이지 바탕 */
+    --surface: #FFFFFF;   /* 카드, 표, 패널 */
+    --surface-2: #EEF1F7; /* 칩, 입력창, 호버 */
+    --border: #DDE2EC;
+    --text: #121826;      /* 본문, 숫자 */
+    --text-2: #4A5470;    /* 보조 설명 */
+    --text-3: #6B7490;    /* 표 헤더, 메타 정보 (12px 이상에서만) */
+    --accent: #2457E6;    /* 링크, 선택된 상태, 기본 버튼 */
+    --accent-bg: #E6EDFF; /* 선택된 칩 바탕 */
+    --on-accent: #FFFFFF;
+    --shadow: 0 1px 2px rgba(18, 24, 38, .06);
 
-  /* 라이트 (롤체지지 스타일) */
-  [data-theme='light'] {
-    --app-bg: 243 245 249;
-    --panel: 255 255 255;
-    --sunken: 238 242 247;
-    --elev: 15 23 42;
-    --ink: 15 23 42;
-    --ink-soft: 30 41 59;
-    --muted: 71 85 105;
-    /* WCAG AA(4.5:1) 확보: 회색 배경(#EEF2F7)에서도 4.84 */
-    --subtle: 91 107 128;
-    --line: 15 23 42;
-    --scroll-track: 233 238 245;
-    --scroll-thumb: 203 213 225;
-    --scroll-thumb-hover: 148 163 184;
+    /* 데이터 의미 색 (양쪽 모드 동일) */
+    --good: #14A37F;
+    --bad: #E5484D;
+    --gold: #E0A526;
+    --cost-1: #8A93A6;
+    --cost-2: #3DBB78;
+    --cost-3: #3E8BFF;
+    --cost-4: #B15CFF;
+    --cost-5: #E0A526;
+
+    /* 의미 색을 글자로 쓸 때 (라이트 바탕에서 4.5:1 이상 확보한 진한 값) */
+    --good-text: #0B7A5E;
+    --bad-text: #C62A30;
+    --gold-text: #8A5D00;
+
+    /* 모서리 (카드 / 버튼·입력창 / 칩) */
+    --radius-card: 12px;
+    --radius-control: 8px;
+    --radius-chip: 6px;
+
     color-scheme: light;
   }
 
+  /* 다크 */
+  :root[data-theme='dark'] {
+    --bg: #0E1320;
+    --surface: #151B2B;
+    --surface-2: #1C2438;
+    --border: #263049;
+    --text: #E8ECF5;
+    --text-2: #A7B0C5;
+    --text-3: #7C879F;
+    --accent: #6C8CFF;
+    --accent-bg: #1E2A4D;
+    --on-accent: #0E1320;
+    --shadow: none;
+    --good-text: #14A37F;
+    --bad-text: #EE6266;
+    --gold-text: #E0A526;
+    color-scheme: dark;
+  }
+
+  /* data-theme 이 아직 없을 때 시스템 설정을 따른다 */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0E1320;
+      --surface: #151B2B;
+      --surface-2: #1C2438;
+      --border: #263049;
+      --text: #E8ECF5;
+      --text-2: #A7B0C5;
+      --text-3: #7C879F;
+      --accent: #6C8CFF;
+      --accent-bg: #1E2A4D;
+      --on-accent: #0E1320;
+      --shadow: none;
+      --good-text: #14A37F;
+      --bad-text: #EE6266;
+      --gold-text: #E0A526;
+      color-scheme: dark;
+    }
+  }
+
   body {
-    background-color: rgb(var(--app-bg));
-    color: rgb(var(--ink));
+    background-color: var(--bg);
+    color: var(--text);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    /* 가독성: 기본 행간/자간 */
+    /* 모든 숫자의 자릿수를 세로로 맞춘다 */
+    font-variant-numeric: tabular-nums;
     line-height: 1.65;
     letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
@@ -51,30 +93,11 @@
   }
 }
 
-/* 라이트 테마에서 색상 배지/텍스트 대비 보정 (다크 칩 → 라이트 칩) */
-[data-theme='light'] [class*='bg-amber-950'] { background-color: #fef3c7; }
-[data-theme='light'] [class*='bg-emerald-950'] { background-color: #d1fae5; }
-[data-theme='light'] [class*='bg-cyan-950'] { background-color: #cffafe; }
-[data-theme='light'] [class*='bg-sky-950'] { background-color: #e0f2fe; }
-[data-theme='light'] [class*='bg-rose-950'] { background-color: #ffe4e6; }
-[data-theme='light'] [class*='bg-indigo-950'] { background-color: #e0e7ff; }
-[data-theme='light'] [class*='bg-violet-950'] { background-color: #ede9fe; }
-[data-theme='light'] [class*='bg-slate-950'] { background-color: #eef2f7; }
-[data-theme='light'] [class*='bg-slate-800'] { background-color: #eef2f7; }
-[data-theme='light'] [class*='bg-slate-700'] { background-color: #e2e8f0; }
-
-[data-theme='light'] [class*='text-amber-300'],
-[data-theme='light'] [class*='text-amber-400'] { color: #b45309; }
-[data-theme='light'] [class*='text-emerald-300'],
-[data-theme='light'] [class*='text-emerald-400'] { color: #047857; }
-[data-theme='light'] [class*='text-cyan-300'],
-[data-theme='light'] [class*='text-cyan-400'] { color: #0e7490; }
-[data-theme='light'] [class*='text-sky-300'] { color: #0369a1; }
-[data-theme='light'] [class*='text-rose-300'],
-[data-theme='light'] [class*='text-rose-400'] { color: #be123c; }
-[data-theme='light'] [class*='text-indigo-300'],
-[data-theme='light'] [class*='text-indigo-400'] { color: #4338ca; }
-[data-theme='light'] [class*='text-violet-300'] { color: #6d28d9; }
+/* 시너지 아이콘(흰색 글리프)을 바탕 농도에 맞춰 보이게 한다 */
+.trait-glyph { filter: brightness(0); opacity: 0.7; }
+.trait-glyph-on-accent { filter: brightness(0) invert(1); }
+[data-theme='dark'] .trait-glyph { filter: none; opacity: 0.9; }
+[data-theme='dark'] .trait-glyph-on-accent { filter: brightness(0); opacity: 0.85; }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
@@ -83,16 +106,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(var(--scroll-track));
+  background: var(--surface-2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--scroll-thumb));
+  background: var(--border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--scroll-thumb-hover));
+  background: var(--text-3);
 }
 
 /* Site animations (플러그인 없이 동작) */

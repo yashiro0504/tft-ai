@@ -46,10 +46,10 @@ export function ProWaitlistButton() {
         onClick={join}
         disabled={joined}
         aria-describedby="pro-waitlist-note"
-        className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition ${
+        className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-control px-4 py-3 text-sm font-black transition ${
           joined
-            ? 'cursor-default border border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
-            : 'cursor-pointer bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 hover:from-amber-300 hover:to-orange-300'
+            ? 'cursor-default border border-good/30 bg-good/10 text-good'
+            : 'cursor-pointer bg-accent text-on-accent hover:opacity-90'
         }`}
       >
         {joined ? (
@@ -69,7 +69,7 @@ export function ProWaitlistButton() {
       <p
         id="pro-waitlist-note"
         aria-live="polite"
-        className="mt-2.5 text-[11px] leading-relaxed text-subtle"
+        className="mt-2.5 text-xs leading-relaxed text-subtle"
       >
         {joined
           ? '관심 신호가 접수되었습니다. 정식 출시 시 사이트 공지로 가장 먼저 안내드릴게요.'

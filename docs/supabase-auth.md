@@ -68,7 +68,7 @@ update public.profiles set plan = 'pro' where id = '<user-uuid>';
 ```
 
 - Pro 한도는 환경변수로 조정:
-  `QUOTA_SEARCH_PRO_PER_DAY=200`, `QUOTA_ANALYSIS_PRO_PER_DAY=50`, `QUOTA_OVERVIEW_PRO_PER_DAY=50`
+  `QUOTA_SEARCH_PRO_PER_DAY=200`, `QUOTA_ANALYSIS_PRO_PER_DAY=10`, `QUOTA_OVERVIEW_PRO_PER_DAY=10`
 - 결제 연동 전까지는 운영자가 수동으로 부여한다.
 
 ## 7. 보안 메모

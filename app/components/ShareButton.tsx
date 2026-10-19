@@ -55,10 +55,10 @@ export function ShareButton({
     <button
       type="button"
       onClick={copy}
-      className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-line/15 bg-elev/5 px-3.5 py-2 text-xs font-bold text-muted transition hover:border-cyan-400/40 hover:text-ink"
+      className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-line bg-sunken px-3.5 py-2 text-xs font-bold text-ink transition hover:border-accent"
       aria-label="전적 페이지 링크 복사"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="h-3.5 w-3.5 text-good" /> : <Copy className="h-3.5 w-3.5" />}
       <span>{copied ? '복사됨' : label}</span>
     </button>
   )

@@ -45,6 +45,8 @@ export function TurnstileWidget({
         sitekey: SITE_KEY,
         theme: 'auto',
         size: 'flexible',
+        // 사람 확인이 필요할 때만 위젯을 보여준다 (통과 시 "성공!" 줄이 자리를 차지하지 않게)
+        appearance: 'interaction-only',
         callback: (token: string) => onToken(token),
         'expired-callback': () => onToken(null),
         'error-callback': () => {
@@ -95,11 +97,11 @@ export function TurnstileWidget({
   if (!SITE_KEY) return null
 
   return (
-    <div className="min-h-[65px]">
+    <div>
       <div ref={containerRef} />
-      {!ready && !failed ? <p className="text-[11px] text-muted">로봇 확인 로딩 중…</p> : null}
+      {!ready && !failed ? <p className="text-xs text-muted">로봇 확인 로딩 중…</p> : null}
       {failed ? (
-        <p className="text-[11px] font-semibold text-rose-400">
+        <p className="text-xs font-semibold text-bad">
           로봇 확인을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.
         </p>
       ) : null}

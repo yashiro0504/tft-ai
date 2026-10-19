@@ -128,13 +128,13 @@ export function SavedSearches({ onPick, disabled = false }: SavedSearchesProps) 
   if (!hasAny) return null
 
   const chipBase =
-    'inline-flex items-center rounded-lg border border-line/15 bg-elev/5 text-[11px] font-bold text-muted transition'
+    'inline-flex items-center rounded-control border border-line bg-sunken text-xs font-bold text-muted transition'
 
   return (
-    <div className="mt-4 space-y-2 border-t border-line/10 pt-3">
+    <div className="mt-4 space-y-2 border-t border-line pt-3">
       {recent.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-0.5 text-[11px] font-bold text-muted">최근 검색</span>
+          <span className="mr-0.5 text-xs font-bold text-muted">최근 검색</span>
           {recent.map((item) => {
             const key = keyOf(item.region, item.gameName, item.tagLine)
             const fav = isFavorite(item)
@@ -156,10 +156,10 @@ export function SavedSearches({ onPick, disabled = false }: SavedSearchesProps) 
                     onClick={() => void toggleFavorite(item)}
                     aria-label={fav ? `${labelOf(item)} 즐겨찾기 해제` : `${labelOf(item)} 즐겨찾기 추가`}
                     aria-pressed={fav}
-                    className="cursor-pointer border-l border-line/10 px-1.5 py-1 hover:text-amber-500 disabled:opacity-40"
+                    className="cursor-pointer border-l border-line px-1.5 py-1 hover:text-accent disabled:opacity-40"
                   >
                     <Star
-                      className={`h-3 w-3 ${fav ? 'fill-amber-400 text-amber-400' : ''}`}
+                      className={`h-3 w-3 ${fav ? 'fill-accent text-accent' : ''}`}
                       aria-hidden="true"
                     />
                   </button>
@@ -168,7 +168,7 @@ export function SavedSearches({ onPick, disabled = false }: SavedSearchesProps) 
                   type="button"
                   onClick={() => removeRecent(item)}
                   aria-label={`${labelOf(item)} 최근 검색에서 삭제`}
-                  className="cursor-pointer border-l border-line/10 px-1.5 py-1 hover:text-rose-400"
+                  className="cursor-pointer border-l border-line px-1.5 py-1 hover:text-bad"
                 >
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
@@ -180,7 +180,7 @@ export function SavedSearches({ onPick, disabled = false }: SavedSearchesProps) 
 
       {loggedIn && favorites.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-0.5 text-[11px] font-bold text-muted">즐겨찾기</span>
+          <span className="mr-0.5 text-xs font-bold text-muted">즐겨찾기</span>
           {favorites.map((item) => {
             const key = keyOf(item.region, item.gameName, item.tagLine)
             return (
@@ -199,9 +199,9 @@ export function SavedSearches({ onPick, disabled = false }: SavedSearchesProps) 
                   disabled={disabled || busyKey === key}
                   onClick={() => void toggleFavorite(item)}
                   aria-label={`${labelOf(item)} 즐겨찾기 해제`}
-                  className="cursor-pointer border-l border-line/10 px-1.5 py-1 text-amber-500 hover:text-amber-600 disabled:opacity-40"
+                  className="cursor-pointer border-l border-line px-1.5 py-1 text-accent hover:text-accent disabled:opacity-40"
                 >
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" aria-hidden="true" />
+                  <Star className="h-3 w-3 fill-accent text-accent" aria-hidden="true" />
                 </button>
               </span>
             )

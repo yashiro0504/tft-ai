@@ -13,7 +13,7 @@ export function RankBadge({ rank }: { rank: TftRankInfo | null | undefined }) {
 
   return (
     <span
-      className={`inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold ${style.chip}`}
+      className={`inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-control border px-2.5 py-1 text-xs font-bold ${style.chip}`}
     >
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.bar}`} />
       <b className={style.text}>{formatRankLabel(rank)}</b>
@@ -29,7 +29,7 @@ export function RankBadge({ rank }: { rank: TftRankInfo | null | undefined }) {
             </>
           ) : null}
           {rank.hotStreak ? (
-            <span className="text-amber-500" title="연승 중" aria-label="연승 중">
+            <span className="text-accent" title="연승 중" aria-label="연승 중">
               🔥
             </span>
           ) : null}

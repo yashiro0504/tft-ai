@@ -32,7 +32,7 @@ export default async function LoginPage({
       <SimpleHeader active="profile" />
 
       <main className="mx-auto flex max-w-md flex-col px-4 py-14">
-        <div className="rounded-2xl border border-line/10 bg-panel/90 p-6 shadow-xl">
+        <div className="rounded-card border border-line bg-panel p-6 shadow-card">
           <h1 className="text-xl font-black tracking-tight">TFT LAB 로그인</h1>
           <p className="mt-2 text-xs leading-relaxed text-muted">
             Discord 계정으로 로그인하면 <strong className="text-ink-soft">일일 AI 코칭 쿼터</strong>가
@@ -50,22 +50,22 @@ export default async function LoginPage({
             {configured ? (
               <LoginButton next={target} />
             ) : (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200">
+              <div className="rounded-card border border-bad/30 bg-bad/10 p-4 text-xs leading-relaxed text-ink">
                 로그인 기능이 아직 설정되지 않았습니다.
                 <br />
                 Supabase 프로젝트와 Discord OAuth 를 연결한 뒤 환경변수를 등록해 주세요.
-                <span className="mt-2 block text-amber-300/80">docs/supabase-auth.md 참고</span>
+                <span className="mt-2 block text-muted">docs/supabase-auth.md 참고</span>
               </div>
             )}
           </div>
 
           {error ? (
-            <p className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+            <p className="mt-4 rounded-control border border-bad/30 bg-bad/10 px-3 py-2 text-xs text-bad">
               로그인에 실패했습니다. 다시 시도해 주세요. ({error})
             </p>
           ) : null}
 
-          <p className="mt-6 text-[11px] leading-relaxed text-subtle">
+          <p className="mt-6 text-xs leading-relaxed text-subtle">
             계속 진행하면{' '}
             <Link href="/terms" className="underline hover:text-ink">
               이용약관
