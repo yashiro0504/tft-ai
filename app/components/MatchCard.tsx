@@ -10,6 +10,7 @@ import { track } from '@/lib/analytics'
 import { AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
+import { TraitHex, traitMaxLevel } from './LabUI'
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -69,11 +70,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     3: { border: 'border-cost-3' },
     2: { border: 'border-cost-2' },
     1: { border: 'border-cost-1' },
-  }
-
-  const getTraitBadge = (tier: number) => {
-    if (tier >= 2) return 'bg-accent-bg border-accent text-accent font-bold'
-    return 'bg-sunken border-line text-ink'
   }
 
   const handleAnalyze = async () => {
@@ -241,26 +237,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           </div>
         </div>
 
-        {/* 3. 시너지 칩: 가로로 줄바꿈 */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {/* 3. 시너지: 육각형(단계 농도) + 이름, 가로로 줄바꿈 */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {match.traits.map((t, i) => (
-            <span
-              key={i}
-              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-chip border text-xs ${getTraitBadge(t.tier)}`}
-            >
-              {t.iconUrl ? (
-                <img
-                  src={t.iconUrl}
-                  alt={t.name}
-                  className="w-3.5 h-3.5 object-contain"
-                  onError={(e) => {
-                    ;(e.target as HTMLElement).style.display = 'none'
-                  }}
-                />
-              ) : null}
-              <span className="font-bold">{t.count}</span>
-              <span>{t.name}</span>
-            </span>
+            <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
           ))}
         </div>
 

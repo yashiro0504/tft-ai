@@ -14,6 +14,7 @@ import type {
   TftMetaResponse,
 } from '@/lib/types'
 import { DetailModal } from './MetaDetailModal'
+import { EvidenceChip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import { ShareButton } from './ShareButton'
 import { track } from '@/lib/analytics'
 import {
@@ -397,9 +398,17 @@ export function MetaDashboard({
                 <span>이름</span>
                 {tab === 'comps' ? <span>BIS</span> : null}
                 {tab === 'champions' ? <span className="num">3성률</span> : null}
-                <span className="num">평균등수</span>
-                <span className="num">TOP4</span>
-                <span className="num">표본</span>
+                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className={`num rk-sort ${sort === k ? 'on' : ''}`}
+                    aria-pressed={sort === k}
+                    onClick={() => setSort(k)}
+                  >
+                    {SORT_LABEL[k]}
+                  </button>
+                ))}
               </div>
               {rows.map((r, i) => (
                 <button
@@ -417,7 +426,7 @@ export function MetaDashboard({
                 >
                   <span className="rk-rank">{String(i + 1).padStart(2, '0')}</span>
                   <span className={tierClass(r.tier)}>{r.tier}</span>
-                  <span className="rk-comp">
+                  <span className={`rk-comp ${r.deck ? 'is-deck' : ''}`}>
                     <span className="rk-name-cell">
                       {r.img ? (
                         <span className="rk-icon">
@@ -428,12 +437,26 @@ export function MetaDashboard({
                       {r.cost ? <span className="rk-cost">{r.cost}코</span> : null}
                     </span>
                     {r.deck ? (
+                      <span className="rk-traitrow">
+                        {[...r.deck.traits]
+                          .map((t) => ({ t, ...traitLevelFromCount(t.key, t.count) }))
+                          .filter((x) => x.level > 0)
+                          .sort((a, b) => b.level - a.level || b.t.count - a.t.count)
+                          .slice(0, 4)
+                          .map(({ t, level, max }) => (
+                            <TraitHex key={t.key} name={t.name} count={t.count} level={level} max={max} iconUrl={t.iconUrl} compact />
+                          ))}
+                      </span>
+                    ) : null}
+                    {r.deck ? (
                       <span className="rk-units">
                         {r.deck.units.map((u) => (
-                          <span key={`${r.key}-${u.key}-${u.index}`} className={`rk-unit c${u.cost ?? 1}`}>
-                            <img src={u.imgUrl} alt="" loading="lazy" />
-                            <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
-                          </span>
+                          <UnitHover key={`${r.key}-${u.key}-${u.index}`} unit={u}>
+                            <span className={`rk-unit c${u.cost ?? 1}`}>
+                              <img src={u.imgUrl} alt="" loading="lazy" />
+                              <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
+                            </span>
+                          </UnitHover>
                         ))}
                       </span>
                     ) : null}
@@ -485,7 +508,7 @@ export function MetaDashboard({
               >
                 ×
               </button>
-              {selected ? <DeckDetail deck={selected} /> : <p className="rk-empty">덱을 선택하세요.</p>}
+              {selected ? <DeckDetail deck={selected} patch={data?.patch} /> : <p className="rk-empty">덱을 선택하세요.</p>}
             </aside>
           </>
         ) : null}
@@ -496,7 +519,7 @@ export function MetaDashboard({
   )
 }
 
-function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
+function DeckDetail({ deck, patch }: { deck: MetaDeckRanking; patch?: string }) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
   return (
     <div>
@@ -508,9 +531,14 @@ function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
         {deck.gold != null ? `${deck.gold}g` : `${deck.unitCost}코`}
         <span className="rk-sep">·</span>
         기물 {deck.units.length}
-        <span className="rk-sep">·</span>
-        커버리지 {Math.round((deck.coverage || 0) * 100)}%
       </p>
+
+      {/* 근거 칩: 이 수치를 믿을 수 있는 이유 */}
+      <div className="rk-evidence">
+        <EvidenceChip title="이 덱 기물들의 실측 매치 표본 수">표본 {deck.sampleSize.toLocaleString()}판</EvidenceChip>
+        <EvidenceChip title="덱 기물 중 실측 통계가 있는 비율">실측 커버리지 {Math.round((deck.coverage || 0) * 100)}%</EvidenceChip>
+        {patch ? <EvidenceChip>패치 {patch}</EvidenceChip> : null}
+      </div>
 
       <div className="rk-dactions">
         <Link
@@ -545,20 +573,23 @@ function DeckDetail({ deck }: { deck: MetaDeckRanking }) {
       <p className="rk-label">구성</p>
       <div className="rk-board">
         {deck.units.slice(0, 8).map((u) => (
-          <div key={`b-${u.key}-${u.index}`} className={`rk-cell c${u.cost ?? 1}`}>
-            <img src={u.imgUrl} alt={u.name} loading="lazy" />
-            <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
-          </div>
+          <UnitHover key={`b-${u.key}-${u.index}`} unit={u}>
+            <div className={`rk-cell c${u.cost ?? 1}`}>
+              <img src={u.imgUrl} alt={u.name} loading="lazy" />
+              <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
+            </div>
+          </UnitHover>
         ))}
       </div>
 
       <p className="rk-label">시너지</p>
-      <div className="rk-traits">
-        {deck.traits.map((t) => (
-          <span key={t.key}>
-            {t.name} <b>{t.count}</b>
-          </span>
-        ))}
+      <div className="rk-hexes">
+        {deck.traits
+          .map((t) => ({ t, ...traitLevelFromCount(t.key, t.count) }))
+          .sort((a, b) => b.level - a.level || b.t.count - a.t.count)
+          .map(({ t, level, max }) => (
+            <TraitHex key={t.key} name={t.name} count={t.count} level={level} max={max} iconUrl={t.iconUrl} />
+          ))}
       </div>
 
       {carry ? (

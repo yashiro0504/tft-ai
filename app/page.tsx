@@ -17,6 +17,7 @@ import { track, trackOnce } from '@/lib/analytics'
 import { addRecentSearch } from '@/lib/recentSearches'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './components/LimitModal'
+import { PlacementStrip } from './components/LabUI'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -342,7 +343,7 @@ export default function TFTCoachPage() {
                   </div>
                 </div>
 
-                <div className="relative flex items-center gap-4 sm:gap-6 bg-sunken border border-line rounded-card px-5 py-3">
+                <div className="relative flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-sunken border border-line rounded-card px-5 py-3">
                   <div className="text-center">
                     <p className="text-xs font-bold text-muted">평균 등수</p>
                     <p className="text-xl md:text-2xl font-black text-ink font-mono">
@@ -366,6 +367,11 @@ export default function TFTCoachPage() {
                     <p className="text-xl md:text-2xl font-black text-ink font-mono">
                       {search.summonerProfile.winRate}%
                     </p>
+                  </div>
+                  <div className="w-[1px] h-8 bg-line hidden sm:block" />
+                  <div className="text-center">
+                    <p className="mb-1 text-xs font-bold text-muted">등수 분포</p>
+                    <PlacementStrip placements={search.matches.map((m) => m.placement)} />
                   </div>
                 </div>
               </div>

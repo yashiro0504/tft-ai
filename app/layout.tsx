@@ -65,9 +65,9 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <script
-          // 저장된 테마(또는 시스템 설정)를 첫 페인트 전에 적용해 깜빡임 방지
+          // 저장된 테마를 첫 페인트 전에 적용해 깜빡임 방지 (저장값이 없으면 다크가 기본)
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('tft-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('tft-theme');if(t!=='light'&&t!=='dark'){t='dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`,
           }}
         />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />

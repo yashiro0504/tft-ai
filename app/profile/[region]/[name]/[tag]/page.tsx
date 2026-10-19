@@ -10,6 +10,7 @@ import { RankBadge } from '@/app/components/RankBadge'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
+import { PlacementStrip } from '@/app/components/LabUI'
 import { SITE_URL } from '@/lib/site'
 
 export const revalidate = 120
@@ -179,7 +180,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 rounded-card border border-line bg-sunken px-5 py-3 sm:gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-4 rounded-card border border-line bg-sunken px-5 py-3 sm:gap-6">
               <div className="text-center">
                 <p className="text-xs font-bold text-muted">평균 등수</p>
                 <p className="font-mono text-xl font-black text-ink md:text-2xl">#{stats.avgPlacement}</p>
@@ -193,6 +194,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <div className="text-center">
                 <p className="text-xs font-bold text-muted">1등 승률</p>
                 <p className="font-mono text-xl font-black text-ink md:text-2xl">{stats.winRate}%</p>
+              </div>
+              <div className="w-[1px] h-8 bg-line hidden sm:block" />
+              <div className="text-center">
+                <p className="mb-1 text-xs font-bold text-muted">등수 분포</p>
+                <PlacementStrip placements={data.matches.map((m) => m.placement)} />
               </div>
             </div>
           </div>

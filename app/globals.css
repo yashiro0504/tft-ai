@@ -93,6 +93,12 @@
   }
 }
 
+/* 시너지 아이콘(흰색 글리프)을 바탕 농도에 맞춰 보이게 한다 */
+.trait-glyph { filter: brightness(0); opacity: 0.7; }
+.trait-glyph-on-accent { filter: brightness(0) invert(1); }
+[data-theme='dark'] .trait-glyph { filter: none; opacity: 0.9; }
+[data-theme='dark'] .trait-glyph-on-accent { filter: brightness(0); opacity: 0.85; }
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

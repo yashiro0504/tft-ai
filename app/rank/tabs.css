@@ -15,9 +15,9 @@
 .rk-tab:hover { border-color: var(--rk-accent); }
 .rk-tab.on { background: var(--accent-bg); border-color: var(--rk-accent); color: var(--rk-accent); font-weight: 600; }
 
-.rk-thead.cols-stat, .rk-row.cols-stat { grid-template-columns: 34px 34px minmax(0, 1fr) 96px 62px 70px; }
-.rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 34px minmax(0, 1fr) 132px 96px 62px 70px; }
-.rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 34px 34px minmax(0, 1fr) 74px 96px 62px 70px; }
+.rk-thead.cols-stat, .rk-row.cols-stat { grid-template-columns: 28px 28px minmax(0, 1fr) 72px 52px 60px; }
+.rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 28px minmax(0, 1fr) 120px 72px 52px 60px; }
+.rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 28px 28px minmax(0, 1fr) 64px 72px 52px 60px; }
 
 .rk-icon {
   width: 28px;

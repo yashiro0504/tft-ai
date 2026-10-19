@@ -5,6 +5,7 @@ import {
   GraduationCap, BookOpen, Target, ClipboardCheck, ArrowRight, Gauge,
 } from 'lucide-react'
 import type { CoachingAxis, MetaCoachFeedback } from '@/lib/types'
+import { CoachMemo } from './LabUI'
 
 interface FeedbackReportProps {
   feedback: MetaCoachFeedback
@@ -164,8 +165,19 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       <div className={`relative overflow-hidden bg-panel border border-line rounded-card ${pad} shadow-card`}>
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex-1">
+            {/* LAB 리포트 헤더: 장식 대신 메타 정보로 정체성을 낸다 */}
+            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-xs font-semibold tracking-wide text-subtle">
+              <span className="text-accent">REPORT</span>
+              <span aria-hidden="true">·</span>
+              <span>{feedback.mode === 'single' ? '단일 경기' : `${matchCount ?? ''}경기 종합`}</span>
+              {feedback.provenance?.patch ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>패치 {feedback.provenance.patch}</span>
+                </>
+              ) : null}
+            </p>
             <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-wider mb-2">
-              <span className="h-2 w-2 rounded-full bg-accent animate-ping" />
               <Award className="w-4 h-4 text-accent" />
               <span>{title || (feedback.mode === 'single' ? '단일 경기 정밀 코칭 총평' : `최근 ${matchCount ?? ''}경기 종합 메타 총평`)}</span>
             </div>
@@ -173,9 +185,9 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               <Sparkles className="w-5 h-5 text-accent" />
               <span>AI 전략 코치 종합 진단</span>
             </h2>
-            <p className="mt-2.5 text-ink-soft text-sm md:text-base leading-relaxed max-w-2xl bg-sunken p-3 rounded-card border border-line">
-              {feedback.overview}
-            </p>
+            <div className="mt-3 max-w-2xl">
+              <CoachMemo>{feedback.overview}</CoachMemo>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 bg-sunken border border-line rounded-card p-4 shrink-0 shadow-card">
