@@ -8,8 +8,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   // 모바일 브라우저 상단바 색. 테마 토글 시 ThemeToggle 이 이 값을 함께 갱신한다.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f3f5f9' },
-    { media: '(prefers-color-scheme: dark)', color: '#080c15' },
+    { media: '(prefers-color-scheme: light)', color: '#F5F7FB' },
+    { media: '(prefers-color-scheme: dark)', color: '#0E1320' },
   ],
 }
 
@@ -73,17 +73,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
         <link rel="preconnect" href="https://ddragon.leagueoflegends.com" />
         <link rel="preconnect" href="https://raw.communitydragon.org" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
           rel="stylesheet"
         />
-        <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className="font-pretendard bg-app text-ink antialiased min-h-screen selection:bg-rose-500 selection:text-white">
+      <body className="font-pretendard bg-app text-ink antialiased min-h-screen selection:bg-accent selection:text-on-accent">
         {children}
       </body>
     </html>

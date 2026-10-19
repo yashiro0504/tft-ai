@@ -7,11 +7,11 @@ import { SiteFooter } from './SiteFooter'
 export function LegalPageShell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="min-h-screen bg-app text-ink">
-      <header className="sticky top-0 z-40 border-b border-line/10 bg-app/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-line bg-app/95 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link href="/" className="text-[15px] font-black tracking-tight">
-            TFT <span className="text-cyan-400">LAB</span>
-            <span className="ml-2 hidden text-[11px] font-bold text-muted sm:inline">SET 18</span>
+            TFT <span className="text-accent">LAB</span>
+            <span className="ml-2 hidden text-xs font-bold text-muted sm:inline">SET 18</span>
           </Link>
           <Link href="/" className="text-xs font-bold text-muted transition hover:text-ink">
             ← 홈으로
@@ -23,7 +23,7 @@ export function LegalPageShell({ title, children }: { title: string; children: R
         <h1 className="text-2xl font-black tracking-tight">{title}</h1>
         <p className="mt-2 text-xs text-subtle">시행일: {POLICY_EFFECTIVE_DATE}</p>
         <div className="mt-8 space-y-7 text-sm leading-relaxed text-ink-soft">{children}</div>
-        <p className="mt-10 rounded-xl border border-line/10 bg-elev/5 p-4 text-xs text-muted">
+        <p className="mt-10 rounded-card border border-line bg-sunken p-4 text-xs text-muted">
           본 문서에 대한 문의: <a className="underline hover:text-ink" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           <br />
           {SITE_NAME} is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games

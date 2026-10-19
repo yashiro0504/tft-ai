@@ -35,12 +35,12 @@ export function LoginButton({ next = '/' }: { next?: string }) {
         type="button"
         onClick={signIn}
         disabled={loading}
-        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-900/30 transition hover:bg-[#4752c4] disabled:cursor-default disabled:opacity-60"
+        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-control bg-[#5865F2] px-4 py-3 text-sm font-bold text-white shadow-card transition hover:bg-[#4752c4] disabled:cursor-default disabled:opacity-60"
       >
         <span aria-hidden="true" className="text-base">🎮</span>
         {loading ? '이동 중…' : 'Discord로 로그인'}
       </button>
-      {error ? <p className="text-xs font-semibold text-rose-400">{error}</p> : null}
+      {error ? <p className="text-xs font-semibold text-bad">{error}</p> : null}
     </div>
   )
 }

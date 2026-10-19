@@ -37,7 +37,7 @@ function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환'}
       title={theme === 'dark' ? '라이트 테마' : '다크 테마'}
-      className="ml-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-line/10 text-muted transition hover:bg-elev/5 hover:text-ink"
+      className="ml-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-control border border-line text-muted transition hover:bg-sunken hover:text-ink"
     >
       {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
@@ -60,20 +60,20 @@ export function SiteHeader({
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/10 bg-app/95 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-line bg-app/95 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => onChange('meta')}
           className="flex shrink-0 items-center gap-2 cursor-pointer"
         >
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-600/20">
-            <Trophy className="w-4 h-4 text-white" />
+          <span className="w-8 h-8 rounded-control bg-accent flex items-center justify-center">
+            <Trophy className="w-4 h-4 text-on-accent" />
           </span>
           <span className="font-black text-ink tracking-tight text-[15px] whitespace-nowrap">
-            TFT <span className="text-cyan-400">LAB</span>
+            TFT <span className="text-accent">LAB</span>
           </span>
-          <span className="hidden sm:inline text-[11px] font-bold text-muted border border-line/15 rounded px-1.5 py-0.5">
+          <span className="hidden sm:inline text-xs font-bold text-muted border border-line rounded-chip px-1.5 py-0.5">
             SET 18
           </span>
         </button>
@@ -89,10 +89,10 @@ export function SiteHeader({
                 onClick={() => onChange(item.id)}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`inline-flex shrink-0 items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition border cursor-pointer ${
+                className={`inline-flex shrink-0 items-center gap-1.5 px-2 sm:px-3 py-2 rounded-control text-xs sm:text-xs font-bold transition border cursor-pointer ${
                   isActive
-                    ? 'bg-elev/10 text-ink border-line/10 shadow-sm'
-                    : 'text-muted hover:text-ink hover:bg-elev/5 border-transparent'
+                    ? 'bg-accent-bg text-accent border-accent'
+                    : 'text-muted hover:text-ink hover:bg-sunken border-transparent'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -104,19 +104,19 @@ export function SiteHeader({
           <ThemeToggle />
           <Link
             href="/pro"
-            className="ml-1 hidden rounded-lg px-2 py-2 text-[11px] font-black text-amber-300 transition hover:bg-amber-500/10 lg:inline-block"
+            className="ml-1 hidden rounded-control px-2 py-2 text-xs font-black text-accent transition hover:bg-accent-bg lg:inline-block"
           >
             PRO
           </Link>
           <Link
             href="/terms"
-            className="ml-1 hidden rounded-lg px-2 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink lg:inline-block"
+            className="ml-1 hidden rounded-control px-2 py-2 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink lg:inline-block"
           >
             약관
           </Link>
           <Link
             href="/privacy"
-            className="hidden rounded-lg px-2 py-2 text-[11px] font-bold text-muted transition hover:bg-elev/5 hover:text-ink lg:inline-block"
+            className="hidden rounded-control px-2 py-2 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink lg:inline-block"
           >
             개인정보
           </Link>

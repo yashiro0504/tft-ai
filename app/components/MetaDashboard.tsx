@@ -429,13 +429,12 @@ export function MetaDashboard({
                     </span>
                     {r.deck ? (
                       <span className="rk-units">
-                        {r.deck.units.slice(0, 7).map((u) => (
+                        {r.deck.units.map((u) => (
                           <span key={`${r.key}-${u.key}-${u.index}`} className={`rk-unit c${u.cost ?? 1}`}>
                             <img src={u.imgUrl} alt="" loading="lazy" />
                             <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
                           </span>
                         ))}
-                        {r.deck.units.length > 7 ? <span className="rk-more">+{r.deck.units.length - 7}</span> : null}
                       </span>
                     ) : null}
                   </span>

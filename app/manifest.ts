@@ -18,8 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     orientation: 'portrait-primary',
     // 다크 테마 기본 배경과 동일 (스플래시 화면 색)
-    background_color: '#080c15',
-    theme_color: '#080c15',
+    background_color: '#0E1320',
+    theme_color: '#0E1320',
     categories: ['games', 'sports', 'utilities'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
