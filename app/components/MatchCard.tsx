@@ -60,8 +60,9 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     ? 'border-l-4 border-l-good'
     : 'border-l-4 border-l-bad'
 
-  // 등수 박스: 왼쪽 위에 작게, 글자색은 --text
-  const placementBadgeTheme = 'border border-line bg-sunken text-ink font-black'
+  // 등수 라벨: 숫자는 --text, 결과 단어만 등수 의미 색
+  const placementLabel = isWin ? '1등 승리' : isTop4 ? '순방' : '탈락'
+  const placementLabelColor = isWin ? 'text-gold' : isTop4 ? 'text-good' : 'text-bad'
 
   // 코스트 색은 챔피언 아이콘 테두리에만 사용
   const costStyle: Record<number, { border: string }> = {
@@ -130,38 +131,36 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   return (
     <div data-index={index} className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme}`}>
-      <div className="p-4 md:p-5">
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
-          {/* 1. 좌측 위: 등수(작게) 및 경기 메타데이터 */}
-          <div className="space-y-1 min-w-[200px] shrink-0">
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-chip text-xs ${placementBadgeTheme}`}>
-                <span className="font-mono">#{match.placement}</span>
-                <span className="font-semibold">{isWin ? '1등 승리' : isTop4 ? '순방' : '탈락'}</span>
+      <div className="px-5 pb-4 pt-5 md:px-6">
+        <div className="flex flex-wrap items-start gap-5">
+          {/* 1. 왼쪽: 등수 + 경기 정보 + 시너지 */}
+          <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-1.5">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-xl font-bold text-ink">#{match.placement}</span>
+              <span className={`text-sm font-semibold ${placementLabelColor}`}>{placementLabel}</span>
+              <span className="text-sm text-subtle">
+                {match.queueType || '랭크 게임'} · {match.timeAgo || '최근'}
               </span>
-              <span className="text-xs font-bold text-ink">{match.queueType || '랭크 게임'}</span>
-              <span className="text-xs text-muted">{match.timeAgo || '최근'}</span>
             </div>
-            <div className="text-xs text-muted flex items-center gap-2">
-              <span>{match.lastRound} 라운드</span>
-              <span>•</span>
-              <span>{match.gameLengthStr || '31분 20초'}</span>
+            <div className="text-sm text-muted">
+              {match.lastRound} 라운드 · {match.gameLengthStr || '31분 20초'} · Lv.{match.level} · 잔여 {match.goldLeft}G
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted font-mono">
-              <span className="text-ink font-bold">Lv.{match.level}</span>
-              <span>|</span>
-              <span>잔여 {match.goldLeft}G</span>
+            {/* 시너지: 육각형(단계 농도) + 이름 */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {match.traits.map((t, i) => (
+                <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
+              ))}
             </div>
           </div>
 
-          {/* 2. 우측: 챔피언 아이콘 (48px, 코스트 색 테두리, 별은 아래쪽에 겹쳐서) + 아이템 */}
-          <div className="flex flex-wrap items-start gap-2 w-full lg:w-auto lg:justify-end">
+          {/* 2. 오른쪽: 챔피언 아이콘 (48px, 코스트는 테두리 색으로만, 별은 아래쪽에 겹쳐서) + 아이템 */}
+          <div className="flex flex-wrap items-start gap-1.5">
             {match.units.map((unit, i) => {
               const cost = unit.rarity || 3
               const info = costStyle[cost] || costStyle[3]
 
               return (
-                <div key={i} className="flex flex-col items-center group/unit relative">
+                <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-12 flex-col items-center group/unit relative">
                   <div
                     className={`relative h-12 w-12 rounded-control border-2 overflow-hidden bg-sunken flex items-center justify-center ${info.border}`}
                   >
@@ -180,11 +179,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                     <span className="text-xs font-black text-muted pointer-events-none absolute text-center px-0.5 truncate max-w-[44px]">
                       {unit.name.slice(0, 2)}
                     </span>
-
-                    {/* 코스트 배지 */}
-                    <div className="absolute top-0 left-0 rounded-br-[4px] bg-black/70 px-1 text-[10px] leading-4 font-mono text-white font-bold z-20">
-                      {cost}G
-                    </div>
 
                     {/* 성급: 아이콘 아래쪽에 겹쳐서 작게 */}
                     {unit.tier >= 2 ? (
@@ -235,13 +229,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               )
             })}
           </div>
-        </div>
-
-        {/* 3. 시너지: 육각형(단계 농도) + 이름, 가로로 줄바꿈 */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          {match.traits.map((t, i) => (
-            <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
-          ))}
         </div>
 
         {/* 4. 증강체 */}
@@ -314,16 +301,16 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           ))}
 
         {/* 4. 하단: 경기별 AI 분석 버튼 + 로비 8명 전체 순위 토글 */}
-        <div className="mt-3 pt-2.5 border-t border-line flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-sunken pt-3">
           <span className="text-xs text-subtle">로비 8인 경기 결과 기록</span>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {match.lobbyParticipants && match.lobbyParticipants.length > 0 && (
               <button
                 type="button"
                 onClick={() => setIsOpenLobby(!isOpenLobby)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-sunken hover:border-accent text-ink text-xs font-semibold transition cursor-pointer border border-line"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-control bg-sunken hover:border-accent text-ink text-sm transition cursor-pointer border border-line"
               >
-                <span>{isOpenLobby ? '로비 순위 접기' : '로비 8명 전체 순위 보기'}</span>
+                <span>{isOpenLobby ? '로비 순위 접기' : '로비 순위 보기'}</span>
                 {isOpenLobby ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             )}
@@ -331,10 +318,9 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             <button
               type="button"
               onClick={() => setIsOpenEvidence(!isOpenEvidence)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-sunken hover:border-accent text-ink text-xs font-semibold transition cursor-pointer border border-line"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-control bg-sunken hover:border-accent text-ink text-sm transition cursor-pointer border border-line"
             >
-              <Database className="w-3.5 h-3.5" />
-              <span>{isOpenEvidence ? '접지 근거 접기' : '접지 근거 보기'}</span>
+              <span>{isOpenEvidence ? '분석 근거 접기' : '분석 근거 보기'}</span>
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
@@ -343,7 +329,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               type="button"
               onClick={handleAnalyze}
               disabled={isAnalyzing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 text-on-accent text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 text-on-accent text-sm font-bold transition cursor-pointer"
             >
               {isAnalyzing ? (
                 <>

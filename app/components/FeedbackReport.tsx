@@ -1,11 +1,11 @@
 'use client'
 
 import {
-  Award, Users, Swords, Shield, TrendingUp, Lightbulb, CheckCircle2, Zap, Sparkles,
+  Users, Swords, Shield, TrendingUp, Lightbulb, CheckCircle2, Zap,
   GraduationCap, BookOpen, Target, ClipboardCheck, ArrowRight, Gauge,
 } from 'lucide-react'
+import { useState } from 'react'
 import type { CoachingAxis, MetaCoachFeedback } from '@/lib/types'
-import { CoachMemo } from './LabUI'
 
 interface FeedbackReportProps {
   feedback: MetaCoachFeedback
@@ -158,71 +158,88 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       : 'bg-bad/10 border-bad/80 text-bad'
 
   const pad = compact ? 'p-5 md:p-6' : 'p-6 md:p-8'
+  const [showAll, setShowAll] = useState(false)
+  const [showEvidence, setShowEvidence] = useState(false)
 
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'}>
-      {/* Hero Score Card (메타 점수 + 유연성 성향 - Tactical HUD Style) */}
-      <div className={`relative overflow-hidden bg-panel border border-line rounded-card ${pad} shadow-card`}>
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="flex-1">
-            {/* LAB 리포트 헤더: 장식 대신 메타 정보로 정체성을 낸다 */}
-            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-xs font-semibold tracking-wide text-subtle">
-              <span className="text-accent">REPORT</span>
-              <span aria-hidden="true">·</span>
-              <span>{feedback.mode === 'single' ? '단일 경기' : `${matchCount ?? ''}경기 종합`}</span>
-              {feedback.provenance?.patch ? (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>패치 {feedback.provenance.patch}</span>
-                </>
-              ) : null}
+      {/* 요약: 리포트 헤더 → 총평 → 점수 3개 → 핵심 교정 3개. 나머지는 펼쳐서 본다 */}
+      <div className={`space-y-4 rounded-card border border-line bg-panel ${pad} shadow-card`}>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-subtle">
+          <span className="tracking-wide text-accent">REPORT</span>
+          <span>{feedback.mode === 'single' ? '단일 경기' : `${matchCount ?? ''}경기 종합`}</span>
+          {feedback.provenance?.patch ? <span>· 패치 {feedback.provenance.patch}</span> : null}
+          {title ? <span className="font-medium">· {title}</span> : null}
+        </p>
+
+        <p className="max-w-[820px] text-base font-medium leading-relaxed text-ink sm:text-lg">{feedback.overview}</p>
+
+        <div className="flex flex-wrap gap-3">
+          <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+            <p className="text-xs text-subtle">전술 점수</p>
+            <p className="text-2xl font-bold text-ink">
+              {feedback.metaScore}
+              <span className="ml-1 text-sm font-medium text-subtle">/100</span>
             </p>
-            <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-wider mb-2">
-              <Award className="w-4 h-4 text-accent" />
-              <span>{title || (feedback.mode === 'single' ? '단일 경기 정밀 코칭 총평' : `최근 ${matchCount ?? ''}경기 종합 메타 총평`)}</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-ink leading-snug flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-accent" />
-              <span>AI 전략 코치 종합 진단</span>
-            </h2>
-            <div className="mt-3 max-w-2xl">
-              <CoachMemo>{feedback.overview}</CoachMemo>
-            </div>
+            <span className="mt-1 inline-block rounded-chip bg-accent-bg px-1.5 py-0.5 text-xs font-semibold text-accent">
+              등급 {feedback.metaTier}
+            </span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3 bg-sunken border border-line rounded-card p-4 shrink-0 shadow-card">
-            {/* 메타 스코어 다이얼 */}
-            <div className="text-center px-4 py-1">
-              <p className="text-xs font-bold text-muted uppercase tracking-widest">전술 점수</p>
-              <div className="my-1">
-                <span className="text-3xl md:text-4xl font-black font-mono text-ink">
-                  {feedback.metaScore}
-                </span>
-                <span className="text-xs text-muted font-mono ml-1 font-semibold">/100</span>
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-chip border border-accent/30 bg-accent-bg px-2 py-0.5 text-xs font-black text-accent">
-                <span>등급: {feedback.metaTier}</span>
-              </div>
-            </div>
-
-            <div className="w-[1px] h-14 bg-line hidden sm:block" />
-
-            {/* 유연성 지수 */}
-            <div className="text-center px-4 py-1">
-              <p className="text-xs font-bold text-muted uppercase tracking-widest">유연성 지수</p>
-              <div className="my-1">
-                <span className={`text-3xl md:text-4xl font-black font-mono text-ink`}>
-                  {flexScore}%
-                </span>
-              </div>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-chip border ${flexBadge}`}>
-                {feedback.playstyle}
+          <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+            <p className="text-xs text-subtle">유연성 지수</p>
+            <p className="text-2xl font-bold text-ink">{flexScore}%</p>
+            <span className={`mt-1 inline-block rounded-chip border px-1.5 py-0.5 text-xs font-semibold ${flexBadge}`}>
+              {feedback.playstyle}
+            </span>
+          </div>
+          {feedback.grounding ? (
+            <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+              <p className="text-xs text-subtle">근거 검증</p>
+              <p className="text-2xl font-bold text-ink">{feedback.grounding.score}%</p>
+              <span className="mt-1 inline-block text-xs text-subtle">
+                수치 {feedback.grounding.supported}/{feedback.grounding.total} 확인
               </span>
             </div>
-          </div>
+          ) : null}
+        </div>
+
+        {feedback.improvements.length ? (
+          <ol className="grid list-none grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 p-0">
+            {feedback.improvements.slice(0, 3).map((item, i) => (
+              <li key={i} className="flex gap-2.5 rounded-control bg-sunken px-3.5 py-3">
+                <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-chip bg-accent-bg text-xs font-bold text-accent">
+                  {i + 1}
+                </span>
+                <span className="line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-ink">{item}</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+            className="cursor-pointer rounded-control border border-line bg-sunken px-4 py-2 text-sm text-ink transition hover:border-accent"
+          >
+            {showAll ? '전체 리포트 접기' : '전체 리포트 펼치기'}
+          </button>
+          {feedback.grounding || feedback.scoreBreakdown || feedback.provenance || feedback.isFallback ? (
+            <button
+              type="button"
+              onClick={() => setShowEvidence((v) => !v)}
+              aria-expanded={showEvidence}
+              className="cursor-pointer rounded-control border border-line bg-sunken px-4 py-2 text-sm text-ink transition hover:border-accent"
+            >
+              {showEvidence ? '분석 근거 접기' : '분석 근거 보기'}
+            </button>
+          ) : null}
         </div>
       </div>
 
+      {showEvidence ? (
+        <>
       {/* 리포트 신뢰도/근거 검증 (코드 산출) */}
       {(feedback.grounding || feedback.provenance || feedback.isFallback) && (
         <div className="rounded-card border border-line bg-sunken px-4 py-3">
@@ -319,6 +336,11 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
         </div>
       )}
 
+        </>
+      ) : null}
+
+      {showAll ? (
+        <>
       {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
       <LectureBlock feedback={feedback} />
 
@@ -402,6 +424,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
           ))}
         </div>
       </div>
+        </>
+      ) : null}
     </div>
   )
 }

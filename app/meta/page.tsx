@@ -37,7 +37,7 @@ export default function MetaPage() {
     <div className="min-h-screen bg-app text-ink">
       <SimpleHeader active="meta" />
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
         <div className="mb-4">
           <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 18 메타 랭킹</h1>
           <p className="mt-1 text-xs text-muted">

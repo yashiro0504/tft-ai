@@ -38,6 +38,20 @@ export type ModalTarget =
   | { type: 'item'; key: string }
   | { type: 'trait'; key: string }
 
+export type Tier = 'S' | 'A' | 'B' | 'C' | 'D'
+
+/** 평균등수 분포 기준 상대 티어 (절대 임계값 대신 상위 퍼센타일) */
+export function assignTiers(avgs: number[]): Tier[] {
+  const order = avgs.map((a, i) => ({ a, i })).sort((x, y) => x.a - y.a)
+  const out: Tier[] = new Array(avgs.length).fill('D')
+  const total = order.length || 1
+  order.forEach((it, idx) => {
+    const p = idx / total
+    out[it.i] = p < 0.1 ? 'S' : p < 0.3 ? 'A' : p < 0.6 ? 'B' : p < 0.85 ? 'C' : 'D'
+  })
+  return out
+}
+
 export function tierClass(tier: string) {
   const t = (tier || '').toUpperCase()
   return ['S', 'A', 'B', 'C', 'D'].includes(t) ? `rk-tier rk-t${t}` : 'rk-tier rk-tC'

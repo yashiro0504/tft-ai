@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BarChart3, Bot, Moon, Sun, Trophy } from 'lucide-react'
+import { BarChart3, Bot, FlaskConical, Moon, Sun } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { syncThemeColor } from '@/lib/themeColor'
 
@@ -37,7 +37,7 @@ function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환'}
       title={theme === 'dark' ? '라이트 테마' : '다크 테마'}
-      className="ml-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-control border border-line text-muted transition hover:bg-sunken hover:text-ink"
+      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-control border border-line text-muted transition hover:bg-sunken hover:text-ink"
     >
       {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
@@ -60,25 +60,24 @@ export function SiteHeader({
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-app/95 backdrop-blur-xl">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 border-b border-sunken bg-app/95 backdrop-blur-xl">
+      <div
+        className={`mx-auto flex h-16 items-center gap-3 px-4 sm:gap-6 sm:px-6 ${
+          active === 'meta' ? 'max-w-[1440px]' : 'max-w-[1200px]'
+        }`}
+      >
         <button
           type="button"
-          onClick={() => onChange('meta')}
-          className="flex shrink-0 items-center gap-2 cursor-pointer"
+          onClick={() => onChange('coach')}
+          className="flex shrink-0 cursor-pointer items-center gap-2.5"
         >
-          <span className="w-8 h-8 rounded-control bg-accent flex items-center justify-center">
-            <Trophy className="w-4 h-4 text-on-accent" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-accent">
+            <FlaskConical className="h-4 w-4 text-on-accent" strokeWidth={2.4} />
           </span>
-          <span className="font-black text-ink tracking-tight text-[15px] whitespace-nowrap">
-            TFT <span className="text-accent">LAB</span>
-          </span>
-          <span className="hidden sm:inline text-xs font-bold text-muted border border-line rounded-chip px-1.5 py-0.5">
-            SET 18
-          </span>
+          <span className="whitespace-nowrap text-base font-bold tracking-tight text-ink">TFT LAB</span>
         </button>
 
-        <nav className="flex items-center gap-1">
+        <nav aria-label="주 메뉴" className="flex items-center gap-1">
           {nav.map((item) => {
             const Icon = item.icon
             const isActive = active === item.id
@@ -89,38 +88,27 @@ export function SiteHeader({
                 onClick={() => onChange(item.id)}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`inline-flex shrink-0 items-center gap-1.5 px-2 sm:px-3 py-2 rounded-control text-xs sm:text-xs font-bold transition border cursor-pointer ${
-                  isActive
-                    ? 'bg-accent-bg text-accent border-accent'
-                    : 'text-muted hover:text-ink hover:bg-sunken border-transparent'
+                className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control px-2.5 py-2 text-sm transition sm:px-3 ${
+                  isActive ? 'bg-accent-bg font-semibold text-accent' : 'font-medium text-muted hover:bg-sunken hover:text-ink'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap">{item.label}</span>
+                <Icon className="h-4 w-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden whitespace-nowrap sm:inline">{item.label}</span>
               </button>
             )
           })}
-          <UserMenu />
-          <ThemeToggle />
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
           <Link
             href="/pro"
-            className="ml-1 hidden rounded-control px-2 py-2 text-xs font-black text-accent transition hover:bg-accent-bg lg:inline-block"
+            className="hidden rounded-control px-2 py-2 text-sm font-bold text-accent transition hover:bg-accent-bg sm:inline-block"
           >
             PRO
           </Link>
-          <Link
-            href="/terms"
-            className="ml-1 hidden rounded-control px-2 py-2 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink lg:inline-block"
-          >
-            약관
-          </Link>
-          <Link
-            href="/privacy"
-            className="hidden rounded-control px-2 py-2 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink lg:inline-block"
-          >
-            개인정보
-          </Link>
-        </nav>
+          <UserMenu />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

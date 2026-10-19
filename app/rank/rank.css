@@ -14,56 +14,22 @@
   --rk-bad: var(--bad-text);
   --rk-unit-size: 36px;
 
+  /* [표 | 선택한 덱 카드] 2열. 필터는 표 위 툴바로 올렸다 */
   display: grid;
-  grid-template-columns: 186px minmax(0, 1fr) 312px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
   max-width: 1440px;
   margin: 0 auto;
-  background: var(--rk-bg);
   color: var(--rk-ink);
-  border-bottom: 1px solid var(--rk-line);
 }
 
-/* 좌측 필터 레일 */
-.rk-rail {
-  border-right: 1px solid var(--rk-line);
-  padding: 22px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-.rk-group { display: flex; flex-direction: column; gap: 2px; }
 .rk-label {
   margin: 0 0 8px;
   font-size: 13px;
   font-weight: 500;
   color: var(--rk-muted);
 }
-.rk-filter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  color: var(--rk-ink2);
-  text-align: left;
-}
-.rk-filter:hover { color: var(--rk-ink); }
-.rk-filter.on { color: var(--rk-ink); font-weight: 600; }
-.rk-filter.on::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--rk-accent);
-  flex: none;
-}
-.rk-count { font-size: 12px; color: var(--rk-muted); font-variant-numeric: tabular-nums; }
-.rk-filter.on .rk-count { color: var(--rk-accent); }
 .rk-refresh {
   display: inline-flex;
   align-items: center;
@@ -82,7 +48,7 @@
 
 /* 본문 */
 .rk-main { min-width: 0; }
-.rk-head { padding: 24px 28px 16px; border-bottom: 1px solid var(--rk-line); }
+.rk-head { padding: 8px 0 20px; }
 .rk-head h1 {
   margin: 0 0 8px;
   font-size: 28px;
@@ -96,8 +62,9 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 28px;
-  border-bottom: 1px solid var(--rk-line);
+  padding: 12px 0;
+  border-top: 1px solid var(--surface-2);
+  border-bottom: 1px solid var(--surface-2);
   font-size: 13px;
   color: var(--rk-ink2);
 }
@@ -126,19 +93,18 @@
 .rk-thead,
 .rk-row {
   display: grid;
-  grid-template-columns: 28px 28px minmax(0, 1fr) 72px 52px 60px;
+  grid-template-columns: 28px 28px minmax(0, 1fr) 120px 64px 72px;
   align-items: center;
-  gap: 10px;
-  padding: 0 20px;
+  gap: 12px;
+  padding: 0 12px;
   width: 100%;
   text-align: left;
 }
 .rk-thead {
-  height: 36px;
+  height: 40px;
   font-size: 13px;
   font-weight: 500;
   color: var(--rk-muted);
-  border-bottom: 1px solid var(--rk-line);
 }
 .rk-thead .num, .rk-row .rk-num { text-align: right; }
 .rk-sort {
@@ -155,7 +121,7 @@
 .rk-row {
   height: 64px;
   border: 0;
-  border-bottom: 1px solid var(--rk-line);
+  border-top: 1px solid var(--surface-2);
   background: none;
   color: inherit;
   font: inherit;
@@ -188,18 +154,19 @@
 .rk-tC, .rk-tD { background: var(--surface-2); color: var(--text-3); }
 
 .rk-comp { display: block; min-width: 0; }
-/* 덱 행: 1줄 = 이름 + 활성 시너지, 2줄 = 기물 아이콘 (아이콘 칸을 최대한 넓게) */
+/* 덱 행: [이름 + 활성 시너지] | [구성 아이콘] */
 .rk-comp.is-deck {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 10px;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(0, 2fr);
+  column-gap: 12px;
   row-gap: 4px;
   align-items: center;
 }
 .rk-comp.is-deck .rk-name-cell { grid-column: 1; grid-row: 1; min-width: 0; }
 .rk-comp.is-deck .rk-name { margin-bottom: 0; }
-.rk-traitrow { grid-column: 2; grid-row: 1; display: flex; flex-wrap: nowrap; gap: 6px; min-width: 0; overflow: hidden; }
-.rk-comp.is-deck .rk-units { grid-column: 1 / -1; grid-row: 2; }
+.rk-traitrow { grid-column: 1; grid-row: 2; display: flex; flex-wrap: nowrap; gap: 8px; min-width: 0; overflow: hidden; }
+.rk-comp.is-deck .rk-units { grid-column: 2; grid-row: 1 / span 2; }
+.rk-comp-head > span { grid-row: 1; }
 .rk-name {
   display: block;
   font-size: 15px;
@@ -261,12 +228,12 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 5px;
+  gap: 6px;
 }
 .rk-num.dim { color: var(--rk-ink2); }
 .rk-bar {
   display: block;
-  width: 56px;
+  width: 80px;
   height: 4px;
   background: var(--rk-surface2);
   border-radius: 2px;
@@ -313,16 +280,18 @@
 
 /* 우측 상세 */
 .rk-detail {
-  border-left: 1px solid var(--rk-line);
-  padding: 22px 20px 40px;
+  background: var(--rk-surface);
+  border: 1px solid var(--rk-line);
+  border-radius: var(--radius-card);
+  padding: 20px;
   position: sticky;
-  top: 56px;
+  top: 80px;
   align-self: start;
-  max-height: calc(100vh - 56px);
+  max-height: calc(100vh - 96px);
   overflow-y: auto;
 }
 .rk-dhead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.rk-dhead h2 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.02em; }
+.rk-dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
 .rk-dmeta { margin: 0 0 8px; font-size: 13px; color: var(--rk-muted); }
 
 .rk-dactions {
@@ -421,39 +390,26 @@
   gap: 16px;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 16px 28px;
+  padding: 16px 24px;
   font-size: 12px;
   color: var(--text-3);
 }
 
 /* 반응형 */
 @media (max-width: 1180px) {
-  .rk-shell { grid-template-columns: 160px minmax(0, 1fr); }
+  .rk-shell { grid-template-columns: minmax(0, 1fr); }
   .rk-detail {
-    grid-column: 1 / -1;
     position: static;
-    border-left: 0;
-    border-top: 1px solid var(--rk-line);
     max-height: none;
   }
 }
 @media (max-width: 760px) {
   .rk-shell { grid-template-columns: minmax(0, 1fr); }
-  .rk-rail {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 14px;
-    border-right: 0;
-    border-bottom: 1px solid var(--rk-line);
-    padding: 14px 16px;
-  }
-  .rk-group { flex-direction: row; align-items: center; gap: 10px; margin: 0; }
-  .rk-label { margin: 0; }
-  .rk-head { padding: 18px 16px 12px; }
-  .rk-toolbar { padding: 10px 16px; }
+  .rk-head { padding: 4px 0 16px; }
   .rk-name { font-size: 15px; }
   .rk-comp.is-deck { display: block; }
-  .rk-comp.is-deck .rk-name { margin-bottom: 2px; }
+  .rk-comp.is-deck .rk-name { margin-bottom: 4px; }
+  .rk-comp-head > span + span { display: none; }
   .rk-traitrow { display: none; }
 }
 

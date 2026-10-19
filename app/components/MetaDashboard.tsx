@@ -23,6 +23,8 @@ import {
   classifyItem,
   type ItemClass,
   type ModalTarget,
+  type Tier,
+  assignTiers,
   tierClass,
 } from './metaShared'
 import '../rank/rank.css'
@@ -38,7 +40,6 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'items', label: '아이템' },
 ]
 
-type Tier = 'S' | 'A' | 'B' | 'C' | 'D'
 const TIERS: ('전체' | Tier)[] = ['전체', 'S', 'A', 'B', 'C', 'D']
 const SORT_LABEL: Record<'avg' | 'top4' | 'sample', string> = {
   avg: '평균등수',
@@ -46,18 +47,6 @@ const SORT_LABEL: Record<'avg' | 'top4' | 'sample', string> = {
   sample: '표본',
 }
 type SortKey = keyof typeof SORT_LABEL
-
-/** 평균등수 분포 기준 상대 티어 (절대 임계값 대신 상위 퍼센타일) */
-function assignTiers(avgs: number[]): Tier[] {
-  const order = avgs.map((a, i) => ({ a, i })).sort((x, y) => x.a - y.a)
-  const out: Tier[] = new Array(avgs.length).fill('D')
-  const total = order.length || 1
-  order.forEach((it, idx) => {
-    const p = idx / total
-    out[it.i] = p < 0.1 ? 'S' : p < 0.3 ? 'A' : p < 0.6 ? 'B' : p < 0.85 ? 'C' : 'D'
-  })
-  return out
-}
 
 /** 수집 시각은 서버(UTC)·클라이언트(KST) 렌더 결과가 같아야 하므로 KST 고정 */
 const DATE_FMT = new Intl.DateTimeFormat('en-CA', {
@@ -250,6 +239,12 @@ export function MetaDashboard({
     })
   }, [rowsAll, tier, sort, query, tab, itemClass])
 
+  // 상세 카드의 티어는 표와 같은 상대 티어를 쓴다 (원본 덱 데이터의 tier 와 다를 수 있음)
+  const selectedTier = useMemo(
+    () => (tab === 'decks' ? (rows.find((r) => r.key === selectedId) || rows[0])?.tier ?? null : null),
+    [rows, selectedId, tab],
+  )
+
   const selected = useMemo(
     () => (tab === 'decks' ? rows.find((r) => r.key === selectedId)?.deck || rows[0]?.deck || null : null),
     [rows, selectedId, tab],
@@ -262,59 +257,17 @@ export function MetaDashboard({
   return (
     <>
       <div className={`rk-shell ${tab === 'decks' ? '' : 'no-detail'}`}>
-        <aside className="rk-rail">
-          <div className="rk-group">
-            <p className="rk-label" title="현재 표 안에서의 상대 순위">상대 티어</p>
-            {TIERS.filter((t) => t === '전체' || countOf(t) > 0).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`rk-filter ${tier === t ? 'on' : ''}`}
-                aria-pressed={tier === t}
-                onClick={() => setTier(t)}
-              >
-                <span>{t}</span>
-                <span className="rk-count">{countOf(t)}</span>
-              </button>
-            ))}
-          </div>
-          <div className="rk-group">
-            <p className="rk-label">정렬</p>
-            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                className={`rk-filter ${sort === k ? 'on' : ''}`}
-                aria-pressed={sort === k}
-                onClick={() => setSort(k)}
-              >
-                <span>{SORT_LABEL[k]}</span>
-              </button>
-            ))}
-          </div>
-          <button type="button" className="rk-refresh" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className="h-3.5 w-3.5" /> 새로고침
-          </button>
-        </aside>
-
         <main className="rk-main">
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
-            <p>
-              {data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}
-              <span className="rk-sep">/</span>
-              기물 {(data?.champions ?? []).length}종
-              <span className="rk-sep">/</span>
-              덱 {(data?.decks ?? []).length}개
-              {data?.generatedAt ? (
-                <>
-                  <span className="rk-sep">/</span>
-                  수집 {fmtDate(data.generatedAt)}
-                </>
-              ) : null}
-              <span className="rk-sep">/</span>
-              티어는 표 내 상대 순위
-            </p>
+            <div className="rk-evidence">
+              <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
+              {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
+              <EvidenceChip>
+                덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
+              </EvidenceChip>
+              <EvidenceChip title="절대 기준이 아니라 현재 표 안에서의 상대 순위">티어 = 표 안 상대 순위</EvidenceChip>
+            </div>
           </header>
 
           <div className="rk-toolbar">
@@ -359,21 +312,39 @@ export function MetaDashboard({
                 })}
               </div>
             ) : null}
+            <div className="rk-chips" role="group" aria-label="상대 티어">
+              {TIERS.filter((t) => t === '전체' || countOf(t) > 0).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`rk-chip ${tier === t ? 'on' : ''}`}
+                  aria-pressed={tier === t}
+                  onClick={() => setTier(t)}
+                >
+                  {t} <span>{countOf(t)}</span>
+                </button>
+              ))}
+            </div>
             <label className="rk-search">
               <Search className="h-3.5 w-3.5" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="이름 검색"
+                placeholder="덱·기물 이름 검색"
                 aria-label="검색"
               />
             </label>
-            <span className="rk-sorted">{rows.length}개 표시 중</span>
-            {onOpenCoach ? (
-              <button type="button" className="rk-tab" onClick={onOpenCoach}>
-                AI 코치
-              </button>
-            ) : null}
+            <span className="rk-sorted">{rows.length}개</span>
+            <button
+              type="button"
+              className="rk-refresh"
+              onClick={() => void load()}
+              disabled={loading}
+              aria-label="새로고침"
+              title="새로고침"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
 
           {error ? (
@@ -395,7 +366,14 @@ export function MetaDashboard({
               <div className={`rk-thead ${colClass}`}>
                 <span>#</span>
                 <span>티어</span>
-                <span>이름</span>
+                {tab === 'decks' ? (
+                  <span className="rk-comp is-deck rk-comp-head">
+                    <span>덱</span>
+                    <span>구성</span>
+                  </span>
+                ) : (
+                  <span>이름</span>
+                )}
                 {tab === 'comps' ? <span>BIS</span> : null}
                 {tab === 'champions' ? <span className="num">3성률</span> : null}
                 {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
@@ -508,7 +486,7 @@ export function MetaDashboard({
               >
                 ×
               </button>
-              {selected ? <DeckDetail deck={selected} patch={data?.patch} /> : <p className="rk-empty">덱을 선택하세요.</p>}
+              {selected ? <DeckDetail deck={selected} tier={selectedTier ?? selected.tier} patch={data?.patch} /> : <p className="rk-empty">덱을 선택하세요.</p>}
             </aside>
           </>
         ) : null}
@@ -519,12 +497,12 @@ export function MetaDashboard({
   )
 }
 
-function DeckDetail({ deck, patch }: { deck: MetaDeckRanking; patch?: string }) {
+function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string; patch?: string }) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
   return (
     <div>
       <div className="rk-dhead">
-        <span className={tierClass(deck.tier)}>{(deck.tier || '-').toUpperCase()}</span>
+        <span className={tierClass(tier)}>{(tier || '-').toUpperCase()}</span>
         <h2>{deck.name}</h2>
       </div>
       <p className="rk-dmeta">

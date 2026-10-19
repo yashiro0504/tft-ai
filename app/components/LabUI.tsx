@@ -62,6 +62,8 @@ function breakpointsOf(keyOrName: string): number[] {
 /** 유닛 수로 현재 단계(0 = 비활성)와 최대 단계를 계산한다 */
 export function traitLevelFromCount(keyOrName: string, count: number) {
   const bps = breakpointsOf(keyOrName)
+  // 단계 데이터가 없는 시너지(예: 검은 가시)는 유닛이 있으면 활성으로 본다
+  if (!bps.length) return { level: count > 0 ? 1 : 0, max: 0 }
   return { level: bps.filter((b) => count >= b).length, max: bps.length }
 }
 

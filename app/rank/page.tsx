@@ -12,7 +12,9 @@ export default function RankPage() {
         active="meta"
         onChange={(tab) => router.push(tab === 'coach' ? '/' : '/?tab=meta')}
       />
-      <MetaDashboard showTitle />
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
+        <MetaDashboard showTitle />
+      </main>
       <footer className="rk-footer">
         <span>출처 Riot 실측 매치 표본</span>
         <span>TFT LAB is not endorsed by Riot Games</span>

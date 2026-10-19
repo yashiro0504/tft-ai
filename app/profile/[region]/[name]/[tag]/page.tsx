@@ -6,11 +6,10 @@ import { calculateProfileStats } from '@/lib/profile'
 import { formatRankLabel, formatRankLp } from '@/lib/rank'
 import { RiotApiError } from '@/lib/riot'
 import { MatchCard } from '@/app/components/MatchCard'
-import { RankBadge } from '@/app/components/RankBadge'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
-import { PlacementStrip } from '@/app/components/LabUI'
+import { SummonerSummary } from '@/app/components/SummonerSummary'
 import { SITE_URL } from '@/lib/site'
 
 export const revalidate = 120
@@ -151,70 +150,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </span>
         </nav>
 
-        <section className="relative overflow-hidden rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
-
-          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={stats.profileIconUrl}
-                  alt={`${stats.gameName} 프로필 아이콘`}
-                  className="h-16 w-16 rounded-card border-2 border-line bg-sunken object-cover"
-                />
-                <span className="absolute -bottom-2 -right-2 rounded-chip border border-line bg-sunken px-2 py-0.5 font-mono text-xs font-black text-ink">
-                  Lv.{stats.summonerLevel}
-                </span>
-              </div>
-              <div>
-                <h1 className="flex items-baseline gap-2 text-2xl font-black md:text-3xl">
-                  <span>{stats.gameName}</span>
-                  <span className="font-mono text-sm font-bold text-muted">#{stats.tagLine}</span>
-                </h1>
-                <div className="mt-1.5">
-                  <RankBadge rank={stats.rank} />
-                </div>
-                <p className="mt-1 text-xs font-medium text-muted">
-                  최근 <strong className="font-mono text-ink">{stats.totalGames}경기</strong> 기준
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 rounded-card border border-line bg-sunken px-5 py-3 sm:gap-6">
-              <div className="text-center">
-                <p className="text-xs font-bold text-muted">평균 등수</p>
-                <p className="font-mono text-xl font-black text-ink md:text-2xl">#{stats.avgPlacement}</p>
-              </div>
-              <div className="h-8 w-[1px] bg-line" />
-              <div className="text-center">
-                <p className="text-xs font-bold text-muted">순방률 (TOP 4)</p>
-                <p className={`font-mono text-xl font-black md:text-2xl ${stats.top4Rate >= 50 ? 'text-good' : 'text-bad'}`}>{stats.top4Rate}%</p>
-              </div>
-              <div className="h-8 w-[1px] bg-line" />
-              <div className="text-center">
-                <p className="text-xs font-bold text-muted">1등 승률</p>
-                <p className="font-mono text-xl font-black text-ink md:text-2xl">{stats.winRate}%</p>
-              </div>
-              <div className="w-[1px] h-8 bg-line hidden sm:block" />
-              <div className="text-center">
-                <p className="mb-1 text-xs font-bold text-muted">등수 분포</p>
-                <PlacementStrip placements={data.matches.map((m) => m.placement)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="relative mt-4 flex flex-wrap items-center gap-2">
-            <ShareButton path={sharePath} />
-            {data.isDemo ? (
-              <span className="rounded-control border border-accent/50 bg-accent-bg px-2.5 py-1.5 text-xs font-bold text-accent">
-                체험 모드
-              </span>
-            ) : null}
-            <span className="text-xs text-subtle">
-              이 페이지 주소를 공유하면 같은 전적을 바로 볼 수 있습니다.
+        <SummonerSummary profile={stats} placements={data.matches.map((m) => m.placement)} as="h1">
+          <ShareButton path={sharePath} />
+          {data.isDemo ? (
+            <span className="rounded-control border border-accent/50 bg-accent-bg px-2.5 py-1.5 text-xs font-bold text-accent">
+              체험 모드
             </span>
-          </div>
-        </section>
+          ) : null}
+          <span className="text-xs text-subtle">이 페이지 주소를 공유하면 같은 전적을 바로 볼 수 있습니다.</span>
+        </SummonerSummary>
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
