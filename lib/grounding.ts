@@ -1,6 +1,7 @@
 import type { GroundingReport, MetaCoachFeedback } from './types'
 import tftData from './tftData.json'
 import championTraits from './championTraits.json'
+import traitBreakpoints from './traitBreakpoints.json'
 
 /**
  * AI 리포트 신뢰성 계층: LLM이 쓴 '수치 주장'이 프롬프트에 제공된 사실 데이터에
@@ -14,6 +15,33 @@ const ALL_TRAIT_NAMES = new Set(
     .map((v) => v?.name)
     .filter((n): n is string => typeof n === 'string' && n.length >= 3)
 )
+
+/** 현재 세트(traitBreakpoints.json) 시너지명 — 이 이름들은 등장만 해도 시너지 언급으로 본다. */
+const CURRENT_TRAIT_NAMES = new Set(
+  Object.values((traitBreakpoints as unknown as { traits?: Record<string, { name?: string }> }).traits || {})
+    .map((v) => v?.name)
+    .filter((n): n is string => typeof n === 'string')
+)
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * 다른 세트 시너지명은 '2라운드'·'효율성'·'마법사'처럼 평범한 단어가 많아,
+ * 시너지 문맥일 때만 시너지 언급으로 본다.
+ *  - 숫자+이름: "4마법사", "3 결투가" (이름이 숫자로 시작하면 "12라운드" 오인을 막기 위해 제외)
+ *  - 이름+시너지/특성: "결투가 시너지", "효율성 특성" (앞 글자가 단어 일부면 제외)
+ * 현재 세트 이름은 패턴 없이(null) 등장 자체로 본다. 긴 이름부터 검사한다("비전 마법사" → "마법사").
+ */
+const TRAIT_CHECKS: Array<[string, RegExp | null]> = [...ALL_TRAIT_NAMES]
+  .sort((a, b) => b.length - a.length)
+  .map((name) => {
+    if (CURRENT_TRAIT_NAMES.has(name)) return [name, null]
+    const esc = escapeRegExp(name)
+    const withCount = /^\d/.test(name) ? '' : `(?<![\\d.])\\d+\\s*${esc}|`
+    return [name, new RegExp(`${withCount}(?<![가-힣A-Za-z0-9])${esc}\\s*(?:시너지|특성)`)]
+  })
 
 const CURRENT_CHAMP_NAMES = new Set(
   Object.values(
@@ -33,8 +61,13 @@ function collectEntityWarnings(text: string, facts: string): string[] {
   }
 
   // 다른 세트 시너지명을 끌어다 쓰는 경우 (예: 결투가 — 세트18에 없음)
-  for (const name of ALL_TRAIT_NAMES) {
-    if (text.includes(name) && !facts.includes(name)) warnings.add(`제공되지 않은 시너지명: ${name}`)
+  // 확인한 이름은 지워서, 그 안에 든 짧은 이름이 다시 걸리지 않게 한다.
+  let rest = text
+  for (const [name, pattern] of TRAIT_CHECKS) {
+    if (!rest.includes(name)) continue
+    const mentioned = pattern ? pattern.test(rest) : true
+    if (mentioned && !facts.includes(name)) warnings.add(`제공되지 않은 시너지명: ${name}`)
+    rest = rest.split(name).join('§')
   }
 
   // 사실 데이터에 없는 기물명을 새로 만들어 쓰는 경우
@@ -49,6 +82,27 @@ const CLAIM_WITH_UNIT = /(?<![\d-])(\d+(?:\.\d+)?)\s*(등|명|골드|G|%|단계|
 const SLASH_100_CLAIM = /(\d+(?:\.\d+)?)\s*\/\s*100/g
 const DECIMAL_CLAIM = /(?<![\d.])(\d+\.\d{1,2})(?![\d.])/g
 const NUMBER_TOKEN = /(\d+(?:\.\d+)?)/g
+
+/**
+ * 프롬프트에 없어도 되는 TFT 공통 규칙 상수 (단위 포함 주장 단위로 허용).
+ * - 골드: 리롤 2, 경험치 구매 4, 최대 이자 5, 이자 구간 10~50
+ * - 성: 1~3성 / 코스트: 1~5 / 명: 로비 8명
+ * LLM이 계산한 값(0.6G 등)이나 점수(50/100)는 여기 넣지 않는다 — 그대로 미확인으로 남긴다.
+ */
+const RULE_CONSTANT_CLAIMS = new Set([
+  ...[2, 4, 5, 10, 20, 30, 40, 50].map((n) => `${n}골드`),
+  ...[1, 2, 3].map((n) => `${n}성`),
+  ...[1, 2, 3, 4, 5].map((n) => `${n}코스트`),
+  '8명',
+])
+
+const UNIT_ALIAS: Record<string, string> = { G: '골드', 코: '코스트' }
+
+function isRuleConstant(claim: string): boolean {
+  const m = claim.match(/^(\d+(?:\.\d+)?)(.*)$/)
+  if (!m) return false
+  return RULE_CONSTANT_CLAIMS.has(`${norm(m[1])}${UNIT_ALIAS[m[2]] ?? m[2]}`)
+}
 
 function norm(raw: string): string {
   const n = Number(raw)
@@ -83,7 +137,7 @@ export function extractClaims(text: string): string[] {
 /**
  * LLM 리포트의 수치 주장을 제공된 사실(프롬프트)과 대조한다.
  * - 단위 수치(등/명/%/G/라운드/성/코)와 소수(3.44)만 검증 대상
- * - 사실 텍스트에 없는 수치는 unsupported 로 기록
+ * - 사실 텍스트에 없는 수치는 unsupported 로 기록 (TFT 규칙 상수는 예외)
  */
 export function validateFeedbackGrounding(
   feedback: MetaCoachFeedback,
@@ -114,7 +168,7 @@ export function validateFeedbackGrounding(
 
   for (const claim of claims) {
     const numRaw = claim.match(/\d+(?:\.\d+)?/)?.[0] || ''
-    if (numRaw && factNumbers.has(norm(numRaw))) supported++
+    if ((numRaw && factNumbers.has(norm(numRaw))) || isRuleConstant(claim)) supported++
     else unsupported.push(claim)
   }
 
