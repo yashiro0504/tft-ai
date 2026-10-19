@@ -1,4 +1,5 @@
 import type { SlimMatchData } from './types'
+import { AXIS_CONFIG } from './axisConfig'
 
 /**
  * 경기 표본 품질 판정 (점수·강의·프롬프트 공용)
@@ -13,31 +14,29 @@ export function stageOfRound(lastRound?: string): number {
   return m ? Number(m[1]) : 0
 }
 
-/** 스테이지별 표준 레벨 (6레벨 3-2, 7레벨 4-1, 8레벨 5-1, 9레벨 6-1 기준) */
+/** 스테이지별 표준 레벨 (axisConfig.expectedLevelByStage — 기본: 6레벨 3-2, 7레벨 4-1, 8레벨 5-1, 9레벨 6-1) */
 export function expectedLevel(stage: number): number {
-  if (stage <= 1) return 4
-  if (stage === 2) return 5
-  if (stage === 3) return 6
-  if (stage === 4) return 7
-  if (stage === 5) return 8
-  return 9
+  const table = AXIS_CONFIG.expectedLevelByStage
+  return table[String(Math.max(stage, 1))] ?? table.default
 }
 
 /** 점수/강의에 쓰기 어려운 표본인가 (초반 종료·보드 미완성) */
 export function isEarlyGame(m: SlimMatchData): boolean {
+  const { minStage, minUnits, minGameSec } = AXIS_CONFIG.earlyGame
   const stage = stageOfRound(m.lastRound)
   const units = m.units?.length ?? 0
-  if (stage > 0 && stage < 3) return true
-  if (units < 4) return true
-  if (m.gameLengthSec && m.gameLengthSec < 15 * 60) return true
+  if (stage > 0 && stage < minStage) return true
+  if (units < minUnits) return true
+  if (m.gameLengthSec && m.gameLengthSec < minGameSec) return true
   return false
 }
 
 /** UI/프롬프트에 표시할 표본 부족 사유 */
 export function lowSampleReason(m: SlimMatchData): string {
+  const { minStage, minUnits, minGameSec } = AXIS_CONFIG.earlyGame
   const stage = stageOfRound(m.lastRound)
-  if (stage > 0 && stage < 3) return `${m.lastRound} 초반 종료`
-  if ((m.units?.length ?? 0) < 4) return `보드 ${m.units?.length ?? 0}유닛`
-  if (m.gameLengthSec && m.gameLengthSec < 15 * 60) return `${Math.round(m.gameLengthSec / 60)}분 종료`
+  if (stage > 0 && stage < minStage) return `${m.lastRound} 초반 종료`
+  if ((m.units?.length ?? 0) < minUnits) return `보드 ${m.units?.length ?? 0}유닛`
+  if (m.gameLengthSec && m.gameLengthSec < minGameSec) return `${Math.round(m.gameLengthSec / 60)}분 종료`
   return ''
 }

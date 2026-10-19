@@ -41,6 +41,9 @@ jobs:
       - name: Deck data sanity
         run: npm run decks:check
 
+      - name: 6-axis scoring regression
+        run: npm run test:axes
+
       - name: Build
         run: npm run build
         env:

@@ -9,6 +9,7 @@ import { getTftMatchDetail, getAccountByRiotId } from './riot'
 import { extractSlimMatchData } from './summarize'
 import { getDemoMatches } from './demo'
 import { generateMetaCoachFeedback, COACH_PROMPT_VERSION } from './llm'
+import { SCORING_VERSION } from './axisConfig'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 import { incrMetric, logEvent } from './observability'
 import { SlimMatchData, TftMatchAnalysisResponse } from './types'
@@ -46,10 +47,10 @@ export interface MatchAnalysisOutcome {
   cached: boolean
 }
 
-/** 캐시 키 (프롬프트 버전 포함 → 프롬프트 변경 시 자동 무효화) */
+/** 캐시 키 (프롬프트·점수 공식 버전 포함 → 둘 중 하나가 바뀌면 자동 무효화) */
 export function analysisCacheKey(params: MatchAnalysisParams): string {
   const subject = params.puuid || params.gameName?.toLowerCase() || 'anon'
-  return `analysis:${params.matchId}:${subject}:${params.mode}:${COACH_PROMPT_VERSION}`
+  return `analysis:${params.matchId}:${subject}:${params.mode}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}`
 }
 
 /**

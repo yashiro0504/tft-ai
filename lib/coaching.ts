@@ -1,5 +1,13 @@
-import type { CoachingAxis, CoachingAxisKey, CoachingPlan, SlimMatchData } from './types'
+import type {
+  AxisEffect,
+  AxisMetric,
+  CoachingAxis,
+  CoachingAxisKey,
+  CoachingPlan,
+  SlimMatchData,
+} from './types'
 import { expectedLevel, isEarlyGame, lowSampleReason, stageOfRound } from './quality'
+import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 
 /**
  * 강의형 코칭 진단 (결정론적)
@@ -9,13 +17,16 @@ import { expectedLevel, isEarlyGame, lowSampleReason, stageOfRound } from './qua
  *
  * 축: 경제 · 아이템 설계 · 템포(레벨/리롤) · 보드 완성도 · 시너지 설계 · 로비 수렴도
  * 초반 종료(2-2 등) 표본은 정상 경기와 섞지 않는다.
+ *
+ * 공식의 숫자는 모두 axisConfig.json 에 있다. 각 축은 경기마다 "가점/감점 항목(effects)"의 합을
+ * 0~100 으로 자른 값이고, 여러 경기면 평균한다. 항목은 UI·프롬프트에 그대로 노출된다.
  */
 
 const clamp = (n: number, min = 0, max = 100) => Math.min(Math.max(n, min), max)
 const avg = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0)
 const round1 = (n: number) => Math.round(n * 10) / 10
 
-interface PerMatchMetrics {
+export interface PerMatchMetrics {
   placement: number
   top4: boolean
   goldLeft: number
@@ -33,13 +44,13 @@ interface PerMatchMetrics {
   compKey: string
 }
 
-function readMatch(m: SlimMatchData): PerMatchMetrics {
+export function readMatch(m: SlimMatchData): PerMatchMetrics {
   const units = m.units || []
   const withCost = units.map((u) => ({ u, cost: u.rarity ?? 1 }))
   const carry = withCost
     .slice()
     .sort((a, b) => b.cost - a.cost || b.u.items.length - a.u.items.length)[0]
-  const traits = (m.traits || []).filter((t) => (t.count || 0) >= 2)
+  const traits = (m.traits || []).filter((t) => (t.count || 0) >= AXIS_CONFIG.axes.synergy.minTraitUnits)
   return {
     placement: Math.min(Math.max(m.placement || 8, 1), 8),
     top4: (m.placement || 8) <= 4,
@@ -60,6 +71,111 @@ function readMatch(m: SlimMatchData): PerMatchMetrics {
       .sort()
       .join('|'),
   }
+}
+
+/* ───────────── 축별 공식 (한 경기) ───────────── */
+
+/** 한 경기의 축 점수 + 가점/감점 항목 (key → points) */
+export interface AxisResult {
+  score: number
+  effects: Record<string, number>
+}
+
+const EFFECT_LABEL: Record<string, string> = {
+  base: '기본',
+  idleGold: '쓰지 않은 골드',
+  levelGap: '표준 레벨 대비 격차',
+  earlyExit: '이른 탈락',
+  carryItems: '캐리 아이템',
+  boardItems: '보드 전체 아이템',
+  unknownStage: '탈락 라운드 불명(중립값)',
+  boardFill: '보드 충원',
+  twoPlus: '2성 이상 비율',
+  threeStar: '3성 보너스',
+  spread: '시너지 분산(활성 개수)',
+  depth: '주력 시너지 깊이',
+  condition: '경합 조건 점수',
+}
+
+function economyAxis(m: PerMatchMetrics): AxisResult {
+  // 잔여 골드만 보면 "다 써서 조기 탈락"이 만점이 된다.
+  // 표준 레벨 대비 격차 + 초반 종료 페널티로 실제 운영을 평가한다.
+  const c = AXIS_CONFIG.axes.economy
+  const levelGap = Math.max(0, expectedLevel(m.stage) - m.level)
+  const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
+  const effects = {
+    base: 100,
+    idleGold: -Math.max(0, m.goldLeft - c.idleGoldFree) * c.idleGoldPenaltyPerGold,
+    levelGap: -levelGap * c.levelGapPenaltyPerLevel,
+    earlyExit: -(early?.penalty ?? 0),
+  }
+  return { score: clamp(Math.round(sum(effects))), effects }
+}
+
+function itemizationAxis(m: PerMatchMetrics): AxisResult {
+  const c = AXIS_CONFIG.axes.itemization
+  const effects = {
+    carryItems: (Math.min(m.carryItems, c.carryItemsMax) / c.carryItemsMax) * c.carryWeight,
+    boardItems: (Math.min(m.totalItems, c.boardItemsMax) / c.boardItemsMax) * c.boardWeight,
+  }
+  return { score: clamp(sum(effects)), effects }
+}
+
+function tempoAxis(m: PerMatchMetrics): AxisResult {
+  const c = AXIS_CONFIG.axes.tempo
+  if (!m.stage) return { score: c.unknownStageScore, effects: { unknownStage: c.unknownStageScore } }
+  const effects = {
+    base: 100,
+    levelGap: -Math.abs(m.level - expectedLevel(m.stage)) * c.levelGapPenaltyPerLevel,
+  }
+  return { score: clamp(sum(effects)), effects }
+}
+
+/** 보드 완성도: 레벨만큼 채웠는가(충원율) × 2성 비율 + 3성 보너스. metaScore 의 덱 완성도와 공용. */
+export function completionAxis(m: Pick<PerMatchMetrics, 'units' | 'level' | 'stage' | 'twoPlus' | 'three'>): AxisResult {
+  const c = AXIS_CONFIG.axes.completion
+  if (!m.units) return { score: 0, effects: { boardFill: 0 } }
+  const slots = Math.max(m.level, expectedLevel(m.stage), 1)
+  const fill = Math.min(m.units / slots, 1)
+  const twoPlusRate = m.twoPlus / m.units
+  const effects = {
+    boardFill: fill * c.fillBase,
+    twoPlus: fill * c.twoPlusBonus * twoPlusRate,
+    threeStar: Math.min(m.three, c.threeStarMax) * c.threeStarBonusEach,
+  }
+  // 점수는 기존 식 그대로 계산한다 (항목 합과 부동소수 반올림이 갈리지 않게)
+  const score = clamp(Math.round(fill * (c.fillBase + c.twoPlusBonus * twoPlusRate) + effects.threeStar))
+  return { score, effects }
+}
+
+function synergyAxis(m: PerMatchMetrics): AxisResult {
+  // 활성 시너지 idealActiveTraits 개 근처가 이상적, depthTargetUnits 명 이상 겹치는 주력 시너지에 가점
+  const c = AXIS_CONFIG.axes.synergy
+  const spread = clamp(100 - Math.abs(m.activeTraits - c.idealActiveTraits) * c.spreadPenaltyPerTrait)
+  const depth = clamp((m.bestTraitCount / c.depthTargetUnits) * 100)
+  const effects = { spread: spread * c.spreadWeight, depth: depth * c.depthWeight }
+  return { score: clamp(sum(effects)), effects }
+}
+
+/** 경합은 원인이 아니라 조건: 경합 없음 / 경합+순방 / 경합+하위권. metaScore 의 경합 대응과 공용. */
+export function contestAxis(m: Pick<PerMatchMetrics, 'contested' | 'top4'>): AxisResult {
+  const c = AXIS_CONFIG.axes.contest
+  const score = !m.contested ? c.uncontested : m.top4 ? c.contestedTop4 : c.contestedBottom4
+  return { score, effects: { condition: score } }
+}
+
+function sum(effects: Record<string, number>): number {
+  return Object.values(effects).reduce((a, b) => a + b, 0)
+}
+
+/** 경기별 항목을 평균해 UI/프롬프트용 effects 로 만든다. (모든 경기에 같은 키가 없을 수도 있다) */
+function averageEffects(results: AxisResult[]): AxisEffect[] {
+  const keys = [...new Set(results.flatMap((r) => Object.keys(r.effects)))]
+  return keys.map((key) => ({
+    key,
+    label: EFFECT_LABEL[key] ?? key,
+    points: round1(avg(results.map((r) => r.effects[key] ?? 0))),
+  }))
 }
 
 const LESSON: Record<CoachingAxisKey, { label: string; lesson: string; topic: string }> = {
@@ -101,7 +217,58 @@ const LESSON: Record<CoachingAxisKey, { label: string; lesson: string; topic: st
   },
 }
 
+
 const ORDER: CoachingAxisKey[] = ['economy', 'itemization', 'tempo', 'completion', 'synergy', 'contest']
+
+const AXIS_FN: Record<CoachingAxisKey, (m: PerMatchMetrics) => AxisResult> = {
+  economy: economyAxis,
+  itemization: itemizationAxis,
+  tempo: tempoAxis,
+  completion: completionAxis,
+  synergy: synergyAxis,
+  contest: contestAxis,
+}
+
+/** 축별 원시 지표 (공식의 입력값) */
+function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[]): AxisMetric[] {
+  const mean = (f: (m: PerMatchMetrics) => number) => round1(avg(metrics.map(f)))
+  const gap = (m: PerMatchMetrics) => (m.stage ? m.level - expectedLevel(m.stage) : 0)
+  switch (key) {
+    case 'economy':
+      return [
+        { key: 'goldLeft', label: '잔여 골드', value: mean((m) => m.goldLeft), unit: 'G' },
+        { key: 'levelShort', label: '표준 레벨보다 부족', value: mean((m) => Math.max(0, -gap(m))), unit: '레벨' },
+        { key: 'stage', label: '탈락 스테이지', value: mean((m) => m.stage) },
+      ]
+    case 'itemization':
+      return [
+        { key: 'carryItems', label: '캐리 아이템', value: mean((m) => m.carryItems), unit: '개' },
+        { key: 'boardItems', label: '보드 전체 아이템', value: mean((m) => m.totalItems), unit: '개' },
+      ]
+    case 'tempo':
+      return [
+        { key: 'level', label: '최종 레벨', value: mean((m) => m.level) },
+        { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage) : m.level)) },
+        { key: 'levelGap', label: '표준 대비 격차', value: mean(gap), unit: '레벨' },
+      ]
+    case 'completion':
+      return [
+        { key: 'units', label: '유닛 수', value: mean((m) => m.units), unit: '개' },
+        { key: 'twoPlus', label: '2성 이상', value: mean((m) => m.twoPlus), unit: '개' },
+        { key: 'three', label: '3성', value: mean((m) => m.three), unit: '개' },
+      ]
+    case 'synergy':
+      return [
+        { key: 'activeTraits', label: '활성 시너지', value: mean((m) => m.activeTraits), unit: '개' },
+        { key: 'bestTraitCount', label: '주력 시너지 인원', value: mean((m) => m.bestTraitCount), unit: '명' },
+      ]
+    case 'contest':
+      return [
+        { key: 'contestedGames', label: '경합 경기', value: metrics.filter((m) => m.contested).length, unit: '판' },
+        { key: 'contestScore', label: '로비 수렴도', value: mean((m) => m.contestScore), unit: '/100' },
+      ]
+  }
+}
 
 /** 6축 진단 + 이번 강의 주제 결정 */
 export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
@@ -113,42 +280,6 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
   const excludedMatches = valid.length - base.length
   const reasons = [...new Set(valid.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
   const basis = base.length === 1 ? '이 경기' : '평균'
-
-  const economyScores = metrics.map((m) => {
-    // 잔여 골드만 보면 "다 써서 조기 탈락"이 만점이 된다.
-    // 표준 레벨 대비 격차 + 초반 종료 페널티로 실제 운영을 평가한다.
-    const levelGap = Math.max(0, expectedLevel(m.stage) - m.level)
-    const earlyPenalty = m.stage > 0 && m.stage < 3 ? 30 : m.stage > 0 && m.stage < 4 ? 15 : 0
-    const idle = Math.max(0, m.goldLeft - 50)
-    return clamp(Math.round(100 - idle * 1.2 - levelGap * 12 - earlyPenalty))
-  })
-
-  const itemScores = metrics.map((m) =>
-    clamp((Math.min(m.carryItems, 3) / 3) * 55 + (Math.min(m.totalItems, 9) / 9) * 45)
-  )
-
-  const tempoScores = metrics.map((m) => {
-    if (!m.stage) return 60
-    const gap = Math.abs(m.level - expectedLevel(m.stage))
-    return clamp(100 - gap * 18)
-  })
-
-  const completionScores = metrics.map((m) => {
-    if (!m.units) return 0
-    const slots = Math.max(m.level, expectedLevel(m.stage), 1)
-    const fill = Math.min(m.units / slots, 1)
-    const twoPlusRate = m.twoPlus / m.units
-    return clamp(Math.round(fill * (55 + 45 * twoPlusRate) + Math.min(m.three, 3) * 2))
-  })
-
-  const synergyScores = metrics.map((m) => {
-    // 활성 시너지 3개 근처가 이상적, 4명 이상 겹치는 주력 시너지에 가점
-    const spread = clamp(100 - Math.abs(m.activeTraits - 3) * 15)
-    const depth = clamp((m.bestTraitCount / 4) * 100)
-    return clamp(spread * 0.55 + depth * 0.45)
-  })
-
-  const contestScores = metrics.map((m) => (!m.contested ? 70 : m.top4 ? 95 : 45))
 
   const detail: Record<CoachingAxisKey, string> = {
     economy: `${basis} 잔여 골드 ${round1(avg(metrics.map((m) => m.goldLeft)))} · ${basis} 탈락 ${round1(
@@ -172,29 +303,25 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
     )}/100`,
   }
 
-  const raw: Record<CoachingAxisKey, number> = {
-    economy: Math.round(avg(economyScores)),
-    itemization: Math.round(avg(itemScores)),
-    tempo: Math.round(avg(tempoScores)),
-    completion: Math.round(avg(completionScores)),
-    synergy: Math.round(avg(synergyScores)),
-    contest: Math.round(avg(contestScores)),
-  }
+  const axes: CoachingAxis[] = ORDER.map((key) => {
+    const results = metrics.map(AXIS_FN[key])
+    return {
+      key,
+      label: LESSON[key].label,
+      score: Math.round(avg(results.map((r) => r.score))),
+      detail: detail[key],
+      lesson: LESSON[key].lesson,
+      metrics: axisMetrics(key, metrics),
+      effects: averageEffects(results),
+    }
+  })
 
-  const axes: CoachingAxis[] = ORDER.map((key) => ({
-    key,
-    label: LESSON[key].label,
-    score: raw[key],
-    detail: detail[key],
-    lesson: LESSON[key].lesson,
-  }))
-
-  // 가장 약한 축 = 강의 주제. 단, '경합'은 다른 축보다 10점 이상 낮을 때만 주제로 채택.
+  // 가장 약한 축 = 강의 주제. 단, '경합'은 다른 축보다 focusMinGap 점 이상 낮을 때만 주제로 채택.
   const sorted = [...axes].sort(
     (a, b) => a.score - b.score || ORDER.indexOf(a.key) - ORDER.indexOf(b.key)
   )
   let focus = sorted[0]
-  if (focus.key === 'contest' && sorted[1] && sorted[1].score - focus.score < 10) {
+  if (focus.key === 'contest' && sorted[1] && sorted[1].score - focus.score < AXIS_CONFIG.axes.contest.focusMinGap) {
     focus = sorted[1]
   }
 
@@ -214,5 +341,6 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
     lowSample,
     excludedMatches,
     sampleWarning,
+    scoringVersion: SCORING_VERSION,
   }
 }

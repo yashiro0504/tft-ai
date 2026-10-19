@@ -3,6 +3,7 @@ import { generateMetaCoachFeedback } from '@/lib/llm'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
+import { SCORING_VERSION } from '@/lib/axisConfig'
 import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     const nocache = raw.nocache === true && process.env.NODE_ENV !== 'production'
     const ids = matches.map((m) => m.matchId).join(',')
 
-    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${COACH_PROMPT_VERSION}:${ids}`
+    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}:${ids}`
     if (!nocache) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
       if (cached) {

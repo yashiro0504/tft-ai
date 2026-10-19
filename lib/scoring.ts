@@ -1,33 +1,32 @@
 import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
-import { expectedLevel, isEarlyGame, lowSampleReason, stageOfRound } from './quality'
+import { isEarlyGame, lowSampleReason, stageOfRound } from './quality'
+import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
+import { completionAxis, contestAxis } from './coaching'
 
 /**
  * 결정론적 점수 산출 (LLM 미사용)
  *
  * 같은 경기 데이터 → 항상 같은 점수. LLM은 이 점수를 '해설'만 한다.
  *
- * 구성 (가중 합산):
+ * 구성 (가중 합산, 가중치·기준값은 axisConfig.json 의 metaScore):
  *  - 결과(등수)     40% : (8 - 등수) / 7 × 100
- *  - 덱 완성도      25% : 보드 충원율 × 2성 비율 (1유닛 3성 보드가 만점이 되지 않게)
- *  - 아이템 활용    20% : 장착 아이템 수 / 9 × 100
- *  - 경합 대응      15% : 경합 없음 70 / 경합+순방 95 / 경합+하위권 45
+ *  - 덱 완성도      25% : 6축의 보드 완성도와 같은 공식 (충원율 × 2성 비율)
+ *  - 아이템 활용    20% : 장착 아이템 수 / boardItemsMax × 100
+ *  - 경합 대응      15% : 6축의 로비 수렴도와 같은 조건 점수
  *
  * v2: 2-2에 끝난 판처럼 보드가 성립하지 않은 표본은 집계에서 제외한다.
  */
-export const SCORING_VERSION = 'v2'
+export { SCORING_VERSION }
 
-const WEIGHTS = { placement: 0.4, completion: 0.25, items: 0.2, contest: 0.15 } as const
+const WEIGHTS = AXIS_CONFIG.metaScore.weights
 
 function clamp(n: number, min = 0, max = 100): number {
   return Math.min(Math.max(n, min), max)
 }
 
 export function scoreToTier(score: number): string {
-  if (score >= 90) return 'S'
-  if (score >= 80) return 'A'
-  if (score >= 70) return 'B'
-  if (score >= 60) return 'C'
-  return 'D'
+  const tiers = AXIS_CONFIG.metaScore.tiers
+  return (tiers.find((t) => score >= t.min) ?? tiers[tiers.length - 1]).tier
 }
 
 interface RawMetrics {
@@ -66,24 +65,19 @@ function placementScore(placement: number): number {
 }
 
 /**
- * 덱 완성도: 보드가 레벨만큼 채워졌는가(충원율) × 2성 비율.
+ * 덱 완성도: 보드가 레벨만큼 채워졌는가(충원율) × 2성 비율. (6축 completion 과 같은 공식)
  * 1유닛 3성 보드가 90점을 받던 v1의 역전을 막는다.
  */
 function completionScore(r: RawMetrics): number {
-  if (r.units === 0) return 0
-  const boardSlots = Math.max(r.level, expectedLevel(r.stage), 1)
-  const fill = Math.min(r.units / boardSlots, 1)
-  const twoPlusRate = r.twoPlus / r.units
-  return clamp(Math.round(fill * (55 + 45 * twoPlusRate) + Math.min(r.three, 3) * 2))
+  return completionAxis(r).score
 }
 
 function itemScore(r: RawMetrics): number {
-  return clamp(Math.round((r.items / 9) * 100))
+  return clamp(Math.round((r.items / AXIS_CONFIG.metaScore.boardItemsMax) * 100))
 }
 
 function contestScore(r: RawMetrics): number {
-  if (!r.contested) return 70
-  return r.top4 ? 95 : 45
+  return contestAxis(r).score
 }
 
 /** 단일 경기의 결정론적 점수 */
@@ -112,7 +106,7 @@ export function computeMatchScore(m: SlimMatchData): { total: number; components
       weight: WEIGHTS.items,
       score: itemScore(r),
       contribution: 0,
-      detail: `장착 아이템 ${r.items}개 (9개=100)`,
+      detail: `장착 아이템 ${r.items}개 (${AXIS_CONFIG.metaScore.boardItemsMax}개=100)`,
     },
     {
       key: 'contest',

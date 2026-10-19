@@ -54,6 +54,31 @@ function AxisRow({ axis, isFocus }: { axis: CoachingAxis; isFocus: boolean }) {
         {axis.verdict || axis.lesson}
       </p>
       <p className="mt-0.5 text-xs text-muted font-mono">{axis.detail}</p>
+
+      {/* 점수 근거: axisConfig 공식의 가점/감점 + 입력 지표 (예전 캐시 리포트에는 없을 수 있음) */}
+      {axis.effects?.length ? (
+        <details className="group mt-2 text-xs">
+          <summary className="cursor-pointer select-none text-subtle hover:text-ink-soft">점수 근거</summary>
+          <ul className="mt-1.5 space-y-0.5">
+            {axis.effects
+              .filter((e) => e.points !== 0)
+              .map((e) => (
+                <li key={e.key} className="flex justify-between gap-2">
+                  <span className="text-muted">{e.label}</span>
+                  <span className={`font-mono ${e.points < 0 ? 'text-bad' : 'text-ink-soft'}`}>
+                    {e.points > 0 ? '+' : ''}
+                    {e.points}
+                  </span>
+                </li>
+              ))}
+          </ul>
+          {axis.metrics?.length ? (
+            <p className="mt-1.5 border-t border-line pt-1.5 text-subtle">
+              {axis.metrics.map((m) => `${m.label} ${m.value}${m.unit ?? ''}`).join(' · ')}
+            </p>
+          ) : null}
+        </details>
+      ) : null}
     </div>
   )
 }
@@ -131,7 +156,7 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
       {plan ? (
         <div className="rounded-card border border-line bg-panel p-4">
           <p className="mb-2 flex items-center gap-1.5 text-[13px] font-black text-ink">
-            <Gauge className="h-4 w-4 text-accent" /> 6축 진단 (코드 산출)
+            <Gauge className="h-4 w-4 text-accent" /> 6축 진단 (코드 산출{plan.scoringVersion ? ` · 공식 ${plan.scoringVersion}` : ''})
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {plan.axes.map((a) => (

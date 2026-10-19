@@ -29,8 +29,10 @@
     "icons": "node scripts/generateIcons.js",
     "decks:check": "node scripts/checkDecks.js",
     "test:augment": "node scripts/testAugmentAggregation.js",
+    "test:axes": "node scripts/testAxes.js",
+    "test:axes:update": "node scripts/testAxes.js --update",
     "inspect:match": "node scripts/inspectMatch.js",
-    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run build",
+    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"
   },

@@ -10,7 +10,7 @@ import {
 } from './meta'
 import { translateChampion, translateItem, translateTrait } from './constants'
 import { validateFeedbackGrounding } from './grounding'
-import { computeScoreBreakdown } from './scoring'
+import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
@@ -437,7 +437,7 @@ ${facts}
   if (signal?.aborted) return ''
 
   // 짧게 캐시(6h): 전체 리포트 캐시가 만료/무효화돼도 인트로는 재사용한다.
-  const cacheKey = match.matchId ? `intro:${match.matchId}:${mode}:${INTRO_PROMPT_VERSION}` : ''
+  const cacheKey = match.matchId ? `intro:${match.matchId}:${mode}:${INTRO_PROMPT_VERSION}:${SCORING_VERSION}` : ''
   if (cacheKey) {
     try {
       const cached = await cacheGetWithSource<string>(cacheKey)
@@ -914,13 +914,7 @@ function parseJsonFeedback(
   return null
 }
 
-function calculateTier(score: number): string {
-  if (score >= 90) return 'S'
-  if (score >= 80) return 'A'
-  if (score >= 70) return 'B'
-  if (score >= 60) return 'C'
-  return 'D'
-}
+const calculateTier = scoreToTier
 
 /**
  * 매치 데이터를 정밀 분석하여 메타 관점의 객관적이고 건설적인 코칭 피드백 생성

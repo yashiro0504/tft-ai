@@ -276,12 +276,32 @@ export type CoachingAxisKey =
   | 'synergy'
   | 'contest'
 
+/** 축 점수의 근거가 되는 원시 지표 (경기 평균 또는 이 경기 값) */
+export interface AxisMetric {
+  key: string
+  label: string
+  value: number
+  unit?: string
+}
+
+/** 축 점수에 더해지거나 빠진 항목 (점수 = 각 항목 합, 0~100 으로 자른 뒤 경기 평균) */
+export interface AxisEffect {
+  key: string
+  label: string
+  /** +면 가점, -면 감점 (경기 평균, 소수 1자리) */
+  points: number
+}
+
 export interface CoachingAxis {
   key: CoachingAxisKey
   label: string
   /** 0~100 (코드 산출) */
   score: number
   detail: string
+  /** 세부 지표 (axisConfig 공식의 입력값) */
+  metrics?: AxisMetric[]
+  /** 점수 구성 (가점/감점 분해) */
+  effects?: AxisEffect[]
   /** 이 축에서 배울 개념 한 줄 */
   lesson: string
   /** LLM 한 줄 진단 */
@@ -304,6 +324,8 @@ export interface CoachingPlan {
   excludedMatches?: number
   /** 표본 관련 안내 */
   sampleWarning?: string
+  /** 점수 공식 버전 (axisConfig.version) */
+  scoringVersion?: string
 }
 
 /** LLM이 작성하는 강의 본문 */
