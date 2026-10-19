@@ -165,12 +165,6 @@ export default function TFTCoachPage() {
     handleSearch(name, tag)
   }
 
-  // 예시 프리셋: 보조 버튼 모양, 현재 입력과 같은 프리셋만 선택된 칩 스타일
-  const presetClass = (name: string, tag: string) =>
-    gameName === name && tagLine === tag
-      ? 'cursor-pointer rounded-control border border-accent bg-accent-bg px-3 py-1.5 font-semibold text-accent transition'
-      : 'cursor-pointer rounded-control border border-line bg-sunken px-3 py-1.5 text-ink transition hover:border-accent'
-
   return (
     <div className="min-h-screen bg-app text-ink selection:bg-accent selection:text-on-accent">
       <SiteHeader active={tab} onChange={handleTabChange} />
@@ -250,18 +244,8 @@ export default function TFTCoachPage() {
             {/* 최근 검색 / 즐겨찾기 (localStorage + 로그인 시 서버) */}
             <SavedSearches onPick={(name, tag) => setSample(name, tag)} disabled={isLoading} />
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-              <span className="mr-1 text-subtle">아이디 없이 예시 보기</span>
-              <button type="button" onClick={() => setSample('띵 땡', 'KR1')} className={presetClass('띵 땡', 'KR1')}>
-                띵 땡#KR1
-              </button>
-              <button type="button" onClick={() => setSample('대깨고집러', 'KR1')} className={presetClass('대깨고집러', 'KR1')}>
-                대깨 사출 판
-              </button>
-              <button type="button" onClick={() => setSample('빈집장인', 'KR1')} className={presetClass('빈집장인', 'KR1')}>
-                빈집 유연 운영
-              </button>
-              <span className="ml-auto text-xs text-subtle">
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm">
+              <span className="text-xs text-subtle">
                 오늘 무료 AI 분석 {quota.remaining}/{quota.limit}회
               </span>
             </div>
