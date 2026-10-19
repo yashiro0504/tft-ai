@@ -2,7 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import Link from 'next/link'
 import { useEffect, type ReactNode } from 'react'
+import { entityHref } from '@/lib/entitySlug'
 import type { TftMetaResponse } from '@/lib/types'
 import { ITEM_CLASS_LABEL, classifyItem, normKey, tierClass, type ModalTarget } from './metaShared'
 
@@ -204,6 +206,9 @@ export function DetailModal({
           {badge ? <span className="rk-mcat">{badge}</span> : null}
         </h2>
         {body}
+        <Link href={entityHref(target.type, target.key)} className="rk-modal-more">
+          {title} 상세 페이지 보기 →
+        </Link>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
 import { DeckViewTracker } from '@/app/components/DeckViewTracker'
 import { SITE_URL } from '@/lib/site'
+import { entityHref } from '@/lib/entitySlug'
 import '../../rank/rank.css'
 import '../deck.css'
 
@@ -180,15 +181,19 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
                   </div>
                   <div className="rk-deck-unit-body">
                     <div className="rk-deck-unit-name">
-                      <b>{unit.name}</b>
+                      <Link href={entityHref('champion', unit.matchedKey ?? unit.lolchessKey)} className="rk-deck-unit-link">
+                        <b>{unit.name}</b>
+                      </Link>
                       <span>{unit.cost != null ? `${unit.cost}코` : '코스트 ?'}</span>
                       {unit.flex ? <span className="rk-deck-flex-badge">플렉스</span> : null}
                     </div>
                     {unit.items.length ? (
                       <div className="rk-deck-items">
                         {unit.items.map((item) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={item.key} src={item.iconUrl} alt={item.name} title={item.name} loading="lazy" />
+                          <Link key={item.key} href={entityHref('item', item.key)} title={item.name}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.iconUrl} alt={item.name} loading="lazy" />
+                          </Link>
                         ))}
                       </div>
                     ) : null}
@@ -208,11 +213,11 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
             <p className="rk-label">시너지</p>
             <div className="rk-traits">
               {deck.traits.map((trait) => (
-                <span key={trait.key}>
+                <Link key={trait.key} href={entityHref('trait', trait.key)} className="rk-deck-trait-link">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={trait.iconUrl} alt="" loading="lazy" />
                   {trait.name} <b>{trait.count}</b>
-                </span>
+                </Link>
               ))}
             </div>
           </section>

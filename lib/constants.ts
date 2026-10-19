@@ -1,7 +1,8 @@
 import tftData from './tftData.json'
 
 export const DDRAGON_VERSION = tftData.version
-export const DDRAGON_TFT_VERSION = `tft-${tftData.version}`
+/** Data Dragon 경로 버전. 예전 `tft-16.17.1` 경로는 403 이라 시너지 아이콘이 모두 깨졌다 (2026-10 확인) */
+export const DDRAGON_TFT_VERSION = tftData.version
 
 export interface TranslatedItem {
   name: string

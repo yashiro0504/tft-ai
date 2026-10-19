@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { getDeckMetaInfo, getDeckViews } from '@/lib/decks'
 import { SITE_URL } from '@/lib/site'
+import { listEntitySlugs } from '@/lib/entityData'
+import { ENTITY_PATH, type EntityKind } from '@/lib/entitySlug'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
@@ -16,6 +18,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
+  // 기물·아이템·시너지 상세 (표본 충분한 항목만)
+  const entityEntries: MetadataRoute.Sitemap = (['champion', 'trait', 'item'] as EntityKind[]).flatMap((kind) =>
+    listEntitySlugs(kind).map((slug) => ({
+      url: `${SITE_URL}${ENTITY_PATH[kind]}/${slug}`,
+      lastModified: deckUpdated,
+      changeFrequency: 'daily' as const,
+      priority: kind === 'item' ? 0.5 : 0.6,
+    }))
+  )
+
   return [
     {
       url: `${SITE_URL}/`,
@@ -30,6 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     ...deckEntries,
+    ...entityEntries,
     {
       url: `${SITE_URL}/pro`,
       lastModified: now,

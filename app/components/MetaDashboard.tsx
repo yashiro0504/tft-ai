@@ -574,7 +574,7 @@ export function MetaDashboard({
                 ) : (
                   <span>이름</span>
                 )}
-                {tab === 'comps' ? <span>BIS</span> : null}
+                {tab === 'comps' ? <span className="rk-bis">BIS</span> : null}
                 {tab === 'champions' ? <span className="num">3성률</span> : null}
                 {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
                   <button

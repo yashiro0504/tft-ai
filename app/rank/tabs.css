@@ -16,7 +16,8 @@
 .rk-tab.on { background: var(--accent-bg); color: var(--rk-accent); font-weight: 600; }
 
 .rk-thead.cols-stat, .rk-row.cols-stat { grid-template-columns: 28px 28px minmax(0, 1fr) 120px 64px 72px; }
-.rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 28px minmax(0, 1fr) 120px 120px 64px 72px; }
+/* BIS: # · 티어 · 이름 · BIS 아이콘 · 평균등수 · TOP4 · 표본 (7칸) */
+.rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 28px 28px minmax(0, 1fr) 120px 120px 64px 72px; }
 .rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 28px 28px minmax(0, 1fr) 64px 120px 64px 72px; }
 
 .rk-icon {
@@ -59,16 +60,18 @@
 
   .rk-thead, .rk-row { padding: 0 16px; gap: 8px; }
   .rk-thead.cols-stat, .rk-row.cols-stat { grid-template-columns: 24px 24px minmax(0, 1fr) 64px; }
-  .rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 28px minmax(0, 1fr) 64px; }
+  .rk-thead.cols-bis, .rk-row.cols-bis { grid-template-columns: 24px 24px minmax(0, 1fr) 64px; }
   .rk-thead.cols-champ, .rk-row.cols-champ { grid-template-columns: 24px 24px minmax(0, 1fr) 64px; }
 
   /* 모바일 공통: 평균등수만 남기고 5번째 이후 숫자 열은 숨긴다. */
   .rk-thead .num:nth-child(n+5),
   .rk-row .rk-num:nth-child(n+5) { display: none; }
 
-  /* BIS: 아이콘 열을 숨기고 #·이름·평균만 표시 */
+  /* BIS: 아이콘(4번째)을 숨기고 평균등수(5번째)를 4번째 열로 올린다. */
   .rk-thead.cols-bis .rk-bis,
   .rk-row.cols-bis .rk-bis { display: none; }
+  .rk-thead.cols-bis .num:nth-child(5) { display: block; }
+  .rk-row.cols-bis .rk-num:nth-child(5) { display: flex; }
 
   /* 기물: 3성률(4번째)을 숨기고 평균등수(5번째)를 4번째 열로 올린다. */
   .rk-thead.cols-champ .num:nth-child(4),
@@ -99,3 +102,19 @@
 .rk-low { color: var(--rk-muted); }
 .rk-pm { margin-left: 4px; font-size: 11px; font-weight: 400; color: var(--rk-muted); }
 .rk-kpis .rk-pm { font-size: 12px; }
+
+/* 상세 모달 → 기물·아이템·시너지 상세 페이지 */
+.rk-modal-more {
+  display: block;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--rk-line);
+  border-radius: var(--radius-control);
+  background: var(--rk-surface2);
+  color: var(--rk-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+.rk-modal-more:hover { border-color: var(--rk-accent); color: var(--rk-accent); }
