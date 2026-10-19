@@ -43,12 +43,15 @@ interface RankCacheEntry {
 /**
  * 소환사 + 최근 매치 목록을 로드한다 (데모 모드 자동 처리 포함).
  * - API 키가 없거나 isDemo=true 이면 시뮬레이션 데이터를 반환한다.
+ * - `fresh: true`(전적 갱신)면 자주 바뀌는 캐시(아이콘/레벨·매치 ID 목록·랭크)를 읽지 않고
+ *   Riot 에서 다시 받아 캐시를 덮어쓴다. 계정(PUUID)·매치 상세는 불변이라 그대로 재사용한다.
  */
 export async function loadSummonerData(
   gameName: string,
   tagLine: string,
   limit: number = DEFAULT_MATCH_LIMIT,
-  isDemo = false
+  isDemo = false,
+  { fresh = false }: { fresh?: boolean } = {}
 ): Promise<LoadedSummonerData> {
   const hasApiKey = Boolean(process.env.RIOT_API_KEY)
   const normalizedLimit = Math.min(Math.max(Math.floor(limit) || DEFAULT_MATCH_LIMIT, 1), MAX_MATCH_LIMIT)
@@ -86,7 +89,7 @@ export async function loadSummonerData(
 
   // 2. 소환사 기본 정보(아이콘/레벨) — 6h 캐시
   const summonerKey = `summoner:${PLATFORM}:${acct.puuid}`
-  let summonerInfo = await cacheGet<{ profileIconId: number; summonerLevel: number }>(summonerKey)
+  let summonerInfo = fresh ? null : await cacheGet<{ profileIconId: number; summonerLevel: number }>(summonerKey)
   if (summonerInfo) {
     incrMetric('riot.cache_hit.summoner')
   } else {
@@ -98,7 +101,7 @@ export async function loadSummonerData(
   //    랭크(TFT-LEAGUE-V1)는 부가 정보이므로 matchIds 와 병렬로 조회해 지연을 늘리지 않는다.
   const matchIdsPromise = (async () => {
     const matchIdsKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}`
-    const cachedIds = await cacheGet<string[]>(matchIdsKey)
+    const cachedIds = fresh ? null : await cacheGet<string[]>(matchIdsKey)
     if (cachedIds) {
       incrMetric('riot.cache_hit.match_ids')
       return cachedIds
@@ -110,7 +113,7 @@ export async function loadSummonerData(
 
   const rankPromise = (async (): Promise<TftRankInfo | null> => {
     const rankKey = `rank:${PLATFORM}:${acct.puuid}`
-    const cachedRank = await cacheGet<RankCacheEntry>(rankKey)
+    const cachedRank = fresh ? null : await cacheGet<RankCacheEntry>(rankKey)
     if (cachedRank) {
       incrMetric('riot.cache_hit.rank')
       return cachedRank.rank

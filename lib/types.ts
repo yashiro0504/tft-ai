@@ -386,6 +386,10 @@ export interface TftSearchResponse {
   summonerProfile?: SummonerProfile
   matches: SlimMatchData[]
   isDemo?: boolean
+  /** Riot 에서 이 전적을 받아온 시각 (epoch ms). 캐시 응답이면 원래 받아온 시각 */
+  fetchedAt?: number
+  /** 이 시각(epoch ms) 이후에 다시 전적 갱신 가능 */
+  refreshAvailableAt?: number
   error?: string
 }
 

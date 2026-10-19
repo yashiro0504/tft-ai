@@ -18,6 +18,7 @@ import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './components/LimitModal'
 import { TopDecks } from './components/TopDecks'
 import { SummonerSummary } from './components/SummonerSummary'
+import { RefreshMatchesButton } from './components/RefreshMatchesButton'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -31,6 +32,8 @@ export default function TFTCoachPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [search, setSearch] = useState<TftSearchResponse | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null)
 
   // Turnstile: 토큰은 1회용이므로 요청 후 resetSignal 을 증가시켜 재발급한다.
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
@@ -82,6 +85,7 @@ export default function TFTCoachPage() {
 
     setError(null)
     setSearch(null)
+    setRefreshNotice(null)
     setOverviewFeedback(null)
     setOverviewError(null)
     setIsLoading(true)
@@ -119,6 +123,47 @@ export default function TFTCoachPage() {
       setIsLoading(false)
       setLoadingStep('')
       // 토큰은 1회용: 성공/실패와 무관하게 위젯을 재발급한다.
+      if (TURNSTILE_SITE_KEY) setTurnstileResetSignal((value) => value + 1)
+    }
+  }
+
+  /** 전적 갱신: 지금 화면은 유지한 채 Riot 에서 다시 받아 교체한다. */
+  const handleRefresh = async () => {
+    if (!search || isRefreshing) return
+    setIsRefreshing(true)
+    setRefreshNotice(null)
+    track('search_refresh', { surface: 'coach' })
+    try {
+      const res = await fetch('/api/tft/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameName: search.gameName,
+          tagLine: search.tagLine,
+          limit: 10,
+          refresh: true,
+          // 게이트 쿠키가 없을 때를 대비해 준비된 토큰이 있으면 함께 보낸다.
+          turnstileToken: turnstileToken || undefined,
+        }),
+      })
+      const data: TftSearchResponse = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '전적 갱신 중 오류가 발생했습니다.')
+      }
+
+      const known = new Set(search.matches.map((m) => m.matchId))
+      const added = data.matches.filter((m) => !known.has(m.matchId)).length
+      if (added > 0) {
+        // 경기 목록이 바뀌면 이전 종합 분석은 맞지 않으므로 지운다.
+        setOverviewFeedback(null)
+        setOverviewError(null)
+      }
+      setSearch(data)
+      setRefreshNotice(added > 0 ? `새 경기 ${added}건을 불러왔어요.` : '새로 끝난 경기가 없어요.')
+    } catch (err) {
+      setRefreshNotice(err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.')
+    } finally {
+      setIsRefreshing(false)
       if (TURNSTILE_SITE_KEY) setTurnstileResetSignal((value) => value + 1)
     }
   }
@@ -300,7 +345,19 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} matches={search.matches} />
+              <SummonerSummary profile={search.summonerProfile} matches={search.matches}>
+                {search.isDemo ? null : (
+                  <>
+                    <RefreshMatchesButton
+                      fetchedAt={search.fetchedAt}
+                      refreshAvailableAt={search.refreshAvailableAt}
+                      refreshing={isRefreshing}
+                      onRefresh={handleRefresh}
+                    />
+                    {refreshNotice ? <p className="w-full text-xs text-muted">{refreshNotice}</p> : null}
+                  </>
+                )}
+              </SummonerSummary>
             )}
 
             {/* 2. 종합 AI 분석 (선택) */}

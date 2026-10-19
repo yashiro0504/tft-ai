@@ -12,6 +12,8 @@
 export const ANALYTICS_EVENT_NAMES = [
   'search_submit',
   'search_success',
+  /** 검색 결과에서 [전적 갱신] 클릭 */
+  'search_refresh',
   'analysis_click',
   'analysis_success',
   'tab_view',
