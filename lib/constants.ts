@@ -92,6 +92,40 @@ const SET18_CHAMPS: Record<string, Set18Champ> = {
   crimsonraptor: { ko: '어미 부리', unit: 'tft18_raptor', cost: 3, square: 'tft18_raptor/hud/tft18_raptor_square.png' }, // 내부 id CrimsonRaptor = Mama Beak
 }
 
+/**
+ * 세트18 기물 초상화 (CommunityDragon `tft18_<기물>/tft18_<기물>_square.png`).
+ * LoL 기본 초상화(ddragon img/champion) 대신 TFT 세트18 전용 아트를 쓴다.
+ * 목록은 CommunityDragon `game/assets/characters/` 의 tft18_* 폴더 중 기물 본체만 추렸다.
+ */
+const SET18_PORTRAIT_UNITS = new Set([
+  'ahri', 'akali', 'alistar', 'alune', 'amumu', 'anivia', 'aphelios', 'ashe', 'azir', 'bard', 'brambleback',
+  'brock', 'caitlyn', 'camille', 'cassiopeia', 'chogath', 'cinderling', 'diana', 'draven', 'elderdragon',
+  'elise', 'evelynn', 'ezreal', 'fiddlesticks', 'gnar', 'gromp', 'hecarim', 'ivern', 'kalista', 'karma',
+  'katarina', 'kayle', 'kennen', 'khazix', 'kobuko', 'kogmaw', 'krug', 'leblanc', 'leona', 'lillia', 'lux',
+  'malphite', 'maokai', 'masteryi', 'mordekaiser', 'morgana', 'murkwolf', 'nautilus', 'neeko', 'nidalee',
+  'nunu', 'ornn', 'rakan', 'rammus', 'raptor', 'reksai', 'renekton', 'rengar', 'scuttlecrab', 'sejuani',
+  'sentinel', 'sentry', 'sett', 'shen', 'sion', 'sivir', 'soraka', 'talon', 'taric', 'teemo', 'tristana',
+  'udyr', 'varus', 'veigar', 'vi', 'warwick', 'willump', 'xayah', 'xerath', 'yorick', 'yunara', 'zyra',
+])
+
+/** 내부 id/표기와 에셋 폴더명이 다른 기물 */
+const SET18_PORTRAIT_ALIAS: Record<string, string> = {
+  pebbles: 'sentry', // 조약돌
+  mamabeak: 'raptor', // 어미 부리
+  crimsonraptor: 'raptor',
+}
+
+/** 세트18 기물이면 전용 초상화 URL, 아니면 null */
+export function set18PortraitUrl(id: string): string | null {
+  if (!id) return null
+  const lower = normalizeTftId(id).toLowerCase().replace(/[^a-z]/g, '')
+  const folder = SET18_PORTRAIT_ALIAS[lower] ?? lower
+  if (!SET18_PORTRAIT_UNITS.has(folder)) return null
+  // 어미 부리는 square 이미지가 hud 폴더에만 있다
+  if (folder === 'raptor') return `${TFT_UNIT_ASSET_BASE}/tft18_raptor/hud/tft18_raptor_square.png`
+  return `${TFT_UNIT_ASSET_BASE}/tft18_${folder}/tft18_${folder}_square.png`
+}
+
 // 18시즌 및 특별 시너지 보완 사전
 const SPECIAL_TRAITS: Record<string, { ko: string; iconSlug: string }> = {
   primal: { ko: '원시', iconSlug: 'Trait_Icon_16_Ixtal.png' },
@@ -190,13 +224,15 @@ export function translateChampion(id: string): TranslatedChamp {
 
   const cleanId = normalizeTftId(id)
   const lower = cleanId.toLowerCase()
+  // 세트18 기물은 이름 출처와 상관없이 전용 초상화를 쓴다
+  const portrait = set18PortraitUrl(id)
 
   // 1. 특별 기물 확인 (코부코 등)
   if (SPECIAL_CHAMPS[lower]) {
     const s = SPECIAL_CHAMPS[lower]
     return {
       name: s.ko,
-      imgUrl: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${s.imgSlug}.png`,
+      imgUrl: portrait ?? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${s.imgSlug}.png`,
       cost: s.cost,
     }
   }
@@ -220,14 +256,14 @@ export function translateChampion(id: string): TranslatedChamp {
   if (entry) {
     return {
       name: entry.name,
-      imgUrl: entry.iconUrl,
+      imgUrl: portrait ?? entry.iconUrl,
       cost: 3,
     }
   }
 
   return {
     name: cleanId,
-    imgUrl: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${cleanId}.png`,
+    imgUrl: portrait ?? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${cleanId}.png`,
     cost: 3,
   }
 }

@@ -1,6 +1,7 @@
 import decksData from './decksData.json'
 import metaStatsData from './metaStats.json'
 import { tierFromAvgPlacement } from './meta'
+import { set18PortraitUrl } from './constants'
 
 /**
  * 메타 덱(구성) — lib/decksData.json 을 정규화한다.
@@ -104,7 +105,9 @@ function computeDeck(deck: RawDeck): DeckView {
   let matchedUnits = 0
   let sampleSize = 0
 
-  const units: DeckUnitView[] = deck.units.map((u) => {
+  const units: DeckUnitView[] = deck.units.map((raw) => {
+    // 정적 덱 데이터의 초상화를 세트18 전용 아트로 교체
+    const u = { ...raw, imgUrl: set18PortraitUrl(raw.matchedKey ?? raw.lolchessKey) ?? raw.imgUrl }
     const stat = u.matchedKey ? CHAMPS[u.matchedKey] : undefined
     if (stat && typeof stat.avgPlacement === 'number') {
       const w = Math.max(1, stat.sampleSize || 0)
