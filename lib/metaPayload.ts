@@ -151,6 +151,7 @@ export function buildMetaPayload(): TftMetaResponse {
       index: u.index,
       imgUrl: u.imgUrl,
       items: u.items,
+      flex: u.flex,
       stat: u.stat,
     })),
     avgPlacement: d.avgPlacement,

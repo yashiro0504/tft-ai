@@ -69,6 +69,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
 
   const meta = getDeckMetaInfo()
   const tier = (deck.tier || 'C').toUpperCase()
+  const flexCount = deck.units.filter((unit) => unit.flex).length
 
   // 보드 좌표(index)가 충분하면 4×7 그리드에 배치하고, 아니면 순서대로 채운다.
   const boardSize = 28
@@ -114,6 +115,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
               표본 <b>{deck.sampleSize.toLocaleString()}</b>판
               <span className="rk-sep">/</span>
               {deck.units.length}유닛 · {deck.unitCost}코
+              {flexCount ? ` (플렉스 ${flexCount})` : ''}
             </p>
             <div className="rk-deck-actions">
               <ShareButton path={`/deck/${deck.id}`} label="덱 링크 복사" surface="deck_page" />
@@ -130,7 +132,8 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
                 {cells.map((unit, index) => (
                   <div
                     key={unit ? `${unit.lolchessKey}-${index}` : `empty-${index}`}
-                    className={`rk-deck-cell${unit ? ` c${unit.cost ?? 1}` : ' empty'}`}
+                    className={`rk-deck-cell${unit ? ` c${unit.cost ?? 1}${unit.flex ? ' is-flex' : ''}` : ' empty'}`}
+                    title={unit?.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
                   >
                     {unit ? (
                       <>
@@ -145,13 +148,17 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
             ) : (
               <div className="rk-deck-comp">
                 {deck.units.map((unit) => (
-                  <div key={`${unit.lolchessKey}-${unit.index ?? 'x'}`} className="rk-deck-comp-unit">
+                  <div
+                    key={`${unit.lolchessKey}-${unit.index ?? 'x'}`}
+                    className={`rk-deck-comp-unit${unit.flex ? ' is-flex' : ''}`}
+                  >
                     <div className={`rk-deck-comp-icon c${unit.cost ?? 1}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={unit.imgUrl} alt={unit.name} loading="lazy" />
                       {unit.star >= 2 ? <em>{`★${unit.star}`}</em> : null}
                     </div>
                     <span>{unit.name}</span>
+                    {unit.flex ? <em className="rk-deck-flex-label">플렉스</em> : null}
                   </div>
                 ))}
               </div>
@@ -162,7 +169,10 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
             <p className="rk-label">유닛</p>
             <div className="rk-deck-units">
               {deck.units.map((unit) => (
-                <div key={`${unit.lolchessKey}-${unit.index ?? 'x'}`} className="rk-deck-unit">
+                <div
+                  key={`${unit.lolchessKey}-${unit.index ?? 'x'}`}
+                  className={`rk-deck-unit${unit.flex ? ' is-flex' : ''}`}
+                >
                   <div className={`rk-deck-unit-icon c${unit.cost ?? 1}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={unit.imgUrl} alt={unit.name} loading="lazy" />
@@ -172,6 +182,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
                     <div className="rk-deck-unit-name">
                       <b>{unit.name}</b>
                       <span>{unit.cost != null ? `${unit.cost}코` : '코스트 ?'}</span>
+                      {unit.flex ? <span className="rk-deck-flex-badge">플렉스</span> : null}
                     </div>
                     {unit.items.length ? (
                       <div className="rk-deck-items">

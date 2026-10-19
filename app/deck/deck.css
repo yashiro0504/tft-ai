@@ -118,6 +118,43 @@
 .rk-deck-cell.c2, .rk-deck-unit-icon.c2, .rk-deck-comp-icon.c2 { box-shadow: inset 0 0 0 2px var(--cost-2); }
 .rk-deck-cell.c1, .rk-deck-unit-icon.c1, .rk-deck-comp-icon.c1 { box-shadow: inset 0 0 0 2px var(--cost-1); }
 
+/* 플렉스(선택): 채용률은 높지만 시너지 최대 단계를 넘는 기물 */
+.rk-deck-cell.is-flex,
+.rk-deck-unit.is-flex .rk-deck-unit-icon,
+.rk-deck-comp-unit.is-flex .rk-deck-comp-icon {
+  opacity: 0.55;
+  outline: 1px dashed var(--rk-accent);
+  outline-offset: -1px;
+}
+.rk-deck-cell.is-flex::after,
+.rk-deck-unit.is-flex .rk-deck-unit-icon::after,
+.rk-deck-comp-unit.is-flex .rk-deck-comp-icon::after {
+  content: 'F';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--rk-accent);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+.rk-deck-flex-label {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--rk-accent);
+}
+.rk-deck-flex-badge {
+  flex: none;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--rk-accent);
+  background: var(--accent-bg);
+  border-radius: var(--radius-chip);
+}
+
 .rk-deck-units {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

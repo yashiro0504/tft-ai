@@ -9,6 +9,7 @@
  *  2. 같은 이름표끼리 묶고, 대표 구성이 거의 같은 묶음은 합친다
  *  3. MIN_GAMES 이상 나온 덱만 남기고, 그 보드들의 실제 등수로 평균/TOP4/1등/분포/픽률을 계산한다
  *  4. 대표 구성 = 그 덱 보드의 절반 이상에서 쓰인 기물 (부족하면 빈도순으로 채움), 캐리 아이템 = 가장 많이 쓴 3개
+ *  5. 시너지 최대 단계(breakpoint max)를 넘는 기물은 flex 로 표시하고 시너지 count 에서 제외한다
  *
  * 사용법:
  *  node scripts/buildDecksFromBoards.js            # 미리보기 + 표 출력
@@ -295,35 +296,38 @@ function coreSize(c) {
   return Math.min(Math.max(median(c.sizes) || 8, 6), MAX_UNITS)
 }
 
-/**
- * 대표 구성: 채용률 순으로 coreSize 만큼 뽑되, 시너지 최대 단계(breakpoint max)를 넘는 기물은 제외한다.
- * 실측 보드는 최대 단계를 넘겨 기용하기도 하지만(예: 전쟁기계 7명), 덱 구성은 6단계까지만 보여 준다.
- * 캐리는 항상 포함한다 (캐리가 초과분이면 다른 기물이 빠진다).
- */
 function coreUnits(c) {
   const ranked = [...c.unitCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k)
-  const size = coreSize(c)
-  const core = []
-  const counts = new Map()
+  const core = ranked.slice(0, coreSize(c))
+  if (!core.includes(c.label.carry) && c.unitCount.has(c.label.carry)) core[core.length - 1] = c.label.carry
+  return core
+}
 
-  const traitsOf = (k) => (champInfo(c.unitIds.get(k)).traits || []).map(norm)
-  const exceeds = (k) =>
-    traitsOf(k).some((t) => {
+/**
+ * 대표 구성 중 시너지 최대 단계(breakpoint max)를 넘는 기물 = 플렉스(선택).
+ * 예: 전쟁기계는 최대 6단계라, 채용률이 높아도 7번째 전쟁기계는 플렉스로 표시하고
+ * 시너지 count 에서는 제외한다. 캐리는 항상 코어로 둔다.
+ */
+function flexKeys(c) {
+  const core = coreUnits(c)
+  const carry = c.label.carry
+  const ordered = [carry, ...core.filter((k) => k !== carry)].filter((k) => core.includes(k))
+  const counts = new Map()
+  const flex = new Set()
+
+  for (const k of ordered) {
+    const traits = (champInfo(c.unitIds.get(k)).traits || []).map(norm)
+    const over = traits.some((t) => {
       const bp = breakpointData.traits?.[t]
       return bp?.max != null && (counts.get(t) || 0) + 1 > bp.max
     })
-  const push = (k) => {
-    core.push(k)
-    for (const t of traitsOf(k)) counts.set(t, (counts.get(t) || 0) + 1)
+    if (over) {
+      flex.add(k)
+      continue
+    }
+    for (const t of traits) counts.set(t, (counts.get(t) || 0) + 1)
   }
-
-  if (c.unitCount.has(c.label.carry)) push(c.label.carry)
-  for (const k of ranked) {
-    if (core.length >= size) break
-    if (core.includes(k) || exceeds(k)) continue
-    push(k)
-  }
-  return core
+  return flex
 }
 
 function mergeInto(a, b) {
@@ -377,6 +381,7 @@ function toDeck(c, totalBoards) {
   /** 아이템을 주로 드는 기물 (메인 딜러 + 탱커 등): 이 기물이 나온 보드의 40% 이상에서 완성 아이템 2개+ */
   const holdsItems = (k) => k === carryKey || (c.unitHolders.get(k) || 0) / (c.unitCount.get(k) || 1) >= 0.4
 
+  const flex = flexKeys(c)
   const units = coreUnits(c).map((k) => {
     const info = champInfo(c.unitIds.get(k))
     const star = k === carryKey ? carryStar : Math.round(c.unitStars.get(k) / c.unitCount.get(k))
@@ -390,14 +395,21 @@ function toDeck(c, totalBoards) {
       matchedKey: statKey(c.unitIds.get(k)),
       traits: info.traits,
       items: holdsItems(k) ? topItems(k) : [],
+      /** 시너지 최대 단계를 넘는 선택 기물 (시너지 count 에서는 제외) */
+      flex: flex.has(k),
       /** 이 덱 보드 중 이 기물을 쓴 비율 */
       usage: r3(c.unitCount.get(k) / c.boards),
     }
   })
-  // 캐리를 맨 앞으로
-  units.sort((a, b) => (b.lolchessKey === carryKey) - (a.lolchessKey === carryKey) || b.usage - a.usage)
+  // 캐리 → 코어 → 플렉스 순, 같은 순위는 채용률 순
+  units.sort(
+    (a, b) =>
+      (b.lolchessKey === carryKey) - (a.lolchessKey === carryKey) ||
+      Number(a.flex) - Number(b.flex) ||
+      b.usage - a.usage
+  )
 
-  const traits = traitsFromUnits(units)
+  const traits = traitsFromUnits(units.filter((unit) => !unit.flex))
 
   const primaryName = traitInfo(c.traitIds.get(c.label.trait) || c.label.trait).name
   const carryName = champInfo(c.unitIds.get(carryKey)).name

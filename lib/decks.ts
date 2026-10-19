@@ -26,6 +26,8 @@ interface RawUnit {
   matchedKey: string | null
   traits: string[]
   items: RawUnitItem[]
+  /** 시너지 최대 단계(breakpoint max)를 넘는 선택 기물 — 시너지 count 에서 제외 */
+  flex?: boolean
   /** 이 덱 보드 중 이 기물을 쓴 비율 (실측 덱만) */
   usage?: number
 }
