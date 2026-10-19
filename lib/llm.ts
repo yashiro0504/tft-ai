@@ -15,9 +15,12 @@ import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
+import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
 export const COACH_PROMPT_VERSION = '2026-10-19.1'
+/** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
+const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
@@ -363,7 +366,6 @@ async function callDeepSeekStream(
 }
 
 export interface CoachIntroParams {
-  gameName: string
   match: SlimMatchData
   mode: 'single' | 'multi'
   onDelta?: (text: string) => void
@@ -376,15 +378,13 @@ export interface CoachIntroParams {
  * 실패해도 전체 리포트에는 영향을 주지 않는다.
  */
 export async function generateCoachIntro({
-  gameName,
   match,
   mode,
   onDelta,
   signal,
 }: CoachIntroParams): Promise<string> {
   const { facts, fallback } = buildIntroFacts(match, mode)
-  const prompt = `소환사명: ${gameName}
-아래 사실만 근거로 TFT 코치의 "핵심 진단"을 2~3문장(150자 이내)으로 써라.
+  const prompt = `아래 사실만 근거로 TFT 코치의 "핵심 진단"을 2~3문장(150자 이내)으로 써라.
 
 [사실]
 ${facts}
@@ -398,6 +398,24 @@ ${facts}
 
   if (signal?.aborted) return ''
 
+  // 짧게 캐시(6h): 전체 리포트 캐시가 만료/무효화돼도 인트로는 재사용한다.
+  const cacheKey = match.matchId ? `intro:${match.matchId}:${mode}:${INTRO_PROMPT_VERSION}` : ''
+  if (cacheKey) {
+    try {
+      const cached = await cacheGetWithSource<string>(cacheKey)
+      if (cached?.value) {
+        try {
+          onDelta?.(cached.value)
+        } catch {
+          /* ignore */
+        }
+        return cached.value
+      }
+    } catch {
+      /* 캐시 장애는 무시하고 생성으로 진행 */
+    }
+  }
+
   const budget = await getLlmBudgetStatus()
   if (budget.exceeded) {
     try {
@@ -409,6 +427,19 @@ ${facts}
   }
 
   let emitted = ''
+  let pending = ''
+  /** 문장 단위(또는 48자)로 묶어 UI 업데이트 횟수를 줄인다. */
+  const flush = () => {
+    if (!pending) return
+    const chunk = pending
+    pending = ''
+    emitted += chunk
+    try {
+      onDelta?.(chunk)
+    } catch {
+      /* ignore */
+    }
+  }
 
   if (DEEPSEEK_API_KEY) {
     try {
@@ -416,12 +447,15 @@ ${facts}
         prompt,
         INTRO_SYSTEM_INSTRUCTION,
         (delta) => {
-          emitted += delta
-          onDelta?.(delta)
+          pending += delta
+          // 첫 청크는 16자에서 바로 내보내 체감 지연을 줄이고, 이후에는 문장 단위/48자로 묶는다.
+          const threshold = emitted ? 48 : 16
+          if (/[.!?。！？]\s*$/.test(pending) || pending.includes('\n') || pending.length >= threshold) flush()
         },
         240,
         signal
       )
+      flush()
       const text = result.text.trim()
       if (text) {
         recordLlmUsage(
@@ -432,9 +466,11 @@ ${facts}
           DEEPSEEK_PRICE_INPUT_PER_M,
           DEEPSEEK_PRICE_OUTPUT_PER_M
         )
+        if (cacheKey) void cacheSet(cacheKey, text, CACHE_TTL.INTRO).catch(() => {})
         return text
       }
     } catch (err) {
+      flush()
       logEvent('warn', 'llm_intro_failed', { provider: 'deepseek', ...errorFields(err) })
       if (emitted.trim()) return emitted.trim()
     }
@@ -467,6 +503,7 @@ ${facts}
         } catch {
           /* ignore */
         }
+        if (cacheKey) void cacheSet(cacheKey, text, CACHE_TTL.INTRO).catch(() => {})
         return text
       }
     } catch (err) {
@@ -474,6 +511,7 @@ ${facts}
     }
   }
 
+  flush()
   if (signal?.aborted) return emitted.trim()
   try {
     if (!emitted) onDelta?.(fallback)
