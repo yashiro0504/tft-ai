@@ -8,6 +8,7 @@ import {
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
 import { RiotApiError } from '@/lib/riot'
+import { generateCoachIntro } from '@/lib/llm'
 import {
   quotaGuard,
   rateLimitGuard,
@@ -96,6 +97,8 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder()
   let closed = false
   let heartbeat: ReturnType<typeof setInterval> | null = null
+  /** 클라이언트가 끊기거나 결과가 도착하면 인트로 스트림을 중단한다. */
+  const introAbort = new AbortController()
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -115,6 +118,13 @@ export async function POST(req: NextRequest) {
           closed = true
           stopHeartbeat()
         }
+      }
+
+      let resultSent = false
+      /** 인트로 토큰 델타 — 결과가 이미 나갔으면 늦은 델타는 버린다. */
+      const sendDelta = (text: string) => {
+        if (resultSent) return
+        send('delta', { text })
       }
 
       const finish = () => {
@@ -143,10 +153,25 @@ export async function POST(req: NextRequest) {
           // 첫 이벤트를 즉시 보내 TTFB 를 줄인다. (이후 단계마다 갱신)
           send('stage', { stage: 'start', message: '분석을 준비하는 중...' })
 
-          const outcome = await runMatchAnalysis(params, (stage) => {
-            send('stage', { stage, message: ANALYSIS_STAGE_MESSAGE[stage] })
+          const outcome = await runMatchAnalysis(params, {
+            onStage: (stage) => {
+              send('stage', { stage, message: ANALYSIS_STAGE_MESSAGE[stage] })
+            },
+            onMatch: (match, displayName) => {
+              // 전체 리포트 생성과 병렬로 짧은 인트로를 토큰 스트리밍한다.
+              void generateCoachIntro({
+                gameName: displayName,
+                match,
+                mode: params.mode,
+                onDelta: sendDelta,
+                signal: introAbort.signal,
+              }).catch(() => {
+                /* 인트로 실패는 전체 분석에 영향을 주지 않는다 */
+              })
+            },
           })
 
+          resultSent = true
           send('result', outcome.response)
           logEvent('info', 'api_match_stream', {
             ms: elapsedMs(startedAt),
@@ -156,6 +181,7 @@ export async function POST(req: NextRequest) {
             isDemo: params.isDemo,
           })
         } catch (err) {
+          introAbort.abort()
           const status =
             err instanceof MatchAnalysisError
               ? err.status
@@ -175,6 +201,7 @@ export async function POST(req: NextRequest) {
             ...errorFields(err),
           })
         } finally {
+          introAbort.abort()
           finish()
         }
       })()
@@ -183,6 +210,7 @@ export async function POST(req: NextRequest) {
     cancel() {
       // 클라이언트 연결 종료
       closed = true
+      introAbort.abort()
       if (heartbeat) {
         clearInterval(heartbeat)
         heartbeat = null

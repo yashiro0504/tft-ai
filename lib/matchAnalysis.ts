@@ -65,14 +65,25 @@ export async function getCachedMatchAnalysis(
   return { response: { ...hit.value, cached: true }, source: hit.source }
 }
 
+export interface MatchAnalysisCallbacks {
+  /** 진행 단계 콜백 */
+  onStage?: (stage: AnalysisStage) => void
+  /**
+   * 매치 해석 직후, LLM 리포트 생성 전에 호출된다.
+   * 스트림 라우트가 이 시점에 짧은 인트로 토큰 스트림을 병렬로 시작한다.
+   */
+  onMatch?: (match: SlimMatchData, displayName: string) => void
+}
+
 /**
  * 매치 1건을 분석한다. 캐시 히트면 Riot/LLM 호출 없이 즉시 반환.
- * @param onStage 진행 단계 콜백 (선택)
+ * @param callbacks 진행 단계 / 매치 해석 콜백 (선택)
  */
 export async function runMatchAnalysis(
   params: MatchAnalysisParams,
-  onStage?: (stage: AnalysisStage) => void
+  callbacks: MatchAnalysisCallbacks = {}
 ): Promise<MatchAnalysisOutcome> {
+  const { onStage, onMatch } = callbacks
   const { matchId, mode } = params
   if (!matchId) throw new MatchAnalysisError('분석할 경기(matchId)가 필요합니다.', 400)
 
@@ -114,6 +125,7 @@ export async function runMatchAnalysis(
     )
   }
 
+  onMatch?.(match, displayName)
   onStage?.('analyzing')
   const feedback = await generateMetaCoachFeedback(displayName, [match], mode)
 

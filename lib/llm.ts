@@ -147,6 +147,14 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   "actionPlan": ["실전 가이드 1", "실전 가이드 2", "실전 가이드 3"]
 }`
 
+/** 짧은 인트로(핵심 진단) 전용 시스템 지시 — 전체 리포트와 별도 호출 */
+const INTRO_SYSTEM_INSTRUCTION = `너는 TFT 아카데미 코치다. 주어진 사실만 근거로 2~3문장의 "핵심 진단"을 쓴다.
+- 경어체, 이모지/마크다운/JSON 금지
+- 수치를 최소 2개 직접 인용
+- 제공된 기물/시너지 이름만 사용하고 새로운 이름·6코스트를 만들지 마라
+- 표본이 부족하면 첫 문장에 "표본 부족"을 명시하고 단정하지 마라
+- 점수/등급은 코드 값을 그대로 쓴다`
+
 /**
  * DeepSeek API 호출 (deepseek-chat)
  */
@@ -204,6 +212,275 @@ async function callDeepSeek(prompt: string): Promise<string> {
   } finally {
     clearTimeout(timer)
   }
+}
+
+/* ───────────── D+C: 짧은 인트로 토큰 스트리밍 ───────────── */
+
+interface IntroFacts {
+  facts: string
+  fallback: string
+}
+
+/** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
+function buildIntroFacts(match: SlimMatchData, mode: 'single' | 'multi'): IntroFacts {
+  const scoring = computeScoreBreakdown([match])
+  const plan = buildCoachingPlan([match])
+  const axis = plan.axes.find((a) => a.key === plan.focus)
+  const twoPlus = match.units.filter((u) => (u.tier || 1) >= 2).length
+  const three = match.units.filter((u) => u.tier === 3).length
+  const traits = (match.traits || []).filter((t) => (t.count || 0) >= 2).slice(0, 3)
+  const early = isEarlyGame(match)
+  const reason = lowSampleReason(match)
+  const others = (match.lobbyParticipants || [])
+    .filter((p) => !p.isUser)
+    .sort((a, b) => a.placement - b.placement)
+    .slice(0, 3)
+  const lobby =
+    mode === 'single' && others.length
+      ? others.map((p) => `${p.placement}등 Lv.${p.level}`).join(' · ')
+      : ''
+
+  const facts = [
+    `- 경기: ${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료 · 잔여 ${match.goldLeft}G`,
+    `- 보드: 유닛 ${match.units.length} · 2성+ ${twoPlus} · 3성 ${three} · 활성 시너지 ${match.traits.length}${
+      traits.length ? ` (${traits.map((t) => `${t.name} ${t.count}`).join(', ')})` : ''
+    }`,
+    `- 표본: ${early ? `표본 부족 (${reason})` : '정상'}`,
+    scoring
+      ? `- 코드 점수: ${scoring.total}/100 ${scoring.tier} (${scoring.components
+          .map((c) => `${c.label} ${c.score}`)
+          .join(' · ')})`
+      : '- 코드 점수: 산출 불가',
+    `- 6축 최저: ${axis?.label ?? '-'} ${axis?.score ?? '-'}/100`,
+    `- 이번 강의 주제: ${plan.topic}`,
+    lobby ? `- 로비 상위: ${lobby} (내 Lv.${match.level})` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const fallback = early
+    ? `표본 부족: ${reason}. ${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료라 단정은 이릅니다.`
+    : `${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료. 코드 점수 ${
+        scoring?.total ?? '-'
+      }점(${scoring?.tier ?? '-'}), 가장 약한 축은 ${axis?.label ?? '-'} ${axis?.score ?? '-'}점입니다.`
+
+  return { facts, fallback }
+}
+
+/** DeepSeek 스트리밍 호출 — OpenAI 호환 SSE 의 delta.content 를 콜백으로 전달한다. */
+async function callDeepSeekStream(
+  prompt: string,
+  system: string,
+  onDelta: ((text: string) => void) | undefined,
+  maxTokens: number,
+  signal?: AbortSignal
+): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
+  const onAbort = () => controller.abort()
+  signal?.addEventListener('abort', onAbort, { once: true })
+
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: maxTokens,
+        stream: true,
+        stream_options: { include_usage: true },
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok || !response.body) {
+      const errText = await response.text()
+      incrMetric(`llm.http_${response.status}`)
+      throw new Error(`DeepSeek stream 오류 (${response.status}): ${errText.slice(0, 300)}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let text = ''
+    let inputTokens = 0
+    let outputTokens = 0
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer = (buffer + decoder.decode(value, { stream: true })).replace(/\r/g, '')
+
+      let boundary = buffer.indexOf('\n\n')
+      while (boundary >= 0) {
+        const chunk = buffer.slice(0, boundary)
+        buffer = buffer.slice(boundary + 2)
+        boundary = buffer.indexOf('\n\n')
+
+        for (const line of chunk.split('\n')) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+          const data = trimmed.slice(5).trim()
+          if (!data || data === '[DONE]') continue
+          try {
+            const obj = JSON.parse(data) as {
+              choices?: Array<{ delta?: { content?: string } }>
+              usage?: { prompt_tokens?: number; completion_tokens?: number }
+            }
+            const delta = obj.choices?.[0]?.delta?.content
+            if (typeof delta === 'string' && delta) {
+              text += delta
+              try {
+                onDelta?.(delta)
+              } catch {
+                /* 클라이언트가 끊겨도 스트림 읽기는 계속한다 */
+              }
+            }
+            if (obj.usage) {
+              inputTokens = obj.usage.prompt_tokens || inputTokens
+              outputTokens = obj.usage.completion_tokens || outputTokens
+            }
+          } catch {
+            /* 형식이 깨진 청크는 무시 */
+          }
+        }
+      }
+    }
+
+    return { text, inputTokens, outputTokens }
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
+
+export interface CoachIntroParams {
+  gameName: string
+  match: SlimMatchData
+  mode: 'single' | 'multi'
+  onDelta?: (text: string) => void
+  signal?: AbortSignal
+}
+
+/**
+ * 전체 리포트 생성과 **병렬로** 실행되는 짧은 인트로(2~3문장).
+ * DeepSeek 토큰 스트림 → Gemini 단일 응답 → 결정론적 폴백 순으로 동작한다.
+ * 실패해도 전체 리포트에는 영향을 주지 않는다.
+ */
+export async function generateCoachIntro({
+  gameName,
+  match,
+  mode,
+  onDelta,
+  signal,
+}: CoachIntroParams): Promise<string> {
+  const { facts, fallback } = buildIntroFacts(match, mode)
+  const prompt = `소환사명: ${gameName}
+아래 사실만 근거로 TFT 코치의 "핵심 진단"을 2~3문장(150자 이내)으로 써라.
+
+[사실]
+${facts}
+
+[규칙]
+- 경어체, 이모지/마크다운/JSON 금지
+- 수치를 최소 2개 직접 인용
+- 제공된 기물/시너지 이름만 사용, 새로운 이름·6코스트 금지
+- 표본 부족이면 첫 문장에 "표본 부족"을 명시하고 단정하지 마라
+- 점수/등급은 코드 값을 그대로 쓴다`
+
+  if (signal?.aborted) return ''
+
+  const budget = await getLlmBudgetStatus()
+  if (budget.exceeded) {
+    try {
+      onDelta?.(fallback)
+    } catch {
+      /* ignore */
+    }
+    return fallback
+  }
+
+  let emitted = ''
+
+  if (DEEPSEEK_API_KEY) {
+    try {
+      const result = await callDeepSeekStream(
+        prompt,
+        INTRO_SYSTEM_INSTRUCTION,
+        (delta) => {
+          emitted += delta
+          onDelta?.(delta)
+        },
+        240,
+        signal
+      )
+      const text = result.text.trim()
+      if (text) {
+        recordLlmUsage(
+          'deepseek',
+          'deepseek-chat',
+          result.inputTokens || Math.ceil(prompt.length / 3),
+          result.outputTokens || Math.ceil(text.length / 2),
+          DEEPSEEK_PRICE_INPUT_PER_M,
+          DEEPSEEK_PRICE_OUTPUT_PER_M
+        )
+        return text
+      }
+    } catch (err) {
+      logEvent('warn', 'llm_intro_failed', { provider: 'deepseek', ...errorFields(err) })
+      if (emitted.trim()) return emitted.trim()
+    }
+  }
+
+  if (GEMINI_API_KEY && !signal?.aborted) {
+    try {
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+      const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        systemInstruction: INTRO_SYSTEM_INSTRUCTION,
+        generationConfig: { temperature: 0.2, maxOutputTokens: 240 },
+      })
+      const result = await withTimeout(model.generateContent(prompt), LLM_TIMEOUT_MS, 'Gemini intro')
+      const text = result.response.text().trim()
+      if (text) {
+        const usage = result.response.usageMetadata as
+          | { promptTokenCount?: number; candidatesTokenCount?: number }
+          | undefined
+        recordLlmUsage(
+          'gemini',
+          GEMINI_MODEL,
+          usage?.promptTokenCount || Math.ceil(prompt.length / 3),
+          usage?.candidatesTokenCount || Math.ceil(text.length / 2),
+          GEMINI_PRICE_INPUT_PER_M,
+          GEMINI_PRICE_OUTPUT_PER_M
+        )
+        try {
+          onDelta?.(text)
+        } catch {
+          /* ignore */
+        }
+        return text
+      }
+    } catch (err) {
+      logEvent('warn', 'llm_intro_failed', { provider: 'gemini', ...errorFields(err) })
+    }
+  }
+
+  if (signal?.aborted) return emitted.trim()
+  try {
+    if (!emitted) onDelta?.(fallback)
+  } catch {
+    /* ignore */
+  }
+  return emitted.trim() || fallback
 }
 
 /**

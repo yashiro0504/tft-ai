@@ -11,6 +11,8 @@ import { AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } 
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
 import { TraitHex, traitMaxLevel } from './LabUI'
+import { computeMatchScore } from '@/lib/scoring'
+import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -19,6 +21,60 @@ interface MatchCardProps {
   gameName: string
   tagLine: string
   isDemo: boolean
+}
+
+/**
+ * D+C 라이브 패널
+ * - D: 서버 응답 전에도 클라이언트가 가진 매치 데이터로 즉시 지표를 보여준다.
+ * - C: 인트로 토큰이 도착하는 대로 타이핑되듯 누적한다.
+ */
+function LiveAnalysisPanel({
+  match,
+  twoStarPlus,
+  intro,
+  stageMessage,
+}: {
+  match: SlimMatchData
+  twoStarPlus: number
+  intro: string
+  stageMessage: string
+}) {
+  const score = computeMatchScore(match)
+  const comp = (key: 'placement' | 'completion' | 'items' | 'contest') =>
+    score.components.find((c) => c.key === key)?.score
+  const early = isEarlyGame(match)
+
+  return (
+    <div
+      className="mt-3 rounded-control border border-line bg-sunken px-4 py-3"
+      aria-busy="true"
+    >
+      <div className="flex items-center gap-2 text-xs font-semibold text-accent" role="status" aria-live="polite">
+        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+        <span>AI 코치가 분석 중</span>
+      </div>
+
+      {/* D: 즉시 계산되는 사실/점수 */}
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+        <span>
+          {match.placement}등 · Lv.{match.level} · {match.lastRound} 종료 · {match.goldLeft}G
+        </span>
+        <span>
+          유닛 {match.units.length} · 2성+ {twoStarPlus} · 시너지 {match.traits.length}
+        </span>
+        <span>
+          완성도 {comp('completion') ?? '-'} · 아이템 {comp('items') ?? '-'} · 경합 {comp('contest') ?? '-'}
+        </span>
+        {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
+      </div>
+
+      {/* C: 인트로 토큰 스트림 */}
+      <p className="mt-2 min-h-[1.5rem] text-sm leading-relaxed text-ink">
+        {intro || stageMessage || '핵심 진단을 준비하는 중...'}
+        {intro ? <span className="ml-0.5 inline-block animate-pulse text-accent">▍</span> : null}
+      </p>
+    </div>
+  )
 }
 
 /**
@@ -34,6 +90,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   const [wasCached, setWasCached] = useState(false)
   /** 스트리밍 진행 문구 (예: "AI가 리포트를 작성하는 중...") */
   const [stageMessage, setStageMessage] = useState('')
+  /** 인트로 토큰 누적 (핵심 진단 2~3문장) */
+  const [introText, setIntroText] = useState('')
   const abortRef = useRef<AbortController | null>(null)
   const quota = useQuota()
   const [isLimitOpen, setIsLimitOpen] = useState(false)
@@ -81,6 +139,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     }
     setIsAnalyzing(true)
     setAnalyzeError(null)
+    setIntroText('')
     setStageMessage('분석을 준비하는 중...')
     track('analysis_click', { scope: 'match', placement: match.placement })
 
@@ -96,6 +155,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           body,
           signal: controller.signal,
           onStage: setStageMessage,
+          onDelta: (text) => setIntroText((prev) => (prev + text).slice(-1200)),
         })
       } catch (err) {
         // 스트리밍 미지원 배포에서만 기존 JSON 경로로 폴백한다.
@@ -125,6 +185,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     } finally {
       abortRef.current = null
       setStageMessage('')
+      setIntroText('')
       setIsAnalyzing(false)
     }
   }
@@ -346,6 +407,14 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           </div>
         </div>
 
+        {isAnalyzing ? (
+          <LiveAnalysisPanel
+            match={match}
+            twoStarPlus={twoStarPlus}
+            intro={introText}
+            stageMessage={stageMessage}
+          />
+        ) : null}
       </div>
       {/* 펼쳐진 로비 8인 순위 테이블 (LOLCHESS 스타일) */}
       {isOpenLobby && match.lobbyParticipants && (
