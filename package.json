@@ -23,6 +23,7 @@
     "collect:boards": "node scripts/collectLadderBoards.js",
     "collect:db": "node scripts/collectDb.js",
     "collect:db:dry": "node scripts/collectDb.js --dry-run",
+    "collect:db:rollup": "node scripts/collectDb.js --rollup-only",
     "build:decks": "node scripts/buildDecksFromBoards.js --write",
     "build:decks:legacy": "node scripts/buildDeckCompsFromStats.js --write",
     "build:deck-preview": "node scripts/buildDecksFromBoards.js",
@@ -34,8 +35,9 @@
     "test:axes": "node scripts/testAxes.js",
     "test:axes:update": "node scripts/testAxes.js --update",
     "test:collect": "node scripts/testCollect.js",
+    "test:rollup": "node scripts/testRollup.js",
     "inspect:match": "node scripts/inspectMatch.js",
-    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:collect && npm run build",
+    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:collect && npm run test:rollup && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"
   },

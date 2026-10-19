@@ -308,7 +308,12 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
             )}
             {feedback.provenance?.source && (
               <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">
-                {feedback.provenance.source === 'riot-ladder' ? '래더 실측' : feedback.provenance.source}
+                {feedback.provenance.source === 'riot-ladder'
+                  ? '래더 실측'
+                  : feedback.provenance.source === 'riot-ranked-db'
+                    ? `KR 랭크 집계${feedback.provenance.filter ? ` · ${feedback.provenance.filter}` : ''}`
+                    : feedback.provenance.source}
+                {feedback.provenance.matches ? ` · ${feedback.provenance.matches.toLocaleString()}판` : ''}
               </span>
             )}
             {feedback.provenance?.generatedAt && (

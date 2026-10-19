@@ -1,0 +1,432 @@
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './supabase/config'
+import { getChampionCost, translateChampion, translateItem, translateTrait } from './constants'
+import { buildMetaPayload, toMetaDeck } from './metaPayload'
+import { deckViewsFromRaw } from './decks'
+import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
+import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
+import {
+  DAYS_FILTER_OPTIONS,
+  DEFAULT_DAYS,
+  DEFAULT_TIER,
+  MIN_SAMPLE,
+  STAT_TYPES,
+  TIER_BUCKETS,
+  TIER_FILTER_OPTIONS,
+  placementMargin,
+  withSample,
+  type DecksResponse,
+  type MetaFilterPatch,
+  type MetaFiltersResponse,
+  type StatFilter,
+  type StatRow,
+  type StatType,
+  type StatsResponse,
+  type TierFilter,
+} from './statsShared'
+
+/**
+ * 데이터 플랫폼 v2 (Phase B) — Supabase 일별 집계 읽기 (서버 전용).
+ *
+ * 읽는 것: supabase/migrations/0006_tft_rollups.sql 의 공개 RPC(tft_stat_query · tft_stat_filters)와 stat_comp.
+ * anon 키로 읽는다 (집계는 공개 select, 원본 보드는 RLS 로 막혀 있다).
+ *
+ * DB 가 설정되지 않았거나(로컬·CI), 0006 이 아직 적용되지 않았거나, 집계가 비었거나, 느리면
+ * 기존 빌드 타임 JSON(lib/metaStats.json · lib/decksData.json)으로 폴백한다. 응답의 source 로 구분한다.
+ */
+
+const DB_TIMEOUT_MS = (() => {
+  const n = Number(process.env.STATS_DB_TIMEOUT_MS)
+  return Number.isFinite(n) && n > 0 ? n : 3000
+})()
+/** 웜 인스턴스 메모 (CDN s-maxage=600 앞단) */
+const MEMO_TTL_MS = 5 * 60_000
+/** 기물×아이템은 행이 많아(기물 × 아이템) 이보다 적은 조합은 응답에서 뺀다 */
+const UNIT_ITEM_MIN_ROWS = 5
+
+let client: SupabaseClient | null | undefined
+function db(): SupabaseClient | null {
+  if (client === undefined) {
+    client =
+      isSupabaseConfigured() && process.env.TFT_STATS_SOURCE !== 'json'
+        ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+        : null
+  }
+  return client
+}
+
+const memo = new Map<string, { value: unknown; expiresAt: number }>()
+async function memoized<T>(key: string, fn: () => Promise<T>, keep: (v: T) => boolean): Promise<T> {
+  const hit = memo.get(key)
+  if (hit && hit.expiresAt > Date.now()) return hit.value as T
+  const value = await fn()
+  if (keep(value)) memo.set(key, { value, expiresAt: Date.now() + MEMO_TTL_MS })
+  return value
+}
+
+class NoDbError extends Error {}
+
+async function withTimeout<T>(run: (signal: AbortSignal) => PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), DB_TIMEOUT_MS)
+  try {
+    const { data, error } = await run(ctrl.signal)
+    if (error) throw new Error(error.message)
+    return data as T
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
+  const c = db()
+  if (!c) throw new NoDbError('supabase_not_configured')
+  return (await withTimeout<T[]>((signal) => c.rpc(fn, args).abortSignal(signal))) ?? []
+}
+
+function fallbackReason(err: unknown): string {
+  if (err instanceof NoDbError) return err.message
+  return 'db_error'
+}
+
+const r2 = (x: number) => Math.round(x * 100) / 100
+const r3 = (x: number) => Math.round(x * 1000) / 1000
+
+/** scripts/buildMetaStats.js normalizeChampId 와 같은 규칙 (metaStats.json 기물 키) */
+export function statChampKey(id: string): string {
+  return String(id || '')
+    .replace(/^TFT\d*_/i, '')
+    .replace(/^DA_\d*_/i, '')
+    .replace(/^DA_/i, '')
+    .replace(/^TFTTutorial_/i, '')
+    .replace(/\d+$/i, '')
+    .replace(/Small$/i, '')
+    .trim()
+}
+
+/* ------------------------------------------------------------------ */
+/* 필터 목록                                                            */
+/* ------------------------------------------------------------------ */
+
+interface FilterRow {
+  patch: string
+  tier_bucket: string
+  matches: number | string
+  first_date: string
+  last_date: string
+}
+
+const jsonFilters = (reason: string): MetaFiltersResponse => ({
+  success: true,
+  source: 'json',
+  patches: [],
+  tiers: TIER_FILTER_OPTIONS,
+  days: DAYS_FILTER_OPTIONS,
+  defaults: { patch: null, tier: DEFAULT_TIER, days: DEFAULT_DAYS },
+  minSample: MIN_SAMPLE,
+  fallbackReason: reason,
+})
+
+/** 사용 가능한 패치(최신순) · 티어 필터별 판 수 */
+export async function getMetaFilters(): Promise<MetaFiltersResponse> {
+  return memoized(
+    'filters',
+    async () => {
+      try {
+        const rows = await rpc<FilterRow>('tft_stat_filters', {})
+        const byPatch = new Map<string, MetaFilterPatch>()
+        for (const r of rows) {
+          const p =
+            byPatch.get(r.patch) ||
+            ({
+              patch: r.patch,
+              firstDate: r.first_date,
+              lastDate: r.last_date,
+              matches: { challenger: 0, grandmaster: 0, master: 0, diamond: 0 },
+            } satisfies MetaFilterPatch)
+          if (r.first_date < p.firstDate) p.firstDate = r.first_date
+          if (r.last_date > p.lastDate) p.lastDate = r.last_date
+          for (const t of TIER_FILTER_OPTIONS) {
+            if (TIER_BUCKETS[t.id].includes(r.tier_bucket)) p.matches[t.id] += Number(r.matches) || 0
+          }
+          byPatch.set(r.patch, p)
+        }
+        const patches = [...byPatch.values()].sort((a, b) => b.lastDate.localeCompare(a.lastDate) || b.patch.localeCompare(a.patch))
+        if (!patches.length) return jsonFilters('empty')
+        return {
+          success: true,
+          source: 'db',
+          patches,
+          tiers: TIER_FILTER_OPTIONS,
+          days: DAYS_FILTER_OPTIONS,
+          defaults: { patch: patches[0].patch, tier: DEFAULT_TIER, days: DEFAULT_DAYS },
+          minSample: MIN_SAMPLE,
+        } satisfies MetaFiltersResponse
+      } catch (err) {
+        const reason = fallbackReason(err)
+        if (reason === 'db_error') logEvent('warn', 'stats_filters_db_failed', errorFields(err))
+        return jsonFilters(reason)
+      }
+    },
+    (v) => v.source === 'db'
+  )
+}
+
+/** 요청 패치가 집계에 없으면 최신 패치 */
+function resolvePatch(filters: MetaFiltersResponse, patch: string | null): string | null {
+  if (patch && filters.patches.some((p) => p.patch === patch)) return patch
+  return filters.patches[0]?.patch ?? null
+}
+
+/* ------------------------------------------------------------------ */
+/* 기물 · 아이템 · 시너지 · 기물×아이템                                    */
+/* ------------------------------------------------------------------ */
+
+interface QueryRow {
+  key1: string | null
+  key2: string | null
+  games: number | string | null
+  placement_sum: number | string | null
+  top4: number | string | null
+  wins: number | string | null
+  extra1: number | string | null
+  extra2: number | string | null
+}
+
+interface Acc {
+  games: number
+  placementSum: number
+  top4: number
+  wins: number
+  extra1: number
+  extra2: number
+}
+
+/** 같은 화면 키로 합친다 (예: TFT18_Gnar · TFT18_GnarSmall → Gnar) */
+function accumulate(rows: QueryRow[], keyOf: (r: QueryRow) => string | null): Map<string, Acc> {
+  const out = new Map<string, Acc>()
+  for (const r of rows) {
+    const key = keyOf(r)
+    if (!key) continue
+    const e = out.get(key) || { games: 0, placementSum: 0, top4: 0, wins: 0, extra1: 0, extra2: 0 }
+    e.games += Number(r.games) || 0
+    e.placementSum += Number(r.placement_sum) || 0
+    e.top4 += Number(r.top4) || 0
+    e.wins += Number(r.wins) || 0
+    e.extra1 += Number(r.extra1) || 0
+    e.extra2 += Number(r.extra2) || 0
+    out.set(key, e)
+  }
+  return out
+}
+
+function baseFields(a: Acc, totalBoards: number, min: number) {
+  return {
+    avgPlacement: r2(a.placementSum / a.games),
+    top4Rate: r3(a.top4 / a.games),
+    sampleSize: a.games,
+    winRate: r3(a.wins / a.games),
+    pickRate: totalBoards > 0 ? r3(a.games / totalBoards) : undefined,
+    margin: placementMargin(a.games),
+    lowSample: a.games < min,
+  }
+}
+
+function mapRows(type: StatType, rows: QueryRow[], totalBoards: number): StatRow[] {
+  const min = MIN_SAMPLE[type]
+  const byAvg = (a: { avgPlacement: number }, b: { avgPlacement: number }) => a.avgPlacement - b.avgPlacement
+  if (type === 'unit') {
+    return [...accumulate(rows, (r) => (r.key1 ? statChampKey(r.key1) : null)).entries()]
+      .filter(([, a]) => a.games > 0)
+      .map(([key, a]): MetaChampRanking & ReturnType<typeof baseFields> => {
+        const t = translateChampion(key)
+        return {
+          key,
+          name: t.name,
+          imgUrl: t.imgUrl,
+          cost: getChampionCost(key),
+          ...baseFields(a, totalBoards, min),
+          avgTier: r2(a.extra1 / a.games),
+          threeStarRate: r3(a.extra2 / a.games),
+        }
+      })
+      .sort(byAvg)
+  }
+  if (type === 'trait') {
+    return [...accumulate(rows, (r) => r.key1).entries()]
+      .filter(([, a]) => a.games > 0)
+      .map(([key, a]): MetaTraitRanking & ReturnType<typeof baseFields> => {
+        const t = translateTrait(key)
+        return { key, name: t.name, iconUrl: t.iconUrl, ...baseFields(a, totalBoards, min), avgTier: r2(a.extra1 / a.games) }
+      })
+      .sort(byAvg)
+  }
+  if (type === 'item') {
+    return [...accumulate(rows, (r) => r.key1).entries()]
+      .filter(([, a]) => a.games > 0)
+      .map(([key, a]): MetaItemRanking & ReturnType<typeof baseFields> => {
+        const t = translateItem(key)
+        return { key, name: t.name, iconUrl: t.iconUrl, ...baseFields(a, totalBoards, min) }
+      })
+      .sort(byAvg)
+  }
+  return [...accumulate(rows, (r) => (r.key1 && r.key2 ? `${statChampKey(r.key1)}|${r.key2}` : null)).entries()]
+    .filter(([, a]) => a.games > 0)
+    .map(([key, a]): MetaComboRanking & ReturnType<typeof baseFields> => {
+      const sep = key.indexOf('|')
+      const champKey = key.slice(0, sep)
+      const itemKey = key.slice(sep + 1)
+      const c = translateChampion(champKey)
+      const it = translateItem(itemKey)
+      return {
+        key,
+        champKey,
+        itemKey,
+        champName: c.name,
+        champImgUrl: c.imgUrl,
+        itemName: it.name,
+        itemIconUrl: it.iconUrl,
+        ...baseFields(a, totalBoards, min),
+      }
+    })
+    .sort(byAvg)
+}
+
+/** JSON 폴백 (필터 미적용, 기존 /api/tft/meta 와 같은 수치) */
+function jsonStats(type: StatType, reason: string): StatsResponse {
+  const p = buildMetaPayload()
+  const min = MIN_SAMPLE[type]
+  const rows: StatRow[] =
+    type === 'unit'
+      ? p.champions.map((r) => withSample(r, min))
+      : type === 'item'
+        ? p.items.map((r) => withSample(r, min))
+        : type === 'trait'
+          ? p.traits.map((r) => withSample(r, min))
+          : p.combos.map((r) => withSample(r, min))
+  return { success: true, source: 'json', type, filter: null, patch: p.patch, minSample: min, rows, fallbackReason: reason }
+}
+
+export function isStatType(v: string | null): v is StatType {
+  return STAT_TYPES.includes(v as StatType)
+}
+
+const tierArg = (t: TierFilter) => t.toUpperCase()
+
+/**
+ * 기물·아이템·시너지·기물×아이템 통계 (필터 적용).
+ * 집계가 없거나 DB 를 쓸 수 없으면 JSON 폴백.
+ */
+export async function getStats(type: StatType, filter: StatFilter): Promise<StatsResponse> {
+  const filters = await getMetaFilters()
+  if (filters.source !== 'db') return jsonStats(type, filters.fallbackReason || 'no_db')
+  const patch = resolvePatch(filters, filter.patch)
+  if (!patch) return jsonStats(type, 'empty')
+  const applied = { patch, tier: filter.tier, days: filter.days }
+  return memoized(
+    `stats:${type}:${patch}:${filter.tier}:${filter.days}`,
+    async () => {
+      const startedAt = Date.now()
+      try {
+        const args = {
+          p_patch: patch,
+          p_tier_min: tierArg(filter.tier),
+          p_days: filter.days,
+          p_min_games: type === 'unit_item' ? UNIT_ITEM_MIN_ROWS : 1,
+        }
+        const [rows, total] = await Promise.all([
+          rpc<QueryRow>('tft_stat_query', { p_type: type, ...args }),
+          rpc<QueryRow>('tft_stat_query', { p_type: 'total', ...args }),
+        ])
+        const totalBoards = Number(total[0]?.games) || 0
+        incrMetric('stats.db')
+        logEvent('info', 'stats_db', { type, patch, tier: filter.tier, days: filter.days, rows: rows.length, ms: elapsedMs(startedAt) })
+        return {
+          success: true,
+          source: 'db',
+          type,
+          filter: applied,
+          totalBoards,
+          totalMatches: Number(total[0]?.extra1) || 0,
+          minSample: MIN_SAMPLE[type],
+          rows: mapRows(type, rows, totalBoards),
+        } satisfies StatsResponse
+      } catch (err) {
+        incrMetric('stats.fallback')
+        logEvent('warn', 'stats_db_failed', { type, ms: elapsedMs(startedAt), ...errorFields(err) })
+        return jsonStats(type, fallbackReason(err))
+      }
+    },
+    (v) => v.source === 'db'
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* 덱                                                                  */
+/* ------------------------------------------------------------------ */
+
+function jsonDecks(reason: string): DecksResponse {
+  const p = buildMetaPayload()
+  return {
+    success: true,
+    source: 'json',
+    filter: null,
+    patch: p.patch,
+    updatedAt: p.deckMeta?.generatedAt,
+    minSample: MIN_SAMPLE.deck,
+    decks: p.decks.map((d) => withSample(d, MIN_SAMPLE.deck)),
+    fallbackReason: reason,
+  }
+}
+
+interface CompRow {
+  deck: unknown
+  total_boards: number
+  updated_at: string
+}
+
+/**
+ * 덱 티어표 (패치 × 티어 필터, 기간 없음 — 수집기가 하루 1회 패치 전체로 묶는다).
+ * 기본 필터(마스터+)에 덱이 하나도 없으면(첫 덱 잡 전) JSON 폴백, 다른 필터는 빈 목록을 그대로 돌려준다.
+ */
+export async function getDecks(filter: Pick<StatFilter, 'patch' | 'tier'>): Promise<DecksResponse> {
+  const filters = await getMetaFilters()
+  if (filters.source !== 'db') return jsonDecks(filters.fallbackReason || 'no_db')
+  const patch = resolvePatch(filters, filter.patch)
+  const c = db()
+  if (!patch || !c) return jsonDecks('empty')
+  return memoized(
+    `decks:${patch}:${filter.tier}`,
+    async () => {
+      try {
+        const rows = await withTimeout<CompRow[]>((signal) =>
+          c.from('stat_comp').select('deck, total_boards, updated_at').eq('patch', patch).eq('tier_min', tierArg(filter.tier)).abortSignal(signal)
+        )
+        if (!rows?.length && filter.tier === DEFAULT_TIER) return jsonDecks('empty')
+        const decks = deckViewsFromRaw((rows ?? []).map((r) => r.deck))
+          .map(toMetaDeck)
+          .map((d) => withSample(d, MIN_SAMPLE.deck))
+        const updatedAt = (rows ?? []).reduce<string | undefined>((m, r) => (!m || r.updated_at > m ? r.updated_at : m), undefined)
+        return {
+          success: true,
+          source: 'db',
+          filter: { patch, tier: filter.tier },
+          totalBoards: rows?.[0]?.total_boards,
+          updatedAt,
+          minSample: MIN_SAMPLE.deck,
+          decks,
+        } satisfies DecksResponse
+      } catch (err) {
+        logEvent('warn', 'decks_db_failed', errorFields(err))
+        return jsonDecks(fallbackReason(err))
+      }
+    },
+    (v) => v.source === 'db'
+  )
+}
+
+/** 테스트용: 메모·클라이언트 초기화 */
+export function __resetStatsForTest() {
+  memo.clear()
+  client = undefined
+}

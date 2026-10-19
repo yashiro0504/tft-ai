@@ -1,6 +1,6 @@
 # 데이터 플랫폼 v2 설계 — DB 저장 · 수집 확대 · 티어/패치/기간 필터
 
-> 상태: **Phase A 구현 완료 (2026-10-20)** · 운영 설정 대기 (§12) · Phase B/C 설계
+> 상태: **Phase A·B 구현 완료 (2026-10-20)** · 운영 설정 대기 (§12, §13) · Phase C 설계
 > 결정: Supabase 무료 플랜 · KR 마스터+ · 원본 최근 1패치 보관 · 프로덕션 키는 운영자가 별도 신청
 > 목표: 롤체지지 / MetaTFT 수준의 통계 기능(티어·패치·기간 필터, 기물×아이템 조건 통계, 덱 티어표)을
 > 받칠 수 있는 데이터 기반을 만든다.
@@ -304,10 +304,17 @@ create table stat_comp (
 
 ### Phase B — 집계 + 필터 서빙 (3~4일)
 
-- [ ] 일별 집계 SQL/잡, 덱 클러스터 잡을 DB 입력으로 전환
-- [ ] `/api/tft/stats`, `/api/tft/decks`, `/api/tft/meta/filters`
-- [ ] 메타 대시보드에 패치·티어·기간 필터, 표본 부족·± 표시
-- [ ] AI 프롬프트의 메타 통계를 API 값으로 교체
+- [x] `supabase/migrations/0006_tft_rollups.sql`: 일별 집계 5종(+ `stat_daily_totals` 픽률 분모), 공개 select RLS,
+      `tft_refresh_rollup(date, patch, tier)` (조합 단위로 지우고 원본에서 다시 넣음 · 원본 정리된 패치는 건드리지 않음),
+      공개 조회 RPC `tft_stat_query` · `tft_stat_filters`, 덱 교체 `tft_replace_comps`, `tft_raw_combos`
+- [x] 수집기 ④단계: 이번 실행에 적재·티어 상향된 조합만 재계산. 하루 1회(`DECK_REFRESH_HOURS`)는 원본 전체 조합 재계산 +
+      최신 패치 덱 클러스터(`scripts/collect/decks.js`, `buildDecksFromBoards.js` 의 `buildDecks` 재사용, 티어 필터 4종)
+- [x] `/api/tft/stats`, `/api/tft/decks`, `/api/tft/meta/filters` (`lib/tftStats.ts`, DB 실패 시 JSON 폴백, `source` 로 구분)
+- [x] 메타 대시보드에 패치·티어·기간 필터, 표본 부족(회색·티어 제외·맨 아래)·± 표시
+- [x] AI 프롬프트의 메타 통계를 같은 집계(최신 패치 · 마스터+ · 7일)로 교체 (`COACH_PROMPT_VERSION` 2026-10-20.1)
+- [x] 테스트: `npm run test:rollup` (JS 집계 · 덱 클러스터 · JSON 폴백, CI 포함). PGlite 가 있으면 0005+0006 을 실제로 돌려
+      SQL 결과 = JS 결과(필터 160조합) · 멱등 · 티어 상향 · RLS · `lib/tftStats` 응답까지 비교 (`PGLITE_PATH=… npm run test:rollup`)
+- [ ] 운영: 0006 적용 후 `npm run collect:db:rollup` 1회 (§13) · 필터 조합별 p95 측정
 - 완료 기준: 필터 조합별 응답 p95 < 300ms(CDN 미스 기준), JSON 폴백 동작 확인
 
 ### Phase C — 확장 (프로덕션 키 승인 후)
@@ -365,3 +372,30 @@ create table stat_comp (
 조절 변수 (Repository variables, 없으면 기본값): `RIOT_MIN_INTERVAL_MS`(2500) · `MAX_MATCHES`(200) · `SEED_TIERS`(challenger,grandmaster,master) · `MASTER_LIMIT`(1000) · `KEEP_PATCHES`(1) · `MAX_RAW_MB`(400)
 
 > 개발 키를 쓰는 동안은 기본 간격 2500ms(약 48회/2분)로 키 한도(100회/2분)의 절반만 쓴다. 나머지는 사이트의 전적 검색 몫이다.
+
+---
+
+## 13. Phase B 운영 설정 (운영자, §12 이후)
+
+1. **SQL 실행** — SQL Editor 에 `supabase/migrations/0006_tft_rollups.sql` 전체를 붙여 실행 (재실행 안전).
+   0006 전에 수집기가 돌면 집계 단계만 경고("집계 실패 — 0006 적용 여부…")를 남기고 수집은 정상으로 끝난다.
+2. **기존 원본으로 집계 채우기** — 로컬에서 한 번 (Riot 호출 없음, service role 필요):
+   ```bash
+   npm run collect:db:rollup
+   ```
+   안 해도 다음 수집 실행 중 하루 1회 전체 재계산이 같은 일을 한다.
+3. **Vercel env** — 앱은 이미 있는 `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` 로 집계를 읽는다 (추가 설정 없음).
+   집계를 끄고 JSON 만 쓰려면 `TFT_STATS_SOURCE=json`. DB 응답 대기 한도는 `STATS_DB_TIMEOUT_MS`(기본 3000).
+4. **확인**
+   ```sql
+   select * from tft_stat_filters();
+   select * from tft_stat_query('unit', (select patch from tft_stat_filters() limit 1), 'MASTER', 7) order by games desc limit 10;
+   select patch, tier_min, count(*), max(updated_at) from stat_comp group by 1, 2;
+   ```
+   앱: `/api/tft/meta/filters` 의 `source` 가 `db` 면 `/meta` 에 필터가 나타난다. `json` 이면 `fallbackReason` 을 본다
+   (`supabase_not_configured` · `empty` · `db_error`).
+
+조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 15판 미만을 표본 부족으로 표시)
+
+표본 규칙 (§6-2): 기물·아이템·시너지 30판, 기물×아이템 20판, 덱 15판 미만은 표본 부족(회색 · 상대 티어 제외 · 정렬 맨 아래).
+평균등수 옆 ± 는 표준오차 2.29/√n. 덱 티어표는 기간 필터 없이 패치 전체로 하루 1회 묶는다.

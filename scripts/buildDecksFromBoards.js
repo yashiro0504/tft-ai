@@ -437,15 +437,12 @@ function toDeck(c, totalBoards) {
   }
 }
 
-function main() {
-  if (!fs.existsSync(BOARDS_PATH)) {
-    console.error('data/ladderBoards.json 이 없습니다. 먼저 node scripts/collectLadderBoards.js 를 실행하세요.')
-    process.exitCode = 1
-    return
-  }
-  const data = JSON.parse(fs.readFileSync(BOARDS_PATH, 'utf-8'))
-  const boards = data.matches.flatMap((m) => m.boards)
-
+/**
+ * 보드 목록 → 덱 랭킹. JSON 수집본(main)과 DB 원본(scripts/collect/decks.js)이 같이 쓴다.
+ * @param boards [{ placement, level, units: [{ id, star, items: [id] }], traits: [{ id, units, style, max? }] }]
+ * @param opts { minGames, maxDecks }
+ */
+function buildDecks(boards, { minGames = MIN_GAMES, maxDecks = MAX_DECKS } = {}) {
   const clusters = new Map()
   let labeled = 0
   for (const b of boards) {
@@ -489,10 +486,25 @@ function main() {
   }
 
   const decks = merged
-    .filter((c) => c.boards >= MIN_GAMES)
-    .map((c) => toDeck(c, boards.length))
-    .sort((a, b) => a.avgPlacement - b.avgPlacement)
-    .slice(0, MAX_DECKS)
+    .filter((c) => c.boards >= minGames)
+    .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements }))
+    .sort((a, b) => a.deck.avgPlacement - b.deck.avgPlacement)
+    .slice(0, maxDecks)
+
+  return { decks, labeled, clusterCount: clusters.size, mergedCount: merged.length }
+}
+
+function main() {
+  if (!fs.existsSync(BOARDS_PATH)) {
+    console.error('data/ladderBoards.json 이 없습니다. 먼저 node scripts/collectLadderBoards.js 를 실행하세요.')
+    process.exitCode = 1
+    return
+  }
+  const data = JSON.parse(fs.readFileSync(BOARDS_PATH, 'utf-8'))
+  const boards = data.matches.flatMap((m) => m.boards)
+  const built = buildDecks(boards)
+  const decks = built.decks.map((d) => d.deck)
+  const labeled = built.labeled
 
   const out = {
     version: 2,
@@ -514,9 +526,10 @@ function main() {
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf-8')
 
   const covered = decks.reduce((s, d) => s + d.games, 0)
-  console.log(`판 ${data.matches.length} · 보드 ${boards.length} · 이름표 ${labeled} · 묶음 ${clusters.size} → 합친 뒤 ${merged.length} → ${MIN_GAMES}판 이상 덱 ${decks.length}개`)
+  console.log(`판 ${data.matches.length} · 보드 ${boards.length} · 이름표 ${labeled} · 묶음 ${built.clusterCount} → 합친 뒤 ${built.mergedCount} → ${MIN_GAMES}판 이상 덱 ${decks.length}개`)
   console.log(`덱 랭킹이 설명하는 보드: ${covered} (${Math.round((covered / boards.length) * 100)}%)`)
-  console.log(`저장 → ${outPath}\n`)
+  console.log(`저장 → ${outPath}
+`)
   console.log('순위 | 덱 | 판수 | 픽률 | 평균 | TOP4 | 1등 | 구성')
   decks.forEach((d, i) => {
     console.log(
@@ -527,4 +540,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { labelBoard, damageScore, itemRole }
+module.exports = { labelBoard, damageScore, itemRole, buildDecks }

@@ -227,6 +227,10 @@ export interface FeedbackProvenance {
   source?: string
   generatedAt?: string
   sample?: boolean
+  /** DB 집계 범위 (예: "마스터+ · 최근 7일") — source='riot-ranked-db' 일 때 */
+  filter?: string
+  /** 그 범위의 판 수 */
+  matches?: number
   /** 프롬프트에 주입한 기물/아이템/조합 통계 항목 수 */
   championStats?: number
   itemStats?: number

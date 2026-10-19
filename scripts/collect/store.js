@@ -1,11 +1,12 @@
 /**
  * 수집기 저장소.
- *  - createSupabaseStore : 실제 적재 (service role, supabase/migrations/0005_tft_stats.sql 필요)
- *  - createMemoryStore   : 드라이런·테스트용 (같은 규칙을 JS 로 흉내 낸다)
+ *  - createSupabaseStore : 실제 적재 (service role, supabase/migrations/0005_tft_stats.sql · 0006_tft_rollups.sql 필요)
+ *  - createMemoryStore   : 드라이런·테스트용 (같은 규칙을 JS 로 흉내 낸다. 집계는 scripts/collect/rollup.js)
  *
  * 두 구현은 같은 메서드를 가진다. collectDb.js 는 어느 쪽인지 모른다.
  */
 const { TIER_RANK } = require('./normalize')
+const { rollupBoards, comboKey, parseComboKey } = require('./rollup')
 
 const chunk = (arr, n) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n))
 const dictKey = (kind, apiId) => `${kind}:${apiId}`
@@ -14,6 +15,7 @@ function createSupabaseStore({ url, serviceRoleKey }) {
   const { createClient } = require('@supabase/supabase-js')
   const db = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
   const dict = new Map()
+  const names = new Map() // id → api_id
 
   const must = ({ data, error }, what) => {
     if (error) throw new Error(`Supabase ${what}: ${error.message}`)
@@ -26,7 +28,10 @@ function createSupabaseStore({ url, serviceRoleKey }) {
     async loadDict() {
       for (let from = 0; ; from += 1000) {
         const rows = must(await db.from('tft_dict').select('id, kind, api_id').range(from, from + 999), 'dict 조회')
-        for (const r of rows) dict.set(dictKey(r.kind, r.api_id), r.id)
+        for (const r of rows) {
+          dict.set(dictKey(r.kind, r.api_id), r.id)
+          names.set(r.id, r.api_id)
+        }
         if (rows.length < 1000) break
       }
       return dict.size
@@ -45,7 +50,10 @@ function createSupabaseStore({ url, serviceRoleKey }) {
         for (const part of chunk(ids, 200)) {
           if (!part.length) continue
           const rows = must(await db.from('tft_dict').select('id, kind, api_id').eq('kind', kind).in('api_id', part), 'dict 재조회')
-          for (const r of rows) dict.set(dictKey(r.kind, r.api_id), r.id)
+          for (const r of rows) {
+            dict.set(dictKey(r.kind, r.api_id), r.id)
+            names.set(r.id, r.api_id)
+          }
         }
       }
       return missing.length
@@ -55,6 +63,11 @@ function createSupabaseStore({ url, serviceRoleKey }) {
       const id = dict.get(dictKey(kind, apiId))
       if (id == null) throw new Error(`사전에 없는 키: ${kind}:${apiId} (ensureDict 누락)`)
       return id
+    },
+
+    /** id → Riot 문자열 ID (loadDict 이후) */
+    dictName(id) {
+      return names.get(id) ?? null
     },
 
     async loadPatches() {
@@ -107,13 +120,16 @@ function createSupabaseStore({ url, serviceRoleKey }) {
       must(await db.from('tft_seed_players').update(patch).eq('puuid_hash', puuidHash), '시드 커서 저장')
     },
 
-    /** id → tier_bucket (이미 받은 판) */
+    /** id → { tier_bucket, game_date, patch } (이미 받은 판) */
     async existingMatches(ids) {
       const out = new Map()
       for (const part of chunk(ids, 200)) {
         if (!part.length) continue
-        const rows = must(await db.from('tft_matches').select('match_id, tier_bucket').in('match_id', part), '기존 매치 조회')
-        for (const r of rows) out.set(r.match_id, r.tier_bucket)
+        const rows = must(
+          await db.from('tft_matches').select('match_id, tier_bucket, game_date, patch').in('match_id', part),
+          '기존 매치 조회'
+        )
+        for (const r of rows) out.set(r.match_id, { tier_bucket: r.tier_bucket, game_date: r.game_date, patch: r.patch })
       }
       return out
     },
@@ -179,6 +195,57 @@ function createSupabaseStore({ url, serviceRoleKey }) {
       const s = await db.from('tft_seed_players').select('*', { count: 'exact', head: true })
       return { matches: m.count ?? 0, seeds: s.count ?? 0 }
     },
+
+    /* ---- Phase B: 집계 (0006_tft_rollups.sql) ---- */
+
+    /** (game_date, patch, tier_bucket) 한 조합을 원본에서 다시 계산. 반환: 보드 수 (-1 = 원본이 정리된 패치) */
+    async refreshRollup(gameDate, patch, tierBucket) {
+      return must(
+        await db.rpc('tft_refresh_rollup', { p_game_date: gameDate, p_patch: patch, p_tier: tierBucket }),
+        '집계 갱신'
+      )
+    },
+
+    /** 원본에 있는 모든 조합 (하루 1회 전체 재계산용) */
+    async rawCombos() {
+      return must(await db.rpc('tft_raw_combos'), '원본 조합 조회')
+    },
+
+    /** 이 패치 덱 클러스터의 마지막 갱신 시각 (없으면 0) */
+    async compsUpdatedAt(patch) {
+      const rows = must(
+        await db.from('stat_comp').select('updated_at').eq('patch', patch).order('updated_at', { ascending: false }).limit(1),
+        '덱 갱신 시각'
+      )
+      return rows[0] ? new Date(rows[0].updated_at).getTime() : 0
+    },
+
+    /** 한 패치의 원본 보드 전부 (덱 클러스터 입력) */
+    async loadBoardsForPatch(patch) {
+      const out = []
+      for (let from = 0; ; from += 1000) {
+        const rows = must(
+          await db
+            .from('tft_boards')
+            .select('match_id, placement, level, units, traits, tft_matches!inner(tier_bucket, patch)')
+            .eq('tft_matches.patch', patch)
+            .order('match_id', { ascending: true })
+            .order('placement', { ascending: true })
+            .range(from, from + 999),
+          '보드 조회'
+        )
+        for (const r of rows) {
+          const m = Array.isArray(r.tft_matches) ? r.tft_matches[0] : r.tft_matches
+          out.push({ match_id: r.match_id, placement: r.placement, level: r.level, units: r.units, traits: r.traits, tier_bucket: m?.tier_bucket })
+        }
+        if (rows.length < 1000) break
+      }
+      return out
+    },
+
+    async replaceComps(patch, tierMin, rows) {
+      return must(await db.rpc('tft_replace_comps', { p_patch: patch, p_tier_min: tierMin, p_rows: rows }), '덱 클러스터 저장')
+    },
   }
 }
 
@@ -191,10 +258,12 @@ function createMemoryStore() {
   const failures = new Map()
   const runs = []
   const patches = new Map()
+  const rollups = new Map() // comboKey → rollupBoards 결과 (stat_*_daily 대신)
+  const comps = new Map() // `${patch}|${tierMin}` → { rows, updatedAt }
 
   return {
     kind: 'memory',
-    _state: { dict, seeds, matches, boards, failures, runs, patches },
+    _state: { dict, seeds, matches, boards, failures, runs, patches, rollups, comps },
 
     async loadDict() {
       return dict.size
@@ -216,6 +285,10 @@ function createMemoryStore() {
       const id = dict.get(dictKey(kind, apiId))
       if (id == null) throw new Error(`사전에 없는 키: ${kind}:${apiId} (ensureDict 누락)`)
       return id
+    },
+    dictName(id) {
+      for (const [k, v] of dict) if (v === id) return k.slice(k.indexOf(':') + 1)
+      return null
     },
     async loadPatches() {
       return [...patches.values()]
@@ -248,7 +321,10 @@ function createMemoryStore() {
     },
     async existingMatches(ids) {
       const out = new Map()
-      for (const id of ids) if (matches.has(id)) out.set(id, matches.get(id).tier_bucket)
+      for (const id of ids) {
+        const m = matches.get(id)
+        if (m) out.set(id, { tier_bucket: m.tier_bucket, game_date: m.game_date, patch: m.patch })
+      }
       return out
     },
     async ingest(match, rows) {
@@ -300,6 +376,43 @@ function createMemoryStore() {
     },
     async counts() {
       return { matches: matches.size, seeds: seeds.size }
+    },
+
+    async refreshRollup(gameDate, patch, tierBucket) {
+      if (![...matches.values()].some((m) => m.patch === patch)) return -1
+      const ids = new Set()
+      for (const m of matches.values()) {
+        if (m.game_date === gameDate && m.patch === patch && m.tier_bucket === tierBucket) ids.add(m.match_id)
+      }
+      const rows = [...boards.values()].filter((b) => ids.has(b.match_id))
+      const key = comboKey(gameDate, patch, tierBucket)
+      if (!rows.length) {
+        rollups.delete(key)
+        return 0
+      }
+      rollups.set(key, rollupBoards(rows))
+      return rows.length
+    },
+    async rawCombos() {
+      const keys = new Set([...matches.values()].map((m) => comboKey(m.game_date, m.patch, m.tier_bucket)))
+      return [...keys].map(parseComboKey)
+    },
+    async compsUpdatedAt(patch) {
+      let max = 0
+      for (const [k, v] of comps) if (k.startsWith(`${patch}|`)) max = Math.max(max, v.updatedAt)
+      return max
+    },
+    async loadBoardsForPatch(patch) {
+      const out = []
+      for (const b of boards.values()) {
+        const m = matches.get(b.match_id)
+        if (m && m.patch === patch) out.push({ ...b, tier_bucket: m.tier_bucket })
+      }
+      return out
+    },
+    async replaceComps(patch, tierMin, rows) {
+      comps.set(`${patch}|${tierMin}`, { rows, updatedAt: Date.now() })
+      return rows.length
     },
   }
 }

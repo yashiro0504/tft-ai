@@ -3,16 +3,30 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
 import type {
   MetaChampRanking,
+  MetaComboRanking,
   MetaCompRanking,
   MetaDeckRanking,
   MetaItemRanking,
   MetaTraitRanking,
   TftMetaResponse,
 } from '@/lib/types'
+import {
+  DAYS_FILTER_OPTIONS,
+  MIN_SAMPLE,
+  TIER_FILTER_OPTIONS,
+  buildCompSets,
+  filterLabel,
+  filterQuery,
+  placementMargin,
+  type DecksResponse,
+  type MetaFiltersResponse,
+  type StatFilter,
+  type StatsResponse,
+} from '@/lib/statsShared'
 import { DetailModal } from './MetaDetailModal'
 import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import { ShareButton } from './ShareButton'
@@ -81,11 +95,44 @@ interface Row {
   avg: number
   top4: number
   sample: number
-  tier: Tier
+  /** 표본 하한 미만은 '-' (상대 티어에서 제외) */
+  tier: Tier | '-'
+  /** 표본 하한 미만 → 회색 + "표본 부족" */
+  low: boolean
   third?: number
   bis?: { key: string; name: string; iconUrl: string }[]
   deck?: MetaDeckRanking
   delta?: number
+}
+
+/** 탭별 표본 하한 (docs/DATA-PLATFORM.md §6-2) */
+const TAB_MIN_SAMPLE: Record<TabId, number> = {
+  decks: MIN_SAMPLE.deck,
+  comps: MIN_SAMPLE.unit,
+  champions: MIN_SAMPLE.unit,
+  traits: MIN_SAMPLE.trait,
+  items: MIN_SAMPLE.item,
+}
+
+/** 표본 충분한 행끼리만 상대 티어를 매긴다 */
+function tiersFor(avgs: number[], samples: number[], min: number): (Tier | '-')[] {
+  const okIdx = avgs.map((_, i) => i).filter((i) => samples[i] >= min)
+  const tiers = assignTiers(okIdx.map((i) => avgs[i]))
+  const out: (Tier | '-')[] = avgs.map(() => '-')
+  okIdx.forEach((i, k) => {
+    out[i] = tiers[k]
+  })
+  return out
+}
+
+/** 필터 응답 4종 → 대시보드 섹션 (덱 제외) */
+type Sections = Pick<TftMetaResponse, 'champions' | 'traits' | 'items' | 'combos' | 'comps'>
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  const json = await res.json()
+  if (!res.ok || json?.success === false) throw new Error(json?.error || '통계를 불러오지 못했습니다.')
+  return json as T
 }
 
 export function MetaDashboard({
@@ -93,11 +140,17 @@ export function MetaDashboard({
   initialData,
   showTitle = false,
   deferSections = false,
+  filters,
+  initialDecksSource,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
   showTitle?: boolean
   deferSections?: boolean
+  /** /api/tft/meta/filters 결과 (SSR). source='db' 일 때만 패치·티어·기간 필터를 보여 준다 */
+  filters?: MetaFiltersResponse
+  /** initialData.decks 가 DB 덱(기본 필터)인가 */
+  initialDecksSource?: 'db' | 'json'
 }) {
   const [data, setData] = useState<TftMetaResponse | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
@@ -111,6 +164,72 @@ export function MetaDashboard({
   const [detailOpen, setDetailOpen] = useState(false)
   const [itemClass, setItemClass] = useState<ItemClass>('all')
   const [modal, setModal] = useState<ModalTarget | null>(null)
+
+  // ---- 필터 (DB 집계가 있을 때만) ----
+  const dbMode = filters?.source === 'db'
+  const [filter, setFilter] = useState<StatFilter>(() => ({
+    patch: filters?.defaults.patch ?? null,
+    tier: filters?.defaults.tier ?? 'master',
+    days: filters?.defaults.days ?? 7,
+  }))
+  /** 마지막 응답 출처 — DB 를 기대했는데 json 이면 필터 미적용 스냅샷 */
+  const [served, setServed] = useState<{ decks?: DecksResponse['source']; stats?: StatsResponse['source']; totalMatches?: number }>(
+    { decks: initialDecksSource }
+  )
+  const deckKey = (f: StatFilter) => `${f.patch}|${f.tier}`
+  const loadedRef = useRef<{ decks: string | null; sections: string | null }>({
+    decks: initialDecksSource === 'db' ? deckKey(filter) : null,
+    sections: null,
+  })
+  const loadSeq = useRef(0)
+
+  /** 필터 적용 로딩: 덱 탭은 /api/tft/decks, 나머지 탭은 /api/tft/stats 4종을 한 번에 받아 같이 쓴다 */
+  const loadFiltered = async (target: TabId, f: StatFilter, force = false) => {
+    const isDecks = target === 'decks'
+    const key = isDecks ? deckKey(f) : filterQuery(f)
+    if (!force && (isDecks ? loadedRef.current.decks : loadedRef.current.sections) === key) return
+    const seq = ++loadSeq.current
+    setLoading(true)
+    setError(null)
+    try {
+      const q = filterQuery(f)
+      if (isDecks) {
+        const json = await fetchJson<DecksResponse>(`/api/tft/decks?${q}`)
+        if (seq !== loadSeq.current) return
+        setData((prev) => (prev ? { ...prev, decks: json.decks } : prev))
+        setServed((s) => ({ ...s, decks: json.source }))
+        loadedRef.current.decks = key
+      } else {
+        const [unit, item, trait, unitItem] = await Promise.all(
+          (['unit', 'item', 'trait', 'unit_item'] as const).map((t) => fetchJson<StatsResponse>(`/api/tft/stats?type=${t}&${q}`))
+        )
+        if (seq !== loadSeq.current) return
+        const champions = unit.rows as MetaChampRanking[]
+        const combos = unitItem.rows as MetaComboRanking[]
+        const sections: Sections = {
+          champions,
+          items: item.rows as MetaItemRanking[],
+          traits: trait.rows as MetaTraitRanking[],
+          combos,
+          comps: buildCompSets(champions, combos),
+        }
+        setData((prev) => (prev ? { ...prev, ...sections } : prev))
+        setServed((s) => ({ ...s, stats: unit.source, totalMatches: unit.totalMatches }))
+        loadedRef.current.sections = key
+        setLoadedAll(true)
+      }
+    } catch (e) {
+      if (seq === loadSeq.current) setError(e instanceof Error ? e.message : '네트워크 오류')
+    } finally {
+      if (seq === loadSeq.current) setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (dbMode) void loadFiltered(tab, filter)
+    // loadFiltered 는 ref 로 중복 요청을 막는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbMode, tab, filter])
 
   const load = async () => {
     setLoading(true)
@@ -151,8 +270,9 @@ export function MetaDashboard({
 
   const rowsAll = useMemo<Row[]>(() => {
     if (!data) return []
+    const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      const tiers = assignTiers(data.decks.map((d) => d.avgPlacement ?? 9))
+      const tiers = tiersFor(data.decks.map((d) => d.avgPlacement ?? 9), data.decks.map((d) => d.sampleSize), min)
       return data.decks.map((d, i) => ({
         key: d.id,
         name: d.name,
@@ -160,12 +280,13 @@ export function MetaDashboard({
         top4: d.top4Rate ?? 0,
         sample: d.sampleSize,
         tier: tiers[i],
+        low: d.sampleSize < min,
         deck: d,
       }))
     }
     if (tab === 'comps') {
       const src: MetaCompRanking[] = data.comps ?? []
-      const tiers = assignTiers(src.map((c) => c.avgPlacement))
+      const tiers = tiersFor(src.map((c) => c.avgPlacement), src.map((c) => c.sampleSize), min)
       return src.map((c, i) => ({
         key: c.key,
         name: c.name,
@@ -175,6 +296,7 @@ export function MetaDashboard({
         top4: c.top4Rate,
         sample: c.sampleSize,
         tier: tiers[i],
+        low: c.sampleSize < min,
         third: c.threeStarRate,
         bis: (c.items ?? []).slice(0, 3),
         delta: c.avgDelta,
@@ -182,7 +304,7 @@ export function MetaDashboard({
     }
     if (tab === 'champions') {
       const src: MetaChampRanking[] = data.champions ?? []
-      const tiers = assignTiers(src.map((c) => c.avgPlacement))
+      const tiers = tiersFor(src.map((c) => c.avgPlacement), src.map((c) => c.sampleSize), min)
       return src.map((c, i) => ({
         key: c.key,
         name: c.name,
@@ -192,13 +314,14 @@ export function MetaDashboard({
         top4: c.top4Rate,
         sample: c.sampleSize,
         tier: tiers[i],
+        low: c.sampleSize < min,
         third: c.threeStarRate,
         delta: c.avgDelta,
       }))
     }
     if (tab === 'traits') {
       const src: MetaTraitRanking[] = data.traits ?? []
-      const tiers = assignTiers(src.map((t) => t.avgPlacement))
+      const tiers = tiersFor(src.map((t) => t.avgPlacement), src.map((t) => t.sampleSize), min)
       return src.map((t, i) => ({
         key: t.key,
         name: t.name,
@@ -207,11 +330,12 @@ export function MetaDashboard({
         top4: t.top4Rate,
         sample: t.sampleSize,
         tier: tiers[i],
+        low: t.sampleSize < min,
         delta: t.avgDelta,
       }))
     }
     const src: MetaItemRanking[] = data.items ?? []
-    const tiers = assignTiers(src.map((it) => it.avgPlacement))
+    const tiers = tiersFor(src.map((it) => it.avgPlacement), src.map((it) => it.sampleSize), min)
     return src.map((it, i) => ({
       key: it.key,
       name: it.name,
@@ -220,6 +344,7 @@ export function MetaDashboard({
       top4: it.top4Rate,
       sample: it.sampleSize,
       tier: tiers[i],
+      low: it.sampleSize < min,
       delta: it.avgDelta,
     }))
   }, [data, tab])
@@ -233,6 +358,8 @@ export function MetaDashboard({
       return tierOk && qOk && classOk
     })
     return [...filtered].sort((a, b) => {
+      // 표본 부족은 평균등수·TOP4 정렬에서 맨 아래로 (우연히 좋은 수치가 위로 오지 않게)
+      if (sort !== 'sample' && a.low !== b.low) return Number(a.low) - Number(b.low)
       if (sort === 'top4') return b.top4 - a.top4
       if (sort === 'sample') return b.sample - a.sample
       return a.avg - b.avg
@@ -251,6 +378,10 @@ export function MetaDashboard({
   )
 
   const countOf = (t: '전체' | Tier) => (t === '전체' ? rowsAll.length : rowsAll.filter((r) => r.tier === t).length)
+  const minSample = TAB_MIN_SAMPLE[tab]
+  const appliedPatch = filter.patch ?? filters?.defaults.patch ?? null
+  const fellBack = dbMode && (tab === 'decks' ? served.decks === 'json' : served.stats === 'json')
+  const tierMatches = dbMode ? filters?.patches.find((p) => p.patch === appliedPatch)?.matches[filter.tier] : undefined
 
   const colClass = tab === 'comps' ? 'cols-bis' : tab === 'champions' ? 'cols-champ' : 'cols-stat'
 
@@ -261,14 +392,83 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
-              {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
+              {dbMode && !fellBack ? (
+                <>
+                  <EvidenceChip title="KR 랭크 판 누적 집계 (매시간 갱신)">
+                    {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
+                  </EvidenceChip>
+                  {tab !== 'decks' && served.totalMatches != null ? (
+                    <EvidenceChip title="이 필터에 들어간 판 수">{served.totalMatches.toLocaleString()}판</EvidenceChip>
+                  ) : tierMatches != null ? (
+                    <EvidenceChip title="이 패치 · 티어 필터의 누적 판 수">{tierMatches.toLocaleString()}판</EvidenceChip>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
+                  {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
+                  {fellBack ? (
+                    <EvidenceChip title="DB 집계를 불러오지 못해 빌드 시점 스냅샷을 보여 줍니다">필터 미적용 스냅샷</EvidenceChip>
+                  ) : null}
+                </>
+              )}
               <EvidenceChip>
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
-              <EvidenceChip title="절대 기준이 아니라 현재 표 안에서의 상대 순위">티어 = 표 안 상대 순위</EvidenceChip>
+              <EvidenceChip title="절대 기준이 아니라 현재 표 안에서의 상대 순위 (표본 부족 제외)">티어 = 표 안 상대 순위</EvidenceChip>
+              <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만은 표본 부족으로 회색 표시`}>
+                ± 표준오차 · {minSample}판 미만 표본 부족
+              </EvidenceChip>
             </div>
           </header>
+
+          {dbMode && filters ? (
+            <div className="rk-toolbar rk-filterbar" role="group" aria-label="통계 필터">
+              <label className="rk-select">
+                <span>패치</span>
+                <select
+                  value={appliedPatch ?? ''}
+                  onChange={(e) => setFilter((f) => ({ ...f, patch: e.target.value || null }))}
+                  aria-label="패치"
+                >
+                  {filters.patches.map((p, i) => (
+                    <option key={p.patch} value={p.patch}>
+                      {p.patch}
+                      {i === 0 ? ' (최신)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="rk-chips" role="group" aria-label="티어">
+                {TIER_FILTER_OPTIONS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`rk-chip ${filter.tier === t.id ? 'on' : ''}`}
+                    aria-pressed={filter.tier === t.id}
+                    onClick={() => setFilter((f) => ({ ...f, tier: t.id }))}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="rk-chips" role="group" aria-label="기간">
+                {DAYS_FILTER_OPTIONS.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    className={`rk-chip ${filter.days === d.id ? 'on' : ''}`}
+                    aria-pressed={filter.days === d.id}
+                    disabled={tab === 'decks'}
+                    title={tab === 'decks' ? '덱은 패치 전체 기준으로 하루 1회 묶습니다' : undefined}
+                    onClick={() => setFilter((f) => ({ ...f, days: d.id }))}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="rk-toolbar">
             <div className="rk-tabs" role="tablist">
@@ -286,7 +486,7 @@ export function MetaDashboard({
                     setDetailOpen(false)
                     setModal(null)
                     // /meta 는 덱 데이터만 SSR 되므로, 다른 탭 첫 진입 시 전체 데이터를 지연 로딩한다.
-                    if (deferSections && !loadedAll && !loading && t.id !== 'decks') void load()
+                    if (!dbMode && deferSections && !loadedAll && !loading && t.id !== 'decks') void load()
                   }}
                 >
                   {t.label}
@@ -338,7 +538,7 @@ export function MetaDashboard({
             <button
               type="button"
               className="rk-refresh"
-              onClick={() => void load()}
+              onClick={() => void (dbMode ? loadFiltered(tab, filter, true) : load())}
               disabled={loading}
               aria-label="새로고침"
               title="새로고침"
@@ -351,7 +551,7 @@ export function MetaDashboard({
             <div className="rk-error">
               <AlertCircle className="h-4 w-4" />
               <span>{error}</span>
-              <button type="button" onClick={() => void load()}>다시 시도</button>
+              <button type="button" onClick={() => void (dbMode ? loadFiltered(tab, filter, true) : load())}>다시 시도</button>
             </div>
           ) : null}
 
@@ -392,7 +592,8 @@ export function MetaDashboard({
                 <button
                   key={r.key}
                   type="button"
-                  className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''}`}
+                  className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''} ${r.low ? 'is-low' : ''}`}
+                  title={r.low ? `표본 부족 (${minSample}판 미만) — 수치 변동이 큽니다` : undefined}
                   onClick={() => {
                     if (tab === 'decks') {
                       setSelectedId(r.key)
@@ -455,7 +656,10 @@ export function MetaDashboard({
                     <span className="rk-num dim">{r.third != null ? `${Math.round(r.third * 100)}%` : '-'}</span>
                   ) : null}
                   <span className="rk-num">
-                    {r.avg ? r.avg.toFixed(2) : '-'}
+                    <span>
+                      {r.avg ? r.avg.toFixed(2) : '-'}
+                      {r.avg && r.sample ? <small className="rk-pm">±{placementMargin(r.sample)?.toFixed(2)}</small> : null}
+                    </span>
                     <i className="rk-bar">
                       <i style={{ width: `${Math.max(4, Math.min(100, ((5.0 - r.avg) / 1.2) * 100))}%` }} />
                     </i>
@@ -463,7 +667,9 @@ export function MetaDashboard({
                   <span className="rk-num">{Math.round(r.top4 * 100)}%</span>
                   <span className="rk-num dim">
                     {r.sample.toLocaleString()}
-                    {r.deck?.playRate != null ? (
+                    {r.low ? (
+                      <small className="rk-sub rk-low">표본 부족</small>
+                    ) : r.deck?.playRate != null ? (
                       <small className="rk-sub">픽률 {(r.deck.playRate * 100).toFixed(1)}%</small>
                     ) : null}
                   </span>
@@ -494,7 +700,15 @@ export function MetaDashboard({
               >
                 ×
               </button>
-              {selected ? <DeckDetail deck={selected} tier={selectedTier ?? selected.tier} patch={data?.patch} /> : <p className="rk-empty">덱을 선택하세요.</p>}
+              {selected ? (
+                <DeckDetail
+                  deck={selected}
+                  tier={selectedTier ?? selected.tier}
+                  patch={dbMode && !fellBack ? appliedPatch ?? undefined : data?.patch}
+                />
+              ) : (
+                <p className="rk-empty">덱을 선택하세요.</p>
+              )}
             </aside>
           </>
         ) : null}
@@ -545,6 +759,9 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
           </>
         )}
         {patch ? <EvidenceChip>패치 {patch}</EvidenceChip> : null}
+        {deck.sampleSize < MIN_SAMPLE.deck ? (
+          <EvidenceChip title={`${MIN_SAMPLE.deck}판 미만이라 수치 변동이 큽니다`}>표본 부족</EvidenceChip>
+        ) : null}
       </div>
 
       <div className="rk-dactions">
@@ -561,7 +778,12 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
       <div className="rk-kpis">
         <div>
           <span>평균등수</span>
-          <b>{deck.avgPlacement != null ? deck.avgPlacement.toFixed(2) : '-'}</b>
+          <b>
+            {deck.avgPlacement != null ? deck.avgPlacement.toFixed(2) : '-'}
+            {deck.avgPlacement != null && deck.sampleSize ? (
+              <small className="rk-pm">±{placementMargin(deck.sampleSize)?.toFixed(2)}</small>
+            ) : null}
+          </b>
         </div>
         <div>
           <span>TOP4</span>

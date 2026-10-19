@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buildMetaPayload } from '@/lib/metaPayload'
 import { toDecksOnly } from '@/lib/metaSlim'
+import { getDecks, getMetaFilters } from '@/lib/tftStats'
 import { MetaRanking } from '@/app/components/MetaRanking'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { SITE_URL } from '@/lib/site'
 
-// 빌드 타임 JSON 기반이므로 정적 생성 + 5분 ISR.
+// 정적 생성 + 5분 ISR. DB 집계(Phase B)가 있으면 기본 필터(최신 패치 · 마스터+) 덱을, 없으면 빌드 타임 JSON 을 그린다.
 export const revalidate = 300
 
 export const metadata: Metadata = {
@@ -28,8 +29,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function MetaPage() {
+export default async function MetaPage() {
   const data = buildMetaPayload()
+  const filters = await getMetaFilters()
+  const dbDecks = filters.source === 'db' ? await getDecks({ patch: filters.defaults.patch, tier: filters.defaults.tier }) : null
+  const fromDb = dbDecks?.source === 'db'
+  if (fromDb && dbDecks) {
+    data.decks = dbDecks.decks
+    data.patch = dbDecks.filter?.patch ?? data.patch
+    data.generatedAt = dbDecks.updatedAt ?? data.generatedAt
+  }
   const patchLabel = data.patch ? `패치 ${data.patch}` : '패치 정보 없음'
   const updated = data.generatedAt ? new Date(data.generatedAt).toLocaleDateString('ko-KR') : '-'
 
@@ -41,12 +50,17 @@ export default function MetaPage() {
         <div className="mb-4">
           <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 18 메타 랭킹</h1>
           <p className="mt-1 text-xs text-muted">
-            챌린저 래더 실측 표본 · {patchLabel} · 갱신 {updated}
-            {!data.hasMeta ? ' · 표본 수집 전(샘플)' : ''}
+            {fromDb ? 'KR 랭크 판 누적 집계' : '챌린저 래더 실측 표본'} · {patchLabel} · 갱신 {updated}
+            {!data.hasMeta && !fromDb ? ' · 표본 수집 전(샘플)' : ''}
           </p>
         </div>
 
-        <MetaRanking initialData={toDecksOnly(data)} deferSections />
+        <MetaRanking
+          initialData={toDecksOnly(data)}
+          deferSections
+          filters={filters}
+          initialDecksSource={fromDb ? 'db' : 'json'}
+        />
 
         <div className="mt-8 text-center">
           <Link href="/" className="text-xs text-muted underline transition hover:text-ink">

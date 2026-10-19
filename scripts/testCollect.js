@@ -10,7 +10,7 @@
 process.argv.push('--dry-run')
 process.env.RIOT_API_KEY = 'RGAPI-test'
 process.env.RIOT_MIN_INTERVAL_MS = '1'
-process.env.MAX_MINUTES = '1'
+process.env.MAX_MINUTES = '10' // 덱 클러스터는 남은 시간이 5분 이상일 때만 돈다
 process.env.TFT_SEED_KEY = 'x'.repeat(48)
 
 const { parsePatch, patchFromDdragon, patchForTime, kstDate, collectDictKeys, normalizeMatch, decodeUnits, decodeTraits } = require('./collect/normalize')
@@ -155,6 +155,12 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   check('시드 PUUID 암호화 저장', [...st.seeds.values()].every((s) => !['c1', 'g1', 'm1', 'm2'].includes(s.puuid_enc) && ['c1', 'g1', 'm1', 'm2'].includes(sc.decrypt(s.puuid_enc))))
   check('패치 달력 기록 (Data Dragon)', st.patches.has('16.20'))
   check('실행 기록', st.runs.length === 1 && st.runs[0].matches_added === 6)
+
+  // Phase B: 이번 실행에 들어온 조합 집계 + 첫 실행이므로 덱 클러스터(일 1회)
+  const rolled = [...st.rollups.values()].reduce((s, r) => s + r.totals.matches, 0)
+  check('집계: 적재한 6판이 모두 일별 집계에 들어감', rolled === 6 && !first.aggregates.error, `집계 ${rolled}판`)
+  check('집계: 판 티어별 조합 (CHALLENGER · GRANDMASTER · MASTER)', st.rollups.size === 3, [...st.rollups.keys()].join(', '))
+  check('덱 클러스터: 최신 패치 × 티어 필터 4개 갱신', first.aggregates.latestPatch === '15.20' && st.comps.size === 4)
 })()
   .catch((e) => {
     failures++

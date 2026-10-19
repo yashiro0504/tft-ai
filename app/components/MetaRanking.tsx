@@ -1,6 +1,7 @@
 'use client'
 
 import type { TftMetaResponse } from '@/lib/types'
+import type { MetaFiltersResponse } from '@/lib/statsShared'
 import { MetaDashboard } from './MetaDashboard'
 
 /**
@@ -12,11 +13,15 @@ export function MetaRanking({
   initialData,
   showTitle,
   deferSections,
+  filters,
+  initialDecksSource,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
   showTitle?: boolean
   deferSections?: boolean
+  filters?: MetaFiltersResponse
+  initialDecksSource?: 'db' | 'json'
 }) {
   return (
     <MetaDashboard
@@ -24,6 +29,8 @@ export function MetaRanking({
       initialData={initialData}
       showTitle={showTitle}
       deferSections={deferSections}
+      filters={filters}
+      initialDecksSource={initialDecksSource}
     />
   )
 }

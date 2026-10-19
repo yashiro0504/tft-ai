@@ -1,6 +1,6 @@
 name: Collect Matches to DB
 
-# 데이터 플랫폼 v2 Phase A — Riot 랭크 판을 Supabase 에 누적한다 (docs/DATA-PLATFORM.md)
+# 데이터 플랫폼 v2 — Riot 랭크 판을 Supabase 에 누적하고(Phase A), 일별 집계·덱 클러스터를 갱신한다(Phase B). docs/DATA-PLATFORM.md
 # 필요한 Repository secrets: RIOT_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY
 # 선택 Repository variables: RIOT_MIN_INTERVAL_MS (프로덕션 키 승인 후 34), MAX_MATCHES, SEED_TIERS, MASTER_LIMIT, KEEP_PATCHES
 # Supabase 시크릿이 없으면 수집 단계는 안내만 남기고 성공으로 끝난다.
@@ -49,7 +49,9 @@ jobs:
         run: npm ci
 
       - name: Collector tests
-        run: npm run test:collect
+        run: |
+          npm run test:collect
+          npm run test:rollup
 
       - name: Collect
         env:

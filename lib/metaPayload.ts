@@ -8,7 +8,7 @@ import {
   hasMetaStats,
 } from './meta'
 import { translateChampion, translateTrait, translateItem, getChampionCost } from './constants'
-import { getDeckViews, getDeckMetaInfo } from './decks'
+import { getDeckViews, getDeckMetaInfo, type DeckView } from './decks'
 import type {
   TftMetaResponse,
   MetaChampRanking,
@@ -18,6 +18,39 @@ import type {
   MetaCompRanking,
   MetaDeckRanking,
 } from './types'
+
+/** 덱 뷰 → 응답 모양 (JSON 덱 · DB 덱 공용) */
+export function toMetaDeck(d: DeckView): MetaDeckRanking {
+  return {
+    id: d.id,
+    name: d.name,
+    gold: d.gold,
+    unitCost: d.unitCost,
+    traits: d.traits,
+    units: d.units.map((u) => ({
+      key: u.matchedKey ?? u.lolchessKey,
+      name: u.name,
+      cost: u.cost,
+      star: u.star,
+      index: u.index,
+      imgUrl: u.imgUrl,
+      items: u.items,
+      flex: u.flex,
+      stat: u.stat,
+    })),
+    avgPlacement: d.avgPlacement,
+    top4Rate: d.top4Rate,
+    coverage: d.coverage,
+    sampleSize: d.sampleSize,
+    tier: d.tier,
+    carryKey: d.carryKey,
+    level: d.level,
+    games: d.games,
+    playRate: d.playRate,
+    winRate: d.winRate,
+    placementDist: d.placementDist,
+  }
+}
 
 /**
  * /api/tft/meta 응답과 /meta 페이지가 공유하는 순수 빌더.
@@ -137,35 +170,7 @@ export function buildMetaPayload(): TftMetaResponse {
     : []
 
   // 메타 덱(보드 조합): 롤체지지 추천 덱 + 실측 통계 결합
-  const decks: MetaDeckRanking[] = getDeckViews().map((d) => ({
-    id: d.id,
-    name: d.name,
-    gold: d.gold,
-    unitCost: d.unitCost,
-    traits: d.traits,
-    units: d.units.map((u) => ({
-      key: u.matchedKey ?? u.lolchessKey,
-      name: u.name,
-      cost: u.cost,
-      star: u.star,
-      index: u.index,
-      imgUrl: u.imgUrl,
-      items: u.items,
-      flex: u.flex,
-      stat: u.stat,
-    })),
-    avgPlacement: d.avgPlacement,
-    top4Rate: d.top4Rate,
-    coverage: d.coverage,
-    sampleSize: d.sampleSize,
-    tier: d.tier,
-    carryKey: d.carryKey,
-    level: d.level,
-    games: d.games,
-    playRate: d.playRate,
-    winRate: d.winRate,
-    placementDist: d.placementDist,
-  }))
+  const decks: MetaDeckRanking[] = getDeckViews().map(toMetaDeck)
 
   return {
     success: true,

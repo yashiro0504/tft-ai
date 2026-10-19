@@ -47,6 +47,9 @@ jobs:
       - name: DB collector tests
         run: npm run test:collect
 
+      - name: Rollup / deck cluster tests
+        run: npm run test:rollup
+
       - name: Build
         run: npm run build
         env:

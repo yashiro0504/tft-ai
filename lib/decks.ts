@@ -126,7 +126,11 @@ export function getDeckMetaInfo(): DeckMetaInfo {
   }
 }
 
-function computeDeck(deck: RawDeck): DeckView {
+/**
+ * @param jsonUnitStats 기물별 실측(stat)을 lib/metaStats.json 에서 붙일지.
+ *   DB 덱(다른 패치·티어 필터)은 JSON 수치와 기준이 달라 붙이지 않는다.
+ */
+function computeDeck(deck: RawDeck, jsonUnitStats = true): DeckView {
   let weight = 0
   let placeSum = 0
   let top4Sum = 0
@@ -136,7 +140,7 @@ function computeDeck(deck: RawDeck): DeckView {
   const units: DeckUnitView[] = deck.units.map((raw) => {
     // 정적 덱 데이터의 초상화를 세트18 전용 아트로 교체
     const u = { ...raw, imgUrl: set18PortraitUrl(raw.matchedKey ?? raw.lolchessKey) ?? raw.imgUrl }
-    const stat = u.matchedKey ? CHAMPS[u.matchedKey] : undefined
+    const stat = jsonUnitStats && u.matchedKey ? CHAMPS[u.matchedKey] : undefined
     if (stat && typeof stat.avgPlacement === 'number') {
       const w = Math.max(1, stat.sampleSize || 0)
       weight += w
@@ -191,12 +195,28 @@ function computeDeck(deck: RawDeck): DeckView {
   }
 }
 
+function byAvgPlacement(a: DeckView, b: DeckView) {
+  if (a.avgPlacement == null && b.avgPlacement == null) return b.unitCost - a.unitCost
+  if (a.avgPlacement == null) return 1
+  if (b.avgPlacement == null) return -1
+  return a.avgPlacement - b.avgPlacement
+}
+
 /** 실측 평균등수 오름차순 (통계 없는 덱은 뒤로) */
 export function getDeckViews(): DeckView[] {
-  return DATA.decks.map(computeDeck).sort((a, b) => {
-    if (a.avgPlacement == null && b.avgPlacement == null) return b.unitCost - a.unitCost
-    if (a.avgPlacement == null) return 1
-    if (b.avgPlacement == null) return -1
-    return a.avgPlacement - b.avgPlacement
-  })
+  return DATA.decks.map((d) => computeDeck(d)).sort(byAvgPlacement)
+}
+
+/**
+ * DB 덱 클러스터(stat_comp.deck — decksData.json 덱과 같은 모양) → 화면용 덱.
+ * 모양이 깨진 행은 건너뛴다.
+ */
+export function deckViewsFromRaw(decks: unknown[]): DeckView[] {
+  return decks
+    .filter((d): d is RawDeck => {
+      const r = d as Partial<RawDeck> | null
+      return Boolean(r && typeof r.id === 'string' && Array.isArray(r.units) && Array.isArray(r.traits))
+    })
+    .map((d) => computeDeck(d, false))
+    .sort(byAvgPlacement)
 }

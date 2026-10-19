@@ -1,14 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan } from './types'
 import { serializeMatchesForLLM } from './summarize'
-import {
-  getChampionRankings,
-  getTraitRankings,
-  getItemRankings,
-  getComboRankings,
-  getMetaSectionInfo,
-} from './meta'
-import { translateChampion, translateItem, translateTrait } from './constants'
+import { getMetaSectionInfo } from './meta'
+import { getStats } from './tftStats'
+import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
@@ -18,7 +13,7 @@ import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-19.2'
+export const COACH_PROMPT_VERSION = '2026-10-20.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -559,56 +554,72 @@ ${facts}
 /**
  * 프롬프트에 주입할 [메타 실측 통계] 블록 + 출처 메타데이터.
  * LLM이 인용할 수 있는 수치의 화이트리스트 역할을 한다.
+ *
+ * 메타 대시보드와 같은 집계(/api/tft/stats 기본 필터: 최신 패치 · 마스터+ · 최근 7일)를 쓴다.
+ * DB 집계를 쓸 수 없으면 getStats 가 lib/metaStats.json 으로 폴백하고, 출처·패치가 그에 맞게 찍힌다.
+ * 표본 하한(기물·시너지·아이템 30, 기물×아이템 20) 미만은 넣지 않는다.
  */
-function buildMetaFacts(): { text: string; provenance: FeedbackProvenance } {
+async function buildMetaFacts(): Promise<{ text: string; provenance: FeedbackProvenance }> {
   const info = getMetaSectionInfo()
-  const provenance: FeedbackProvenance = {
-    patch: info.patch,
-    source: info.source,
-    generatedAt: info.generatedAt,
-    sample: info.sample,
-    championStats: 0,
-    itemStats: 0,
-    comboStats: 0,
-  }
+  const [units, traits, items, combos] = await Promise.all(
+    (['unit', 'trait', 'item', 'unit_item'] as const).map((t) => getStats(t, DEFAULT_FILTER))
+  )
+  const fromDb = units.source === 'db' && units.filter != null
+  const provenance: FeedbackProvenance = fromDb
+    ? {
+        patch: units.filter?.patch,
+        source: 'riot-ranked-db',
+        generatedAt: new Date().toISOString(),
+        sample: false,
+        filter: filterLabel({ tier: DEFAULT_FILTER.tier, days: DEFAULT_FILTER.days }),
+        matches: units.totalMatches,
+        championStats: 0,
+        itemStats: 0,
+        comboStats: 0,
+      }
+    : {
+        patch: info.patch,
+        source: info.source,
+        generatedAt: info.generatedAt,
+        sample: info.sample,
+        championStats: 0,
+        itemStats: 0,
+        comboStats: 0,
+      }
 
-  if (!info.hasMeta) {
+  const enough = (r: StatRow) => !r.lowSample
+  const top = (res: typeof units, n: number) => res.rows.filter(enough).slice(0, n)
+  const champRows = top(units, 12)
+  const traitRows = top(traits, 10)
+  const itemRows = top(items, 10)
+  const comboRows = top(combos, 8)
+
+  if ((!fromDb && !info.hasMeta) || (!champRows.length && !traitRows.length && !itemRows.length)) {
     return {
       text: '[메타 실측 통계]\n※ 수집된 메타 통계가 없다. 기물/아이템/시너지의 평균등수·픽률을 인용하지 말고 "메타 통계 미제공"으로 명시하라.',
       provenance,
     }
   }
-
-  const champs = getChampionRankings().filter((c) => c.sampleSize >= 10).slice(0, 12)
-  const traits = getTraitRankings(10).slice(0, 10)
-  const items = getItemRankings().filter((i) => i.sampleSize >= 10).slice(0, 10)
-  const combos = getComboRankings(10).slice(0, 8)
-  provenance.championStats = champs.length
-  provenance.itemStats = items.length
-  provenance.comboStats = combos.length
+  provenance.championStats = champRows.length
+  provenance.itemStats = itemRows.length
+  provenance.comboStats = comboRows.length
 
   const fmt = (x: number) => (Math.round(x * 100) / 100).toFixed(2)
+  const label = (r: StatRow) => ('champName' in r ? `${r.champName} × ${r.itemName}` : r.name)
+  const list = (rows: StatRow[]) => rows.map((r) => `${label(r)} ${fmt(r.avgPlacement)} (n=${r.sampleSize})`).join(', ')
+  const header = fromDb
+    ? `- 패치: ${provenance.patch ?? '?'} · 출처: KR 랭크 판 집계 · 범위: ${provenance.filter} · 판 수: ${provenance.matches ?? '?'}`
+    : `- 패치: ${info.patch ?? '?'} · 출처: ${info.source ?? '?'} · 수집일: ${(info.generatedAt || '').slice(0, 10) || '?'}${
+        info.sample ? ' · (샘플/검증 전)' : ''
+      }`
   const lines = [
     '[메타 실측 통계 — 아래 수치만 인용 가능]',
-    `- 패치: ${info.patch ?? '?'} · 출처: ${info.source ?? '?'} · 수집일: ${
-      (info.generatedAt || '').slice(0, 10) || '?'
-    }${info.sample ? ' · (샘플/검증 전)' : ''}`,
-    `- 기물 TOP${champs.length} (평균등수 · 표본): ${champs
-      .map((c) => `${translateChampion(c.key).name} ${fmt(c.avgPlacement)} (n=${c.sampleSize})`)
-      .join(', ')}`,
-    `- 시너지 TOP${traits.length}: ${traits
-      .map((t) => `${translateTrait(t.key).name} ${fmt(t.avgPlacement)} (n=${t.sampleSize})`)
-      .join(', ')}`,
-    `- 아이템 TOP${items.length}: ${items
-      .map((i) => `${translateItem(i.key).name} ${fmt(i.avgPlacement)} (n=${i.sampleSize})`)
-      .join(', ')}`,
-    `- BIS 조합 TOP${combos.length}: ${combos
-      .map((c) => {
-        const [ck, ...rest] = c.key.split('|')
-        return `${translateChampion(ck).name} × ${translateItem(rest.join('|')).name} ${fmt(c.avgPlacement)} (n=${c.sampleSize})`
-      })
-      .join(', ')}`,
-    '※ 위 목록에 없는 기물/아이템/시너지의 수치는 인용 금지. n<10은 참고용으로만.',
+    header,
+    `- 기물 TOP${champRows.length} (평균등수 · 표본): ${list(champRows)}`,
+    `- 시너지 TOP${traitRows.length}: ${list(traitRows)}`,
+    `- 아이템 TOP${itemRows.length}: ${list(itemRows)}`,
+    `- BIS 조합 TOP${comboRows.length}: ${list(comboRows)}`,
+    '※ 위 목록에 없는 기물/아이템/시너지의 수치는 인용 금지. 평균등수 오차는 약 ±2.29/√n 이므로 차이가 0.1 미만이면 우열을 단정하지 마라.',
   ]
   return { text: lines.join('\n'), provenance }
 }
@@ -622,7 +633,7 @@ export async function generateMetaCoachFeedback(
   mode: 'single' | 'multi' = 'single'
 ): Promise<MetaCoachFeedback> {
   const matchSerialized = serializeMatchesForLLM(matches, { includeLobby: mode === 'single' })
-  const { text: metaFacts, provenance } = buildMetaFacts()
+  const { text: metaFacts, provenance } = await buildMetaFacts()
   const scoring = computeScoreBreakdown(matches)
   const scoreFacts = scoring
     ? [

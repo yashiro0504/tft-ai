@@ -76,3 +76,26 @@
   .rk-thead.cols-champ .num:nth-child(5) { display: block; }
   .rk-row.cols-champ .rk-num:nth-child(5) { display: flex; }
 }
+
+/* 통계 필터 (패치 · 티어 · 기간) — DB 집계가 있을 때만 */
+.rk-filterbar { border-bottom: 0; padding-bottom: 0; gap: 10px; }
+.rk-select { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--rk-muted); }
+.rk-select select {
+  border: 1px solid var(--rk-line);
+  border-radius: var(--radius-chip);
+  background: var(--rk-surface2);
+  color: var(--rk-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+.rk-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.rk-chip:disabled:hover { border-color: var(--rk-line); }
+
+/* 표본 부족 · 평균등수 ± */
+.rk-row.is-low { opacity: 0.55; }
+.rk-row.is-low .rk-name { font-weight: 500; }
+.rk-low { color: var(--rk-muted); }
+.rk-pm { margin-left: 4px; font-size: 11px; font-weight: 400; color: var(--rk-muted); }
+.rk-kpis .rk-pm { font-size: 12px; }
