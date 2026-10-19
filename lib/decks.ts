@@ -1,10 +1,12 @@
 import decksData from './decksData.json'
 import metaStatsData from './metaStats.json'
 import { tierFromAvgPlacement } from './meta'
+import { set18PortraitUrl } from './constants'
 
 /**
  * 메타 덱(구성) — lib/decksData.json 을 정규화한다.
- * 데이터는 Riot 래더 표본을 자체 집계해 생성한다(scripts/buildDeckCompsFromStats.js).
+ * 데이터는 Riot 래더 실제 최종 보드를 묶어 만든다(scripts/buildDecksFromBoards.js).
+ * 덱 수치(평균 등수·TOP4·1등·판수)는 그 덱 보드들의 실제 결과다.
  */
 
 interface RawUnitItem {
@@ -24,6 +26,8 @@ interface RawUnit {
   matchedKey: string | null
   traits: string[]
   items: RawUnitItem[]
+  /** 이 덱 보드 중 이 기물을 쓴 비율 (실측 덱만) */
+  usage?: number
 }
 
 interface RawDeck {
@@ -34,6 +38,19 @@ interface RawDeck {
   unitCount: number
   traits: { key: string; name: string; iconUrl: string; count: number }[]
   units: RawUnit[]
+  avgPlacement?: number
+  top4Rate?: number
+  carryKey?: string | null
+  /** 래더 실측 덱이면 채워진다 (scripts/buildDecksFromBoards.js) */
+  /** 이 덱 보드들의 레벨 중앙값 */
+  level?: number
+  games?: number
+  /** 전체 보드 중 이 덱 비율 (0~1) */
+  playRate?: number
+  /** 1등 비율 (0~1) */
+  winRate?: number
+  /** 1~8등 횟수 */
+  placementDist?: number[]
 }
 
 const DATA = decksData as unknown as {
@@ -77,6 +94,16 @@ export interface DeckView {
   tier: string
   /** 대표 캐리(아이템 3개 또는 최고 코스트) */
   carryKey: string | null
+  /** 래더 실측 덱이면 채워진다 (scripts/buildDecksFromBoards.js) */
+  /** 이 덱 보드들의 레벨 중앙값 */
+  level?: number
+  games?: number
+  /** 전체 보드 중 이 덱 비율 (0~1) */
+  playRate?: number
+  /** 1등 비율 (0~1) */
+  winRate?: number
+  /** 1~8등 횟수 */
+  placementDist?: number[]
 }
 
 export interface DeckMetaInfo {
@@ -104,7 +131,9 @@ function computeDeck(deck: RawDeck): DeckView {
   let matchedUnits = 0
   let sampleSize = 0
 
-  const units: DeckUnitView[] = deck.units.map((u) => {
+  const units: DeckUnitView[] = deck.units.map((raw) => {
+    // 정적 덱 데이터의 초상화를 세트18 전용 아트로 교체
+    const u = { ...raw, imgUrl: set18PortraitUrl(raw.matchedKey ?? raw.lolchessKey) ?? raw.imgUrl }
     const stat = u.matchedKey ? CHAMPS[u.matchedKey] : undefined
     if (stat && typeof stat.avgPlacement === 'number') {
       const w = Math.max(1, stat.sampleSize || 0)
@@ -125,9 +154,15 @@ function computeDeck(deck: RawDeck): DeckView {
     return { ...u }
   })
 
-  const avgPlacement = weight > 0 ? Math.round((placeSum / weight) * 100) / 100 : null
-  const top4Rate = weight > 0 ? top4Sum / weight : null
-  const coverage = deck.units.length ? matchedUnits / deck.units.length : 0
+  // 실측 덱: 그 덱 보드들의 실제 결과를 그대로 쓴다 (기물 평균으로 다시 계산하지 않는다)
+  const measured = typeof deck.games === 'number' && typeof deck.avgPlacement === 'number'
+  const avgPlacement = measured
+    ? (deck.avgPlacement as number)
+    : weight > 0
+      ? Math.round((placeSum / weight) * 100) / 100
+      : null
+  const top4Rate = measured ? (deck.top4Rate ?? null) : weight > 0 ? top4Sum / weight : null
+  const coverage = measured ? 1 : deck.units.length ? matchedUnits / deck.units.length : 0
 
   // 캐리: 아이템 3개 장착 유닛 → 없으면 최고 코스트
   const withItems = units.filter((u) => u.items.length >= 2).sort((a, b) => b.items.length - a.items.length)
@@ -143,9 +178,14 @@ function computeDeck(deck: RawDeck): DeckView {
     avgPlacement,
     top4Rate,
     coverage,
-    sampleSize,
+    sampleSize: measured ? (deck.games as number) : sampleSize,
     tier: avgPlacement != null ? tierFromAvgPlacement(avgPlacement) : '-',
-    carryKey: carry ? carry.matchedKey ?? carry.lolchessKey : null,
+    carryKey: measured && deck.carryKey ? deck.carryKey : carry ? carry.matchedKey ?? carry.lolchessKey : null,
+    level: deck.level,
+    games: deck.games,
+    playRate: deck.playRate,
+    winRate: deck.winRate,
+    placementDist: deck.placementDist,
   }
 }
 

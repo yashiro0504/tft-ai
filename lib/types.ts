@@ -474,7 +474,7 @@ export interface MetaCompRanking {
   }[]
 }
 
-/** 메타 덱(보드 조합) — 롤체지지 추천 덱 + 우리 실측 통계 결합 */
+/** 메타 덱(보드 조합) — Riot 래더 실제 보드를 묶은 덱 (실측) */
 export interface MetaDeckRanking {
   id: string
   name: string
@@ -501,6 +501,12 @@ export interface MetaDeckRanking {
   sampleSize: number
   tier: string
   carryKey: string | null
+  /** 래더 실측: 레벨 중앙값, 판수, 픽률(0~1), 1등 비율(0~1), 1~8등 횟수 */
+  level?: number
+  games?: number
+  playRate?: number
+  winRate?: number
+  placementDist?: number[]
 }
 
 export interface TftMetaResponse {

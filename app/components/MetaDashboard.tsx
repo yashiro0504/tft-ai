@@ -14,7 +14,7 @@ import type {
   TftMetaResponse,
 } from '@/lib/types'
 import { DetailModal } from './MetaDetailModal'
-import { EvidenceChip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
+import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import { ShareButton } from './ShareButton'
 import { track } from '@/lib/analytics'
 import {
@@ -458,7 +458,12 @@ export function MetaDashboard({
                     </i>
                   </span>
                   <span className="rk-num">{Math.round(r.top4 * 100)}%</span>
-                  <span className="rk-num dim">{r.sample.toLocaleString()}</span>
+                  <span className="rk-num dim">
+                    {r.sample.toLocaleString()}
+                    {r.deck?.playRate != null ? (
+                      <small className="rk-sub">픽률 {(r.deck.playRate * 100).toFixed(1)}%</small>
+                    ) : null}
+                  </span>
                 </button>
               ))}
               {!rows.length && !loading ? <p className="rk-empty">조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.</p> : null}
@@ -499,6 +504,10 @@ export function MetaDashboard({
 
 function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string; patch?: string }) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
+  // 아이템을 드는 기물 (메인 딜러를 맨 앞으로)
+  const holders = deck.units
+    .filter((u) => u.items.length > 0)
+    .sort((a, b) => Number(b.key === carry?.key) - Number(a.key === carry?.key))
   return (
     <div>
       <div className="rk-dhead">
@@ -506,6 +515,12 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
         <h2>{deck.name}</h2>
       </div>
       <p className="rk-dmeta">
+        {deck.level ? (
+          <>
+            {deck.level}레벨 덱
+            <span className="rk-sep">·</span>
+          </>
+        ) : null}
         {deck.gold != null ? `${deck.gold}g` : `${deck.unitCost}코`}
         <span className="rk-sep">·</span>
         기물 {deck.units.length}
@@ -513,8 +528,19 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
 
       {/* 근거 칩: 이 수치를 믿을 수 있는 이유 */}
       <div className="rk-evidence">
-        <EvidenceChip title="이 덱 기물들의 실측 매치 표본 수">표본 {deck.sampleSize.toLocaleString()}판</EvidenceChip>
-        <EvidenceChip title="덱 기물 중 실측 통계가 있는 비율">실측 커버리지 {Math.round((deck.coverage || 0) * 100)}%</EvidenceChip>
+        {deck.games != null ? (
+          <>
+            <EvidenceChip title="이 덱으로 분류된 실제 래더 보드 수">래더 실측 {deck.games.toLocaleString()}판</EvidenceChip>
+            {deck.playRate != null ? (
+              <EvidenceChip title="수집한 전체 보드 중 이 덱 비율">픽률 {(deck.playRate * 100).toFixed(1)}%</EvidenceChip>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <EvidenceChip title="이 덱 기물들의 실측 매치 표본 수">표본 {deck.sampleSize.toLocaleString()}판</EvidenceChip>
+            <EvidenceChip title="덱 기물 중 실측 통계가 있는 비율">실측 커버리지 {Math.round((deck.coverage || 0) * 100)}%</EvidenceChip>
+          </>
+        )}
         {patch ? <EvidenceChip>패치 {patch}</EvidenceChip> : null}
       </div>
 
@@ -539,14 +565,27 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
           <b>{deck.top4Rate != null ? `${Math.round(deck.top4Rate * 100)}%` : '-'}</b>
         </div>
         <div>
-          <span>표본</span>
-          <b>{deck.sampleSize.toLocaleString()}</b>
+          <span>{deck.games != null ? '1등' : '표본'}</span>
+          <b>
+            {deck.games != null && deck.winRate != null
+              ? `${Math.round(deck.winRate * 100)}%`
+              : deck.sampleSize.toLocaleString()}
+          </b>
         </div>
         <div>
-          <span>시너지</span>
-          <b>{deck.traits.length}</b>
+          <span>{deck.games != null ? '판수' : '시너지'}</span>
+          <b>{deck.games != null ? deck.games.toLocaleString() : deck.traits.length}</b>
         </div>
       </div>
+
+      {deck.placementDist ? (
+        <>
+          <p className="rk-label">등수 분포</p>
+          <div className="rk-dist">
+            <PlacementStrip counts={deck.placementDist} />
+          </div>
+        </>
+      ) : null}
 
       <p className="rk-label">구성</p>
       <div className="rk-board">
@@ -570,14 +609,29 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
           ))}
       </div>
 
-      {carry ? (
+      {holders.length ? (
         <>
-          <p className="rk-label">핵심 캐리 아이템</p>
-          <div className="rk-items">
-            <span className="rk-item-name">{carry.name}</span>
-            <span className="rk-item-list">
-              {carry.items.length ? carry.items.map((it) => <span key={it.key}>{it.name}</span>) : <em>데이터 없음</em>}
-            </span>
+          <p className="rk-label">아이템 구성</p>
+          <div className="rk-builds">
+            {holders.map((u) => (
+              <div key={`it-${u.key}-${u.index}`} className="rk-build">
+                <img className="rk-build-unit" src={u.imgUrl} alt="" loading="lazy" />
+                <div className="rk-build-body">
+                  <span className="rk-build-name">
+                    {u.name}
+                    {u.key === carry?.key ? <em>메인 딜러</em> : null}
+                  </span>
+                  <span className="rk-build-items">
+                    {u.items.map((it) => (
+                      <span key={it.key} className="rk-build-item" title={it.name}>
+                        <img src={it.iconUrl} alt="" loading="lazy" />
+                        {it.name}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </>
       ) : null}

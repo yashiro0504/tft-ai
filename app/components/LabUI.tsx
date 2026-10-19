@@ -16,14 +16,27 @@ import breakpointData from '@/lib/traitBreakpoints.json'
 
 /* ───────────── 등수 분포 띠 ───────────── */
 
-export function PlacementStrip({ placements, className = '' }: { placements: number[]; className?: string }) {
-  const counts = Array.from({ length: 8 }, (_, i) => placements.filter((p) => p === i + 1).length)
+export function PlacementStrip({
+  placements,
+  counts: givenCounts,
+  className = '',
+}: {
+  /** 판별 등수 목록 (예: 최근 10경기) */
+  placements?: number[]
+  /** 또는 1~8등 횟수 (덱 실측 분포) */
+  counts?: number[]
+  className?: string
+}) {
+  const counts =
+    givenCounts && givenCounts.length === 8
+      ? givenCounts
+      : Array.from({ length: 8 }, (_, i) => (placements ?? []).filter((p) => p === i + 1).length)
   const max = Math.max(1, ...counts)
-  const total = placements.length
+  const total = counts.reduce((s, n) => s + n, 0)
   const summary = counts.map((c, i) => `${i + 1}등 ${c}회`).join(', ')
 
   return (
-    <div className={`inline-flex flex-col gap-1 ${className}`} role="img" aria-label={`최근 ${total}경기 등수 분포: ${summary}`}>
+    <div className={`inline-flex flex-col gap-1 ${className}`} role="img" aria-label={`${total}판 등수 분포: ${summary}`}>
       <div className="flex h-7 items-end gap-[3px]">
         {counts.map((c, i) => {
           const color = i === 0 ? 'bg-gold' : i < 4 ? 'bg-good' : 'bg-bad'

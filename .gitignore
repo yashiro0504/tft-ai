@@ -42,6 +42,7 @@ next-env.d.ts
 
 # tuning data outputs (실측 수집 데이터; 샘플은 커밋함)
 /data/contestSamples.json
+/data/ladderBoards.json
 
 # eval harness output (생성물)
 /data/evalReport.json

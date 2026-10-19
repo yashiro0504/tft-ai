@@ -159,6 +159,11 @@ export function buildMetaPayload(): TftMetaResponse {
     sampleSize: d.sampleSize,
     tier: d.tier,
     carryKey: d.carryKey,
+    level: d.level,
+    games: d.games,
+    playRate: d.playRate,
+    winRate: d.winRate,
+    placementDist: d.placementDist,
   }))
 
   return {
