@@ -279,6 +279,24 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
   부분 JSON 파싱 리스크 없이 체감 대기(첫 피드백 39ms)를 없애는 것이 목적이다.
 - 캐시 히트도 쿼터를 소모하는 기존 정책은 **변경하지 않았다**(과금 정책 변경은 별도 결정 사항).
 
+### AI 분석 v2 — 점수·표본·접지 (2026-10-19)
+
+- 배경: 2-2에 1유닛 3성으로 끝난 판이 `B(77)`를 받고 "보드 완성도 90/100"으로 표시되는 신뢰 문제가 있었다. 종합 분석에서도 초반 종료 판이 평균에 섞였고, 응답의 `feedback.mode`가 항상 `single`로 내려왔다.
+- 변경
+  - `lib/quality.ts` 신규 — `stageOfRound`, `expectedLevel`, `isEarlyGame`, `lowSampleReason`
+  - `lib/scoring.ts` **v2** — 완성도를 `보드 충원율 × 2성 비율`로 계산(1유닛 3성 만점 방지), 초반 종료 경기 집계 제외(`excludedMatches`, `lowSample`, `sampleWarning`)
+  - `lib/coaching.ts` — 경제 점수를 `레벨 격차 + 초반 페널티 + 잔여 골드`로 재정의, 단일 경기는 `이 경기`/복수는 `평균` 문구 분기
+  - `lib/summarize.ts` — 단일 경기 프롬프트에 로비 상위 3명(레벨·기물·시너지)과 로비 평균 레벨 추가, 초반 종료 표본 표시
+  - `lib/llm.ts` — 프롬프트 버전 `2026-10-19.1`, `feedback.mode` 버그 수정, 표본 품질·이름/코스트 환각 금지·경합 의미 지침 추가
+  - `lib/grounding.ts` — 다른 세트 시너지명·6코스트 등 엔티티 경고(`warnings`) 추가, 스테이지-라운드 표기의 수치 오탐 제거
+  - `FeedbackReport` — `표본 부족` 배지, 표본 경고, 이름/코스트 경고 표시
+  - `scripts/evalReports.js` — mode 불일치·표본 부족·이름 경고 집계
+- 검증 (로컬, DeepSeek)
+  - 단일(2-2): 77/B → **60/C**, `lowSample=true`, grounding 100%
+  - 단일(6-1 5등): 64/C, 로비 평균 레벨 7.6 인용, grounding 93%(계산값 0.6 1건)
+  - 종합(3경기): 71/B, 초반 1경기 제외(`matches=2`, `excludedMatches=1`), grounding 100%
+  - `npm run eval:reports -- --runs 1`: 성공 100% · 폴백 0% · grounding 100% · mode OK · 경고 0 · **게이트 통과**
+
 ### P1-5. 덱 구성 품질 (1~2일) — ✅ 완료 (2026-10-18)
 
 - 목표: 알고리즘 덱이 “실제로 나올 법한” 구성이 되게 한다.

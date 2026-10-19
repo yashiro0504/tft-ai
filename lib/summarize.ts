@@ -2,6 +2,7 @@ import { RawTFTMatch, SlimMatchData, SlimMatchTrait, SlimMatchUnit, LobbyPartici
 import { translateChampion, translateItem, translateTrait } from './constants'
 import { analyzeContest } from './contest'
 import { analyzeAugments } from './meta'
+import { isEarlyGame, lowSampleReason } from './quality'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -124,6 +125,7 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
     gameDatetime: rawMatch.info.game_datetime,
     timeAgo: formatTimeAgo(rawMatch.info.game_datetime),
     gameLengthStr: formatDuration(participant.time_eliminated || rawMatch.info.game_length),
+    gameLengthSec: participant.time_eliminated || rawMatch.info.game_length || 0,
     queueType,
     placement: participant.placement,
     level: participant.level,
@@ -138,7 +140,10 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
   }
 }
 
-export function serializeMatchesForLLM(matches: SlimMatchData[]): string {
+export function serializeMatchesForLLM(
+  matches: SlimMatchData[],
+  options: { includeLobby?: boolean } = {}
+): string {
   return matches
     .map((m, idx) => {
       const traitStr = m.traits.map((t) => `${t.name}(${t.count})[${t.tier}단계]`).join(', ') || '없음'
@@ -187,15 +192,39 @@ export function serializeMatchesForLLM(matches: SlimMatchData[]): string {
           ]
             .filter(Boolean)
             .join(' | ')
-        : `✅ 빈집 성공 (강도 ${ci.contestScore ?? 0}/100, 겹침 거의 없음)`
+        : `✅ 경합 없음(유리한 조건) (강도 ${ci.contestScore ?? 0}/100, 겹침 거의 없음)`
 
       const augmentLine = m.augments.length ? `\n- 선택 증강체: ${augStr}` : ''
+
+      const others = (m.lobbyParticipants || [])
+        .filter((p) => !p.isUser)
+        .sort((a, b) => a.placement - b.placement)
+      const top = others.slice(0, 3)
+      const avgLevel = others.length ? others.reduce((s, p) => s + p.level, 0) / others.length : 0
+      const lobbyLine =
+        options.includeLobby && top.length
+          ? `\n- 로비 상위 3명: ${top
+              .map(
+                (p) =>
+                  `${p.placement}등 Lv.${p.level} [${p.units
+                    .slice(0, 4)
+                    .map((u) => `${u.name}${u.tier >= 2 ? `★${u.tier}` : ''}`)
+                    .join(', ')}] ${p.traits
+                    .slice(0, 2)
+                    .map((t) => `${t.name} ${t.count}`)
+                    .join(' / ')}`
+              )
+              .join(' | ')}\n- 로비 평균 레벨: Lv.${Math.round(avgLevel * 10) / 10} (내 Lv.${m.level})`
+          : ''
+      const sampleLine = isEarlyGame(m)
+        ? `\n- ⚠️ 표본 품질: 초반 종료 (${lowSampleReason(m)} · ${m.gameLengthStr ?? '?'}) — 이 판은 등급/강의 근거로 쓰지 말고 "표본 부족"을 명시하라`
+        : ''
 
       return `[매치 ${idx + 1} - ${setStr}]
 - 최종 등수: ${m.placement}등 (${m.placement <= 4 ? '순방/승리' : '하위권/탈락'})
 - 로비 경쟁 현황: ${contestStr}
 - 계산 지표(코드 산출): 2성+기물 ${twoStarPlus}개, 3성 ${threeStar}개, 총 장착아이템 ${totalItems}개
-- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 남은 골드: ${m.goldLeft}G)${augmentLine}
+- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 남은 골드: ${m.goldLeft}G, 경기 길이: ${m.gameLengthStr ?? '?'})${augmentLine}${sampleLine}${lobbyLine}
 - 활성 시너지: ${traitStr}
 - 최종 기물/아이템 구성: ${unitStr}`
     })

@@ -1,11 +1,51 @@
 import type { GroundingReport, MetaCoachFeedback } from './types'
+import tftData from './tftData.json'
+import championTraits from './championTraits.json'
 
 /**
  * AI 리포트 신뢰성 계층: LLM이 쓴 '수치 주장'이 프롬프트에 제공된 사실 데이터에
  * 실제로 존재하는지 코드로 대조한다. (환각/창작 수치 탐지)
+ *
+ * 수치뿐 아니라 다른 세트의 시너지명·존재하지 않는 코스트도 경고로 남긴다.
  */
 
-const CLAIM_WITH_UNIT = /(\d+(?:\.\d+)?)\s*(등|명|골드|G|%|단계|성|코|코스트|라운드|초|분|판)/g
+const ALL_TRAIT_NAMES = new Set(
+  Object.values((tftData as unknown as { traitMap?: Record<string, { name?: string }> }).traitMap || {})
+    .map((v) => v?.name)
+    .filter((n): n is string => typeof n === 'string' && n.length >= 3)
+)
+
+const CURRENT_CHAMP_NAMES = new Set(
+  Object.values(
+    (championTraits as unknown as { champions?: Record<string, { name?: string }> }).champions || {}
+  )
+    .map((v) => v?.name)
+    .filter((n): n is string => typeof n === 'string' && n.length >= 3)
+)
+
+function collectEntityWarnings(text: string, facts: string): string[] {
+  const warnings = new Set<string>()
+
+  // TFT 기물 코스트는 1~5만 존재한다.
+  for (const m of text.matchAll(/(\d+)\s*코스트/g)) {
+    const n = Number(m[1])
+    if (n > 5) warnings.add(`존재하지 않는 코스트: ${n}코스트`)
+  }
+
+  // 다른 세트 시너지명을 끌어다 쓰는 경우 (예: 결투가 — 세트18에 없음)
+  for (const name of ALL_TRAIT_NAMES) {
+    if (text.includes(name) && !facts.includes(name)) warnings.add(`제공되지 않은 시너지명: ${name}`)
+  }
+
+  // 사실 데이터에 없는 기물명을 새로 만들어 쓰는 경우
+  for (const name of CURRENT_CHAMP_NAMES) {
+    if (text.includes(name) && !facts.includes(name)) warnings.add(`제공되지 않은 기물명: ${name}`)
+  }
+
+  return [...warnings]
+}
+
+const CLAIM_WITH_UNIT = /(?<![\d-])(\d+(?:\.\d+)?)\s*(등|명|골드|G|%|단계|성|코|코스트|라운드|초|분|판)/g
 const SLASH_100_CLAIM = /(\d+(?:\.\d+)?)\s*\/\s*100/g
 const DECIMAL_CLAIM = /(?<![\d.])(\d+\.\d{1,2})(?![\d.])/g
 const NUMBER_TOKEN = /(\d+(?:\.\d+)?)/g
@@ -84,5 +124,6 @@ export function validateFeedbackGrounding(
     total,
     supported,
     unsupported,
+    warnings: collectEntityWarnings(text, facts),
   }
 }

@@ -168,11 +168,24 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-subtle">
           <span className="tracking-wide text-accent">REPORT</span>
           <span>{feedback.mode === 'single' ? '단일 경기' : `${matchCount ?? ''}경기 종합`}</span>
+          {feedback.dataQuality?.lowSample ? (
+            <span className="rounded-chip border border-gold/60 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold text-gold">
+              표본 부족
+            </span>
+          ) : null}
           {feedback.provenance?.patch ? <span>· 패치 {feedback.provenance.patch}</span> : null}
           {title ? <span className="font-medium">· {title}</span> : null}
         </p>
 
         <p className="max-w-[820px] text-base font-medium leading-relaxed text-ink sm:text-lg">{feedback.overview}</p>
+
+        {feedback.dataQuality?.lowSample ? (
+          <p className="rounded-control border border-gold/40 bg-gold/5 px-3 py-2 text-xs leading-relaxed text-muted">
+            초반 종료 표본이라 점수·강의 해석에 주의가 필요합니다
+            {feedback.dataQuality.reason ? ` (${feedback.dataQuality.reason})` : ''}. 판을 끝까지 운영한 경기가
+            쌓이면 더 정확해집니다.
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap gap-3">
           <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
@@ -287,6 +300,16 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               </p>
             </details>
           )}
+          {feedback.grounding?.warnings && feedback.grounding.warnings.length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[12px] text-gold hover:text-ink-soft">
+                이름/코스트 경고 {feedback.grounding.warnings.length}개 보기
+              </summary>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                {feedback.grounding.warnings.join(', ')}
+              </p>
+            </details>
+          )}
           <p className="mt-2 text-xs leading-relaxed text-subtle">
             ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 낮을수록
             창작(환각) 가능성이 큽니다.
@@ -303,6 +326,11 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               {feedback.scoreBreakdown.matches}경기 평균 · {feedback.scoreBreakdown.version}
             </span>
           </div>
+          {feedback.scoreBreakdown.sampleWarning ? (
+            <p className="mt-2 rounded-control border border-gold/40 bg-gold/5 px-2.5 py-1.5 text-[12px] leading-relaxed text-muted">
+              {feedback.scoreBreakdown.sampleWarning}
+            </p>
+          ) : null}
           <div className="mt-2.5 space-y-2">
             {feedback.scoreBreakdown.components.map((c) => (
               <div key={c.key} className="flex items-center gap-2">

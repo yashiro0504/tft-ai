@@ -90,7 +90,10 @@ async function main() {
           status,
           ok: Boolean(json.success && f.overview),
           ms,
+          mode: f.mode,
           isFallback: Boolean(f.isFallback),
+          lowSample: Boolean(f.dataQuality?.lowSample),
+          entityWarnings: f.grounding?.warnings?.length || 0,
           metaScore: f.metaScore,
           metaTier: f.metaTier,
           breakdownTotal: f.scoreBreakdown ? f.scoreBreakdown.total : null,
@@ -108,7 +111,7 @@ async function main() {
       }
       if (r < RUNS - 1) await new Promise((res) => setTimeout(res, 1500))
     }
-    results.push({ name: c.name, runs })
+    results.push({ name: c.name, mode: c.mode || 'multi', runs })
   }
 
   const allRuns = results.flatMap((r) => r.runs)
@@ -131,6 +134,9 @@ async function main() {
       metaScoreStable: scores.length > 0 && Math.max(...scores) === Math.min(...scores),
       flexibilityStdDev: Math.round(stddev(flex) * 10) / 10,
       grounding: r.runs.map((x) => (x.grounding ? x.grounding.score : null)),
+      modeOk: r.runs.every((x) => !x.ok || x.mode === r.mode),
+      lowSample: r.runs.filter((x) => x.lowSample).length,
+      entityWarnings: r.runs.reduce((s, x) => s + (x.entityWarnings || 0), 0),
     }
   })
 
@@ -146,6 +152,9 @@ async function main() {
     claims,
     unsupportedClaims: unsupported,
     scoreMatchesBreakdown: `${scoreMatches}/${okRuns.length}`,
+    modeMismatch: perCase.filter((c) => !c.modeOk).length,
+    lowSampleRuns: okRuns.filter((r) => r.lowSample).length,
+    entityWarnings: okRuns.reduce((s, r) => s + (r.entityWarnings || 0), 0),
   }
 
   console.log('\n=== 요약 ===')
@@ -156,6 +165,9 @@ async function main() {
     `근거 검증 평균 ${summary.groundingAvg}% (최저 ${summary.groundingMin}%) · 주장 ${summary.claims}개 중 미확인 ${summary.unsupportedClaims}개`
   )
   console.log(`점수=코드 산출 일치: ${summary.scoreMatchesBreakdown}`)
+  console.log(
+    `mode 불일치 ${summary.modeMismatch}건 · 표본 부족 ${summary.lowSampleRuns}건 · 이름/코스트 경고 ${summary.entityWarnings}개`
+  )
 
   console.log('\n=== 케이스별 ===')
   perCase.forEach((c) => {
@@ -163,7 +175,7 @@ async function main() {
       `- ${c.name}: 점수 ${c.metaScore.join('/')} ${c.metaScoreStable ? '(고정)' : '(변동!)'} · ` +
         `유연성 표준편차 ${c.flexibilityStdDev} · grounding ${c.grounding
           .map((g) => (g == null ? '-' : `${g}%`))
-          .join('/')}`
+          .join('/')} · mode ${c.modeOk ? 'OK' : '불일치'} · 표본부족 ${c.lowSample} · 이름경고 ${c.entityWarnings}`
     )
   })
 
@@ -178,6 +190,7 @@ async function main() {
   if (summary.groundingAvg != null && summary.groundingAvg < 85) failed.push('grounding<85%')
   if (scoreMatches !== okRuns.length) failed.push('점수-코드 불일치')
   if (perCase.some((c) => !c.metaScoreStable)) failed.push('점수 변동')
+  if (perCase.some((c) => !c.modeOk)) failed.push('mode 불일치')
 
   if (failed.length) {
     console.error(`\n❌ 신뢰성 게이트 실패: ${failed.join(', ')}`)
