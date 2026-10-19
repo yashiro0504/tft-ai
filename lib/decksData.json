@@ -8913,15 +8913,15 @@
       "id": "ladder-ashe-juggernaut",
       "name": "전쟁기계 애쉬",
       "gold": null,
-      "unitCost": 27,
-      "unitCount": 9,
+      "unitCost": 25,
+      "unitCount": 8,
       "level": 9,
       "traits": [
         {
           "key": "Juggernaut",
           "name": "전쟁기계",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
-          "count": 7
+          "count": 6
         },
         {
           "key": "Hunter",
@@ -9106,21 +9106,6 @@
           ],
           "items": [],
           "usage": 0.447
-        },
-        {
-          "lolchessKey": "sejuani",
-          "name": "세주아니",
-          "cost": 2,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
-          "matchedKey": "Sejuani",
-          "traits": [
-            "Juggernaut",
-            "Solar"
-          ],
-          "items": [],
-          "usage": 0.368
         }
       ],
       "avgPlacement": 4.63,
@@ -11801,15 +11786,15 @@
       "id": "ladder-zyra-juggernaut",
       "name": "전쟁기계 자이라",
       "gold": null,
-      "unitCost": 22,
-      "unitCount": 8,
+      "unitCost": 21,
+      "unitCount": 7,
       "level": 8,
       "traits": [
         {
           "key": "Juggernaut",
           "name": "전쟁기계",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
-          "count": 7
+          "count": 6
         },
         {
           "key": "Summoner",
@@ -11988,22 +11973,6 @@
           ],
           "items": [],
           "usage": 0.557
-        },
-        {
-          "lolchessKey": "rakan",
-          "name": "라칸",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
-          "matchedKey": "Rakan",
-          "traits": [
-            "Fae",
-            "Juggernaut",
-            "Vanguard"
-          ],
-          "items": [],
-          "usage": 0.53
         }
       ],
       "avgPlacement": 4.99,
@@ -12522,15 +12491,15 @@
       "id": "ladder-sivir-juggernaut",
       "name": "전쟁기계 시비르",
       "gold": null,
-      "unitCost": 22,
-      "unitCount": 8,
+      "unitCost": 21,
+      "unitCount": 7,
       "level": 8,
       "traits": [
         {
           "key": "Juggernaut",
           "name": "전쟁기계",
           "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_16_Juggernaut.png",
-          "count": 7
+          "count": 6
         },
         {
           "key": "Primal",
@@ -12677,22 +12646,6 @@
           ],
           "items": [],
           "usage": 0.372
-        },
-        {
-          "lolchessKey": "yorick",
-          "name": "요릭",
-          "cost": 1,
-          "star": 2,
-          "index": null,
-          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
-          "matchedKey": "Yorick",
-          "traits": [
-            "Blossom",
-            "Juggernaut",
-            "Summoner"
-          ],
-          "items": [],
-          "usage": 0.349
         }
       ],
       "avgPlacement": 5.05,
