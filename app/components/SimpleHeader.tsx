@@ -19,11 +19,11 @@ export function SimpleHeader({ active }: { active?: 'meta' | 'profile' | 'pro' }
           </span>
         </Link>
         <nav className="flex items-center gap-1">
-          <Link href="/meta" className={linkClass(active === 'meta')}>
-            메타 랭킹
-          </Link>
           <Link href="/" className={linkClass(active === 'profile')}>
             AI 코치
+          </Link>
+          <Link href="/meta" className={linkClass(active === 'meta')}>
+            메타 랭킹
           </Link>
           <Link
             href="/pro"

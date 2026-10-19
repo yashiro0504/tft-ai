@@ -55,8 +55,8 @@ export function SiteHeader({
   onChange: (tab: SiteTab) => void
 }) {
   const nav: { id: SiteTab; label: string; icon: typeof BarChart3 }[] = [
-    { id: 'meta', label: '메타 랭킹', icon: BarChart3 },
     { id: 'coach', label: 'AI 코치', icon: Bot },
+    { id: 'meta', label: '메타 랭킹', icon: BarChart3 },
   ]
 
   return (

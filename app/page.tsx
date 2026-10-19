@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Compass, RefreshCw, AlertCircle, Info, Layers, BarChart3, Sparkles,
+  Compass, RefreshCw, AlertCircle, Info, Layers, BarChart3, Sparkles, Lock,
 } from 'lucide-react'
 import type { TftSearchResponse, TftOverviewResponse, MetaCoachFeedback } from '@/lib/types'
 import { MatchCard } from './components/MatchCard'
@@ -15,11 +15,13 @@ import { RankBadge } from './components/RankBadge'
 import { SavedSearches } from './components/SavedSearches'
 import { track, trackOnce } from '@/lib/analytics'
 import { addRecentSearch } from '@/lib/recentSearches'
+import { useQuota } from '@/lib/useQuota'
+import { LimitModal } from './components/LimitModal'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 export default function TFTCoachPage() {
-  const [tab, setTab] = useState<'meta' | 'coach'>('meta')
+  const [tab, setTab] = useState<'meta' | 'coach'>('coach')
   const [gameName, setGameName] = useState('')
   const [tagLine, setTagLine] = useState('KR1')
 
@@ -36,14 +38,18 @@ export default function TFTCoachPage() {
   const [isOverviewLoading, setIsOverviewLoading] = useState(false)
   const [overviewFeedback, setOverviewFeedback] = useState<MetaCoachFeedback | null>(null)
   const [overviewError, setOverviewError] = useState<string | null>(null)
+  const quota = useQuota()
+  const [isLimitOpen, setIsLimitOpen] = useState(false)
+  /** 종합 분석은 Pro 예정 기능: 정책 확정 전까지 막지 않고 안내만 보여준다 */
+  const [showProNotice, setShowProNotice] = useState(false)
 
-  // /rank 등에서 '/?tab=coach' 로 진입한 경우 코치 탭을 연다.
+  // 기본 탭은 AI 코치. '/?tab=meta' 로 진입한 경우에만 메타 랭킹 탭을 연다.
   // (useSearchParams 는 Suspense 경계가 필요하므로 window 에서 직접 읽는다)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
-    const initialTab = params.get('tab') === 'coach' ? 'coach' : 'meta'
-    if (initialTab === 'coach') setTab('coach')
+    const initialTab = params.get('tab') === 'meta' ? 'meta' : 'coach'
+    if (initialTab === 'meta') setTab('meta')
     trackOnce('tab_view:home:initial', 'tab_view', { tab: initialTab, surface: 'home' })
   }, [])
 
@@ -54,7 +60,7 @@ export default function TFTCoachPage() {
     track('tab_view', { tab: next, surface: 'home' })
     if (typeof window === 'undefined') return
     const url = new URL(window.location.href)
-    if (next === 'coach') url.searchParams.set('tab', 'coach')
+    if (next === 'meta') url.searchParams.set('tab', 'meta')
     else url.searchParams.delete('tab')
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
   }
@@ -118,6 +124,11 @@ export default function TFTCoachPage() {
 
   const handleOverview = async () => {
     if (!search || isOverviewLoading) return
+    setShowProNotice(true)
+    if (quota.exhausted) {
+      setIsLimitOpen(true)
+      return
+    }
     setIsOverviewLoading(true)
     setOverviewError(null)
     track('analysis_click', { scope: 'overview', matchCount: search.matches.length })
@@ -137,6 +148,7 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
+      quota.consume()
       track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
     } catch (err) {
       const message = err instanceof Error ? err.message : '종합 분석 중 오류가 발생했습니다.'
@@ -152,7 +164,7 @@ export default function TFTCoachPage() {
     handleSearch(name, tag)
   }
 
-  // 체험용 프리셋: 보조 버튼 모양, 현재 입력과 같은 프리셋만 선택된 칩 스타일
+  // 예시 프리셋: 보조 버튼 모양, 현재 입력과 같은 프리셋만 선택된 칩 스타일
   const presetClass = (name: string, tag: string) =>
     gameName === name && tagLine === tag
       ? 'px-2.5 py-1 rounded-control bg-accent-bg text-accent border border-accent font-bold transition'
@@ -238,7 +250,7 @@ export default function TFTCoachPage() {
 
           {/* Quick Preset Samples */}
           <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-line text-xs text-muted">
-            <span className="font-semibold text-muted">체험용 프리셋:</span>
+            <span className="font-semibold text-muted">아이디 없이 예시 보기:</span>
             <button
               type="button"
               onClick={() => setSample('띵 땡', 'KR1')}
@@ -366,11 +378,20 @@ export default function TFTCoachPage() {
                   <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-accent" />
                     최근 {search.matches.length}경기 종합 AI 코칭
+                    <span
+                      title="Pro 기능 (출시 전까지 무료)"
+                      className="inline-flex items-center gap-1 rounded-chip bg-accent-bg px-1.5 py-0.5 text-xs font-bold text-accent"
+                    >
+                      <Lock className="h-3 w-3" aria-hidden="true" />
+                      PRO
+                    </span>
                   </h3>
                   <p className="text-xs text-muted mt-1">
                     여러 판을 묶어 플레이스타일·유연성 성향을 진단합니다. (개별 정밀 분석은 아래 경기 카드에서)
                   </p>
                 </div>
+                <div className="flex shrink-0 items-center gap-3">
+                <span className="text-xs text-subtle whitespace-nowrap">오늘 {quota.remaining}/{quota.limit}회 남음</span>
                 <button
                   type="button"
                   onClick={handleOverview}
@@ -389,7 +410,15 @@ export default function TFTCoachPage() {
                     </>
                   )}
                 </button>
+                </div>
               </div>
+
+              {showProNotice && (
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-subtle">
+                  <Lock className="h-3 w-3 text-accent" aria-hidden="true" />
+                  종합 분석은 Pro 기능이에요. 출시 전까지는 무료로 쓸 수 있어요.
+                </p>
+              )}
 
               {overviewError && (
                 <div className="mt-4 p-3 rounded-control bg-bad/10 border border-bad/60 text-bad text-sm flex items-center gap-2">
@@ -457,6 +486,8 @@ export default function TFTCoachPage() {
         </section>
         )}
       </main>
+
+      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} />
 
       <footer className="relative border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-1.5 px-4 py-6 text-center sm:flex-row sm:text-left">

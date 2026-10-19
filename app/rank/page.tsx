@@ -10,7 +10,7 @@ export default function RankPage() {
     <>
       <SiteHeader
         active="meta"
-        onChange={(tab) => router.push(tab === 'coach' ? '/?tab=coach' : '/')}
+        onChange={(tab) => router.push(tab === 'coach' ? '/' : '/?tab=meta')}
       />
       <MetaDashboard showTitle />
       <footer className="rk-footer">

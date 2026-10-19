@@ -8,6 +8,8 @@ import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from 
 import { FeedbackReport } from './FeedbackReport'
 import { track } from '@/lib/analytics'
 import { AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
+import { useQuota } from '@/lib/useQuota'
+import { LimitModal } from './LimitModal'
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -32,6 +34,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   /** 스트리밍 진행 문구 (예: "AI가 리포트를 작성하는 중...") */
   const [stageMessage, setStageMessage] = useState('')
   const abortRef = useRef<AbortController | null>(null)
+  const quota = useQuota()
+  const [isLimitOpen, setIsLimitOpen] = useState(false)
 
   // 카드가 사라지면 진행 중인 스트림을 끊는다.
   useEffect(() => {
@@ -74,6 +78,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   const handleAnalyze = async () => {
     if (isAnalyzing) return
+    if (quota.exhausted) {
+      setIsLimitOpen(true)
+      return
+    }
     setIsAnalyzing(true)
     setAnalyzeError(null)
     setStageMessage('분석을 준비하는 중...')
@@ -106,6 +114,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         throw new Error(data.error || '이 경기 분석 중 오류가 발생했습니다.')
       }
       setFeedback(data.feedback)
+      quota.consume()
       setWasCached(Boolean(data.cached))
       track('analysis_success', {
         scope: 'match',
@@ -349,6 +358,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
+            <span className="text-xs text-subtle whitespace-nowrap">오늘 {quota.remaining}/{quota.limit}회 남음</span>
             <button
               type="button"
               onClick={handleAnalyze}
@@ -606,6 +616,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           <FeedbackReport feedback={feedback} title="이 경기 정밀 코칭 (단일 매치)" compact />
         </div>
       )}
+
+      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} />
 
     </div>
   )
