@@ -10,8 +10,8 @@
   --rk-ink2: var(--text-2);
   --rk-muted: var(--text-3);
   --rk-accent: var(--accent);
-  --rk-good: var(--good);
-  --rk-bad: var(--bad);
+  --rk-good: var(--good-text);
+  --rk-bad: var(--bad-text);
   --rk-unit-size: 40px;
 
   display: grid;

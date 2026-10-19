@@ -185,7 +185,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                     {unit.tier >= 2 ? (
                       <span
                         className={`absolute bottom-0 inset-x-0 z-20 text-center text-[10px] leading-3 tracking-[-0.1em] bg-black/60 ${
-                          unit.tier === 3 ? 'text-gold' : 'text-white'
+                          unit.tier === 3 ? 'text-[color:var(--gold)]' : 'text-white'
                         }`}
                       >
                         {unit.tier === 3 ? '★★★' : '★★'}
@@ -444,7 +444,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                                 </span>
                               )}
                               {u.tier > 1 && (
-                                <span className="absolute right-0 top-0 rounded-bl bg-black/80 px-0.5 text-[7px] font-black text-gold">
+                                <span className="absolute right-0 top-0 rounded-bl bg-black/80 px-0.5 text-[7px] font-black text-[color:var(--gold)]">
                                   {u.tier}★
                                 </span>
                               )}

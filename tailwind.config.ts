@@ -46,6 +46,12 @@ const config: Config = {
         'cost-4': token('cost-4'),
         'cost-5': token('cost-5'),
       },
+      // 글자색으로 쓸 때만 대비를 확보한 값으로 바꾼다 (띠·막대·테두리·바탕은 원래 값)
+      textColor: {
+        good: token('good-text'),
+        bad: token('bad-text'),
+        gold: token('gold-text'),
+      },
       fontFamily: {
         sans: PRETENDARD,
         pretendard: PRETENDARD,

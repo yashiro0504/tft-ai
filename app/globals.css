@@ -27,6 +27,11 @@
     --cost-4: #B15CFF;
     --cost-5: #E0A526;
 
+    /* 의미 색을 글자로 쓸 때 (라이트 바탕에서 4.5:1 이상 확보한 진한 값) */
+    --good-text: #0B7A5E;
+    --bad-text: #C62A30;
+    --gold-text: #8A5D00;
+
     /* 모서리 (카드 / 버튼·입력창 / 칩) */
     --radius-card: 12px;
     --radius-control: 8px;
@@ -48,6 +53,9 @@
     --accent-bg: #1E2A4D;
     --on-accent: #0E1320;
     --shadow: none;
+    --good-text: #14A37F;
+    --bad-text: #EE6266;
+    --gold-text: #E0A526;
     color-scheme: dark;
   }
 
@@ -65,6 +73,9 @@
       --accent-bg: #1E2A4D;
       --on-accent: #0E1320;
       --shadow: none;
+      --good-text: #14A37F;
+      --bad-text: #EE6266;
+      --gold-text: #E0A526;
       color-scheme: dark;
     }
   }
