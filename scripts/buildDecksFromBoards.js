@@ -295,10 +295,34 @@ function coreSize(c) {
   return Math.min(Math.max(median(c.sizes) || 8, 6), MAX_UNITS)
 }
 
+/**
+ * 대표 구성: 채용률 순으로 coreSize 만큼 뽑되, 시너지 최대 단계(breakpoint max)를 넘는 기물은 제외한다.
+ * 실측 보드는 최대 단계를 넘겨 기용하기도 하지만(예: 전쟁기계 7명), 덱 구성은 6단계까지만 보여 준다.
+ * 캐리는 항상 포함한다 (캐리가 초과분이면 다른 기물이 빠진다).
+ */
 function coreUnits(c) {
   const ranked = [...c.unitCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k)
-  const core = ranked.slice(0, coreSize(c))
-  if (!core.includes(c.label.carry) && c.unitCount.has(c.label.carry)) core[core.length - 1] = c.label.carry
+  const size = coreSize(c)
+  const core = []
+  const counts = new Map()
+
+  const traitsOf = (k) => (champInfo(c.unitIds.get(k)).traits || []).map(norm)
+  const exceeds = (k) =>
+    traitsOf(k).some((t) => {
+      const bp = breakpointData.traits?.[t]
+      return bp?.max != null && (counts.get(t) || 0) + 1 > bp.max
+    })
+  const push = (k) => {
+    core.push(k)
+    for (const t of traitsOf(k)) counts.set(t, (counts.get(t) || 0) + 1)
+  }
+
+  if (c.unitCount.has(c.label.carry)) push(c.label.carry)
+  for (const k of ranked) {
+    if (core.length >= size) break
+    if (core.includes(k) || exceeds(k)) continue
+    push(k)
+  }
   return core
 }
 
