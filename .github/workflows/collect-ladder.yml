@@ -73,6 +73,16 @@ jobs:
       - name: Validate collected data
         run: npm run meta:check
 
+      - name: Collect ladder boards
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          RIOT_REGION: asia
+          RIOT_PLATFORM: kr
+          PLAYERS: ${{ github.event.inputs.players || '60' }}
+          MATCHES_PER_PLAYER: ${{ github.event.inputs.matches_per_player || '8' }}
+          MAX_MATCHES: ${{ github.event.inputs.max_matches || '400' }}
+        run: npm run collect:boards
+
       - name: Rebuild decks from stats
         run: |
           npm run build:decks
