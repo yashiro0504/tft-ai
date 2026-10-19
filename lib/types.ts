@@ -492,6 +492,8 @@ export interface MetaDeckRanking {
     index: number | null
     imgUrl: string
     items: { key: string; name: string; iconUrl: string }[]
+    /** 시너지 최대 단계(breakpoint max)를 넘는 선택 기물 — 시너지 count 에서 제외 */
+    flex?: boolean
     stat?: { avgPlacement: number; top4Rate: number; sampleSize: number }
   }[]
   avgPlacement: number | null

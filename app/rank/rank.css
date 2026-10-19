@@ -368,6 +368,26 @@
 .rk-cell.c2 { box-shadow: inset 0 0 0 2px var(--cost-2); }
 .rk-cell.c1 { box-shadow: inset 0 0 0 2px var(--cost-1); }
 
+/* 플렉스(선택): 채용률은 높지만 시너지 최대 단계를 넘는 기물 */
+.rk-unit.is-flex,
+.rk-cell.is-flex {
+  opacity: 0.55;
+  outline: 1px dashed var(--rk-accent);
+  outline-offset: -1px;
+}
+.rk-unit.is-flex::after,
+.rk-cell.is-flex::after {
+  content: 'F';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--rk-accent);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
 .rk-evidence { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
 .rk-hexes { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 24px; }
 .rk-board > span > .rk-cell { width: 100%; }

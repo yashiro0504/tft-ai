@@ -132,8 +132,10 @@ function main() {
     }
 
     // 선언된 시너지 count 가 실제 유닛 구성과 일치하는지 재계산 대조
+    // 플렉스(시너지 최대 단계를 넘는 선택 기물)는 count 에서 제외한다
     const recomputed = new Map()
     for (const unit of units) {
+      if (unit.flex) continue
       for (const trait of unit.traits || []) {
         recomputed.set(trait, (recomputed.get(trait) || 0) + 1)
       }

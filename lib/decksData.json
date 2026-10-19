@@ -8913,8 +8913,8 @@
       "id": "ladder-ashe-juggernaut",
       "name": "전쟁기계 애쉬",
       "gold": null,
-      "unitCost": 25,
-      "unitCount": 8,
+      "unitCost": 27,
+      "unitCount": 9,
       "level": 9,
       "traits": [
         {
@@ -9106,6 +9106,22 @@
           ],
           "items": [],
           "usage": 0.447
+        },
+        {
+          "lolchessKey": "sejuani",
+          "name": "세주아니",
+          "cost": 2,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Sejuani.png",
+          "matchedKey": "Sejuani",
+          "traits": [
+            "Juggernaut",
+            "Solar"
+          ],
+          "items": [],
+          "usage": 0.368,
+          "flex": true
         }
       ],
       "avgPlacement": 4.63,
@@ -11786,8 +11802,8 @@
       "id": "ladder-zyra-juggernaut",
       "name": "전쟁기계 자이라",
       "gold": null,
-      "unitCost": 21,
-      "unitCount": 7,
+      "unitCost": 22,
+      "unitCount": 8,
       "level": 8,
       "traits": [
         {
@@ -11973,6 +11989,23 @@
           ],
           "items": [],
           "usage": 0.557
+        },
+        {
+          "lolchessKey": "rakan",
+          "name": "라칸",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Rakan.png",
+          "matchedKey": "Rakan",
+          "traits": [
+            "Fae",
+            "Juggernaut",
+            "Vanguard"
+          ],
+          "items": [],
+          "usage": 0.53,
+          "flex": true
         }
       ],
       "avgPlacement": 4.99,
@@ -12491,8 +12524,8 @@
       "id": "ladder-sivir-juggernaut",
       "name": "전쟁기계 시비르",
       "gold": null,
-      "unitCost": 21,
-      "unitCount": 7,
+      "unitCost": 22,
+      "unitCount": 8,
       "level": 8,
       "traits": [
         {
@@ -12646,6 +12679,23 @@
           ],
           "items": [],
           "usage": 0.372
+        },
+        {
+          "lolchessKey": "yorick",
+          "name": "요릭",
+          "cost": 1,
+          "star": 2,
+          "index": null,
+          "imgUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Yorick.png",
+          "matchedKey": "Yorick",
+          "traits": [
+            "Blossom",
+            "Juggernaut",
+            "Summoner"
+          ],
+          "items": [],
+          "usage": 0.349,
+          "flex": true
         }
       ],
       "avgPlacement": 5.05,

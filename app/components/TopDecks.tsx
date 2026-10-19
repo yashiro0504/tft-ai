@@ -90,9 +90,15 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
                 {d.units.slice(0, 8).map((u) => (
                   <UnitHover key={`${u.key}-${u.index}`} unit={u}>
                     <span
-                      className={`block aspect-square w-full overflow-hidden rounded-chip border-2 bg-sunken ${COST_BORDER[u.cost ?? 1] ?? COST_BORDER[1]}`}
+                      className={`relative block aspect-square w-full overflow-hidden rounded-chip border-2 bg-sunken ${
+                        COST_BORDER[u.cost ?? 1] ?? COST_BORDER[1]
+                      } ${u.flex ? 'opacity-60 outline outline-1 outline-dashed outline-accent' : ''}`}
+                      title={u.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
                     >
                       <img src={u.imgUrl} alt={u.name} loading="lazy" className="h-full w-full object-cover" />
+                      {u.flex ? (
+                        <em className="absolute right-0.5 top-0.5 text-[9px] font-bold not-italic text-accent">F</em>
+                      ) : null}
                     </span>
                   </UnitHover>
                 ))}

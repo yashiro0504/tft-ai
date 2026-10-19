@@ -430,7 +430,10 @@ export function MetaDashboard({
                       <span className="rk-units">
                         {r.deck.units.map((u) => (
                           <UnitHover key={`${r.key}-${u.key}-${u.index}`} unit={u}>
-                            <span className={`rk-unit c${u.cost ?? 1}`}>
+                            <span
+                              className={`rk-unit c${u.cost ?? 1}${u.flex ? ' is-flex' : ''}`}
+                              title={u.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
+                            >
                               <img src={u.imgUrl} alt="" loading="lazy" />
                               <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
                             </span>
@@ -591,7 +594,10 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
       <div className="rk-board">
         {deck.units.slice(0, 8).map((u) => (
           <UnitHover key={`b-${u.key}-${u.index}`} unit={u}>
-            <div className={`rk-cell c${u.cost ?? 1}`}>
+            <div
+              className={`rk-cell c${u.cost ?? 1}${u.flex ? ' is-flex' : ''}`}
+              title={u.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
+            >
               <img src={u.imgUrl} alt={u.name} loading="lazy" />
               <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
             </div>

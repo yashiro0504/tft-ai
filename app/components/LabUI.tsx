@@ -179,6 +179,8 @@ export interface HoverUnit {
   star: number
   imgUrl: string
   items: { key: string; name: string; iconUrl: string }[]
+  /** 시너지 최대 단계를 넘는 선택 기물 */
+  flex?: boolean
   stat?: { avgPlacement: number; top4Rate: number; sampleSize: number }
 }
 
@@ -219,6 +221,9 @@ export function UnitHover({ unit, children }: { unit: HoverUnit; children: React
                   </p>
                 </div>
               </div>
+              {unit.flex ? (
+                <p className="mt-1 text-xs font-semibold text-accent">플렉스(선택) · 시너지 최대 단계 초과</p>
+              ) : null}
               {unit.items.length ? (
                 <div className="mt-2 space-y-1">
                   {unit.items.map((it) => (
