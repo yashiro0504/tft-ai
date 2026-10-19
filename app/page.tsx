@@ -487,16 +487,17 @@ export default function TFTCoachPage() {
         )}
       </main>
 
-      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} />
+      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} scope="overview" />
 
       <footer className="relative border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-1.5 px-4 py-6 text-center sm:flex-row sm:text-left">
           <p className="text-[12px] text-muted">
             <span className="font-black text-muted">TFT LAB</span> · 시즌 18 메타 랭킹 &amp; AI 코치
           </p>
-          <p className="text-xs leading-relaxed text-subtle">
-            데이터: Riot 실측 매치 표본 · TFT LAB is not endorsed by Riot Games.
-          </p>
+          <div className="text-xs leading-relaxed text-subtle sm:text-right">
+            <p>데이터: Riot 실측 매치 표본 · TFT LAB is not endorsed by Riot Games.</p>
+            <p>이 서비스는 라이엇 게임즈와 제휴하거나 승인받지 않았습니다.</p>
+          </div>
         </div>
       </footer>
     </div>

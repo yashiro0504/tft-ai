@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, X } from 'lucide-react'
 import { FREE_ANALYSIS_LIMIT } from '@/lib/useQuota'
+import { track } from '@/lib/analytics'
 
 const PRO_BENEFITS = ['하루 분석 횟수 확대', '최근 10경기 종합 분석', '분석 기록 저장']
 
@@ -11,7 +12,16 @@ const PRO_BENEFITS = ['하루 분석 횟수 확대', '최근 10경기 종합 분
  * 하루 무료 분석 한도 도달 안내 (전환 지시서 단계 2).
  * 기본 버튼은 Pro 출시 알림(현재 /pro 페이지)으로 연결한다. 단계 4에서 이메일 입력으로 교체 예정.
  */
-export function LimitModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function LimitModal({
+  open,
+  onClose,
+  scope,
+}: {
+  open: boolean
+  onClose: () => void
+  /** 어떤 분석에서 한도에 걸렸는지 (이벤트 기록용) */
+  scope: 'match' | 'overview'
+}) {
   const router = useRouter()
   const primaryRef = useRef<HTMLButtonElement | null>(null)
   // 부모가 다시 렌더링되어도 포커스가 튀지 않도록 열릴 때만 효과를 건다.
@@ -20,12 +30,15 @@ export function LimitModal({ open, onClose }: { open: boolean; onClose: () => vo
 
   useEffect(() => {
     if (!open) return
+    track('limit_reached', { scope, limit: FREE_ANALYSIS_LIMIT })
     primaryRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCloseRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+    // scope 는 열릴 때의 값만 기록한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   if (!open) return null
@@ -78,6 +91,7 @@ export function LimitModal({ open, onClose }: { open: boolean; onClose: () => vo
             ref={primaryRef}
             type="button"
             onClick={() => {
+              track('pro_waitlist_click', { surface: 'limit_modal', scope })
               onClose()
               router.push('/pro')
             }}

@@ -26,6 +26,7 @@ export function SiteFooter() {
         <p className="text-xs leading-relaxed text-subtle">
           데이터: Riot 실측 매치 표본 · {SITE_NAME} is not endorsed by Riot Games.
         </p>
+        <p className="text-xs leading-relaxed text-subtle">이 서비스는 라이엇 게임즈와 제휴하거나 승인받지 않았습니다.</p>
       </div>
     </footer>
   )

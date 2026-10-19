@@ -16,6 +16,7 @@ export default function RankPage() {
       <footer className="rk-footer">
         <span>출처 Riot 실측 매치 표본</span>
         <span>TFT LAB is not endorsed by Riot Games</span>
+        <span>이 서비스는 라이엇 게임즈와 제휴하거나 승인받지 않았습니다.</span>
       </footer>
     </>
   )

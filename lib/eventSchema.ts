@@ -19,6 +19,8 @@ export const ANALYTICS_EVENT_NAMES = [
   'share_click',
   'login_click',
   'pro_waitlist_click',
+  /** 하루 무료 분석 한도 도달 화면 노출 (전환 지시서 단계 3) */
+  'limit_reached',
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]

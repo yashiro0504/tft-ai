@@ -56,8 +56,8 @@ export async function GET() {
     plan === 'pro'
       ? {
           search: dailyQuotaLimit('QUOTA_SEARCH_PRO_PER_DAY', 200),
-          analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 50),
-          overview: dailyQuotaLimit('QUOTA_OVERVIEW_PRO_PER_DAY', 50),
+          analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10),
+          overview: dailyQuotaLimit('QUOTA_OVERVIEW_PRO_PER_DAY', 10),
         }
       : {
           search: dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50),

@@ -28,6 +28,8 @@ export function LegalPageShell({ title, children }: { title: string; children: R
           <br />
           {SITE_NAME} is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games
           or anyone officially involved in producing or managing Riot Games properties.
+          <br />
+          이 서비스는 라이엇 게임즈와 제휴하거나 승인받지 않았습니다.
         </p>
       </main>
 

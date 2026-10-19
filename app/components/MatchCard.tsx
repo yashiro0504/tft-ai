@@ -617,7 +617,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         </div>
       )}
 
-      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} />
+      <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} scope="match" />
 
     </div>
   )
