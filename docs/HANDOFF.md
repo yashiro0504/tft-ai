@@ -302,21 +302,26 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 - 목표: 8~10초 동안 아무것도 안 보이는 체감 대기를 줄인다. 구조화 JSON 전체를 토큰 스트리밍하는 대신,
   **즉시 계산되는 지표(D)** 와 **짧은 인트로 2~3문장(C)** 을 먼저 보여준다.
 - 구현
-  - `MatchCard` — 분석 시작 즉시 `LiveAnalysisPanel` 표시
-    - D: 클라이언트가 가진 매치 데이터로 `computeMatchScore` 를 계산해 등수/레벨/골드/유닛/2성+/시너지/완성도/아이템/경합을 0ms에 표시
+  - `MatchCard` — `MatchQuickStats`
+    - **분석 전에도 상시 노출**: 등수/레벨/골드/유닛/2성+/시너지/완성도/아이템/경합을 `computeMatchScore` 로 즉시 계산
+    - 분석 중에는 같은 패널이 “AI 코치가 분석 중”으로 바뀌며 인트로를 표시
     - `isEarlyGame` 이면 `표본 부족: 2-2 초반 종료` 를 함께 표시
-    - C: SSE `delta` 토큰을 누적해 타이핑되듯 표시
   - `lib/llm.ts` — `generateCoachIntro` 신규
     - 전체 리포트와 **병렬**로 DeepSeek `stream: true` 호출 (`max_tokens 240`)
+    - **문장 단위 청킹**: 첫 청크는 16자에서 바로, 이후 문장부호/48자마다 전송 → UI 업데이트 125회 → **7회**
+    - **인트로 6h 캐시**: `intro:{matchId}:{mode}:{introVersion}`. 프롬프트에 소환사명을 넣지 않아 매치 단위 캐시가 안전하다
     - Gemini 키만 있으면 단일 응답을 한 번에 전송, 둘 다 실패하면 결정론적 문장으로 폴백
     - `getLlmBudgetStatus` / `recordLlmUsage` 적용
   - `lib/matchAnalysis.ts` — `onMatch(match, displayName)` 콜백 추가 (매치 해석 직후, LLM 전)
   - `app/api/tft/match/stream/route.ts` — `delta` 이벤트 추가, `onMatch`에서 인트로 시작, 결과 전송 후 늦은 델타 차단
   - `lib/analysisStream.ts` — `onDelta` 콜백 + `delta` 이벤트 파싱 (결과 이후 델타 무시)
-- 실측 (로컬 데모 `KR_DEMO_001`, 개발 서버 첫 컴파일 포함)
-  - stage start 2.30s → **첫 delta 3.14s** → 인트로 125토큰/177자 → **result 10.23s**
-  - 인트로와 전체 리포트가 병렬로 실행되어 전체 소요 시간은 기존과 동일
-- 비용: 분석 1회당 DeepSeek 호출 1회 추가(최대 240 output tokens). 실패는 전체 리포트에 영향 없음.
+- 실측 (`next start` 프로덕션 빌드, 캐시 초기화 후)
+  | 시나리오 | 첫 delta | delta 수 | result |
+  | --- | --- | --- | --- |
+  | 1차 생성 | **1.21s** | **6** | 9.31s |
+  | 2차 (전체 리포트 미스 + 인트로 캐시 히트) | **28ms** | 1 | 8.62s |
+  - 인트로 169자, 인트로와 전체 리포트가 병렬이라 전체 소요 시간은 기존과 동일
+- 비용: 분석 1회당 DeepSeek 호출 1회 추가(최대 240 output tokens). 인트로 캐시 히트 시 추가 호출 없음. 실패는 전체 리포트에 영향 없음.
 
 ### P1-5. 덱 구성 품질 (1~2일) — ✅ 완료 (2026-10-18)
 

@@ -157,10 +157,9 @@ export async function POST(req: NextRequest) {
             onStage: (stage) => {
               send('stage', { stage, message: ANALYSIS_STAGE_MESSAGE[stage] })
             },
-            onMatch: (match, displayName) => {
+            onMatch: (match) => {
               // 전체 리포트 생성과 병렬로 짧은 인트로를 토큰 스트리밍한다.
               void generateCoachIntro({
-                gameName: displayName,
                 match,
                 mode: params.mode,
                 onDelta: sendDelta,

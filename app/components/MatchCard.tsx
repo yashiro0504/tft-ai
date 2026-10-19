@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info, Database,
 } from 'lucide-react'
@@ -23,38 +23,49 @@ interface MatchCardProps {
   isDemo: boolean
 }
 
+type MatchScore = ReturnType<typeof computeMatchScore>
+
 /**
- * D+C 라이브 패널
- * - D: 서버 응답 전에도 클라이언트가 가진 매치 데이터로 즉시 지표를 보여준다.
- * - C: 인트로 토큰이 도착하는 대로 타이핑되듯 누적한다.
+ * 핵심 지표 패널 (D+C)
+ * - 분석 전: 항상 노출되는 "미리 보기" 지표
+ * - 분석 중: 인트로 토큰이 도착하는 대로 타이핑되듯 누적
  */
-function LiveAnalysisPanel({
+function MatchQuickStats({
   match,
+  score,
   twoStarPlus,
+  live,
   intro,
   stageMessage,
 }: {
   match: SlimMatchData
+  score: MatchScore
   twoStarPlus: number
+  live: boolean
   intro: string
   stageMessage: string
 }) {
-  const score = computeMatchScore(match)
   const comp = (key: 'placement' | 'completion' | 'items' | 'contest') =>
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
 
   return (
     <div
-      className="mt-3 rounded-control border border-line bg-sunken px-4 py-3"
-      aria-busy="true"
+      className={`mt-4 rounded-control border px-4 py-3 ${
+        live ? 'border-accent bg-accent-bg' : 'border-line bg-sunken'
+      }`}
+      aria-busy={live ? 'true' : undefined}
     >
-      <div className="flex items-center gap-2 text-xs font-semibold text-accent" role="status" aria-live="polite">
-        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        <span>AI 코치가 분석 중</span>
+      <div
+        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-accent"
+        role={live ? 'status' : undefined}
+        aria-live={live ? 'polite' : undefined}
+      >
+        {live ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : null}
+        <span className="text-xs font-semibold">{live ? 'AI 코치가 분석 중' : '핵심 지표'}</span>
+        {!live ? <span className="text-[11px] font-normal text-subtle">AI 분석 전 미리 보기</span> : null}
       </div>
 
-      {/* D: 즉시 계산되는 사실/점수 */}
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         <span>
           {match.placement}등 · Lv.{match.level} · {match.lastRound} 종료 · {match.goldLeft}G
@@ -68,11 +79,12 @@ function LiveAnalysisPanel({
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
       </div>
 
-      {/* C: 인트로 토큰 스트림 */}
-      <p className="mt-2 min-h-[1.5rem] text-sm leading-relaxed text-ink">
-        {intro || stageMessage || '핵심 진단을 준비하는 중...'}
-        {intro ? <span className="ml-0.5 inline-block animate-pulse text-accent">▍</span> : null}
-      </p>
+      {live ? (
+        <p className="mt-2 min-h-[1.5rem] text-sm leading-relaxed text-ink">
+          {intro || stageMessage || '핵심 진단을 준비하는 중...'}
+          {intro ? <span className="ml-0.5 inline-block animate-pulse text-accent">▍</span> : null}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -107,6 +119,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   const twoStarPlus = match.units.filter((u) => (u.tier || 1) >= 2).length
   const threeStar = match.units.filter((u) => u.tier === 3).length
   const totalItems = match.units.reduce((s, u) => s + (u.items?.length || 0), 0)
+  /** 분석 전에도 보여줄 결정론적 지표 (서버 LLM과 동일 산식) */
+  const quickScore = useMemo(() => computeMatchScore(match), [match])
 
   const isWin = match.placement === 1
   const isTop4 = match.placement <= 4 && !isWin
@@ -361,6 +375,15 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             </div>
           ))}
 
+        <MatchQuickStats
+          match={match}
+          score={quickScore}
+          twoStarPlus={twoStarPlus}
+          live={isAnalyzing}
+          intro={introText}
+          stageMessage={stageMessage}
+        />
+
         {/* 4. 하단: 경기별 AI 분석 버튼 + 로비 8명 전체 순위 토글 */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-sunken pt-3">
           <span className="text-xs text-subtle">로비 8인 경기 결과 기록</span>
@@ -406,15 +429,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             </button>
           </div>
         </div>
-
-        {isAnalyzing ? (
-          <LiveAnalysisPanel
-            match={match}
-            twoStarPlus={twoStarPlus}
-            intro={introText}
-            stageMessage={stageMessage}
-          />
-        ) : null}
       </div>
       {/* 펼쳐진 로비 8인 순위 테이블 (LOLCHESS 스타일) */}
       {isOpenLobby && match.lobbyParticipants && (
