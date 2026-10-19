@@ -23,7 +23,7 @@ const BREAKPOINTS: Record<string, number[]> = Object.fromEntries(
  * 경기 데이터에서 6개 축을 계산해 0~100 점을 매기고,
  * 가장 약한 축을 '이번 강의 주제'로 고정한다. (LLM은 이 주제를 벗어나지 않는다)
  *
- * 축: 경제 · 아이템 설계 · 템포(레벨/리롤) · 보드 완성도 · 시너지 설계 · 로비 수렴도
+ * 축: 경제 · 아이템 설계 · 템포(레벨/리롤) · 보드 완성도 · 시너지 설계 · 유연성 (key: contest, 입력은 로비 수렴도)
  * 초반 종료(2-2 등) 표본은 정상 경기와 섞지 않는다.
  *
  * 공식의 숫자는 모두 axisConfig.json 에 있다. 각 축은 경기마다 "가점/감점 항목(effects)"의 합을
@@ -241,10 +241,10 @@ const LESSON: Record<CoachingAxisKey, { label: string; lesson: string; topic: st
     topic: '시너지 밀도 강의 — 얕은 판 vs 깊은 판',
   },
   contest: {
-    label: '로비 수렴도 대응',
+    label: '유연성',
     lesson:
       '겹침은 원인이 아니라 조건이다. 수렴도가 높으면 "같이 갈 것인가, 비틀 것인가"를 라운드 단위로 정해야 한다.',
-    topic: '수렴도 대응 강의 — 겹쳤을 때 비트는 기준',
+    topic: '유연성 강의 — 겹쳤을 때 비트는 기준',
   },
 }
 

@@ -224,7 +224,7 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
             </span>
           </div>
           <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
-            <p className="text-xs text-subtle">유연성 지수</p>
+            <p className="text-xs text-subtle" title="AI 가 판단한 피봇(덱 전환) 성향 — 6축의 유연성 점수와는 별개">피봇 성향</p>
             <p className="text-2xl font-bold text-ink">{flexScore}%</p>
             <span className={`mt-1 inline-block rounded-chip border px-1.5 py-0.5 text-xs font-semibold ${flexBadge}`}>
               {feedback.playstyle}
@@ -402,11 +402,11 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
       <LectureBlock feedback={feedback} />
 
-      {/* 로비 수렴도 (6축 중 1개 — 보조 지표) */}
+      {/* 유연성 (6축 중 1개 — 로비 수렴도에 어떻게 대응했는가, 보조 지표) */}
       <div className="rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
         <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-accent">
           <Users className="h-4 w-4 text-accent" />
-          <span>로비 수렴도 (보조 지표)</span>
+          <span>유연성 (보조 지표)</span>
         </div>
         <div className="rounded-card border border-line bg-sunken p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
           {feedback.contestAnalysis}

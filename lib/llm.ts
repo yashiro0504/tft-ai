@@ -13,7 +13,7 @@ import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-20.1'
+export const COACH_PROMPT_VERSION = '2026-10-20.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -138,7 +138,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 
 ★★★ 이번 강의 주제는 코드가 이미 결정했다 ★★★
 - 프롬프트의 [이번 강의 주제]와 [6축 진단]을 그대로 사용한다. 임의로 다른 주제를 만들지 마라.
-- '경합(로비 수렴도)'은 6개 축 중 하나일 뿐이다. 주제가 경합일 때만 본문 중심에 두고, 그 외에는 axes 항목의 한 줄로만 다뤄라.
+- '유연성(로비 수렴도 대응, key: contest)'은 6개 축 중 하나일 뿐이다. 주제가 경합일 때만 본문 중심에 두고, 그 외에는 axes 항목의 한 줄로만 다뤄라.
 - "겹쳐서(대깨) 졌다"는 인과 단정 금지. 겹침은 조건이고, 판단(비틀었는가)만 평가하라.
 
 [강의 본문 구성 — 반드시 이 순서]
@@ -196,7 +196,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
     { "key": "synergy", "verdict": "한 줄 진단" },
     { "key": "contest", "verdict": "한 줄 진단" }
   ],
-  "contestAnalysis": "로비 수렴도 1~2문장",
+  "contestAnalysis": "유연성: 로비 수렴도에 어떻게 대응했는지 1~2문장",
   "itemAnalysis": "아이템 설계 해설",
   "synergyAnalysis": "시너지 설계 해설",
   "economyAnalysis": "경제/템포 해설",
@@ -727,7 +727,7 @@ ${qualityFacts}
    모든 서술은 위 데이터의 수치(골드, 레벨, 탈락 라운드, 2성 수, 아이템 수, 로비 수렴도)를 직접 인용해 작성하라.
 
 위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 분석하되, [이번 강의 주제]를 중심으로 "원리 → 데이터 근거 → 더 나은 선택 → 연습 과제"가 이어지는 강의형 JSON 리포트를 작성하라.
-6축(경제·아이템·템포·완성도·시너지·수렴도)을 모두 진단하되, 주제가 아닌 축은 한 줄로만 다뤄 분량을 분산시켜라.`
+6축(경제·아이템·템포·완성도·시너지·유연성)을 모두 진단하되, 주제가 아닌 축은 한 줄로만 다뤄 분량을 분산시켜라.`
 
   // LLM 응답에 코드 기반 '점수/근거 검증/출처/강의계획'을 붙인다.
   const finalize = (

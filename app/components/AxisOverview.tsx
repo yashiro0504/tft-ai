@@ -14,7 +14,7 @@ const SHORT: Record<CoachingAxisKey, string> = {
   tempo: '템포',
   completion: '완성도',
   synergy: '시너지',
-  contest: '수렴도',
+  contest: '유연성',
 }
 
 const SIZE = 200
