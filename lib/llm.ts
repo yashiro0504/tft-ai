@@ -12,11 +12,12 @@ import { translateChampion, translateItem, translateTrait } from './constants'
 import { validateFeedbackGrounding } from './grounding'
 import { computeScoreBreakdown } from './scoring'
 import { buildCoachingPlan } from './coaching'
+import { isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-18.1'
+export const COACH_PROMPT_VERSION = '2026-10-19.1'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
@@ -103,6 +104,12 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - [메타 실측 통계] 블록에 있는 수치만 인용 가능. 표본(n)이 작으면 "표본이 적어 참고용"이라고 밝혀라.
 - 인용 수치는 표기 그대로 쓴다(예: 평균등수 3.44, 표본 n=21, 골드 42, 5-2 탈락). 새로 계산한 근사치를 만들지 마라.
 - metaScore/metaTier 는 코드 산출값을 그대로 반환한다.
+
+★★★ 이름/코스트 환각 금지 ★★★
+- 제공된 사실 데이터에 등장한 기물·시너지·아이템·증강 이름만 쓴다. 다른 세트의 시너지명(예: 결투가)이나 존재하지 않는 이름을 만들지 마라.
+- 기물 코스트는 1~5만 존재한다. "6코스트" 같은 표현을 쓰지 마라.
+- 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
+- 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
 
 [문체]
 - 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
@@ -264,7 +271,7 @@ export async function generateMetaCoachFeedback(
   matches: SlimMatchData[],
   mode: 'single' | 'multi' = 'single'
 ): Promise<MetaCoachFeedback> {
-  const matchSerialized = serializeMatchesForLLM(matches)
+  const matchSerialized = serializeMatchesForLLM(matches, { includeLobby: mode === 'single' })
   const { text: metaFacts, provenance } = buildMetaFacts()
   const scoring = computeScoreBreakdown(matches)
   const scoreFacts = scoring
@@ -275,6 +282,7 @@ export async function generateMetaCoachFeedback(
           (c) =>
             `- ${c.label}: ${c.score}/100 × ${Math.round(c.weight * 100)}% = +${c.contribution} (${c.detail})`
         ),
+        ...(scoring.sampleWarning ? [`- 표본: ${scoring.sampleWarning}`] : []),
         '※ metaScore/metaTier 는 반드시 위 코드 산출값을 그대로 반환하라. 점수 해설은 위 구성요소 수치를 근거로 작성하라.',
       ].join('\n')
     : '[코드 산출 점수]\n※ 산출 불가 (경기 데이터 없음)'
@@ -291,10 +299,23 @@ export async function generateMetaCoachFeedback(
     ...plan.axes.map((a) => `- ${a.key}(${a.label}): ${a.score}/100 · ${a.detail}`),
     '※ axes 배열에는 위 6개 key 를 모두 넣고, score/점수는 위 코드 값을 그대로 인용하라.',
     '※ 초점 축이 contest 가 아니라면 로비 경합은 axes 의 한 줄 + contestAnalysis 로만 다루고, lecture 주제로 삼지 마라.',
+    ...(plan.sampleWarning ? [`- 표본: ${plan.sampleWarning}`] : []),
   ].join('\n')
   const modeContext = mode === 'single'
-    ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라.'
+    ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라. 한 판뿐이므로 "평균"이 아니라 "이 경기"로 서술하라.'
     : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
+
+  const qualityFacts = [
+    '[표본 품질 — 코드 판정]',
+    ...(plan.lowSample
+      ? [
+          `- ${plan.sampleWarning ?? '표본 부족'}`,
+          '※ 초반 종료 표본뿐이다. 점수/등급을 단정하지 말고 리포트 첫 문장에 "표본 부족"을 명시하라.',
+        ]
+      : [
+          `- 집계 경기 ${plan.matchCount}건${plan.excludedMatches ? ` (초반 종료 ${plan.excludedMatches}건 제외)` : ''}`,
+        ]),
+  ].join('\n')
 
   // 증강 데이터/메타 통계 제공 여부에 따라 접지 안내를 동적으로 구성
   const hasAugments = matches.some((m) => (m.augments?.length || 0) > 0)
@@ -327,6 +348,8 @@ ${scoreFacts}
 
 ${planFacts}
 
+${qualityFacts}
+
    모든 서술은 위 데이터의 수치(골드, 레벨, 탈락 라운드, 2성 수, 아이템 수, 로비 수렴도)를 직접 인용해 작성하라.
 
 위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 분석하되, [이번 강의 주제]를 중심으로 "원리 → 데이터 근거 → 더 나은 선택 → 연습 과제"가 이어지는 강의형 JSON 리포트를 작성하라.
@@ -342,8 +365,10 @@ ${planFacts}
       ...plan,
       axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
     }
+    const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
     return {
       ...fb,
+      mode,
       metaScore: scoring ? scoring.total : fb.metaScore,
       metaTier: scoring ? scoring.tier : fb.metaTier,
       isFallback,
@@ -352,6 +377,11 @@ ${planFacts}
       plan: planWithVerdicts,
       lecture: normalizeLecture(fb.lecture, planWithVerdicts, fb),
       grounding: validateFeedbackGrounding(fb, prompt),
+      dataQuality: {
+        lowSample: Boolean(plan.lowSample),
+        reason: earlyReasons.length ? earlyReasons.join(' · ') : undefined,
+        excludedMatches: plan.excludedMatches,
+      },
     }
   }
 

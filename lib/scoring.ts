@@ -1,4 +1,5 @@
 import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
+import { expectedLevel, isEarlyGame, lowSampleReason, stageOfRound } from './quality'
 
 /**
  * 결정론적 점수 산출 (LLM 미사용)
@@ -7,11 +8,13 @@ import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
  *
  * 구성 (가중 합산):
  *  - 결과(등수)     40% : (8 - 등수) / 7 × 100
- *  - 덱 완성도      25% : 2성+ 비율 85 + 3성 보너스(최대 15)
+ *  - 덱 완성도      25% : 보드 충원율 × 2성 비율 (1유닛 3성 보드가 만점이 되지 않게)
  *  - 아이템 활용    20% : 장착 아이템 수 / 9 × 100
- *  - 경합 대응      15% : 빈집 70 / 경합+순방 95 / 경합+하위권 45
+ *  - 경합 대응      15% : 경합 없음 70 / 경합+순방 95 / 경합+하위권 45
+ *
+ * v2: 2-2에 끝난 판처럼 보드가 성립하지 않은 표본은 집계에서 제외한다.
  */
-export const SCORING_VERSION = 'v1'
+export const SCORING_VERSION = 'v2'
 
 const WEIGHTS = { placement: 0.4, completion: 0.25, items: 0.2, contest: 0.15 } as const
 
@@ -37,6 +40,8 @@ interface RawMetrics {
   contestScore?: number
   contestLevel?: string
   top4: boolean
+  level: number
+  stage: number
 }
 
 function readMetrics(m: SlimMatchData): RawMetrics {
@@ -51,6 +56,8 @@ function readMetrics(m: SlimMatchData): RawMetrics {
     contestScore: m.contestedInfo?.contestScore,
     contestLevel: m.contestedInfo?.level,
     top4: (m.placement || 8) <= 4,
+    level: m.level || 0,
+    stage: stageOfRound(m.lastRound),
   }
 }
 
@@ -58,9 +65,16 @@ function placementScore(placement: number): number {
   return Math.round(((8 - placement) / 7) * 100)
 }
 
+/**
+ * 덱 완성도: 보드가 레벨만큼 채워졌는가(충원율) × 2성 비율.
+ * 1유닛 3성 보드가 90점을 받던 v1의 역전을 막는다.
+ */
 function completionScore(r: RawMetrics): number {
   if (r.units === 0) return 0
-  return clamp(Math.round((r.twoPlus / r.units) * 85 + Math.min(r.three, 3) * 5))
+  const boardSlots = Math.max(r.level, expectedLevel(r.stage), 1)
+  const fill = Math.min(r.units / boardSlots, 1)
+  const twoPlusRate = r.twoPlus / r.units
+  return clamp(Math.round(fill * (55 + 45 * twoPlusRate) + Math.min(r.three, 3) * 2))
 }
 
 function itemScore(r: RawMetrics): number {
@@ -102,13 +116,13 @@ export function computeMatchScore(m: SlimMatchData): { total: number; components
     },
     {
       key: 'contest',
-      label: '경합 대응',
+      label: '경합 대응(조건)',
       weight: WEIGHTS.contest,
       score: contestScore(r),
       contribution: 0,
       detail: r.contested
         ? `경합 ${r.contestLevel ?? ''} ${r.contestScore ?? '?'}/100 · ${r.top4 ? '순방' : '하위권'}`
-        : `빈집 (${r.contestScore ?? 0}/100)`,
+        : `경합 없음(유리한 조건) ${r.contestScore ?? 0}/100`,
     },
   ]
   comps.forEach((c) => {
@@ -123,9 +137,14 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
   const valid = (matches || []).filter(Boolean)
   if (valid.length === 0) return null
 
-  const metrics = valid.map(readMetrics)
-  const per = valid.map((m) => computeMatchScore(m))
+  const early = valid.filter(isEarlyGame)
+  const full = valid.filter((m) => !isEarlyGame(m))
+  // 초반 종료 판이 섞여 있으면 정상 경기만 집계한다. 전부 초반이면 어쩔 수 없이 전체 사용 + lowSample.
+  const sample = full.length ? full : valid
+  const metrics = sample.map(readMetrics)
+  const per = sample.map((m) => computeMatchScore(m))
   const avg = (nums: number[]) => nums.reduce((a, b) => a + b, 0) / (nums.length || 1)
+  const single = sample.length === 1
 
   const components: ScoreComponent[] = [
     {
@@ -134,7 +153,7 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
       weight: WEIGHTS.placement,
       score: Math.round(avg(per.map((p) => p.components[0].score))),
       contribution: 0,
-      detail: `평균 ${avg(metrics.map((m) => m.placement)).toFixed(2)}등`,
+      detail: single ? `${metrics[0].placement}등` : `평균 ${avg(metrics.map((m) => m.placement)).toFixed(2)}등`,
     },
     {
       key: 'completion',
@@ -142,10 +161,12 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
       weight: WEIGHTS.completion,
       score: Math.round(avg(per.map((p) => p.components[1].score))),
       contribution: 0,
-      detail: `평균 2성+ ${avg(metrics.map((m) => m.twoPlus)).toFixed(1)}개 · 3성 ${metrics.reduce(
-        (s, m) => s + m.three,
-        0
-      )}회`,
+      detail: single
+        ? `2성+ ${metrics[0].twoPlus}/${metrics[0].units} · 3성 ${metrics[0].three}`
+        : `평균 2성+ ${avg(metrics.map((m) => m.twoPlus)).toFixed(1)}개 · 3성 ${metrics.reduce(
+            (s, m) => s + m.three,
+            0
+          )}회`,
     },
     {
       key: 'items',
@@ -153,15 +174,15 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
       weight: WEIGHTS.items,
       score: Math.round(avg(per.map((p) => p.components[2].score))),
       contribution: 0,
-      detail: `평균 장착 ${avg(metrics.map((m) => m.items)).toFixed(1)}개`,
+      detail: single ? `장착 아이템 ${metrics[0].items}개` : `평균 장착 ${avg(metrics.map((m) => m.items)).toFixed(1)}개`,
     },
     {
       key: 'contest',
-      label: '경합 대응',
+      label: '경합 대응(조건)',
       weight: WEIGHTS.contest,
       score: Math.round(avg(per.map((p) => p.components[3].score))),
       contribution: 0,
-      detail: `${metrics.filter((m) => m.contested).length}/${valid.length}경기 경합 · 순방 ${metrics.filter(
+      detail: `${metrics.filter((m) => m.contested).length}/${sample.length}경기 경합 · 순방 ${metrics.filter(
         (m) => m.top4
       ).length}회`,
     },
@@ -171,12 +192,24 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
   })
 
   const total = Math.round(components.reduce((sum, c) => sum + c.contribution, 0))
+  const lowSample = full.length === 0
+  const excludedMatches = valid.length - sample.length
+  const reasons = [...new Set(early.map(lowSampleReason).filter(Boolean))]
+  const sampleWarning = lowSample
+    ? `표본 부족: 초반 종료 경기만 있어 점수를 신뢰하기 어렵습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+    : excludedMatches
+      ? `초반 종료 ${excludedMatches}경기는 점수 집계에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+      : undefined
+
   return {
     total,
     tier: scoreToTier(total),
     components,
-    matches: valid.length,
+    matches: sample.length,
     perMatch: per.map((p) => p.total),
+    excludedMatches,
+    lowSample,
+    sampleWarning,
     version: SCORING_VERSION,
   }
 }

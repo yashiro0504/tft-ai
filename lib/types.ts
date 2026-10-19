@@ -165,6 +165,8 @@ export interface SlimMatchData {
   gameDatetime: number
   timeAgo?: string
   gameLengthStr?: string
+  /** 게임 길이(초) — 초반 종료 표본 판정용 */
+  gameLengthSec?: number
   queueType?: string
   placement: number
   level: number
@@ -215,6 +217,8 @@ export interface GroundingReport {
   supported: number
   /** 사실에서 확인되지 않은 수치 주장 (예: "72%", "3.44") */
   unsupported: string[]
+  /** 수치가 아닌 환각 경고 (제공되지 않은 시너지명, 존재하지 않는 코스트 등) */
+  warnings?: string[]
 }
 
 /** 리포트가 참조한 데이터 출처/패치/표본 정보 */
@@ -253,6 +257,12 @@ export interface ScoreBreakdown {
   matches: number
   /** 경기별 총점 (재현/디버깅용) */
   perMatch: number[]
+  /** 점수 집계에서 제외한 초반 종료 경기 수 */
+  excludedMatches?: number
+  /** 표본이 부족해 점수 해석에 주의가 필요한가 */
+  lowSample?: boolean
+  /** 표본 관련 안내 문구 */
+  sampleWarning?: string
   /** 산출식 버전 */
   version: string
 }
@@ -288,6 +298,12 @@ export interface CoachingPlan {
   /** 강의 기본 개념 문장 */
   drillTemplate: string
   matchCount: number
+  /** 초반 종료 경기만 있어 표본이 부족한가 */
+  lowSample?: boolean
+  /** 점수/강의에서 제외한 초반 종료 경기 수 */
+  excludedMatches?: number
+  /** 표본 관련 안내 */
+  sampleWarning?: string
 }
 
 /** LLM이 작성하는 강의 본문 */
@@ -334,6 +350,15 @@ export interface MetaCoachFeedback {
   provenance?: FeedbackProvenance
   /** 코드가 산출한 점수 근거 (LLM 아님) */
   scoreBreakdown?: ScoreBreakdown
+  /** 표본 품질 (초반 종료 경기 등) */
+  dataQuality?: {
+    /** 초반 종료 경기만 있어 점수/강의 해석에 주의가 필요한가 */
+    lowSample: boolean
+    /** 표본 부족 사유 (예: "2-2 초반 종료 · 보드 1유닛") */
+    reason?: string
+    /** 점수 집계에서 제외한 초반 종료 경기 수 */
+    excludedMatches?: number
+  }
   fullMarkdown?: string
 }
 
