@@ -45,6 +45,8 @@ export interface AnalyzeMatchStreamOptions {
   body: Record<string, unknown>
   /** 진행 단계 문구 콜백 */
   onStage?: (message: string) => void
+  /** 인트로 토큰 델타 (도착하는 순서대로 누적하면 된다) */
+  onDelta?: (text: string) => void
   signal?: AbortSignal
 }
 
@@ -56,6 +58,7 @@ export interface AnalyzeMatchStreamOptions {
 export async function analyzeMatchStream({
   body,
   onStage,
+  onDelta,
   signal,
 }: AnalyzeMatchStreamOptions): Promise<TftMatchAnalysisResponse> {
   const res = await fetch('/api/tft/match/stream', {
@@ -86,6 +89,7 @@ export async function analyzeMatchStream({
   const decoder = new TextDecoder()
   let buffer = ''
   let result: TftMatchAnalysisResponse | null = null
+  let resultReceived = false
 
   while (true) {
     const { done, value } = await reader.read()
@@ -109,7 +113,22 @@ export async function analyzeMatchStream({
         } catch {
           /* 형식이 깨진 stage 는 무시 */
         }
+      } else if (parsed.event === 'delta') {
+        if (resultReceived) continue
+        try {
+          const payload = JSON.parse(parsed.data) as { text?: string }
+          if (typeof payload?.text === 'string' && payload.text) {
+            try {
+              onDelta?.(payload.text)
+            } catch {
+              /* UI 콜백 오류는 스트림을 깨지 않는다 */
+            }
+          }
+        } catch {
+          /* 형식이 깨진 delta 는 무시 */
+        }
       } else if (parsed.event === 'result') {
+        resultReceived = true
         try {
           result = JSON.parse(parsed.data) as TftMatchAnalysisResponse
         } catch {
