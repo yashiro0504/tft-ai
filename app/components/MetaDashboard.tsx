@@ -504,6 +504,10 @@ export function MetaDashboard({
 
 function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string; patch?: string }) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
+  // 아이템을 드는 기물 (메인 딜러를 맨 앞으로)
+  const holders = deck.units
+    .filter((u) => u.items.length > 0)
+    .sort((a, b) => Number(b.key === carry?.key) - Number(a.key === carry?.key))
   return (
     <div>
       <div className="rk-dhead">
@@ -511,6 +515,12 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
         <h2>{deck.name}</h2>
       </div>
       <p className="rk-dmeta">
+        {deck.level ? (
+          <>
+            {deck.level}레벨 덱
+            <span className="rk-sep">·</span>
+          </>
+        ) : null}
         {deck.gold != null ? `${deck.gold}g` : `${deck.unitCost}코`}
         <span className="rk-sep">·</span>
         기물 {deck.units.length}
@@ -599,14 +609,29 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
           ))}
       </div>
 
-      {carry ? (
+      {holders.length ? (
         <>
-          <p className="rk-label">핵심 캐리 아이템</p>
-          <div className="rk-items">
-            <span className="rk-item-name">{carry.name}</span>
-            <span className="rk-item-list">
-              {carry.items.length ? carry.items.map((it) => <span key={it.key}>{it.name}</span>) : <em>데이터 없음</em>}
-            </span>
+          <p className="rk-label">아이템 구성</p>
+          <div className="rk-builds">
+            {holders.map((u) => (
+              <div key={`it-${u.key}-${u.index}`} className="rk-build">
+                <img className="rk-build-unit" src={u.imgUrl} alt="" loading="lazy" />
+                <div className="rk-build-body">
+                  <span className="rk-build-name">
+                    {u.name}
+                    {u.key === carry?.key ? <em>메인 딜러</em> : null}
+                  </span>
+                  <span className="rk-build-items">
+                    {u.items.map((it) => (
+                      <span key={it.key} className="rk-build-item" title={it.name}>
+                        <img src={it.iconUrl} alt="" loading="lazy" />
+                        {it.name}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </>
       ) : null}

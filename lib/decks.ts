@@ -42,6 +42,8 @@ interface RawDeck {
   top4Rate?: number
   carryKey?: string | null
   /** 래더 실측 덱이면 채워진다 (scripts/buildDecksFromBoards.js) */
+  /** 이 덱 보드들의 레벨 중앙값 */
+  level?: number
   games?: number
   /** 전체 보드 중 이 덱 비율 (0~1) */
   playRate?: number
@@ -93,6 +95,8 @@ export interface DeckView {
   /** 대표 캐리(아이템 3개 또는 최고 코스트) */
   carryKey: string | null
   /** 래더 실측 덱이면 채워진다 (scripts/buildDecksFromBoards.js) */
+  /** 이 덱 보드들의 레벨 중앙값 */
+  level?: number
   games?: number
   /** 전체 보드 중 이 덱 비율 (0~1) */
   playRate?: number
@@ -177,6 +181,7 @@ function computeDeck(deck: RawDeck): DeckView {
     sampleSize: measured ? (deck.games as number) : sampleSize,
     tier: avgPlacement != null ? tierFromAvgPlacement(avgPlacement) : '-',
     carryKey: measured && deck.carryKey ? deck.carryKey : carry ? carry.matchedKey ?? carry.lolchessKey : null,
+    level: deck.level,
     games: deck.games,
     playRate: deck.playRate,
     winRate: deck.winRate,

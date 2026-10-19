@@ -501,7 +501,8 @@ export interface MetaDeckRanking {
   sampleSize: number
   tier: string
   carryKey: string | null
-  /** 래더 실측: 판수, 픽률(0~1), 1등 비율(0~1), 1~8등 횟수 */
+  /** 래더 실측: 레벨 중앙값, 판수, 픽률(0~1), 1등 비율(0~1), 1~8등 횟수 */
+  level?: number
   games?: number
   playRate?: number
   winRate?: number

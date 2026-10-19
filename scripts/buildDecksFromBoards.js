@@ -139,6 +139,7 @@ function traitsFromUnits(units) {
     const bp = breakpointData.traits?.[norm(key)]
     if (bp && count < bp.breakpoints[0]) continue
     if (bp && bp.breakpoints.length === 1) continue // 고유 시너지는 덱 구성 요소로 세지 않는다
+    if (!bp && count < 2) continue // 단계 데이터가 없는 1명짜리 시너지(고유 시너지)도 뺀다
     const info = traitInfo(key)
     out.push({ key, name: info.name, iconUrl: info.iconUrl, count })
   }
@@ -152,6 +153,55 @@ function isCompositional(trait) {
   return !bp || bp.breakpoints.length > 1
 }
 
+/**
+ * 아이템 역할: 딜템(damage) / 탱템(tank) / 애매(hybrid) / 기타(조합 재료·상징·유물 등)
+ * 메인 딜러는 "딜템을 가장 많이 든 기물"로 판별한다. (탱커도 아이템 3개를 들기 때문)
+ */
+const TANK_ITEMS = new Set([
+  'gargoylestoneplate', 'warmogsarmor', 'protectorsvow', 'spiritvisage', 'adaptivehelm', 'sunfirecape',
+  'steadfastheart', 'dragonsclaw', 'evenshroud', 'bramblevest', 'redemption', 'ionicspark',
+])
+const HYBRID_ITEMS = new Set(['crownguard', 'titansresolve', 'steraksgage', 'thiefsgloves'])
+
+function itemBase(id) {
+  return String(id || '')
+    .split('/')
+    .pop()
+    .replace(/^TFT\d*_Item_/i, '')
+    .replace(/^DA_\d*_?/i, '')
+    .replace(/Radiant$/i, '')
+    .toLowerCase()
+}
+
+function itemRole(id) {
+  const base = itemBase(id)
+  if (/^component_|emblem|^artifact_|tactician/.test(base)) return 'other'
+  if (TANK_ITEMS.has(base)) return 'tank'
+  if (HYBRID_ITEMS.has(base)) return 'hybrid'
+  return 'damage'
+}
+
+/** 완성 아이템인가 (조합 재료 제외) */
+function isCompletedItem(id) {
+  return !/^component_/.test(itemBase(id))
+}
+
+function damageScore(unit) {
+  let score = 0
+  for (const it of unit.items || []) {
+    const role = itemRole(it)
+    if (role === 'damage') score += 1
+    else if (role === 'hybrid') score += 0.4
+  }
+  return score
+}
+
+const median = (arr) => {
+  if (!arr.length) return 0
+  const s = [...arr].sort((a, b) => a - b)
+  return s[Math.floor(s.length / 2)]
+}
+
 /** 상점에서 사는 실제 기물인가 (소환물·토큰 제외) */
 function isRealUnit(k) {
   return Boolean(reference.champions?.[k] || SET18_NAMES[k])
@@ -159,15 +209,21 @@ function isRealUnit(k) {
 
 /** 보드 → 이름표 (캐리 + 핵심 시너지) */
 function labelBoard(board) {
-  const units = board.units || []
+  const units = (board.units || []).filter((u) => isRealUnit(norm(u.id)))
   if (units.length < 5) return null
-  const carry = [...units].sort(
+  // 메인 딜러: 딜템을 가장 많이 든 기물 → 동점이면 코스트·별 순. 딜템이 거의 없으면 아이템 수로.
+  const holders = units.filter((u) => (u.items || []).filter(isCompletedItem).length >= 2)
+  if (!holders.length) return null
+  const byDamage = [...holders].sort(
     (a, b) =>
-      (b.items?.length || 0) - (a.items?.length || 0) ||
+      damageScore(b) - damageScore(a) ||
       (champInfo(b.id).cost || 0) - (champInfo(a.id).cost || 0) ||
       (b.star || 0) - (a.star || 0)
-  )[0]
-  if (!carry || (carry.items?.length || 0) < 2) return null
+  )
+  const carry =
+    damageScore(byDamage[0]) >= 1
+      ? byDamage[0]
+      : [...holders].sort((a, b) => (b.items?.length || 0) - (a.items?.length || 0))[0]
 
   const primary = [...(board.traits || [])]
     .filter(isCompositional)
@@ -187,6 +243,10 @@ function newCluster(label) {
     unitIds: new Map(), // 기물 → 원본 id
     carryItems: new Map(),
     carryStars: [],
+    unitItems: new Map(), // 기물 → (아이템 → 횟수)
+    unitHolders: new Map(), // 기물 → 완성 아이템 2개 이상 든 보드 수
+    sizes: [], // 보드별 실제 기물 수
+    levels: [], // 보드별 레벨
     traitCount: new Map(), // 시너지 → 활성 보드 수
     traitUnits: new Map(), // 시너지 → 유닛 수 합
     traitIds: new Map(),
@@ -196,12 +256,20 @@ function newCluster(label) {
 function addBoard(c, board, label) {
   c.boards++
   c.placements[board.placement - 1]++
+  c.levels.push(board.level || 0)
   const seen = new Set()
   for (const u of board.units) {
     const k = norm(u.id)
     if (!isRealUnit(k)) continue // 소환물(작은 돌거북 등)은 덱 구성에서 뺀다
     if (seen.has(k)) continue
     seen.add(k)
+    const done = (u.items || []).filter(isCompletedItem)
+    if (done.length >= 2) c.unitHolders.set(k, (c.unitHolders.get(k) || 0) + 1)
+    if (done.length) {
+      const m = c.unitItems.get(k) || new Map()
+      for (const it of done) m.set(it, (m.get(it) || 0) + 1)
+      c.unitItems.set(k, m)
+    }
     c.unitCount.set(k, (c.unitCount.get(k) || 0) + 1)
     c.unitStars.set(k, (c.unitStars.get(k) || 0) + (u.star || 1))
     if (!c.unitIds.has(k)) c.unitIds.set(k, u.id)
@@ -216,27 +284,39 @@ function addBoard(c, board, label) {
     c.traitUnits.set(k, (c.traitUnits.get(k) || 0) + t.units)
     if (!c.traitIds.has(k)) c.traitIds.set(k, t.id)
   }
+  c.sizes.push(seen.size)
 }
 
-/** 대표 구성: 절반 이상에서 쓰인 기물 → 부족하면 빈도순 채움 (최소 7, 최대 MAX_UNITS) */
+/**
+ * 대표 구성: 이 덱 보드들의 실제 기물 수(중앙값, 보통 레벨과 같음)만큼 많이 쓰인 기물 순으로.
+ * 8~9렙 덱이면 8~9개가 된다. 메인 딜러는 항상 포함.
+ */
+function coreSize(c) {
+  return Math.min(Math.max(median(c.sizes) || 8, 6), MAX_UNITS)
+}
+
 function coreUnits(c) {
-  const ranked = [...c.unitCount.entries()].sort((a, b) => b[1] - a[1])
-  const core = ranked.filter(([, n]) => n / c.boards >= 0.5).slice(0, MAX_UNITS)
-  for (const entry of ranked) {
-    if (core.length >= 7) break
-    if (!core.includes(entry)) core.push(entry)
-  }
-  return core.map(([k]) => k)
+  const ranked = [...c.unitCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k)
+  const core = ranked.slice(0, coreSize(c))
+  if (!core.includes(c.label.carry) && c.unitCount.has(c.label.carry)) core[core.length - 1] = c.label.carry
+  return core
 }
 
 function mergeInto(a, b) {
   a.boards += b.boards
   for (let i = 0; i < 8; i++) a.placements[i] += b.placements[i]
-  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits']) {
+  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits', 'unitHolders']) {
     for (const [k, v] of b[field]) a[field].set(k, (a[field].get(k) || 0) + v)
   }
   for (const field of ['unitIds', 'traitIds']) for (const [k, v] of b[field]) if (!a[field].has(k)) a[field].set(k, v)
+  for (const [k, m] of b.unitItems) {
+    const target = a.unitItems.get(k) || new Map()
+    for (const [it, n] of m) target.set(it, (target.get(it) || 0) + n)
+    a.unitItems.set(k, target)
+  }
   a.carryStars.push(...b.carryStars)
+  a.sizes.push(...b.sizes)
+  a.levels.push(...b.levels)
 }
 
 function overlap(a, b) {
@@ -263,7 +343,15 @@ function toDeck(c, totalBoards) {
   const carryStar = c.carryStars.length
     ? [...c.carryStars].sort((a, b) => a - b)[Math.floor(c.carryStars.length / 2)]
     : 2
-  const carryItems = [...c.carryItems.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id]) => itemInfo(id))
+  /** 이 기물이 가장 많이 든 완성 아이템 3개 (아이콘 있는 것만) */
+  const topItems = (k) =>
+    [...(c.unitItems.get(k) || new Map()).entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => itemInfo(id))
+      .filter((it) => it.iconUrl)
+      .slice(0, 3)
+  /** 아이템을 주로 드는 기물 (메인 딜러 + 탱커 등): 이 기물이 나온 보드의 40% 이상에서 완성 아이템 2개+ */
+  const holdsItems = (k) => k === carryKey || (c.unitHolders.get(k) || 0) / (c.unitCount.get(k) || 1) >= 0.4
 
   const units = coreUnits(c).map((k) => {
     const info = champInfo(c.unitIds.get(k))
@@ -277,7 +365,7 @@ function toDeck(c, totalBoards) {
       imgUrl: info.imgUrl,
       matchedKey: statKey(c.unitIds.get(k)),
       traits: info.traits,
-      items: k === carryKey ? carryItems : [],
+      items: holdsItems(k) ? topItems(k) : [],
       /** 이 덱 보드 중 이 기물을 쓴 비율 */
       usage: r3(c.unitCount.get(k) / c.boards),
     }
@@ -296,6 +384,8 @@ function toDeck(c, totalBoards) {
     gold: null,
     unitCost: units.reduce((s, u) => s + (u.cost || 0), 0),
     unitCount: units.length,
+    /** 이 덱 보드들의 레벨 중앙값 */
+    level: median(c.levels),
     traits,
     units,
     avgPlacement: r2(avg),
@@ -336,7 +426,10 @@ function main() {
   const merged = []
   for (const c of sorted) {
     const host = merged.find((m) => m.label.carry === c.label.carry && overlap(m, c) >= MERGE_OVERLAP)
-    if (host) mergeInto(host, c)
+    if (host) {
+      if (process.env.DEBUG_MERGE) console.log(`merge(overlap) ${host.label.carry}|${host.label.trait} <- ${c.label.carry}|${c.label.trait} (${c.boards})`)
+      mergeInto(host, c)
+    }
     else merged.push(c)
   }
 
@@ -349,6 +442,7 @@ function main() {
       const sig = coreUnits(merged[i]).slice().sort().join(',')
       for (let j = i + 1; j < merged.length; j++) {
         if (coreUnits(merged[j]).slice().sort().join(',') === sig) {
+          if (process.env.DEBUG_MERGE) console.log(`merge(same core) ${merged[i].label.carry}|${merged[i].label.trait} <- ${merged[j].label.carry}|${merged[j].label.trait} (${merged[j].boards})`)
           mergeInto(merged[i], merged[j])
           merged.splice(j, 1)
           changed = true
@@ -395,4 +489,6 @@ function main() {
   })
 }
 
-main()
+if (require.main === module) main()
+
+module.exports = { labelBoard, damageScore, itemRole }
