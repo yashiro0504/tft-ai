@@ -94,6 +94,13 @@ jobs:
           echo "$deck -> $code"
           test "$code" = "200"
 
+          # 잘못된 퍼센트 인코딩 슬러그는 500 이 아니라 404
+          for path in /champions/a%25b /items/a%25b /traits/a%25b; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$path")
+            echo "$path -> $code"
+            test "$code" = "404"
+          done
+
           echo "smoke ok"
 
   eval:

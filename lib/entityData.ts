@@ -306,8 +306,17 @@ async function traitPage(slug: string): Promise<EntityPageData | null> {
   }
 }
 
+/** Next.js 가 이미 디코딩한 params 에 '%' 가 남아 있으면 decodeURIComponent 가 URIError 를 던진다 → 원문 그대로 */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 export const getEntityPage = cache(async (kind: EntityKind, slug: string): Promise<EntityPageData | null> => {
-  const s = decodeURIComponent(slug).toLowerCase()
+  const s = safeDecode(slug).toLowerCase()
   if (!/^[a-z0-9]{1,60}$/.test(s)) return null
   if (kind === 'champion') return championPage(s)
   if (kind === 'item') return itemPage(s)
