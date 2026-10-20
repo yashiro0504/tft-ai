@@ -10,6 +10,7 @@ import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
+import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStatus'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
@@ -20,16 +21,29 @@ const INTRO_PROMPT_VERSION = '2026-10-19.1'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-/**
- * DeepSeek 모델 ID. 레거시 별칭 `deepseek-chat` 도 현재 V4.1-Flash 로 라우팅되지만
+/*
+ * DEEPSEEK_MODEL: 레거시 별칭 `deepseek-chat` 도 현재 V4.1-Flash 로 라우팅되지만
  * 문서에서 빠졌으므로 정식 ID 를 기본값으로 쓴다. (`deepseek-v4-pro` 등으로 교체 가능)
- */
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-flash'
-/**
- * V4.x 는 thinking 모드가 기본값이다. 켜면 reasoning 토큰이 max_tokens 를 먼저 소모해
+ * DEEPSEEK_THINKING: V4.x 는 thinking 모드가 기본값이다. 켜면 reasoning 토큰이 max_tokens 를 먼저 소모해
  * JSON 이 잘리거나 인트로가 비므로 기본은 끈다. (`DEEPSEEK_THINKING=enabled` 로 켤 수 있음)
+ * 값은 /api/health 와 같이 쓰도록 lib/llmStatus.ts 에 있다.
  */
-const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === 'enabled' ? 'enabled' : 'disabled'
+
+/** DeepSeek HTTP 오류: 모델 ID·응답 본문 일부를 로그·헬스 상태에 남기고 던질 에러를 만든다 */
+function deepSeekHttpError(label: string, status: number, errText: string): Error {
+  const body = errText.slice(0, 300)
+  incrMetric(`llm.http_${status}`)
+  recordLlmHttpError({ provider: 'deepseek', model: DEEPSEEK_MODEL, status, body })
+  // 4xx(429 제외)는 모델 ID·파라미터(thinking 등) 스펙 불일치일 가능성이 크다
+  logEvent(status >= 400 && status < 500 && status !== 429 ? 'error' : 'warn', 'llm_http_error', {
+    provider: 'deepseek',
+    model: DEEPSEEK_MODEL,
+    thinking: DEEPSEEK_THINKING,
+    status,
+    body,
+  })
+  return new Error(`${label} (${status}): ${body}`)
+}
 
 function numEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name])
@@ -231,9 +245,7 @@ async function callDeepSeek(prompt: string): Promise<string> {
     })
 
     if (!response.ok) {
-      const errText = await response.text()
-      incrMetric(`llm.http_${response.status}`)
-      throw new Error(`DeepSeek API 오류 (${response.status}): ${errText.slice(0, 300)}`)
+      throw deepSeekHttpError('DeepSeek API 오류', response.status, await response.text())
     }
 
     const data = (await response.json()) as {
@@ -340,9 +352,7 @@ async function callDeepSeekStream(
     })
 
     if (!response.ok || !response.body) {
-      const errText = await response.text()
-      incrMetric(`llm.http_${response.status}`)
-      throw new Error(`DeepSeek stream 오류 (${response.status}): ${errText.slice(0, 300)}`)
+      throw deepSeekHttpError('DeepSeek stream 오류', response.status, await response.text())
     }
 
     const reader = response.body.getReader()
