@@ -43,10 +43,24 @@ npx eslint <변경한 파일들>
 
 | ID | 심각도 | 제목 | 주요 파일 | 상태 |
 | --- | --- | --- | --- | --- |
-| G1 | 🟡 Low | `MAX_RAW_MB_HARD < MAX_RAW_MB` 설정이면 소프트 이하에서도 하드 prune | `scripts/collectDb.js`, `scripts/testCollect.js` | [ ] |
-| G2 | 🟠 Medium | `check:ops --db`가 전역 최신 1행만 봐서 최신 패치 지연을 오판 | `scripts/checkOps.js`, `docs/DATA-PLATFORM.md` | [ ] |
+| G1 | 🟡 Low | `MAX_RAW_MB_HARD < MAX_RAW_MB` 설정이면 소프트 이하에서도 하드 prune | `scripts/collectDb.js`, `scripts/testCollect.js` | [x] `41463bc` |
+| G2 | 🟠 Medium | `check:ops --db`가 전역 최신 1행만 봐서 최신 패치 지연을 오판 | `scripts/checkOps.js`, `docs/DATA-PLATFORM.md` | [x] `2bf6a0e` |
 
 **권장 순서**: G1 → G2
+
+### 검증 완료 스냅샷 (2026-10-20, `2bf6a0e`)
+
+```text
+typecheck ✅ · test:axes ✅ · test:collect ✅ · test:ops ✅ · test:rollup ✅(REQUIRE_PGLITE=1, PGlite SQL 패리티)
+meta:check ✅ · decks:check ✅ · eslint(변경 파일) ✅ · build ✅
+G1: MAX_RAW_MB=500 / HARD=480 → 490MB 에서 용량 가드 정리·건너뜀 없음(수집 진행), 501MB 에서 하드 정리 + note
+    (resolveLimitConfig 단위 + main() 통합 2케이스, 기존 F1 3분기 유지)
+G2: 16.19 1시간 전 + 16.20 30시간 전 → 미충족(최신 패치 기준) / 16.20 2시간 전 → 충족
+    (test:ops 8케이스 · 가짜 stat_comp 서버로 checkOps --db 수동 실행:
+     "db: 최신 패치 16.20 · 마지막 빌드 … (30.0시간 전)" + 티어별 줄 → ❌ / 2.0시간 → ✅)
+
+미검증(환경 제약): 실 Supabase stat_comp 응답(로컬에 Supabase env 없음)
+```
 
 ---
 
@@ -283,7 +297,7 @@ git commit -m "docs(review): 후속 2 지시서(G1~G2) 및 완료 상태 반영"
 | --- | --- | --- |
 | 1차 리뷰 R1~R11 | `docs/REVIEW-2026-10-20.md` | `12e2912` ~ `e3988c5` |
 | 후속 F1~F6 | `docs/REVIEW-2026-10-20-FOLLOWUP.md` | `92e1356` ~ `04cb5e3` |
-| 후속 2 G1~G2 | 이 문서 | (작업 후 기입) |
+| 후속 2 G1~G2 | 이 문서 | `41463bc` ~ `2bf6a0e` |
 
 검증 스냅샷(F1~F6): typecheck·test:axes·test:collect·test:rollup(PGlite)·lint·build 모두 통과,
 라이브에서 health body 없음 · unit 변형 15행 · 전체 879행 · `%` 슬러그 404 확인.
