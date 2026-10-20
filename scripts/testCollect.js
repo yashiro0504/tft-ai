@@ -144,12 +144,21 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   }
 
   const quiet = { log() {}, warn() {}, error: console.error }
-  // collectDb 는 require 시점에 createMemoryStore 를 구조 분해하므로 그 전에 감싼다 (집계 실패 시나리오용)
+  // collectDb 는 require 시점에 createMemoryStore 를 구조 분해하므로 그 전에 감싼다 (집계 실패 · 시드 손상 시나리오용)
   const storeMod = require('./collect/store')
   const realCreateMemoryStore = storeMod.createMemoryStore
   let brokenRollup = false
+  let corruptSeed = false
   storeMod.createMemoryStore = () => {
     const s = realCreateMemoryStore()
+    if (corruptSeed) {
+      // 시드 갱신 직후 c1 의 암호문을 깨뜨린다 (다른 키로 만든 시드 흉내)
+      const origUpsert = s.upsertSeeds.bind(s)
+      s.upsertSeeds = async (rows) => {
+        await origUpsert(rows)
+        for (const seed of s._state.seeds.values()) if (sc.decrypt(seed.puuid_enc) === 'c1') seed.puuid_enc = 'broken.token'
+      }
+    }
     if (!brokenRollup) return s
     // 이전 패치 1판을 미리 넣어 두고, 집계는 실패하게 한다
     const origLoadDict = s.loadDict.bind(s)
@@ -191,6 +200,15 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   const bst = broken.store._state
   check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
   check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
+
+  console.log('시드 복호화 실패 격리 (REVIEW R9)')
+  corruptSeed = true
+  const withBad = await main({ log: quiet })
+  corruptSeed = false
+  const wst = withBad.store._state
+  // c1 의 판(KR_1·KR_3)만 빠지고 나머지 시드의 판은 수집된다 (KR_2 는 g1 에도 있음)
+  check('복호화 불가 시드 1건 → 나머지 시드 수집 계속', withBad.stats.matches_added === 4 && !wst.matches.has('KR_1') && wst.matches.has('KR_2') && wst.matches.has('KR_6'), `added=${withBad.stats.matches_added}`)
+  check('실패 시드 수가 실행 기록에 남음', /시드 복호화 실패 1건/.test(wst.runs[0].note || ''), wst.runs[0].note)
 
   console.log('덱 클러스터 시간 확보 (REVIEW R3)')
   const MIN = 60 * 1000

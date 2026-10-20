@@ -301,12 +301,25 @@ async function main({ log = console } = {}) {
 
     // 3) 시드 순회 (가장 오래 확인 안 한 선수부터)
     let seedsChecked = 0
+    let seedDecryptFailures = 0
     outer: while (Date.now() < collectUntil && stats.matches_added < CFG.maxMatches) {
       const batch = await store.nextSeeds(50)
       if (!batch.length) break
+      let batchDecryptFailures = 0
       for (const seed of batch) {
         if (Date.now() > collectUntil || stats.matches_added >= CFG.maxMatches) break outer
-        const puuid = seedCrypto.decrypt(seed.puuid_enc)
+        let puuid
+        try {
+          puuid = seedCrypto.decrypt(seed.puuid_enc)
+        } catch (e) {
+          // TFT_SEED_KEY 교체·손상 시드: 이 시드만 건너뛰고 커서를 밀어 다음 배치에서 다시 잡히지 않게 한다
+          // (다음 시드 갱신이 새 키로 다시 만들고, 오래된 행은 pruneStaleSeeds 가 지운다)
+          seedDecryptFailures++
+          batchDecryptFailures++
+          log.warn(`  시드 복호화 실패 (건너뜀): ${e.message}`)
+          await store.markSeedChecked(seed.puuid_hash, { checkedAt: new Date().toISOString(), lastMatchAt: null })
+          continue
+        }
         const since = seed.last_match_at
           ? new Date(seed.last_match_at).getTime() - CURSOR_OVERLAP_MS
           : Date.now() - CFG.lookbackDays * 24 * 60 * 60 * 1000
@@ -351,8 +364,13 @@ async function main({ log = console } = {}) {
           )
         }
       }
+      if (batchDecryptFailures === batch.length) {
+        log.warn('⚠️  배치의 시드를 하나도 복호화하지 못했습니다 — TFT_SEED_KEY 를 확인하세요 (시드 순회 중단)')
+        break
+      }
       if (batch.length < 50) break
     }
+    if (seedDecryptFailures) stats.note = [stats.note, `시드 복호화 실패 ${seedDecryptFailures}건`].filter(Boolean).join(' · ')
 
     // 4) 일별 집계 (원본 정리 전에: 정리될 패치의 마지막 판까지 집계에 남긴다)
     aggregates = await refreshAggregates({ store, dirty, deadline, log })
