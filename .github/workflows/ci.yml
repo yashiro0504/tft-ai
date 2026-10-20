@@ -53,6 +53,9 @@ jobs:
           # PGlite 가 없으면 SQL(0005·0006) 패리티·RLS 검증이 건너뛰어지므로 실패로 처리
           REQUIRE_PGLITE: "1"
 
+      - name: Ops check unit tests
+        run: npm run test:ops
+
       - name: Build
         run: npm run build
         env:
