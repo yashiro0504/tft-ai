@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStats, isStatType } from '@/lib/tftStats'
-import { parseStatFilter } from '@/lib/statsShared'
+import { filterStatsByUnit, parseStatFilter } from '@/lib/statsShared'
 import { rateLimitGuard, handleApiError } from '@/lib/apiUtils'
 import { STATS_CACHE_HEADERS } from '@/lib/statsCache'
 
@@ -27,11 +27,9 @@ export async function GET(req: NextRequest) {
     }
     const res = await getStats(type, parseStatFilter(params))
     const unit = params.get('unit')
-    if (type === 'unit_item' && unit) {
-      const u = unit.toLowerCase()
-      res.rows = res.rows.filter((r) => 'champKey' in r && r.champKey.toLowerCase() === u)
-    }
-    return NextResponse.json(res, { headers: STATS_CACHE_HEADERS })
+    // res 는 lib/tftStats 메모 캐시의 객체 그대로다 — 직접 고치지 말 것
+    const payload = type === 'unit_item' && unit ? filterStatsByUnit(res, unit) : res
+    return NextResponse.json(payload, { headers: STATS_CACHE_HEADERS })
   } catch (err) {
     return handleApiError(err, 'stats')
   }

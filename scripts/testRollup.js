@@ -190,6 +190,18 @@ const sortRows = (rows) =>
   )
   check('덱: decksData.json 폴백', fbDecks.source === 'json' && fbDecks.decks.length > 0 && fbDecks.decks.every((d) => d.lowSample === d.sampleSize < 15))
 
+  // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1)
+  const fbCombos = await fallback.getStats('unit_item', shared.DEFAULT_FILTER)
+  const comboCount = fbCombos.rows.length
+  const someChamp = fbCombos.rows[0] && fbCombos.rows[0].champKey
+  const onlyOne = shared.filterStatsByUnit(fbCombos, String(someChamp))
+  check(
+    'unit 필터: 원본 rows 불변 · 새 객체 반환',
+    comboCount > 0 && fbCombos.rows.length === comboCount && onlyOne !== fbCombos && onlyOne.rows !== fbCombos.rows && onlyOne.rows.length > 0 && onlyOne.rows.length < comboCount,
+    `${comboCount} → ${fbCombos.rows.length} / ${onlyOne.rows.length}`
+  )
+  check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
+
   await sqlChecks()
 })()
   .catch((e) => {

@@ -163,6 +163,14 @@ export interface MetaFiltersResponse {
   fallbackReason?: string
 }
 
+/**
+ * 기물×아이템 응답을 한 기물로 거른다. 원본(메모 캐시가 들고 있는 객체)은 건드리지 않고 새 객체를 돌려준다.
+ */
+export function filterStatsByUnit<T extends StatRow>(res: StatsResponse<T>, unit: string): StatsResponse<T> {
+  const u = unit.toLowerCase()
+  return { ...res, rows: res.rows.filter((r) => 'champKey' in r && r.champKey.toLowerCase() === u) }
+}
+
 /** 표본 필드 채우기 */
 export function withSample<T extends { sampleSize: number }>(row: T, min: number): T & SampleFields {
   return { ...row, margin: placementMargin(row.sampleSize), lowSample: row.sampleSize < min }
