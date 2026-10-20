@@ -19,6 +19,27 @@ export class AnalysisStreamUnavailableError extends Error {
   }
 }
 
+/**
+ * 봇 게이트(검색 통과 쿠키 없음 · 만료) 또는 Turnstile 실패로 403 이 났을 때.
+ * 호출부는 Turnstile 확인 후 `turnstileToken` 을 실어 다시 요청한다. (게이트 거부는 쿼터 소모 전이다)
+ */
+export class AnalysisGateError extends Error {
+  constructor(
+    message: string,
+    readonly code: 'BOT_GATE_REQUIRED' | 'TURNSTILE_FAILED'
+  ) {
+    super(message)
+    this.name = 'AnalysisGateError'
+  }
+}
+
+/** 403 응답 본문 → 게이트 오류면 AnalysisGateError, 아니면 메시지 */
+function errorFromBody(data: { error?: string; code?: string } | null, fallback: string): Error {
+  const message = data?.error || fallback
+  if (data?.code === 'BOT_GATE_REQUIRED' || data?.code === 'TURNSTILE_FAILED') return new AnalysisGateError(message, data.code)
+  return new Error(message)
+}
+
 interface SseEvent {
   event: string
   data: string
@@ -75,14 +96,13 @@ export async function analyzeMatchStream({
   }
 
   if (!res.ok) {
-    let message = '이 경기 분석 중 오류가 발생했습니다.'
+    let data: { error?: string; code?: string } | null = null
     try {
-      const data = (await res.json()) as { error?: string }
-      if (data?.error) message = data.error
+      data = (await res.json()) as { error?: string; code?: string }
     } catch {
       /* 본문이 JSON 이 아닌 경우 기본 메시지 유지 */
     }
-    throw new Error(message)
+    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.')
   }
 
   const reader = res.body.getReader()
@@ -167,9 +187,9 @@ export async function analyzeMatchJson({
     signal,
   })
 
-  const data = (await res.json()) as TftMatchAnalysisResponse
+  const data = (await res.json()) as TftMatchAnalysisResponse & { code?: string }
   if (!res.ok || !data.success || !data.feedback) {
-    throw new Error(data.error || '이 경기 분석 중 오류가 발생했습니다.')
+    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.')
   }
   return data
 }

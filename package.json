@@ -36,8 +36,9 @@
     "test:axes:update": "node scripts/testAxes.js --update",
     "test:collect": "node scripts/testCollect.js",
     "test:rollup": "node scripts/testRollup.js",
+    "test:gate": "node scripts/testBotGate.js",
     "inspect:match": "node scripts/inspectMatch.js",
-    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:collect && npm run test:rollup && npm run build",
+    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:collect && npm run test:rollup && npm run test:gate && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"
   },

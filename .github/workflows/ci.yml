@@ -50,6 +50,9 @@ jobs:
       - name: Rollup / deck cluster tests
         run: npm run test:rollup
 
+      - name: Bot gate cookie tests
+        run: npm run test:gate
+
       - name: Build
         run: npm run build
         env:
