@@ -152,7 +152,12 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
                           {body}
                         </Link>
                       ) : (
-                        <div className="rk-ent-rowlink">{body}</div>
+                        <div
+                          className="rk-ent-rowlink is-static"
+                          title={d.fromDb ? 'DB 집계 덱은 별도 상세 페이지가 없습니다' : '이 덱은 별도 상세 페이지가 없습니다'}
+                        >
+                          {body}
+                        </div>
                       )}
                     </li>
                   )
