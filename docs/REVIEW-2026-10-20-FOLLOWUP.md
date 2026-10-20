@@ -43,12 +43,31 @@ npx eslint <변경한 파일들>
 
 | ID | 심각도 | 제목 | 주요 파일 | 상태 |
 | --- | --- | --- | --- | --- |
-| F1 | 🟠 Medium | `MAX_RAW_MB` 용량 가드가 집계 실패와 무관하게 원본을 prune | `scripts/collectDb.js`, `scripts/testCollect.js` | [ ] |
-| F2 | 🟡 Low | `/api/health`가 LLM 오류 `body`를 토큰 없이 공개 | `app/api/health/route.ts`, `lib/llmStatus.ts` | [ ] |
-| F3 | 🟡 Low | unit 필터·네거티브 캐시 테스트 커버리지 갭 | `scripts/testRollup.js` | [ ] |
-| F4 | ⚪ Doc | 리뷰 MD 내용은 갱신됨 — 저장소 커밋만 남음 | `docs/REVIEW-2026-10-20.md` | [ ] |
-| F5 | 🟡 Low | DB 덱 비링크 행의 클래스/접근성 정리 | `app/components/EntityDetail.tsx`, `app/entity.css` | [ ] |
-| F6 | ⚪ Ops | 덱 클러스터 신선도 경고를 운영 표면에 연결 | `docs/DATA-PLATFORM.md`, (선택) `scripts/checkOps.js` | [ ] |
+| F1 | 🟠 Medium | `MAX_RAW_MB` 용량 가드가 집계 실패와 무관하게 원본을 prune | `scripts/collectDb.js`, `scripts/testCollect.js` | [x] `92e1356` |
+| F2 | 🟡 Low | `/api/health`가 LLM 오류 `body`를 토큰 없이 공개 | `app/api/health/route.ts`, `lib/llmStatus.ts` | [x] `76f2cf8` |
+| F3 | 🟡 Low | unit 필터·네거티브 캐시 테스트 커버리지 갭 | `scripts/testRollup.js` | [x] `01137cd` |
+| F4 | ⚪ Doc | 리뷰 MD 내용은 갱신됨 — 저장소 커밋만 남음 | `docs/REVIEW-2026-10-20.md` | [x] `7a126d9` |
+| F5 | 🟡 Low | DB 덱 비링크 행의 클래스/접근성 정리 | `app/components/EntityDetail.tsx`, `app/entity.css` | [x] `4cae868` |
+| F6 | ⚪ Ops | 덱 클러스터 신선도 경고를 운영 표면에 연결 | `docs/DATA-PLATFORM.md`, (선택) `scripts/checkOps.js` | [x] `04cb5e3` |
+
+### 검증 완료 스냅샷 (2026-10-20, `04cb5e3`)
+
+```text
+typecheck ✅ · test:axes ✅ · test:collect ✅(+F1 용량 가드 4케이스)
+test:rollup ✅ EXIT:0 (F2 redact · F3 DA_*/Base·stats failMemo + PGlite SQL 패리티)
+lint ✅ EXIT:0 · build ✅(250 pages) · meta:check ✅ · decks:check ✅
+
+라이브(next start):
+  /api/health → status=ok, lastLlmHttpError=null, "body" 키 없음 (F2)
+  ?type=unit_item&unit=ahri / DA_18_Ahri / TFT18_Ahri → 모두 15행, unit="ahri" (F3)
+  ?type=unit_item (unit 없음) → 879행 (R1 캐시 불변 유지)
+  /champions|items|traits/a%25b → 404 (R7 유지)
+  check:ops --db → Supabase 미설정 시 "덱 신선도 점검 건너뜀" 안내 (F6)
+
+미검증(환경 제약):
+  - F1 소프트/하드 한도는 메모리 저장소 테스트로만 확인 (실 Supabase 용량 가드 미실행)
+  - F6 checkOps --db 의 24h/72h 판정은 Supabase 미설정으로 실제 DB 응답 미검증
+```
 
 **권장 순서**: F1 → F4 → F2 → F3 → F5 → F6
 
@@ -391,3 +410,13 @@ curl.exe -s "http://127.0.0.1:3100/api/tft/stats?type=unit_item&unit=DA_18_Ahri"
 
 검증 스냅샷: `typecheck`·`test:axes`·`test:collect`·`test:rollup`(PGlite SQL 실행)·`lint`·`build` 모두 통과,
 라이브에서 캐시 불변(ahri 15 → 전체 879)·`TFT18_Ahri` 동일·잘못된 `%` 슬러그 404 확인.
+
+---
+
+## 6. 후속 2
+
+F1~F6 검증 중 발견한 설정 경계·판정 정확도 보강은
+**`docs/REVIEW-2026-10-20-FOLLOWUP2.md` (G1~G2)** 에서 이어서 처리한다.
+
+- G1: `MAX_RAW_MB_HARD < MAX_RAW_MB` 설정 방어(정규화)
+- G2: `check:ops --db`를 전역 최신 1행이 아니라 **최신 패치 기준**으로 판정
