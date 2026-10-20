@@ -20,7 +20,8 @@
  *   NEXT_PUBLIC_SUPABASE_URL (또는 SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY(32자+)
  *   RIOT_MIN_INTERVAL_MS=1250   개발 키 기준. 프로덕션 키는 34 (한도 60%)
  *   MAX_MINUTES=50 · MAX_MATCHES=200(무료 플랜: 시간당 200판 ≈ 패치당 6.4만 판 ≈ 170MB, 실측 2.6KB/판) · SEED_TIERS=challenger,grandmaster,master · MASTER_LIMIT=1000
- *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1 · MAX_RAW_MB=400
+ *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1
+ *   MAX_RAW_MB=400(소프트: 넘으면 수집만 중단) · MAX_RAW_MB_HARD=480(하드: 넘으면 무조건 정리) · PRUNE_ON_LIMIT=0(1 이면 소프트에서도 정리)
  *   SET_NUMBER=18 · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=20 · COMP_MIN_GAMES=8
  */
 const crypto = require('crypto')
@@ -58,6 +59,8 @@ const CFG = {
   lookbackDays: num('NEW_SEED_LOOKBACK_DAYS', 2),
   keepPatches: num('KEEP_PATCHES', 1),
   maxRawMb: num('MAX_RAW_MB', 400),
+  maxRawMbHard: num('MAX_RAW_MB_HARD', 480),
+  pruneOnLimit: process.env.PRUNE_ON_LIMIT === '1',
   setNumber: num('SET_NUMBER', 18),
   rankedQueue: num('RANKED_QUEUE', 1100),
   deckRefreshHours: num('DECK_REFRESH_HOURS', 20),
@@ -184,6 +187,17 @@ function shouldPrune(aggregates) {
   return Boolean(aggregates) && !aggregates.error
 }
 
+/**
+ * 시작 시 용량 가드에서 원본을 정리할지.
+ * 소프트 한도(MAX_RAW_MB)는 opt-in(PRUNE_ON_LIMIT=1) — 실행 끝 정리(shouldPrune)가 막혀 원본이 쌓인 경우가 대부분이라
+ * 집계 상태를 모른 채 지우지 않는다. 하드 한도(MAX_RAW_MB_HARD)는 DB 자체를 지키는 최후 수단이라 항상 정리.
+ */
+function shouldPruneOnLimit(sizeMb, cfg = CFG) {
+  if (sizeMb > cfg.maxRawMbHard) return true
+  if (sizeMb > cfg.maxRawMb) return cfg.pruneOnLimit
+  return false
+}
+
 /** --rollup-only: Riot 호출 없이 원본 전체로 집계·덱 클러스터를 다시 만든다 */
 async function rollupOnly(store, log) {
   await store.loadDict()
@@ -236,16 +250,29 @@ async function main({ log = console } = {}) {
     const patchAt = (gameAtMs) => patchForTime(calendar, gameAtMs)
     log.log(`  패치 달력: ${calendar.map((p) => p.patch).sort().join(', ') || '(비어 있음)'}`)
 
-    // 0) 용량 가드 (무료 플랜)
+    // 0) 용량 가드 (무료 플랜): 소프트 한도는 수집만 멈추고, 하드 한도·opt-in 일 때만 정리
     let sizeMb = await store.rawSizeMb()
     if (sizeMb > CFG.maxRawMb) {
-      const removed = await store.prune(CFG.keepPatches)
-      sizeMb = await store.rawSizeMb()
-      log.warn(`  원본 ${sizeMb}MB > 한도 ${CFG.maxRawMb}MB → 정리 ${removed}판`)
+      if (shouldPruneOnLimit(sizeMb)) {
+        const hard = sizeMb > CFG.maxRawMbHard
+        const removed = await store.prune(CFG.keepPatches)
+        const before = sizeMb
+        sizeMb = await store.rawSizeMb()
+        if (hard) {
+          stats.note = `하드 한도 초과(${before}MB > ${CFG.maxRawMbHard}MB) — 집계 상태와 무관하게 원본 ${removed}판 정리`
+          log.error(`❌ ${stats.note}`)
+        } else {
+          log.warn(`  원본 ${before}MB > 한도 ${CFG.maxRawMb}MB → 정리 ${removed}판 (PRUNE_ON_LIMIT=1)`)
+        }
+      }
       if (sizeMb > CFG.maxRawMb) {
-        stats.note = `용량 한도 초과(${sizeMb}MB) — 수집 건너뜀`
-        log.warn(`⚠️  ${stats.note}. KEEP_PATCHES 를 줄이거나 플랜을 올리세요.`)
-        return
+        const note = `용량 한도 초과(${sizeMb}MB > ${CFG.maxRawMb}MB) — 수집 건너뜀`
+        stats.note = [stats.note, note].filter(Boolean).join(' · ')
+        log.warn(
+          `⚠️  ${note}. 집계 실패로 정리가 막혔는지(tft_collect_runs.note) 확인 후 수동 정리하거나 PRUNE_ON_LIMIT=1, ` +
+            `또는 KEEP_PATCHES 를 줄이거나 플랜을 올리세요.`
+        )
+        return { store, stats, aggregates }
       }
     }
 
@@ -413,4 +440,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { main, CFG, shouldPrune, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }
+module.exports = { main, CFG, shouldPrune, shouldPruneOnLimit, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }

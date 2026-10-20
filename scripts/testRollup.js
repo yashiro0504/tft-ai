@@ -199,7 +199,8 @@ const sortRows = (rows) =>
     check('엔티티 페이지(JSON): 덱 링크 유지', jd && jd.linkable === true && jd.fromDb === false, JSON.stringify(jd))
   }
 
-  // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1)
+  // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1).
+  // 라우트는 filterStatsByUnit 결과만 응답하므로(route.ts 주석) 라우트 회귀는 이 순수 함수 테스트로 고정한다.
   const fbCombos = await fallback.getStats('unit_item', shared.DEFAULT_FILTER)
   const comboCount = fbCombos.rows.length
   const someChamp = fbCombos.rows[0] && fbCombos.rows[0].champKey
@@ -212,15 +213,29 @@ const sortRows = (rows) =>
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
   // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
   const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
-  const variants = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase()].map((u) => shared.filterStatsByUnit(fbCombos, u))
+  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3)
+  const unitInputs = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase(), `DA_18_${someChamp}`, `DA_${someChamp}`, `${someChamp}18_Base`]
+  const variants = unitInputs.map((u) => shared.filterStatsByUnit(fbCombos, u))
   check(
-    `unit 필터: ${slug} · ${someChamp} · TFT18_${someChamp} 같은 결과 · 응답 unit = 슬러그`,
+    `unit 필터: ${unitInputs.join(' · ')} 같은 결과 · 응답 unit = 슬러그`,
     variants.every((v) => v.unit === slug && v.success && JSON.stringify(v.rows) === JSON.stringify(variants[0].rows)) && variants[0].rows.length > 0,
     variants.map((v) => `${v.unit}:${v.rows.length}`).join(' ')
   )
   check('unit 필터: 거른 뒤에도 totalBoards · filter 는 그대로', onlyOne.totalBoards === fbCombos.totalBoards && onlyOne.filter === fbCombos.filter)
   const lux = shared.filterStatsByUnit({ ...fbCombos, rows: [{ champKey: 'Lux18_Base', key: 'Lux18_Base|x' }] }, 'lux')
   check('unit 필터: 원본 키 Lux18_Base 도 슬러그 lux 로 찾음', lux.rows.length === 1)
+
+  console.log('헬스 (lib/llmStatus — 공개 응답에서 LLM 오류 본문 제거, FOLLOWUP F2)')
+  {
+    const ls = require('../lib/llmStatus')
+    check('오류 없으면 null', ls.redactLlmError(null, { includeBody: false }) === null)
+    ls.recordLlmHttpError({ provider: 'deepseek', model: 'deepseek-flash', status: 400, body: 'org-xyz request-id 123' })
+    const err = ls.lastLlmHttpError()
+    const pub = ls.redactLlmError(err, { includeBody: false })
+    const auth = ls.redactLlmError(err, { includeBody: true })
+    check('공개: body 키 없음 · model/status/at 유지', !('body' in pub) && pub.model === 'deepseek-flash' && pub.status === 400 && Boolean(pub.at) && !JSON.stringify(pub).includes('org-xyz'))
+    check('인증: body 포함 · 원본 불변', auth.body === 'org-xyz request-id 123' && err.body === 'org-xyz request-id 123')
+  }
 
   // DB 장애 네거티브 캐시 (REVIEW R5): 타임아웃 1회 뒤 FAIL_TTL 동안은 DB 를 기다리지 않고 바로 폴백
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://hang.test'
@@ -247,6 +262,39 @@ const sortRows = (rows) =>
     'DB 장애 폴백 응답 스키마 유지 (source · fallbackReason · filter)',
     [firstFail, secondFail].every((r) => r.source === 'json' && r.fallbackReason === 'db_error' && r.filter === null && r.rows.length > 0)
   )
+
+  // stats 키 자체의 네거티브 캐시 (FOLLOWUP F3): 필터 RPC 는 정상, 통계 RPC 만 멈춤
+  let queryCalls = 0
+  const filterRows = [{ patch: '16.20', tier_bucket: 'MASTER', matches: 10, first_date: '2026-10-19', last_date: '2026-10-20' }]
+  const partial = loadStatsLib({
+    rpc: (fn) => ({
+      abortSignal: (signal) => {
+        if (fn === 'tft_stat_filters') return Promise.resolve({ data: filterRows, error: null })
+        queryCalls++
+        return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
+      },
+    }),
+  })
+  t = Date.now()
+  const qFirst = await partial.getStats('unit', shared.DEFAULT_FILTER)
+  const qFirstMs = Date.now() - t
+  const callsAfterFirst = queryCalls
+  t = Date.now()
+  const qSecond = await partial.getStats('unit', shared.DEFAULT_FILTER)
+  const qSecondMs = Date.now() - t
+  check(
+    'stats 키 failMemo: 필터 성공 + 통계 RPC 타임아웃 → 두 번째는 DB 재시도 없이 즉시 폴백',
+    (await partial.getMetaFilters()).source === 'db' &&
+      qFirstMs >= 250 &&
+      qSecondMs < 50 &&
+      callsAfterFirst === 2 &&
+      queryCalls === 2 &&
+      [qFirst, qSecond].every((r) => r.source === 'json' && r.fallbackReason === 'db_error'),
+    `${qFirstMs}ms / ${qSecondMs}ms · 통계 RPC ${queryCalls}회`
+  )
+  await partial.getStats('item', shared.DEFAULT_FILTER)
+  check('stats 키 failMemo 는 키 단위 (다른 type 은 DB 재시도)', queryCalls === 4, `통계 RPC ${queryCalls}회`)
+
   delete process.env.NEXT_PUBLIC_SUPABASE_URL
   delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   delete process.env.STATS_DB_TIMEOUT_MS
