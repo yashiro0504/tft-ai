@@ -2,14 +2,17 @@
  * 운영 설정 점검 (Go-live gate)
  *
  * 사용:
- *   node scripts/checkOps.js [URL] [--strict]
- *   npm run check:ops -- https://www.tftlab.kr --strict
+ *   node scripts/checkOps.js [URL] [--strict] [--db]
+ *   npm run check:ops -- https://www.tftlab.kr --strict --db
  *
  * 확인 항목:
  *  - /api/health 200 및 Riot/LLM 연동
  *  - Redis(분산 캐시) 설정 여부
  *  - Turnstile 강제 여부 + 토큰 없이 검색이 403으로 막히는지
  *  - sitemap URL 수/덱 URL 존재 및 덱 페이지 200
+ *  - (--db) 덱 클러스터(stat_comp) 신선도: 마지막 빌드가 24시간 넘으면 미충족, 72시간 넘으면 수집 파이프라인 점검 안내
+ *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — stat_comp 는 anon 읽기 공개.
+ *    없으면 건너뛴다(CI 등).
  *
  * --strict: 하나라도 미충족이면 exit 1 (배포 전 게이트로 사용)
  */
@@ -17,6 +20,8 @@ const rawUrl =
   process.argv.find((arg) => arg.startsWith('http')) || process.env.OPS_URL || 'https://www.tftlab.kr'
 const BASE = rawUrl.replace(/\/+$/, '')
 const STRICT = process.argv.includes('--strict')
+const DB = process.argv.includes('--db')
+const HOUR = 60 * 60 * 1000
 
 const failures = []
 const notes = []
@@ -111,6 +116,8 @@ async function main() {
     fail(`sitemap 확인 실패: ${err.message}`)
   }
 
+  if (DB) await checkDeckFreshness()
+
   if (Array.isArray(health.warnings) && health.warnings.length > 0) {
     console.log('\nwarnings:')
     health.warnings.forEach((warning) => console.log(`  - ${warning}`))
@@ -126,6 +133,42 @@ async function main() {
     if (STRICT) process.exit(1)
   } else {
     console.log('\n✅ 운영 점검 통과')
+  }
+}
+
+/** stat_comp 의 마지막 빌드 시각 (docs/DATA-PLATFORM.md §13 신선도 기준: 24시간 · 72시간) */
+async function checkDeckFreshness() {
+  require('./_env').loadEnv()
+  const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '')
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    console.log('db: Supabase URL/anon 키가 없어 덱 신선도 점검을 건너뜁니다')
+    return
+  }
+  try {
+    const res = await fetch(`${url}/rest/v1/stat_comp?select=patch,tier_min,updated_at&order=updated_at.desc&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) throw new Error(`status ${res.status}`)
+    const [latest] = await res.json()
+    if (!latest) {
+      fail('덱 클러스터(stat_comp) 비어 있음 — npm run collect:db:rollup')
+      return
+    }
+    const ageH = (Date.now() - Date.parse(latest.updated_at)) / HOUR
+    console.log(`db: 덱 클러스터 마지막 빌드 ${latest.updated_at} (패치 ${latest.patch}, ${ageH.toFixed(1)}시간 전)`)
+    if (ageH <= 24) {
+      pass('덱 클러스터 24시간 이내 갱신')
+      return
+    }
+    fail(`덱 클러스터 ${Math.floor(ageH)}시간 미갱신 (24시간 초과)`)
+    notes.push('npm run collect:db:rollup 으로 덱 클러스터 수동 갱신 (tft_collect_runs.note 의 "덱 클러스터 미룸" 확인)')
+    if (ageH > 72) {
+      notes.push('72시간 초과: collect-db 워크플로 실패 여부 · RIOT_API_KEY 만료 · 0006 마이그레이션 적용 상태를 함께 확인')
+    }
+  } catch (err) {
+    fail(`덱 클러스터 신선도 확인 실패: ${err.message}`)
   }
 }
 

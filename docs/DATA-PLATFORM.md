@@ -410,6 +410,19 @@ Phase C 예정 (미구현):
    앱: `/api/tft/meta/filters` 의 `source` 가 `db` 면 `/meta` 에 필터가 나타난다. `json` 이면 `fallbackReason` 을 본다
    (`supabase_not_configured` · `empty` · `db_error`).
 
+5. **덱 클러스터 신선도 (일일 점검)** — 덱 재빌드가 미뤄지면 `tft_collect_runs.note` 와 수집 로그에만 남으므로 따로 본다.
+   ```sql
+   -- 최신 패치 덱 클러스터 신선도 (24시간 초과면 경고)
+   select patch, tier_min, count(*) as decks, max(updated_at) as last_built,
+          now() - max(updated_at) as age
+     from stat_comp
+    group by 1, 2
+    order by last_built desc;
+   ```
+   또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
+   - `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행.
+   - **72시간 초과** → 수집 워크플로(`collect-db.yml`) 실패 여부 · `RIOT_API_KEY` 만료 · 0006 적용 상태를 함께 확인.
+
 수집기는 `MAX_MINUTES` 보다 7분 일찍 수집을 멈춰 덱 클러스터 몫을 남긴다. 그래도 미루면 `note` 에 남기고, 최신 패치 덱이 24시간 이상
 갱신되지 않았으면 경고한다(위 `stat_comp` 의 `max(updated_at)` 확인 → `npm run collect:db:rollup` 으로 수동 갱신).
 
