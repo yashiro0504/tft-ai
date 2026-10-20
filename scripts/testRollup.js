@@ -202,6 +202,35 @@ const sortRows = (rows) =>
   )
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
 
+  // DB 장애 네거티브 캐시 (REVIEW R5): 타임아웃 1회 뒤 FAIL_TTL 동안은 DB 를 기다리지 않고 바로 폴백
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://hang.test'
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon'
+  process.env.STATS_DB_TIMEOUT_MS = '300'
+  let hangCalls = 0
+  const hanging = (signal) => {
+    hangCalls++
+    return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
+  }
+  const slow = loadStatsLib({ rpc: () => ({ abortSignal: hanging }) })
+  let t = Date.now()
+  const firstFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
+  const firstMs = Date.now() - t
+  t = Date.now()
+  const secondFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
+  const secondMs = Date.now() - t
+  check(
+    'DB 타임아웃 2회: 첫 요청만 대기, 두 번째는 즉시 폴백',
+    firstMs >= 250 && secondMs < 50 && hangCalls === 1,
+    `${firstMs}ms / ${secondMs}ms · DB 호출 ${hangCalls}회`
+  )
+  check(
+    'DB 장애 폴백 응답 스키마 유지 (source · fallbackReason · filter)',
+    [firstFail, secondFail].every((r) => r.source === 'json' && r.fallbackReason === 'db_error' && r.filter === null && r.rows.length > 0)
+  )
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL
+  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  delete process.env.STATS_DB_TIMEOUT_MS
+
   await sqlChecks()
 })()
   .catch((e) => {

@@ -20,6 +20,7 @@ import {
   type MetaFiltersResponse,
   type StatFilter,
   type StatRow,
+  type StatSource,
   type StatType,
   type StatsResponse,
   type TierFilter,
@@ -56,11 +57,34 @@ function db(): SupabaseClient | null {
 }
 
 const memo = new Map<string, { value: unknown; expiresAt: number }>()
-async function memoized<T>(key: string, fn: () => Promise<T>, keep: (v: T) => boolean): Promise<T> {
+/** DB 장애 네거티브 캐시: 키 → 다시 DB 를 시도해도 되는 시각 (값은 저장하지 않는다) */
+const failMemo = new Map<string, number>()
+/** DB 장애 중 요청마다 DB_TIMEOUT_MS 를 기다리지 않게 이 시간 동안은 바로 폴백한다 */
+const FAIL_TTL_MS = 20_000
+
+/**
+ * db 응답만 MEMO_TTL_MS 캐시한다. DB 오류(db_error)면 실패 시각만 남겨 FAIL_TTL_MS 동안 fallback 을 바로 돌려주고,
+ * 그 뒤 첫 요청에서 다시 DB 를 시도한다.
+ */
+async function memoized<T extends { source: StatSource; fallbackReason?: string }>(
+  key: string,
+  fn: () => Promise<T>,
+  fallback: (reason: string) => T
+): Promise<T> {
   const hit = memo.get(key)
   if (hit && hit.expiresAt > Date.now()) return hit.value as T
+  const retryAt = failMemo.get(key)
+  if (retryAt && retryAt > Date.now()) {
+    incrMetric('stats.fallback_cooldown')
+    return fallback('db_error')
+  }
   const value = await fn()
-  if (keep(value)) memo.set(key, { value, expiresAt: Date.now() + MEMO_TTL_MS })
+  if (value.source === 'db') {
+    memo.set(key, { value, expiresAt: Date.now() + MEMO_TTL_MS })
+    failMemo.delete(key)
+  } else if (value.fallbackReason === 'db_error') {
+    failMemo.set(key, Date.now() + FAIL_TTL_MS)
+  }
   return value
 }
 
@@ -168,7 +192,7 @@ export async function getMetaFilters(): Promise<MetaFiltersResponse> {
         return jsonFilters(reason)
       }
     },
-    (v) => v.source === 'db'
+    jsonFilters
   )
 }
 
@@ -357,7 +381,7 @@ export async function getStats(type: StatType, filter: StatFilter): Promise<Stat
         return jsonStats(type, fallbackReason(err))
       }
     },
-    (v) => v.source === 'db'
+    (reason) => jsonStats(type, reason)
   )
 }
 
@@ -421,12 +445,13 @@ export async function getDecks(filter: Pick<StatFilter, 'patch' | 'tier'>): Prom
         return jsonDecks(fallbackReason(err))
       }
     },
-    (v) => v.source === 'db'
+    jsonDecks
   )
 }
 
 /** 테스트용: 메모·클라이언트 초기화 */
 export function __resetStatsForTest() {
   memo.clear()
+  failMemo.clear()
   client = undefined
 }
