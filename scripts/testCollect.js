@@ -194,7 +194,7 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
     }
     return s
   }
-  const { main, CFG, shouldPrune, shouldPruneOnLimit, refreshAggregates, collectionDeadline } = require('./collectDb')
+  const { main, CFG, shouldPrune, shouldPruneOnLimit, resolveLimitConfig, refreshAggregates, collectionDeadline } = require('./collectDb')
   const first = await main({ log: quiet })
   const st = first.store._state
   check('1회차: 랭크 6판 적재', first.stats.matches_added === 6, `added=${first.stats.matches_added}`)
@@ -230,17 +230,30 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
       shouldPruneOnLimit(450, { ...lim, pruneOnLimit: true }) === true &&
       shouldPruneOnLimit(481, lim) === true
   )
+  // 하드 < 소프트 설정 방어 (FOLLOWUP2 G1)
+  const r1 = resolveLimitConfig(400, 480)
+  const r2 = resolveLimitConfig(500, 480)
+  check('resolveLimitConfig: 정상 설정 유지 · 하드 < 소프트면 소프트로 보정', r1.maxRawMb === 400 && r1.maxRawMbHard === 480 && r2.maxRawMb === 500 && r2.maxRawMbHard === 500, JSON.stringify([r1, r2]))
+  const inverted = { ...r2, pruneOnLimit: false }
+  check(
+    '하드 < 소프트(500/480): 490MB 정리 없음 · 501MB 하드 정리 · 보정 전 cfg 를 넘겨도 같음',
+    shouldPruneOnLimit(490, inverted) === false &&
+      shouldPruneOnLimit(501, inverted) === true &&
+      shouldPruneOnLimit(490, { maxRawMb: 500, maxRawMbHard: 480, pruneOnLimit: false }) === false
+  )
+  check('정상 설정(400/480) 450MB 는 PRUNE_ON_LIMIT 에 따름', shouldPruneOnLimit(450, { ...r1, pruneOnLimit: false }) === false && shouldPruneOnLimit(450, { ...r1, pruneOnLimit: true }) === true)
+
   // 집계가 계속 실패해 이전 패치 원본(KR_OLD)이 쌓인 상황
-  const runWithSize = async (mb, pruneOnLimit) => {
-    const saved = CFG.pruneOnLimit
-    CFG.pruneOnLimit = pruneOnLimit
+  const runWithSize = async (mb, pruneOnLimit, limits = { maxRawMb: 400, maxRawMbHard: 480 }) => {
+    const saved = { pruneOnLimit: CFG.pruneOnLimit, maxRawMb: CFG.maxRawMb, maxRawMbHard: CFG.maxRawMbHard }
+    Object.assign(CFG, { pruneOnLimit }, resolveLimitConfig(limits.maxRawMb, limits.maxRawMbHard))
     fakeSizeMb = mb
     preloadOld = true
     // 하드 한도 정리는 log.error 로 남는다 (테스트 출력에서는 숨김)
     const r = await main({ log: { ...quiet, error() {} } })
     preloadOld = false
     fakeSizeMb = null
-    CFG.pruneOnLimit = saved
+    Object.assign(CFG, saved)
     return { r, calls: pruneCalls, st: r.store._state }
   }
   const soft = await runWithSize(450, false)
@@ -257,6 +270,16 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
     hardRun.calls === 1 && !hardRun.st.matches.has('KR_OLD') && /하드 한도 초과/.test(hardRun.st.runs[0].note || ''),
     `prune=${hardRun.calls} note=${hardRun.st.runs[0].note}`
   )
+
+  // G1 통합: MAX_RAW_MB=500 / HARD=480 → 490MB 는 한도 이하라 정리·건너뜀 없음, 501MB 는 하드 정리
+  const below = await runWithSize(490, false, { maxRawMb: 500, maxRawMbHard: 480 })
+  check(
+    '하드 < 소프트 설정 · 490MB: 정리 없음 · 하드 note 없음 · 수집 진행',
+    below.calls <= 1 && below.st.matches.has('KR_CUR') && !/하드 한도 초과|용량 한도 초과/.test(below.st.runs[0].note || '') && below.r.stats.matches_added > 0,
+    `prune=${below.calls} added=${below.r.stats.matches_added} note=${below.st.runs[0].note}`
+  )
+  const above = await runWithSize(501, false, { maxRawMb: 500, maxRawMbHard: 480 })
+  check('하드 < 소프트 설정 · 501MB: 하드 정리 + note', above.calls === 1 && /하드 한도 초과\(501MB > 500MB\)/.test(above.st.runs[0].note || ''), above.st.runs[0].note)
 
   console.log('시드 복호화 실패 격리 (REVIEW R9)')
   corruptSeed = true

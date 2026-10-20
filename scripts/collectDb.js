@@ -43,6 +43,9 @@ const num = (name, def) => {
 
 const DRY_RUN = process.argv.includes('--dry-run')
 const ROLLUP_ONLY = process.argv.includes('--rollup-only')
+/** 설정 원값 (보정 전) — 하드 < 소프트 경고용 */
+const RAW_LIMITS = { soft: num('MAX_RAW_MB', 400), hard: num('MAX_RAW_MB_HARD', 480) }
+const LIMITS = resolveLimitConfig(RAW_LIMITS.soft, RAW_LIMITS.hard)
 const CFG = {
   region: env('RIOT_REGION', 'asia'),
   platform: env('RIOT_PLATFORM', 'kr'),
@@ -58,8 +61,8 @@ const CFG = {
   idsPerSeed: num('IDS_PER_SEED', 20),
   lookbackDays: num('NEW_SEED_LOOKBACK_DAYS', 2),
   keepPatches: num('KEEP_PATCHES', 1),
-  maxRawMb: num('MAX_RAW_MB', 400),
-  maxRawMbHard: num('MAX_RAW_MB_HARD', 480),
+  maxRawMb: LIMITS.maxRawMb,
+  maxRawMbHard: LIMITS.maxRawMbHard,
   pruneOnLimit: process.env.PRUNE_ON_LIMIT === '1',
   setNumber: num('SET_NUMBER', 18),
   rankedQueue: num('RANKED_QUEUE', 1100),
@@ -193,9 +196,15 @@ function shouldPrune(aggregates) {
  * 집계 상태를 모른 채 지우지 않는다. 하드 한도(MAX_RAW_MB_HARD)는 DB 자체를 지키는 최후 수단이라 항상 정리.
  */
 function shouldPruneOnLimit(sizeMb, cfg = CFG) {
-  if (sizeMb > cfg.maxRawMbHard) return true
-  if (sizeMb > cfg.maxRawMb) return cfg.pruneOnLimit
+  const { maxRawMb, maxRawMbHard } = resolveLimitConfig(cfg.maxRawMb, cfg.maxRawMbHard)
+  if (sizeMb > maxRawMbHard) return true
+  if (sizeMb > maxRawMb) return cfg.pruneOnLimit
   return false
+}
+
+/** 소프트/하드 한도 정규화 — 하드가 소프트보다 작으면 소프트로 올린다 (설정 실수로 소프트 이하에서 하드 정리되지 않게) */
+function resolveLimitConfig(softMb, hardMb) {
+  return { maxRawMb: softMb, maxRawMbHard: Math.max(hardMb, softMb) }
 }
 
 /** --rollup-only: Riot 호출 없이 원본 전체로 집계·덱 클러스터를 다시 만든다 */
@@ -251,6 +260,9 @@ async function main({ log = console } = {}) {
     log.log(`  패치 달력: ${calendar.map((p) => p.patch).sort().join(', ') || '(비어 있음)'}`)
 
     // 0) 용량 가드 (무료 플랜): 소프트 한도는 수집만 멈추고, 하드 한도·opt-in 일 때만 정리
+    if (RAW_LIMITS.hard < RAW_LIMITS.soft) {
+      log.warn(`  MAX_RAW_MB_HARD(${RAW_LIMITS.hard}) < MAX_RAW_MB(${RAW_LIMITS.soft}) → 하드 한도를 ${CFG.maxRawMbHard}MB 로 보정`)
+    }
     let sizeMb = await store.rawSizeMb()
     if (sizeMb > CFG.maxRawMb) {
       if (shouldPruneOnLimit(sizeMb)) {
@@ -440,4 +452,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { main, CFG, shouldPrune, shouldPruneOnLimit, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }
+module.exports = { main, CFG, shouldPrune, shouldPruneOnLimit, resolveLimitConfig, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }
