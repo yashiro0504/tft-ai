@@ -13,7 +13,8 @@ export const dynamic = 'force-dynamic'
  * DB 가 없거나 실패하면 lib/metaStats.json 으로 폴백한다 (source: 'json', filter: null).
  * - tier: challenger | grandmaster | master(기본) | diamond — 그 구간 이상 누적
  * - days: 3 | 7(기본) | 0(패치 전체)
- * - unit: type=unit_item 일 때 기물 키로 거른다 (BIS)
+ * - unit: type=unit_item 일 때 그 기물만 (BIS). 슬러그(ahri)·수집 키(Ahri)·Riot ID(TFT18_Ahri) 모두 허용,
+ *   응답 unit 에 맞춘 슬러그를 돌려준다. totalBoards 는 거르기 전 분모. 없는 기물은 빈 rows (200)
  */
 export async function GET(req: NextRequest) {
   try {

@@ -256,7 +256,7 @@ create table stat_comp (
 | 경로 | 내용 | 캐시 |
 | --- | --- | --- |
 | `GET /api/tft/stats?type=unit&patch=&tier=&days=` | 기물·아이템·시너지 표 | `s-maxage=600, stale-while-revalidate=3600` |
-| `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS) | 동일 |
+| `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS). `unit` 은 슬러그(`ahri`)·수집 키(`Ahri`)·Riot ID(`TFT18_Ahri`) 모두 허용, 응답 `unit` = 맞춘 슬러그, `totalBoards` 는 거르기 전 분모 | 동일 |
 | `GET /api/tft/decks?patch=&tier=` | 덱 티어표 | 동일 |
 | `GET /api/tft/explore?units=&items=` | 조건부 통계 (원본 GIN 쿼리) | 30분 · 요청 rate limit |
 | `GET /api/tft/meta/filters` | 사용 가능한 패치·표본 수 | 10분 |

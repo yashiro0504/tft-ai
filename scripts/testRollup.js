@@ -201,6 +201,17 @@ const sortRows = (rows) =>
     `${comboCount} → ${fbCombos.rows.length} / ${onlyOne.rows.length}`
   )
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
+  // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
+  const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
+  const variants = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase()].map((u) => shared.filterStatsByUnit(fbCombos, u))
+  check(
+    `unit 필터: ${slug} · ${someChamp} · TFT18_${someChamp} 같은 결과 · 응답 unit = 슬러그`,
+    variants.every((v) => v.unit === slug && v.success && JSON.stringify(v.rows) === JSON.stringify(variants[0].rows)) && variants[0].rows.length > 0,
+    variants.map((v) => `${v.unit}:${v.rows.length}`).join(' ')
+  )
+  check('unit 필터: 거른 뒤에도 totalBoards · filter 는 그대로', onlyOne.totalBoards === fbCombos.totalBoards && onlyOne.filter === fbCombos.filter)
+  const lux = shared.filterStatsByUnit({ ...fbCombos, rows: [{ champKey: 'Lux18_Base', key: 'Lux18_Base|x' }] }, 'lux')
+  check('unit 필터: 원본 키 Lux18_Base 도 슬러그 lux 로 찾음', lux.rows.length === 1)
 
   // DB 장애 네거티브 캐시 (REVIEW R5): 타임아웃 1회 뒤 FAIL_TTL 동안은 DB 를 기다리지 않고 바로 폴백
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://hang.test'
