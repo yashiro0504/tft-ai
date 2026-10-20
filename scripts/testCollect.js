@@ -144,7 +144,28 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   }
 
   const quiet = { log() {}, warn() {}, error: console.error }
-  const { main } = require('./collectDb')
+  // collectDb 는 require 시점에 createMemoryStore 를 구조 분해하므로 그 전에 감싼다 (집계 실패 시나리오용)
+  const storeMod = require('./collect/store')
+  const realCreateMemoryStore = storeMod.createMemoryStore
+  let brokenRollup = false
+  storeMod.createMemoryStore = () => {
+    const s = realCreateMemoryStore()
+    if (!brokenRollup) return s
+    // 이전 패치 1판을 미리 넣어 두고, 집계는 실패하게 한다
+    const origLoadDict = s.loadDict.bind(s)
+    s.loadDict = async () => {
+      await origLoadDict()
+      const oldRaw = fakeMatch('KR_OLD', { at: Date.UTC(2026, 9, 1), version: 'Version 15.19.1' })
+      await s.ensureDict(collectDictKeys(oldRaw))
+      const o = normalizeMatch(oldRaw, { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
+      await s.ingest(o.match, o.boards)
+    }
+    s.refreshRollup = async () => {
+      throw new Error('rollup boom')
+    }
+    return s
+  }
+  const { main, shouldPrune } = require('./collectDb')
   const first = await main({ log: quiet })
   const st = first.store._state
   check('1회차: 랭크 6판 적재', first.stats.matches_added === 6, `added=${first.stats.matches_added}`)
@@ -161,6 +182,15 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   check('집계: 적재한 6판이 모두 일별 집계에 들어감', rolled === 6 && !first.aggregates.error, `집계 ${rolled}판`)
   check('집계: 판 티어별 조합 (CHALLENGER · GRANDMASTER · MASTER)', st.rollups.size === 3, [...st.rollups.keys()].join(', '))
   check('덱 클러스터: 최신 패치 × 티어 필터 4개 갱신', first.aggregates.latestPatch === '15.20' && st.comps.size === 4)
+
+  console.log('집계 실패 시 원본 정리 건너뜀 (REVIEW R2)')
+  check('shouldPrune: 집계 오류면 false · 성공이면 true', shouldPrune({ error: 'x' }) === false && shouldPrune({ error: null }) === true && shouldPrune(null) === false)
+  brokenRollup = true
+  const broken = await main({ log: quiet })
+  brokenRollup = false
+  const bst = broken.store._state
+  check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
+  check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
 })()
   .catch((e) => {
     failures++

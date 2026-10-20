@@ -159,6 +159,11 @@ async function refreshAggregates({ store, dirty, deadline, log, force = false })
   return out
 }
 
+/** 집계가 성공했을 때만 원본을 정리한다 */
+function shouldPrune(aggregates) {
+  return Boolean(aggregates) && !aggregates.error
+}
+
 /** --rollup-only: Riot 호출 없이 원본 전체로 집계·덱 클러스터를 다시 만든다 */
 async function rollupOnly(store, log) {
   await store.loadDict()
@@ -331,9 +336,14 @@ async function main({ log = console } = {}) {
     // 4) 일별 집계 (원본 정리 전에: 정리될 패치의 마지막 판까지 집계에 남긴다)
     aggregates = await refreshAggregates({ store, dirty, deadline, log })
 
-    // 5) 원본 정리
-    const removed = await store.prune(CFG.keepPatches)
-    if (removed) log.log(`  원본 정리: 이전 패치 ${removed}판 삭제 (최근 ${CFG.keepPatches}패치 보관)`)
+    // 5) 원본 정리 — 집계가 실패했으면 건너뛴다 (집계되지 않은 원본을 지우면 복구할 수 없다)
+    if (shouldPrune(aggregates)) {
+      const removed = await store.prune(CFG.keepPatches)
+      if (removed) log.log(`  원본 정리: 이전 패치 ${removed}판 삭제 (최근 ${CFG.keepPatches}패치 보관)`)
+    } else {
+      stats.note = [stats.note, '집계 실패로 원본 정리를 건너뜀'].filter(Boolean).join(' · ')
+      log.warn('  집계 실패 → 원본 정리를 건너뜁니다 (다음 실행에서 재시도)')
+    }
   } catch (e) {
     stats.note = e.message
     if (e instanceof KeyError) log.error(`❌ ${e.message} — GitHub secret RIOT_API_KEY 를 확인하세요`)
@@ -363,4 +373,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { main, CFG }
+module.exports = { main, CFG, shouldPrune }
