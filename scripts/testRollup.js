@@ -341,7 +341,9 @@ function loadPglite() {
 async function sqlChecks() {
   const mod = loadPglite()
   if (!mod) {
-    console.log('SQL (PGlite) — 건너뜀: PGlite 없음 (PGLITE_PATH 로 지정하면 0005·0006 을 실제로 실행해 비교)')
+    // CI 는 REQUIRE_PGLITE=1 — 실서비스 SQL 이 검증 없이 통과하지 않게 한다
+    check('SQL (PGlite) 로드', !process.env.REQUIRE_PGLITE, 'REQUIRE_PGLITE=1 인데 @electric-sql/pglite 를 불러오지 못함 (npm ci 확인)')
+    console.log('SQL (PGlite) — 건너뜀: PGlite 없음 (npm install 또는 PGLITE_PATH 로 지정하면 0005·0006 을 실제로 실행해 비교)')
     return
   }
   console.log('SQL (PGlite: 0005 + 0006 실행 · JS 결과와 비교)')

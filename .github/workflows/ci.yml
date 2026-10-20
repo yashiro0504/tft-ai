@@ -47,8 +47,11 @@ jobs:
       - name: DB collector tests
         run: npm run test:collect
 
-      - name: Rollup / deck cluster tests
+      - name: Rollup / deck cluster tests (+ SQL parity on PGlite)
         run: npm run test:rollup
+        env:
+          # PGlite 가 없으면 SQL(0005·0006) 패리티·RLS 검증이 건너뛰어지므로 실패로 처리
+          REQUIRE_PGLITE: "1"
 
       - name: Build
         run: npm run build
