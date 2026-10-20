@@ -165,7 +165,7 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
     }
     return s
   }
-  const { main, shouldPrune } = require('./collectDb')
+  const { main, shouldPrune, refreshAggregates, collectionDeadline } = require('./collectDb')
   const first = await main({ log: quiet })
   const st = first.store._state
   check('1회차: 랭크 6판 적재', first.stats.matches_added === 6, `added=${first.stats.matches_added}`)
@@ -191,6 +191,29 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   const bst = broken.store._state
   check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
   check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
+
+  console.log('덱 클러스터 시간 확보 (REVIEW R3)')
+  const MIN = 60 * 1000
+  check('수집 종료 = MAX_MINUTES − 7분 (짧은 실행은 절반)', collectionDeadline(0, 50) === 43 * MIN && collectionDeadline(0, 10) === 5 * MIN)
+  const deckStore = realCreateMemoryStore()
+  for (const id of ['KR_D1', 'KR_D2']) {
+    const r = fakeMatch(id)
+    await deckStore.ensureDict(collectDictKeys(r))
+    const n = normalizeMatch(r, { platform: 'kr', tierBucket: 'MASTER' }, deckStore.dictId)
+    await deckStore.ingest(n.match, n.boards)
+  }
+  const t0 = Date.now()
+  const runDeadline = t0 + 50 * MIN
+  // 수집이 자기 몫(43분)을 다 쓰고 마지막 판 조회로 90초 넘친 시점
+  const exhausted = await refreshAggregates({ store: deckStore, dirty: new Set(), deadline: runDeadline, log: quiet, now: () => collectionDeadline(t0, 50) + 90 * 1000 })
+  check('수집이 시간을 다 써도 덱 클러스터 재빌드', !exhausted.error && exhausted.comps && deckStore._state.comps.size === 4, JSON.stringify(exhausted))
+  const warns = []
+  const lateStore = realCreateMemoryStore()
+  await lateStore.ensureDict(collectDictKeys(fakeMatch('KR_D3')))
+  const n3 = normalizeMatch(fakeMatch('KR_D3'), { platform: 'kr', tierBucket: 'MASTER' }, lateStore.dictId)
+  await lateStore.ingest(n3.match, n3.boards)
+  const late = await refreshAggregates({ store: lateStore, dirty: new Set(), deadline: runDeadline, log: { ...quiet, warn: (m) => warns.push(m) }, now: () => runDeadline - MIN })
+  check('정말 시간이 없으면 미루고 note · 24시간+ 미갱신 경고', late.comps === null && /미룸/.test(late.note) && /미갱신/.test(late.note) && warns.some((w) => /덱 클러스터/.test(w)), `${late.note} / ${warns.join(' | ')}`)
 })()
   .catch((e) => {
     failures++

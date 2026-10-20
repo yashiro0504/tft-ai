@@ -8,7 +8,7 @@
  *  4) 일별 집계: 이번 실행에 들어온(또는 티어가 바뀐) (game_date, patch, tier_bucket) 조합만 다시 계산
  *     하루 1회(DECK_REFRESH_HOURS)는 원본의 모든 조합을 다시 계산하고, 최신 패치 덱 클러스터(stat_comp)를 다시 만든다
  *  5) 원본 정리: 최근 KEEP_PATCHES 개 패치만 남김 (무료 플랜 500MB 대응, 집계는 영구)
- * MAX_MINUTES 가 지나거나 MAX_MATCHES 를 채우면 멈춘다. 다음 실행이 커서부터 이어 간다.
+ * 수집(2·3)은 MAX_MINUTES 보다 7분 일찍 멈춰 덱 클러스터 몫을 남긴다. MAX_MATCHES 를 채워도 멈춘다. 다음 실행이 커서부터 이어 간다.
  *
  * 사용법:
  *   node scripts/collectDb.js                 # Supabase 적재 (SUPABASE_SERVICE_ROLE_KEY 필요)
@@ -64,6 +64,10 @@ const CFG = {
 }
 /** 덱 클러스터는 원본 1패치를 다 읽으므로 남은 시간이 이보다 적으면 다음 실행으로 미룬다 */
 const DECK_JOB_MIN_MS = 5 * 60 * 1000
+/** 수집 루프는 MAX_MINUTES 보다 이만큼 일찍 멈춰 덱 클러스터 몫을 남긴다 (마지막 판 조회가 넘치는 여유 2분 포함) */
+const DECK_JOB_RESERVE_MS = DECK_JOB_MIN_MS + 2 * 60 * 1000
+/** 최신 패치 덱 클러스터가 이보다 오래되면 경고 */
+const DECK_STALE_WARN_MS = 24 * 60 * 60 * 1000
 /** 시드 커서와 실제 판 시각 사이 여유 (startTime 기준이 판 시작인지 끝인지와 무관하게 놓치지 않게) */
 const CURSOR_OVERLAP_MS = 60 * 60 * 1000
 
@@ -124,20 +128,26 @@ async function refreshSeeds({ riot, store, seedCrypto, log }) {
   return rows.length
 }
 
+/** 수집(실패 재시도·시드 순회) 종료 시각. 짧은 실행에서도 수집 시간이 0 이 되지 않게 절반은 남긴다 */
+function collectionDeadline(startedAt, maxMinutes = CFG.maxMinutes) {
+  const total = maxMinutes * 60 * 1000
+  return startedAt + Math.max(total - DECK_JOB_RESERVE_MS, total / 2)
+}
+
 /**
  * 4) 일별 집계 갱신.
  *  - 매 실행: dirty 조합(이번 실행에 적재·티어 상향된 판의 (game_date, patch, tier_bucket))만 다시 계산
  *  - 최신 패치 덱 클러스터가 DECK_REFRESH_HOURS 보다 오래됐으면(하루 1회): 원본의 모든 조합 + 덱 클러스터
  * 0006 마이그레이션 전이거나 실패해도 수집 결과는 그대로 두고 경고만 남긴다 (다음 일 1회 전체 재계산이 메운다).
  */
-async function refreshAggregates({ store, dirty, deadline, log, force = false }) {
-  const out = { combos: 0, comps: null, latestPatch: null, error: null }
+async function refreshAggregates({ store, dirty, deadline, log, force = false, now = Date.now }) {
+  const out = { combos: 0, comps: null, latestPatch: null, error: null, note: '' }
   try {
     const raw = await store.rawCombos()
     const latest = raw.reduce((best, c) => (!best || c.game_date > best.game_date ? c : best), null)
     out.latestPatch = latest?.patch ?? null
-    const compsAt = out.latestPatch ? await store.compsUpdatedAt(out.latestPatch) : Date.now()
-    const daily = force || Date.now() - compsAt > CFG.deckRefreshHours * 60 * 60 * 1000
+    const compsAt = out.latestPatch ? await store.compsUpdatedAt(out.latestPatch) : now()
+    const daily = force || now() - compsAt > CFG.deckRefreshHours * 60 * 60 * 1000
 
     const keys = new Set(dirty)
     if (daily) for (const c of raw) keys.add(comboKey(c.game_date, c.patch, c.tier_bucket))
@@ -149,8 +159,18 @@ async function refreshAggregates({ store, dirty, deadline, log, force = false })
     if (keys.size) log.log(`  집계 갱신: ${keys.size}개 조합${daily ? ' (일 1회 전체 재계산)' : ''}`)
 
     if (daily && out.latestPatch) {
-      if (force || deadline - Date.now() > DECK_JOB_MIN_MS) out.comps = await rebuildComps(store, out.latestPatch, { log })
-      else log.log('  덱 클러스터: 남은 시간이 부족해 다음 실행으로 미룸')
+      if (force || deadline - now() > DECK_JOB_MIN_MS) out.comps = await rebuildComps(store, out.latestPatch, { log })
+      else {
+        out.note = '덱 클러스터 미룸(시간 부족)'
+        log.log('  덱 클러스터: 남은 시간이 부족해 다음 실행으로 미룸')
+        // compsAt 0 = 아직 한 번도 만들지 않음
+        const staleMs = compsAt ? now() - compsAt : Infinity
+        if (staleMs > DECK_STALE_WARN_MS) {
+          const hours = Number.isFinite(staleMs) ? `${Math.floor(staleMs / 3600000)}시간` : '한 번도'
+          out.note += ` · 덱 클러스터 ${hours} 미갱신`
+          log.warn(`⚠️  최신 패치(${out.latestPatch}) 덱 클러스터가 ${hours} 갱신되지 않았습니다 — npm run collect:db:rollup 으로 수동 갱신하세요`)
+        }
+      }
     }
   } catch (e) {
     out.error = e.message
@@ -176,6 +196,7 @@ async function rollupOnly(store, log) {
 async function main({ log = console } = {}) {
   const startedAt = Date.now()
   const deadline = startedAt + CFG.maxMinutes * 60 * 1000
+  const collectUntil = collectionDeadline(startedAt)
   if (ROLLUP_ONLY) {
     const store = makeStore()
     if (!store) {
@@ -274,17 +295,17 @@ async function main({ log = console } = {}) {
 
     // 2) 실패 재시도
     for (const f of await store.failures(50)) {
-      if (Date.now() > deadline) break
+      if (Date.now() > collectUntil) break
       tally(await fetchAndIngest(f.match_id, f.tier_bucket, f.attempts))
     }
 
     // 3) 시드 순회 (가장 오래 확인 안 한 선수부터)
     let seedsChecked = 0
-    outer: while (Date.now() < deadline && stats.matches_added < CFG.maxMatches) {
+    outer: while (Date.now() < collectUntil && stats.matches_added < CFG.maxMatches) {
       const batch = await store.nextSeeds(50)
       if (!batch.length) break
       for (const seed of batch) {
-        if (Date.now() > deadline || stats.matches_added >= CFG.maxMatches) break outer
+        if (Date.now() > collectUntil || stats.matches_added >= CFG.maxMatches) break outer
         const puuid = seedCrypto.decrypt(seed.puuid_enc)
         const since = seed.last_match_at
           ? new Date(seed.last_match_at).getTime() - CURSOR_OVERLAP_MS
@@ -314,7 +335,7 @@ async function main({ log = console } = {}) {
         let lastGameAt = seed.last_match_at ? new Date(seed.last_match_at).getTime() : 0
         for (const id of ids) {
           if (existing.has(id) || skippedThisRun.has(id)) continue
-          if (Date.now() > deadline || stats.matches_added >= CFG.maxMatches) break
+          if (Date.now() > collectUntil || stats.matches_added >= CFG.maxMatches) break
           const r = await fetchAndIngest(id, seed.tier)
           tally(r)
           if (r.gameAt) lastGameAt = Math.max(lastGameAt, r.gameAt)
@@ -353,6 +374,7 @@ async function main({ log = console } = {}) {
     // 수집이 중간에 멈췄어도(키 만료 등) 이미 적재한 판은 집계에 넣는다
     if (!aggregates && dirty.size) aggregates = await refreshAggregates({ store, dirty, deadline: 0, log })
     if (aggregates?.error) stats.note = [stats.note, `집계 실패: ${aggregates.error}`].filter(Boolean).join(' · ').slice(0, 500)
+    if (aggregates?.note) stats.note = [stats.note, aggregates.note].filter(Boolean).join(' · ').slice(0, 500)
     stats.riot_calls = riot.calls
     await store.finishRun(runId, stats).catch(() => {})
     const counts = await store.counts().catch(() => ({}))
@@ -373,4 +395,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { main, CFG, shouldPrune }
+module.exports = { main, CFG, shouldPrune, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }
