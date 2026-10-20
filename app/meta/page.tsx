@@ -60,6 +60,7 @@ export default async function MetaPage() {
           deferSections
           filters={filters}
           initialDecksSource={fromDb ? 'db' : 'json'}
+          syncUrl
         />
 
         <div className="mt-8 text-center">
