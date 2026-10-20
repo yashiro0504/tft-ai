@@ -10,7 +10,8 @@
  *  - Redis(분산 캐시) 설정 여부
  *  - Turnstile 강제 여부 + 토큰 없이 검색이 403으로 막히는지
  *  - sitemap URL 수/덱 URL 존재 및 덱 페이지 200
- *  - (--db) 덱 클러스터(stat_comp) 신선도: 마지막 빌드가 24시간 넘으면 미충족, 72시간 넘으면 수집 파이프라인 점검 안내
+ *  - (--db) 덱 클러스터(stat_comp) 신선도: **최신 패치**의 마지막 빌드가 24시간 넘으면 미충족, 72시간 넘으면 수집 파이프라인 점검 안내
+ *    (이전 패치가 최근에 다시 빌드돼도 최신 패치가 늦으면 미충족)
  *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — stat_comp 는 anon 읽기 공개.
  *    없으면 건너뛴다(CI 등).
  *
@@ -136,7 +137,36 @@ async function main() {
   }
 }
 
-/** stat_comp 의 마지막 빌드 시각 (docs/DATA-PLATFORM.md §13 신선도 기준: 24시간 · 72시간) */
+const PATCH_RE = /^(\d+)\.(\d+)$/
+
+/** 패치 내림차순 비교: '16.20' > '16.9' (숫자.숫자). 모르는 형식(set18 등)은 숫자 패치 뒤, 서로는 문자열 내림차순 */
+function comparePatchDesc(a, b) {
+  const pa = PATCH_RE.exec(String(a))
+  const pb = PATCH_RE.exec(String(b))
+  if (pa && pb) return Number(pb[1]) - Number(pa[1]) || Number(pb[2]) - Number(pa[2])
+  if (pa) return -1
+  if (pb) return 1
+  return String(b).localeCompare(String(a))
+}
+
+/**
+ * stat_comp 행 → 최신 패치와 그 패치의 마지막 빌드 시각 (티어 필터별 포함).
+ * 행이 없으면 latestPatch null · ageH Infinity.
+ */
+function latestPatchFreshness(rows, now = Date.now()) {
+  const latestPatch = [...new Set(rows.map((r) => r.patch))].sort(comparePatchDesc)[0] ?? null
+  const byTier = {}
+  let lastBuiltMs = 0
+  for (const r of rows) {
+    if (r.patch !== latestPatch) continue
+    const t = Date.parse(r.updated_at) || 0
+    byTier[r.tier_min] = Math.max(byTier[r.tier_min] || 0, t)
+    lastBuiltMs = Math.max(lastBuiltMs, t)
+  }
+  return { latestPatch, lastBuiltMs, ageH: lastBuiltMs ? (now - lastBuiltMs) / HOUR : Infinity, byTier }
+}
+
+/** 최신 패치 덱 클러스터 신선도 (docs/DATA-PLATFORM.md §13 기준: 24시간 · 72시간) */
 async function checkDeckFreshness() {
   require('./_env').loadEnv()
   const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '')
@@ -146,25 +176,28 @@ async function checkDeckFreshness() {
     return
   }
   try {
-    const res = await fetch(`${url}/rest/v1/stat_comp?select=patch,tier_min,updated_at&order=updated_at.desc&limit=1`, {
+    // 패치 수 × 티어 4 × 덱 ≤ 수백 행 — 클라이언트에서 패치별로 묶는다 (문서 §13 SQL 의 group by 와 같은 기준)
+    const res = await fetch(`${url}/rest/v1/stat_comp?select=patch,tier_min,updated_at`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
       cache: 'no-store',
     })
     if (!res.ok) throw new Error(`status ${res.status}`)
-    const [latest] = await res.json()
-    if (!latest) {
+    const f = latestPatchFreshness(await res.json())
+    if (!f.latestPatch || !f.lastBuiltMs) {
       fail('덱 클러스터(stat_comp) 비어 있음 — npm run collect:db:rollup')
       return
     }
-    const ageH = (Date.now() - Date.parse(latest.updated_at)) / HOUR
-    console.log(`db: 덱 클러스터 마지막 빌드 ${latest.updated_at} (패치 ${latest.patch}, ${ageH.toFixed(1)}시간 전)`)
-    if (ageH <= 24) {
-      pass('덱 클러스터 24시간 이내 갱신')
+    console.log(`db: 최신 패치 ${f.latestPatch} · 마지막 빌드 ${new Date(f.lastBuiltMs).toISOString()} (${f.ageH.toFixed(1)}시간 전)`)
+    for (const [tier, t] of Object.entries(f.byTier)) {
+      console.log(`    ${tier}: ${new Date(t).toISOString()} (${((Date.now() - t) / HOUR).toFixed(1)}시간 전)`)
+    }
+    if (f.ageH <= 24) {
+      pass(`덱 클러스터 24시간 이내 갱신 (${f.latestPatch})`)
       return
     }
-    fail(`덱 클러스터 ${Math.floor(ageH)}시간 미갱신 (24시간 초과)`)
+    fail(`최신 패치 ${f.latestPatch} 덱 클러스터 ${Math.floor(f.ageH)}시간 미갱신 (24시간 초과)`)
     notes.push('npm run collect:db:rollup 으로 덱 클러스터 수동 갱신 (tft_collect_runs.note 의 "덱 클러스터 미룸" 확인)')
-    if (ageH > 72) {
+    if (f.ageH > 72) {
       notes.push('72시간 초과: collect-db 워크플로 실패 여부 · RIOT_API_KEY 만료 · 0006 마이그레이션 적용 상태를 함께 확인')
     }
   } catch (err) {
@@ -172,7 +205,11 @@ async function checkDeckFreshness() {
   }
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+}
+
+module.exports = { comparePatchDesc, latestPatchFreshness }

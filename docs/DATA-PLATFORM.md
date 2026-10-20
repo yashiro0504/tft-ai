@@ -421,7 +421,9 @@ Phase C 예정 (미구현):
     order by last_built desc;
    ```
    또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
-   - `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행.
+   판정은 **최신 패치**(가장 높은 `숫자.숫자` 패치) 행의 `max(updated_at)` 기준 — 위 SQL 결과에서 최신 패치 줄들을 본다.
+   이전 패치가 최근에 다시 빌드됐어도 최신 패치가 늦으면 미충족이다.
+   - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행.
    - **72시간 초과** → 수집 워크플로(`collect-db.yml`) 실패 여부 · `RIOT_API_KEY` 만료 · 0006 적용 상태를 함께 확인.
 
 수집기는 `MAX_MINUTES` 보다 7분 일찍 수집을 멈춰 덱 클러스터 몫을 남긴다. 그래도 미루면 `note` 에 남기고, 최신 패치 덱이 24시간 이상
