@@ -6,7 +6,7 @@ import { dailyQuotaLimit } from '@/lib/quota'
 import { getLlmBudgetStatus } from '@/lib/llmBudget'
 import { turnstileStatus } from '@/lib/turnstile'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
-import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, lastLlmHttpError } from '@/lib/llmStatus'
+import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, lastLlmHttpError, redactLlmError } from '@/lib/llmStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,8 +76,11 @@ export async function GET(req: NextRequest) {
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
       deepseekModel: DEEPSEEK_MODEL,
       deepseekThinking: DEEPSEEK_THINKING,
-      /** 이 인스턴스의 마지막 LLM HTTP 오류 (llm.http_<status> 카운터는 metrics 에) */
-      lastLlmHttpError: llmError,
+      /**
+       * 이 인스턴스의 마지막 LLM HTTP 오류 (llm.http_<status> 카운터는 metrics 에).
+       * 오류 본문(body)은 HEALTH_TOKEN 으로 인증된 요청에만 — 토큰이 없는 배포는 공개 응답이라 뺀다.
+       */
+      lastLlmHttpError: redactLlmError(llmError, { includeBody: Boolean(token) }),
       gemini: Boolean(process.env.GEMINI_API_KEY),
       turnstile,
       supabase: isSupabaseConfigured(),

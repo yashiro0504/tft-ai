@@ -26,3 +26,13 @@ export function recordLlmHttpError(e: Omit<LlmHttpError, 'at'>): void {
 export function lastLlmHttpError(): LlmHttpError | null {
   return lastHttpError
 }
+
+/**
+ * 헬스 응답용. 공개(토큰 없는) 응답에는 provider 오류 본문(요청 ID·조직 정보 등이 섞일 수 있음)을 빼고,
+ * HEALTH_TOKEN 으로 인증된 응답에만 넣는다. 본문은 로그(llm_http_error)에 항상 남는다.
+ */
+export function redactLlmError(e: LlmHttpError | null, { includeBody }: { includeBody: boolean }): Partial<LlmHttpError> | null {
+  if (!e) return null
+  if (includeBody) return { ...e }
+  return { provider: e.provider, model: e.model, status: e.status, at: e.at }
+}

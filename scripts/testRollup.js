@@ -222,6 +222,18 @@ const sortRows = (rows) =>
   const lux = shared.filterStatsByUnit({ ...fbCombos, rows: [{ champKey: 'Lux18_Base', key: 'Lux18_Base|x' }] }, 'lux')
   check('unit 필터: 원본 키 Lux18_Base 도 슬러그 lux 로 찾음', lux.rows.length === 1)
 
+  console.log('헬스 (lib/llmStatus — 공개 응답에서 LLM 오류 본문 제거, FOLLOWUP F2)')
+  {
+    const ls = require('../lib/llmStatus')
+    check('오류 없으면 null', ls.redactLlmError(null, { includeBody: false }) === null)
+    ls.recordLlmHttpError({ provider: 'deepseek', model: 'deepseek-flash', status: 400, body: 'org-xyz request-id 123' })
+    const err = ls.lastLlmHttpError()
+    const pub = ls.redactLlmError(err, { includeBody: false })
+    const auth = ls.redactLlmError(err, { includeBody: true })
+    check('공개: body 키 없음 · model/status/at 유지', !('body' in pub) && pub.model === 'deepseek-flash' && pub.status === 400 && Boolean(pub.at) && !JSON.stringify(pub).includes('org-xyz'))
+    check('인증: body 포함 · 원본 불변', auth.body === 'org-xyz request-id 123' && err.body === 'org-xyz request-id 123')
+  }
+
   // DB 장애 네거티브 캐시 (REVIEW R5): 타임아웃 1회 뒤 FAIL_TTL 동안은 DB 를 기다리지 않고 바로 폴백
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://hang.test'
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon'
