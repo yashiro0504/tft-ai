@@ -189,6 +189,15 @@ const sortRows = (rows) =>
     fbUnits.source === 'json' && fbUnits.filter === null && fbUnits.rows.length > 0 && fbUnits.rows.every((r) => typeof r.lowSample === 'boolean' && r.margin > 0)
   )
   check('덱: decksData.json 폴백', fbDecks.source === 'json' && fbDecks.decks.length > 0 && fbDecks.decks.every((d) => d.lowSample === d.sampleSize < 15))
+  {
+    // JSON 모드 엔티티 페이지: 정적 /deck/[id] 가 있는 덱은 그대로 링크 (REVIEW R8)
+    const entity = require('../lib/entityData')
+    const { entitySlug } = require('../lib/entitySlug')
+    const d0 = fbDecks.decks[0]
+    const page = await entity.getEntityPage('champion', entitySlug('champion', d0.units[0].key))
+    const jd = page && page.decks.find((d) => d.id === d0.id)
+    check('엔티티 페이지(JSON): 덱 링크 유지', jd && jd.linkable === true && jd.fromDb === false, JSON.stringify(jd))
+  }
 
   // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1)
   const fbCombos = await fallback.getStats('unit_item', shared.DEFAULT_FILTER)
@@ -357,6 +366,13 @@ async function apiChecks(db, mem) {
   const decks = await stats.getDecks({ patch: '16.20', tier: 'master' })
   check('덱: db · stat_comp.deck → 화면 덱 · 표본 부족(12 < 15)', decks.source === 'db' && decks.decks.length === 1 && decks.decks[0].id === sampleDeck.id && decks.decks[0].lowSample === true && decks.totalBoards === 960)
   check('덱: DB 덱에는 JSON 기물 수치를 붙이지 않음', decks.decks[0].units.every((u) => !u.stat))
+  // 엔티티 페이지: DB 덱은 id 가 JSON 덱과 겹쳐도 /deck/[id](다른 패치 스냅샷)로 링크하지 않는다 (REVIEW R8)
+  for (const k of Object.keys(require.cache)) if (/entityData\.ts$/.test(k)) delete require.cache[k]
+  const entity = require('../lib/entityData')
+  const { entitySlug } = require('../lib/entitySlug')
+  const champPage = await entity.getEntityPage('champion', entitySlug('champion', decks.decks[0].units[0].key))
+  const dbDeck = champPage && champPage.decks.find((d) => d.id === sampleDeck.id)
+  check('엔티티 페이지: DB 덱은 링크 안 함 · DB 집계 표시', dbDeck && dbDeck.fromDb === true && dbDeck.linkable === false, JSON.stringify(dbDeck))
   const chDecks = await stats.getDecks({ patch: '16.20', tier: 'challenger' })
   check('덱: 기본 아닌 필터에 덱이 없으면 빈 목록 (db)', chDecks.source === 'db' && chDecks.decks.length === 0)
 

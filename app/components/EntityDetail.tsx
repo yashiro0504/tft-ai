@@ -136,7 +136,10 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
                   const body = (
                     <>
                       <span className={`rk-tier rk-t${(d.tier || 'C').toUpperCase()}`}>{(d.tier || '-').toUpperCase()}</span>
-                      <span className="rk-ent-rowname">{d.name}</span>
+                      <span className="rk-ent-rowname">
+                        {d.name}
+                        {d.fromDb ? <em>DB 집계</em> : null}
+                      </span>
                       <span className="rk-ent-rowstat">
                         <b>{avg(d.avgPlacement)}</b>위 · TOP4 {pct(d.top4Rate)} · {d.sampleSize.toLocaleString()}판
                       </span>
