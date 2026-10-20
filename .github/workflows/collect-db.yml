@@ -2,7 +2,7 @@ name: Collect Matches to DB
 
 # 데이터 플랫폼 v2 — Riot 랭크 판을 Supabase 에 누적하고(Phase A), 일별 집계·덱 클러스터를 갱신한다(Phase B). docs/DATA-PLATFORM.md
 # 필요한 Repository secrets: RIOT_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY
-# 선택 Repository variables: RIOT_MIN_INTERVAL_MS (프로덕션 키 승인 후 34), MAX_MATCHES, SEED_TIERS, MASTER_LIMIT, KEEP_PATCHES
+# 선택 Repository variables: RIOT_MIN_INTERVAL_MS (프로덕션 키 승인 후 34), MAX_MATCHES, SEED_TIERS, MASTER_LIMIT, KEEP_PATCHES, MAX_RAW_MB, MAX_RAW_MB_HARD, PRUNE_ON_LIMIT
 # Supabase 시크릿이 없으면 수집 단계는 안내만 남기고 성공으로 끝난다.
 
 on:
@@ -69,6 +69,8 @@ jobs:
           MASTER_LIMIT: ${{ vars.MASTER_LIMIT || '1000' }}
           KEEP_PATCHES: ${{ vars.KEEP_PATCHES || '1' }}
           MAX_RAW_MB: ${{ vars.MAX_RAW_MB || '400' }}
+          MAX_RAW_MB_HARD: ${{ vars.MAX_RAW_MB_HARD || '480' }}
+          PRUNE_ON_LIMIT: ${{ vars.PRUNE_ON_LIMIT || '0' }}
         run: |
           if [ -z "$RIOT_API_KEY" ]; then
             echo "::error title=RIOT_API_KEY missing::Repository secret RIOT_API_KEY 를 설정하세요."

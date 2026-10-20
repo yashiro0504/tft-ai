@@ -149,8 +149,20 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   const realCreateMemoryStore = storeMod.createMemoryStore
   let brokenRollup = false
   let corruptSeed = false
+  let preloadOld = false
+  /** null 이 아니면 rawSizeMb 를 이 값으로 고정 (용량 가드 시나리오) */
+  let fakeSizeMb = null
+  /** 마지막으로 만든 저장소의 prune 호출 수 */
+  let pruneCalls = 0
   storeMod.createMemoryStore = () => {
     const s = realCreateMemoryStore()
+    pruneCalls = 0
+    const origPrune = s.prune.bind(s)
+    s.prune = async (k) => {
+      pruneCalls++
+      return origPrune(k)
+    }
+    if (fakeSizeMb !== null) s.rawSizeMb = async () => fakeSizeMb
     if (corruptSeed) {
       // 시드 갱신 직후 c1 의 암호문을 깨뜨린다 (다른 키로 만든 시드 흉내)
       const origUpsert = s.upsertSeeds.bind(s)
@@ -159,22 +171,30 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
         for (const seed of s._state.seeds.values()) if (sc.decrypt(seed.puuid_enc) === 'c1') seed.puuid_enc = 'broken.token'
       }
     }
-    if (!brokenRollup) return s
-    // 이전 패치 1판을 미리 넣어 두고, 집계는 실패하게 한다
-    const origLoadDict = s.loadDict.bind(s)
-    s.loadDict = async () => {
-      await origLoadDict()
-      const oldRaw = fakeMatch('KR_OLD', { at: Date.UTC(2026, 9, 1), version: 'Version 15.19.1' })
-      await s.ensureDict(collectDictKeys(oldRaw))
-      const o = normalizeMatch(oldRaw, { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
-      await s.ingest(o.match, o.boards)
+    if (brokenRollup || preloadOld) {
+      // 이전 패치 1판을 미리 넣어 둔다
+      const origLoadDict = s.loadDict.bind(s)
+      s.loadDict = async () => {
+        await origLoadDict()
+        const oldRaw = fakeMatch('KR_OLD', { at: Date.UTC(2026, 9, 1), version: 'Version 15.19.1' })
+        await s.ensureDict(collectDictKeys(oldRaw))
+        const o = normalizeMatch(oldRaw, { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
+        await s.ingest(o.match, o.boards)
+        if (preloadOld) {
+          // 용량 가드 시나리오: 수집 전에도 최신 패치 판이 있어야 KEEP_PATCHES=1 정리가 이전 패치를 지운다
+          const cur = normalizeMatch(fakeMatch('KR_CUR'), { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
+          await s.ingest(cur.match, cur.boards)
+        }
+      }
     }
-    s.refreshRollup = async () => {
-      throw new Error('rollup boom')
+    if (brokenRollup) {
+      s.refreshRollup = async () => {
+        throw new Error('rollup boom')
+      }
     }
     return s
   }
-  const { main, shouldPrune, refreshAggregates, collectionDeadline } = require('./collectDb')
+  const { main, CFG, shouldPrune, shouldPruneOnLimit, refreshAggregates, collectionDeadline } = require('./collectDb')
   const first = await main({ log: quiet })
   const st = first.store._state
   check('1회차: 랭크 6판 적재', first.stats.matches_added === 6, `added=${first.stats.matches_added}`)
@@ -200,6 +220,43 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   const bst = broken.store._state
   check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
   check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
+
+  console.log('용량 가드: 소프트/하드 한도 분리 (FOLLOWUP F1)')
+  const lim = { maxRawMb: 400, maxRawMbHard: 480, pruneOnLimit: false }
+  check(
+    'shouldPruneOnLimit: 한도 이하 false · 소프트 opt-in 만 · 하드는 항상',
+    shouldPruneOnLimit(400, lim) === false &&
+      shouldPruneOnLimit(450, lim) === false &&
+      shouldPruneOnLimit(450, { ...lim, pruneOnLimit: true }) === true &&
+      shouldPruneOnLimit(481, lim) === true
+  )
+  // 집계가 계속 실패해 이전 패치 원본(KR_OLD)이 쌓인 상황
+  const runWithSize = async (mb, pruneOnLimit) => {
+    const saved = CFG.pruneOnLimit
+    CFG.pruneOnLimit = pruneOnLimit
+    fakeSizeMb = mb
+    preloadOld = true
+    // 하드 한도 정리는 log.error 로 남는다 (테스트 출력에서는 숨김)
+    const r = await main({ log: { ...quiet, error() {} } })
+    preloadOld = false
+    fakeSizeMb = null
+    CFG.pruneOnLimit = saved
+    return { r, calls: pruneCalls, st: r.store._state }
+  }
+  const soft = await runWithSize(450, false)
+  check(
+    '소프트 한도 기본: 정리 없이 수집 중단 · KR_OLD 보존 · note',
+    soft.calls === 0 && soft.st.matches.has('KR_OLD') && soft.r.stats.matches_added === 0 && /용량 한도 초과/.test(soft.st.runs[0].note || ''),
+    `prune=${soft.calls} note=${soft.st.runs[0].note}`
+  )
+  const optIn = await runWithSize(450, true)
+  check('소프트 한도 + PRUNE_ON_LIMIT=1: 정리', optIn.calls === 1 && !optIn.st.matches.has('KR_OLD'), `prune=${optIn.calls}`)
+  const hardRun = await runWithSize(500, false)
+  check(
+    '하드 한도: 설정과 무관하게 정리 · note',
+    hardRun.calls === 1 && !hardRun.st.matches.has('KR_OLD') && /하드 한도 초과/.test(hardRun.st.runs[0].note || ''),
+    `prune=${hardRun.calls} note=${hardRun.st.runs[0].note}`
+  )
 
   console.log('시드 복호화 실패 격리 (REVIEW R9)')
   corruptSeed = true

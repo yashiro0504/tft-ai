@@ -379,7 +379,12 @@ Phase C 예정 (미구현):
 6. **프로덕션 키 승인 후** — Repository *variables* 에 `RIOT_MIN_INTERVAL_MS=34` (한도 60%), 필요하면 `MAX_MATCHES` 상향.
    GitHub secret · Vercel env 의 `RIOT_API_KEY` 를 함께 교체한다.
 
-조절 변수 (Repository variables, 없으면 기본값): `RIOT_MIN_INTERVAL_MS`(2500) · `MAX_MATCHES`(200) · `SEED_TIERS`(challenger,grandmaster,master) · `MASTER_LIMIT`(1000) · `KEEP_PATCHES`(1) · `MAX_RAW_MB`(400)
+조절 변수 (Repository variables, 없으면 기본값): `RIOT_MIN_INTERVAL_MS`(2500) · `MAX_MATCHES`(200) · `SEED_TIERS`(challenger,grandmaster,master) · `MASTER_LIMIT`(1000) · `KEEP_PATCHES`(1) · `MAX_RAW_MB`(400) · `MAX_RAW_MB_HARD`(480) · `PRUNE_ON_LIMIT`(0)
+
+> **용량 가드 (실행 시작 시)**: 원본이 `MAX_RAW_MB`(소프트)를 넘으면 **정리하지 않고 수집만 건너뛴다** (`tft_collect_runs.note` 에 사유).
+> 실행 끝 정리는 집계가 성공한 실행에서만 돌므로, 소프트 한도를 넘었다는 건 대개 집계가 실패해 이전 패치가 남았다는 뜻이다 →
+> `note` 의 집계 실패 사유를 먼저 고치면 다음 실행 끝에서 정리된다. 집계 상태와 무관하게 정리하려면 `PRUNE_ON_LIMIT=1`.
+> `MAX_RAW_MB_HARD`(하드)를 넘으면 DB 를 지키기 위해 설정과 무관하게 정리하고 `log.error` + `note` 를 남긴다 (집계 안 된 판은 복구 불가).
 
 > 개발 키를 쓰는 동안은 기본 간격 2500ms(약 48회/2분)로 키 한도(100회/2분)의 절반만 쓴다. 나머지는 사이트의 전적 검색 몫이다.
 
