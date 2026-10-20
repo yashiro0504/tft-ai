@@ -148,7 +148,7 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
                   return (
                     <li key={d.id} className="rk-ent-row">
                       {d.linkable ? (
-                        <Link href={`/deck/${d.id}`} className="rk-ent-rowlink">
+                        <Link href={d.href} className="rk-ent-rowlink">
                           {body}
                         </Link>
                       ) : (

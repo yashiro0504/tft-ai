@@ -705,6 +705,7 @@ export function MetaDashboard({
                   deck={selected}
                   tier={selectedTier ?? selected.tier}
                   patch={dbMode && !fellBack ? appliedPatch ?? undefined : data?.patch}
+                  deckQuery={dbMode && !fellBack && appliedPatch ? `?patch=${appliedPatch}&tier=${filter.tier}` : ''}
                 />
               ) : (
                 <p className="rk-empty">덱을 선택하세요.</p>
@@ -719,7 +720,18 @@ export function MetaDashboard({
   )
 }
 
-function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string; patch?: string }) {
+function DeckDetail({
+  deck,
+  tier,
+  patch,
+  deckQuery = '',
+}: {
+  deck: MetaDeckRanking
+  tier: string
+  patch?: string
+  /** DB 덱이면 ?patch=&tier= — 덱 페이지가 같은 집계 덱(stat_comp)을 연다 */
+  deckQuery?: string
+}) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
   // 아이템을 드는 기물 (메인 딜러를 맨 앞으로)
   const holders = deck.units
@@ -766,13 +778,13 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
 
       <div className="rk-dactions">
         <Link
-          href={`/deck/${deck.id}`}
+          href={`/deck/${deck.id}${deckQuery}`}
           className="rk-dlink"
           onClick={() => track('deck_open', { surface: 'meta_deck_row' })}
         >
           덱 페이지
         </Link>
-        <ShareButton path={`/deck/${deck.id}`} label="공유" surface="meta_deck_row" />
+        <ShareButton path={`/deck/${deck.id}${deckQuery}`} label="공유" surface="meta_deck_row" />
       </div>
 
       <div className="rk-kpis">
