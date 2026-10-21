@@ -324,6 +324,19 @@ export interface CoachingAxis {
   verdict?: string
 }
 
+/** 덱 유형 (리롤형/표준형). mixed 는 여러 경기 종합에서 유형이 섞인 경우 */
+export type DeckType = 'reroll' | 'standard' | 'mixed' | 'unknown'
+
+/** 한 경기의 덱 유형 판정 결과 (lib/deckType.ts) */
+export interface DeckTypeInfo {
+  type: Exclude<DeckType, 'mixed'>
+  threeStars: number
+  threeStarCosts: number[]
+  lowCostThreeStars: number
+  carryThreeStar: boolean
+  reason: string
+}
+
 /** 코드가 결정한 이번 리포트의 강의 계획 */
 export interface CoachingPlan {
   focus: CoachingAxisKey
@@ -334,6 +347,10 @@ export interface CoachingPlan {
   /** 강의 기본 개념 문장 */
   drillTemplate: string
   matchCount: number
+  /** 덱 유형 판정 (리롤형이면 템포 축·강의 주제가 리롤 성과 기준으로 바뀐다) */
+  deckType?: DeckType
+  deckTypeLabel?: string
+  deckTypeReason?: string
   /** 초반 종료 경기만 있어 표본이 부족한가 */
   lowSample?: boolean
   /** 점수/강의에서 제외한 초반 종료 경기 수 */

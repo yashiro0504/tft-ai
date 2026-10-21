@@ -40,6 +40,97 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   const win = fixture.cases.find((c) => c.name === 'Seed02 win 1등 6-5').matches[0]
   check('내가 1등이면 로비 2등과 비교', buildComparisonFacts({ matches: [win], mode: 'single', combos: [], decks: [] }).includes('- 로비 2등과 비교:'))
 
+  console.log('덱 유형 판정')
+  const { detectDeckType, summarizeDeckTypes } = require('../lib/deckType')
+  // 기준 샘플: 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리(카시오페아 2성)
+  const info = detectDeckType(sample)
+  check(
+    '기준 샘플 = 리롤형 (3성 5개, 1·2코)',
+    info.type === 'reroll' && info.threeStars === 5 && info.threeStarCosts.join(',') === '1,1,1,2,2',
+    JSON.stringify(info)
+  )
+  check(
+    '비교 사실에 덱 유형 줄',
+    block.includes('- 덱 유형: 리롤형 — 3성 5개(1·1·1·2·2코) · Lv.7'),
+    block
+  )
+  const standard = {
+    ...sample,
+    level: 9,
+    units: sample.units.map((u) => ({ ...u, tier: (u.rarity ?? 1) >= 4 ? 2 : 1 })),
+  }
+  check('3성 없으면 표준형', detectDeckType(standard).type === 'standard', JSON.stringify(detectDeckType(standard)))
+  const few = { ...sample, units: sample.units.slice(0, 3) }
+  check('기물 3개면 판정 불가', detectDeckType(few).type === 'unknown', JSON.stringify(detectDeckType(few)))
+  const carryThree = {
+    ...sample,
+    units: sample.units.map((u) => ({ ...u, tier: u.name === '카시오페아' ? 3 : u.tier })),
+  }
+  check('캐리 3성 판정', detectDeckType(carryThree).carryThreeStar === true, JSON.stringify(detectDeckType(carryThree)))
+  const mixed = summarizeDeckTypes([sample, standard])
+  check(
+    '여러 판 유형 혼합 = mixed',
+    mixed.type === 'mixed' && mixed.line.includes('리롤형 1/2판') && mixed.line.includes('표준형 1/2판'),
+    mixed.line
+  )
+  // 캐리 = 아이템 최다 기물 (코스트는 동률일 때만). 아이템 없는 고코스트 탱커가 캐리로 잡히면 안 된다.
+  const tankBoard = {
+    ...sample,
+    units: [
+      ...sample.units.map((u) => ({ ...u, tier: u.name === '베이가' ? 3 : u.tier, items: u.name === '베이가' ? ['a', 'b', 'c', 'd'] : u.items })),
+      { id: 'TANK', name: '탱커', rarity: 4, tier: 1, items: [] },
+    ],
+  }
+  check('캐리 = 아이템 최다 기물 (4코 무템 탱커 아님)', detectDeckType(tankBoard).carryThreeStar === true, JSON.stringify(detectDeckType(tankBoard)))
+  // 8레벨 + 4코 캐리 3성 + 3코 3성 → 저코스트 3성 0개, 캐리도 리롤 코스트가 아니므로 표준형
+  const fast8 = {
+    ...sample,
+    level: 8,
+    units: sample.units.map((u) =>
+      u.name === '카시오페아' ? { ...u, rarity: 4, tier: 3 } : u.name === '피들스틱' ? { ...u, tier: 3 } : { ...u, tier: 2 }
+    ),
+  }
+  check('8레벨 4코 캐리 3성 = 표준형', detectDeckType(fast8).type === 'standard', JSON.stringify(detectDeckType(fast8)))
+  const { buildCoachingPlan } = require('../lib/coaching')
+  const plan = buildCoachingPlan([sample])
+  check('리롤형 판정이 강의 계획에 반영', plan.deckType === 'reroll' && plan.deckTypeLabel === '리롤형', JSON.stringify(plan.deckType))
+  const tempo = plan.axes.find((a) => a.key === 'tempo')
+  check(
+    '리롤 템포 = 100 − 3성 부족 0 − 캐리 3성 미완성 20 = 80 (표준형과 같은 100점 척도)',
+    tempo.score === 80 &&
+      tempo.effects.some((e) => e.key === 'missingThreeStars' && e.points === 0) &&
+      tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === -20),
+    JSON.stringify(tempo)
+  )
+  check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
+  // 3성 2개(베이가·오른)뿐인 리롤형 → 템포 100 − 20 − 20 = 60 → 가장 약한 축
+  const thinReroll = { ...sample, units: sample.units.map((u) => ({ ...u, tier: ['베이가', '오른'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
+  const rerollTopicPlan = buildCoachingPlan([thinReroll])
+  check(
+    '리롤형에서 템포가 초점이면 주제 = 리롤 성과',
+    rerollTopicPlan.deckType === 'reroll' && rerollTopicPlan.focus === 'tempo' && rerollTopicPlan.topic.includes('리롤 성과'),
+    JSON.stringify({ focus: rerollTopicPlan.focus, topic: rerollTopicPlan.topic })
+  )
+  const mixedPlan = buildCoachingPlan([sample, standard])
+  const mixedTempo = mixedPlan.axes.find((a) => a.key === 'tempo')
+  check(
+    '혼합이면 템포 지표·강의 모두 두 기준',
+    mixedPlan.deckType === 'mixed' &&
+      mixedTempo.metrics.some((x) => x.key === 'levelGap') &&
+      mixedTempo.metrics.some((x) => x.key === 'carryThreeStar') &&
+      mixedTempo.lesson.includes('리롤형은 코어 3성'),
+    JSON.stringify(mixedTempo)
+  )
+  const early = { ...sample, lastRound: '2-2' }
+  const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
+  const earlyPlan = buildCoachingPlan([sample, standard, early])
+  check(
+    '종합: 비교 사실과 강의 계획의 덱 유형 줄이 같은 표본(초반 종료 제외)',
+    mixedFacts.includes(`- 덱 유형: ${earlyPlan.deckTypeReason}`) && earlyPlan.deckTypeReason.includes('/2판'),
+    `${earlyPlan.deckTypeReason}
+${mixedFacts}`
+  )
+
   console.log('메타 덱 유사도')
   const board = { ...sample, units: ['TFT18_A', 'TFT18_B', 'TFT18_C', 'TFT18_D', 'TFT18_E'].map((id) => ({ id, name: id, tier: 2, items: [] })) }
   const near = { name: '가까운 덱', avgPlacement: 4.21, sampleSize: 120, units: ['A', 'B', 'C', 'D', 'F'].map((key) => ({ key })) } // 4/6 = 0.67

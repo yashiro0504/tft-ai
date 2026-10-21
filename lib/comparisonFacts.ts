@@ -1,4 +1,6 @@
 import { entitySlug } from './entitySlug'
+import { summarizeDeckTypes } from './deckType'
+import { scoringSample } from './quality'
 import type { LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
@@ -195,12 +197,16 @@ export function buildComparisonFacts({
   const lines: string[] = []
   if (mode === 'single') {
     const m = matches[0]
+    // 덱 유형: 최종 보드의 3성 개수·코스트·레벨로 코드가 판정 (리롤형이면 템포 해석이 달라진다)
+    lines.push(`- 덱 유형: ${summarizeDeckTypes([m]).line}`)
     lines.push(...lobbyLines(m))
     const dl = deckLine(m, decks)
     if (dl) lines.push(dl)
     const bl = bisLine(m.units, bis, '보드 전체', true)
     if (bl) lines.push(bl)
   } else {
+    // 강의 계획(buildCoachingPlan)과 같은 표본 — 초반 종료 판 제외 — 으로 세어야 프롬프트 안 숫자가 일치한다.
+    lines.push(`- 덱 유형: ${summarizeDeckTypes(scoringSample(matches).sample).line}`)
     lines.push(...multiLines(matches))
     const bl = bisLine(
       matches.flatMap((m) => m.units),

@@ -16,7 +16,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.3'
+export const COACH_PROMPT_VERSION = '2026-10-21.4'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -176,6 +176,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 [진단 6축]
 - 코드가 계산한 axes 점수를 그대로 쓴다. 점수를 새로 만들지 마라.
 - 각 축에 verdict(한 줄 진단, 25자 내외)를 붙인다. 축끼리 문장이 겹치면 안 된다.
+- 덱 유형이 리롤형이면 템포 축을 "레벨이 낮다"가 아니라 "3성 완성·캐리 3성" 기준으로 해설하라. 표준형에만 레벨 격차를 적용하라.
 - actions 는 다음 판에서 할 행동 3개다(서로 다른 축, 측정 가능하게). lecture.checklist·axes verdict 와 문장을 복사하지 마라.
 
 ★★★ 데이터 접지(Grounding) ★★★
@@ -687,6 +688,7 @@ export async function generateMetaCoachFeedback(
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
     `- 초점 축: ${plan.focusLabel} (${plan.focus})`,
+    `- 덱 유형: ${plan.deckTypeReason ?? '판정 불가'}`,
     `- 기본 개념 문장(참고): ${plan.drillTemplate}`,
     '',
     '[6축 진단 — 코드 산출 점수, 그대로 사용]',

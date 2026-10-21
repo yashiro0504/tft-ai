@@ -40,3 +40,9 @@ export function lowSampleReason(m: SlimMatchData): string {
   if (m.gameLengthSec && m.gameLengthSec < minGameSec) return `${Math.round(m.gameLengthSec / 60)}분 종료`
   return ''
 }
+
+/** 점수·강의에 쓸 표본: 초반 종료 판을 뺀 정상 경기. 전부 초반이면 어쩔 수 없이 전체를 쓴다. */
+export function scoringSample(matches: SlimMatchData[]): { sample: SlimMatchData[]; full: SlimMatchData[] } {
+  const full = matches.filter((m) => !isEarlyGame(m))
+  return { sample: full.length ? full : matches, full }
+}

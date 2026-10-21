@@ -1,5 +1,5 @@
 import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
-import { isEarlyGame, lowSampleReason, stageOfRound } from './quality'
+import { isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { completionAxis, contestAxis } from './coaching'
 
@@ -132,9 +132,8 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
   if (valid.length === 0) return null
 
   const early = valid.filter(isEarlyGame)
-  const full = valid.filter((m) => !isEarlyGame(m))
   // 초반 종료 판이 섞여 있으면 정상 경기만 집계한다. 전부 초반이면 어쩔 수 없이 전체 사용 + lowSample.
-  const sample = full.length ? full : valid
+  const { sample, full } = scoringSample(valid)
   const metrics = sample.map(readMetrics)
   const per = sample.map((m) => computeMatchScore(m))
   const avg = (nums: number[]) => nums.reduce((a, b) => a + b, 0) / (nums.length || 1)
