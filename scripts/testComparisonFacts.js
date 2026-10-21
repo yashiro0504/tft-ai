@@ -269,6 +269,25 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     )
     check('채점: 설정 이후 경기가 없으면 진행 0', evaluateGoal(g, [board(50, 0)]).games.length === 0 && !evaluateGoal(g, []).done)
   }
+  // ── 내 덱 성적표 (lib/deckReport): 메타 덱으로 묶어 내 평균 vs 메타 평균 · 2판 이상만 판정 ──
+  {
+    const { buildDeckReport } = require('../lib/deckReport')
+    const U = (id, name) => ({ id, name, rarity: 4, tier: 2, items: [] })
+    const deckA = { name: '테스트 A', avgPlacement: 4, sampleSize: 200, units: ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
+    const deckB = { name: '테스트 B', avgPlacement: 4.5, sampleSize: 10, units: ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
+    const game = (id, placement, keys) => ({ ...standard, matchId: id, placement, level: 8, lastRound: '5-5', units: keys.map((k) => U(`DA_18_${k}`, k)) })
+    const aKeys = ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel']
+    const bKeys = ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern']
+    const r = buildDeckReport(
+      [game('a1', 7, aKeys), game('a2', 6, aKeys), game('b1', 1, bKeys), game('b2', 2, bKeys), game('x', 5, ['Veigar', 'Ornn', 'RekSai', 'Alistar']), { ...game('e', 8, aKeys), lastRound: '2-2' }],
+      [deckA, deckB]
+    )
+    const A = r.rows.find((x) => x.name === '테스트 A')
+    const B = r.rows.find((x) => x.name === '테스트 B')
+    check('덱 성적표: 2판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 2 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
+    check('덱 성적표: 메타 표본 적은 덱은 판정 없음', B && B.games === 2 && B.verdict === null, JSON.stringify(B))
+    check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 5판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 5, JSON.stringify(r.unmatched))
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { loadDeckReport } from '@/lib/deckReport'
 import { loadSummonerData, DEFAULT_MATCH_LIMIT } from '@/lib/tftService'
 import { calculateProfileStats } from '@/lib/profile'
 import { cacheGet, cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
@@ -72,7 +73,9 @@ export async function POST(req: NextRequest) {
         isDemo,
         refresh,
       })
-      return issueBotGate(NextResponse.json({ ...cached.value, refreshAvailableAt }), req)
+      // 덱 성적표는 캐시 값에 넣지 않고 매번 붙인다 (메타 덱 통계가 갱신되면 바로 반영 · 메모 캐시라 비용이 작다)
+      const deckReport = await loadDeckReport(cached.value.matches)
+      return issueBotGate(NextResponse.json({ ...cached.value, deckReport, refreshAvailableAt }), req)
     }
 
     const data = await loadSummonerData(gameName, tagLine, limit, isDemo, { fresh: canRefresh })
@@ -108,7 +111,8 @@ export async function POST(req: NextRequest) {
       matches: data.matches.length,
       refresh,
     })
-    return issueBotGate(NextResponse.json({ ...response, refreshAvailableAt: fetchedAt + REFRESH_COOLDOWN_MS }), req)
+    const deckReport = await loadDeckReport(response.matches)
+    return issueBotGate(NextResponse.json({ ...response, deckReport, refreshAvailableAt: fetchedAt + REFRESH_COOLDOWN_MS }), req)
   } catch (err) {
     logEvent('error', 'api_search_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'search')
