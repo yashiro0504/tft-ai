@@ -203,7 +203,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const core = (t) => [U('DA_18_GnarSmall', '나르', 5, 2), U('DA_18_ElderDragon', '장로 드래곤', 5, 2), U('DA_18_Ivern', '아이번', 5, t), U('DA_Taric18', '타릭', 5, t), U('DA_Amumu18', '아무무', 4, t)]
     const me = {
       ...standard, placement: 6, level: 10, lastRound: '5-6', traits: [],
-      units: [...core(1), U('DA_Taric18', '타릭', 5, 1), U('DA_Vi18', '바이', 3, 1, ['수은', '가고일 돌갑옷', '쓸데없이 큰 지팡이']), U('DA_Amumu18', '아무무', 4, 1, ['찬란한 워모그의 갑옷'])],
+      units: [...core(1), U('DA_Taric18', '타릭', 5, 1), U('DA_Vi18', '바이', 3, 1, ['수은', '가고일 돌갑옷', '찬란한 워모그의 갑옷']), U('DA_Amumu18', '아무무', 4, 1, ['워모그의 갑옷'])],
     }
     me.lobbyParticipants = [
       { placement: 2, gameName: 'o', tagLine: 'x', level: 10, lastRound: '6-5', damageToPlayers: 0, traits: [], units: core(2), isUser: false },
@@ -212,7 +212,14 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const km = keyMoments(me)
     check('핵심 장면: 같은 구성 상위 상대 성급 차이가 1순위', km[0]?.kind === 'sameComp' && /아이번 1★ vs 2★/.test(km[0].fact) && /2등/.test(km[0].title), JSON.stringify(km[0]))
     check('핵심 장면: 같은 기물 1성 여러 장 (타릭 2장)', km.some((x) => x.kind === 'duplicateCopies' && /타릭 1성 2장/.test(x.fact)), JSON.stringify(km))
-    check('핵심 장면: 1성 기물 아이템 · 찬란한 아이템', km.some((x) => x.kind === 'itemsOnWeak' && /찬란한 워모그의 갑옷\(아무무\)/.test(x.fact)), JSON.stringify(km))
+    check(
+      '핵심 장면: 1성 1~3코 기물 아이템 · 찬란한 아이템 (4코 1성 아무무 아이템은 세지 않음)',
+      km.some((x) => x.kind === 'itemsOnWeak' && /찬란한 워모그의 갑옷\(바이\)/.test(x.fact) && !/아무무/.test(x.fact)),
+      JSON.stringify(km)
+    )
+    // 1등 판처럼 1성 5코스트 캐리에 BIS 를 몰아준 건 정상 운영 — 장면이 아니다
+    const fiveCostCarry = { ...me, units: [...core(2), U('DA_18_ElderDragon', '장로 드래곤', 5, 1, ['무한의 대검', '최후의 속삭임', '타격대의 철퇴'])], lobbyParticipants: [] }
+    check('핵심 장면: 1성 5코스트 캐리 BIS 는 아이템·캐리 장면 아님', !keyMoments(fiveCostCarry).some((x) => x.kind === 'itemsOnWeak' || x.kind === 'carryOneStar'), JSON.stringify(keyMoments(fiveCostCarry)))
     check('핵심 장면: 최대 3개', km.length <= 3)
     const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
     check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
@@ -238,13 +245,13 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const worse = [game(7, 1), game(6, 1), game(8, 1), game(3, 0), game(2, 0)]
     const hs = habitPatterns(worse)
     const weak = hs.find((h) => h.kind === 'itemsOnWeak')
-    check('습관: 3/5판 1성 기물 아이템 · 찬란한 · 있던 판/없던 판 등수', Boolean(weak) && /^3\/5판/.test(weak.fact) && /찬란한 아이템이 1성 기물에 간 판 3회/.test(weak.fact) && /있던 판 평균 7등 \/ 없던 판 2\.5등/.test(weak.fact), JSON.stringify(hs))
+    check('습관: 3/5판 1성 기물 아이템 · 찬란한 · 있던 판/없던 판 등수', Boolean(weak) && /^3\/5판/.test(weak.fact) && /찬란한 아이템이 1성 1~3코스트 기물에 간 판 3회/.test(weak.fact) && /있던 판 평균 7등 \/ 없던 판 2\.5등/.test(weak.fact), JSON.stringify(hs))
     const better = [game(2, 1), game(1, 1), game(3, 1), game(7, 0), game(8, 0)]
     check('습관: 있던 판이 확실히 더 좋은 등수면 습관이 아님', !habitPatterns(better).some((h) => h.kind === 'itemsOnWeak'), JSON.stringify(habitPatterns(better)))
     check('습관: 집계 판 3판 미만이면 없음', habitPatterns(worse.slice(0, 2)).length === 0)
     const plan = buildCoachingPlan(worse)
     const fp = focusOnMoment(plan, hs, 'multi')
-    check('강의 주제 = 첫 습관 (1성 기물 아이템 → 아이템 축)', fp.focus === 'itemization' && fp.topic === '반복 습관 교정 — 좋은 아이템이 1성 기물에' && fp.axes === plan.axes, JSON.stringify({ focus: fp.focus, topic: fp.topic }))
+    check('강의 주제 = 첫 습관 (1성 기물 아이템 → 아이템 축)', fp.focus === 'itemization' && fp.topic === '반복 습관 교정 — 아이템이 1성 저코스트 기물에' && fp.axes === plan.axes, JSON.stringify({ focus: fp.focus, topic: fp.topic }))
     check('장면 없으면 강의 계획 그대로', focusOnMoment(plan, [], 'single') === plan)
   }
   // ── 연습 목표 (lib/goals): 장면 → 다음 3판 숫자 목표 · 설정 이후 경기로 채점 ──
@@ -257,8 +264,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       ...extra,
     })
     const src = board(100, 5)
-    const g = goalFromMoment({ kind: 'itemsOnWeak', title: '좋은 아이템이 1성 기물에' }, [src])
-    check('목표: 1성 기물 아이템 → 2개 이하 · 기준 5 · since=출처 경기 시각', g && g.dir === 'max' && g.target === 2 && g.baseline === 5 && g.since === 100 && goalText(g) === '1성 기물에 든 아이템 2개 이하', JSON.stringify(g))
+    const g = goalFromMoment({ kind: 'itemsOnWeak', title: '아이템이 1성 저코스트 기물에' }, [src])
+    check('목표: 1성 기물 아이템 → 2개 이하 · 기준 5 · since=출처 경기 시각', g && g.dir === 'max' && g.target === 2 && g.baseline === 5 && g.since === 100 && goalText(g) === '1성 1~3코스트 기물에 든 아이템 2개 이하', JSON.stringify(g))
     check('목표: 1명 모자란 시너지는 목표로 바꾸지 않음', goalFromMoment({ kind: 'nearBreakpoint', title: 'x' }, [src]) === null)
     const later = [board(50, 0), board(200, 1), board(300, 4), board(400, 0, { lastRound: '2-2' }), board(500, 2), board(600, 0)]
     const pr = evaluateGoal(g, later)

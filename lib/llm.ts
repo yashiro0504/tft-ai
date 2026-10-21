@@ -4,7 +4,7 @@ import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
 import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
-import { keyMoments, type KeyMoment } from './keyMoments'
+import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
@@ -18,7 +18,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-22.1'
+export const COACH_PROMPT_VERSION = '2026-10-22.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -200,6 +200,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
 - 레벨 9~10 표준형(밸류) 보드에서 5코스트 겹침은 그 레벨에 간 모두가 겪는 조건이다. "겹쳐서 졌다", "다른 덱으로 비틀었어야" 식으로
   원인 삼지 말고, 같은 5코스트를 쓴 상대와 2성 수·아이템 차이를 비교하라.
+- 완성 아이템은 기물에서 떼어 다른 기물로 옮길 수 없다(아이템 제거기·재조합기 같은 특수 아이템이 없으면). "아이템을 옮겨라/회수하라/나중에 몰아줘라"고
+  하지 말고, 다음 판에 처음부터 어느 기물에 줄지로 말하라. 4·5코스트 1성 캐리에 아이템을 몰아주는 것은 후반 정상 운영이다 — 문제로 삼지 마라.
 - 증강 정보는 Riot API 가 제공하지 않는다. 증강 판단(프리즘 개수 등)을 추측하지 말되, "증강이 약했다/좋았다"처럼 단정하지도 마라.
 - 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
 - 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
@@ -721,7 +723,18 @@ export async function generateMetaCoachFeedback(
   // 강의 본문(moments)은 이 장면들을 해설한다.
   const moments: KeyMoment[] = basePlan.lowSample ? [] : mode === 'single' ? (matches[0] ? keyMoments(matches[0]) : []) : habitPatterns(matches)
   // 장면이 있으면 강의 주제를 첫 장면에 맞춘다 — 가장 약한 축(예: 유연성)과 장면(예: 1성 기물 아이템)이 따로 놀지 않게
-  const plan = focusOnMoment(basePlan, moments, mode)
+  // 1등 판은 '복기' — 이긴 요인을 먼저, 장면은 다듬을 점으로 (1등 판을 문제점 나열로 만들지 않는다)
+  const win = mode === 'single' && matches[0]?.placement === 1 && !basePlan.lowSample
+  const plan = win ? { ...focusOnMoment(basePlan, moments, mode), topic: '1등 판 복기 — 이긴 이유와 다듬을 점' } : focusOnMoment(basePlan, moments, mode)
+  const winFacts = mode === 'single' && matches[0] && matches[0].placement <= 2 && !basePlan.lowSample
+    ? [
+        `[이긴 요인 — 코드 산출, 이 판은 ${matches[0].placement}등이다]`,
+        ...winFactors(matches[0]).map((x) => `- ${x}`),
+        win
+          ? '※ 1등 판이다. concept 다음 강의는 이 이긴 요인부터 짚어라. [핵심 장면]은 "더 강해질 수 있었던 다듬을 점"으로만 해설하고, "문제였다/약하게 만들었다/졌다"처럼 쓰지 마라. why 는 "이렇게 했다면 더 여유 있게 이겼다"는 관점, fix 는 "다음에도 이기는 판에서 다듬을 점"으로 써라. overview 첫 문장은 이 판이 1등인 이유다.'
+          : '※ 2등(순방) 판이다. 이긴 요인을 먼저 인정하고, [핵심 장면]은 1등과의 차이를 줄일 다듬을 점으로 해설하라.',
+      ].join('\n')
+    : ''
   const momentFacts = moments.length
     ? [
         mode === 'single'
@@ -808,7 +821,9 @@ ${metaFacts}
 ${comparisonFacts ? `
 ${comparisonFacts}
 ` : ''}
-${momentFacts}
+${winFacts ? `${winFacts}
+
+` : ''}${momentFacts}
 
 ${scoreFacts}
 
