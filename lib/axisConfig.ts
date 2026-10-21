@@ -13,6 +13,21 @@ export interface AxisConfig {
   version: string
   expectedLevelByStage: Record<string, number>
   earlyGame: { minStage: number; minUnits: number; minGameSec: number }
+  /** 덱 유형(리롤형/표준형) 판정 임계값 — lib/deckType.ts */
+  deckType: {
+    /** 이보다 기물이 적으면 판정 불가 */
+    minUnits: number
+    /** 리롤형 최소 3성 개수 */
+    minThreeStars: number
+    /** '저코스트'로 볼 최대 코스트 */
+    lowCostMaxRarity: number
+    /** 리롤형으로 보려면 저코스트 3성이 최소 몇 개여야 하는가 (캐리 3성이면 대체 가능) */
+    minLowCostThreeStars: number
+    /** 캐리 3성이 저코스트 3성 조건을 대신하려면 캐리 코스트가 이 이하여야 한다 */
+    carryMaxRarity: number
+    /** 이 레벨 이하에서만 리롤형으로 본다 */
+    maxLevel: number
+  }
   axes: {
     economy: {
       idleGoldFree: number
@@ -23,7 +38,12 @@ export interface AxisConfig {
       earlyExitPenalty: { maxStage: number; penalty: number }[]
     }
     itemization: { carryItemsMax: number; carryWeight: number; boardItemsMax: number; boardWeight: number }
-    tempo: { unknownStageScore: number; levelGapPenaltyPerLevel: number }
+    tempo: {
+      unknownStageScore: number
+      levelGapPenaltyPerLevel: number
+      /** 리롤형 템포: 레벨 격차 대신 3성 완성·캐리 3성으로 평가 (100에서 감점, 표준형과 같은 척도) */
+      reroll: { targetThreeStars: number; missingThreeStarPenalty: number; carryNotThreeStarPenalty: number }
+    }
     completion: { fillBase: number; twoPlusBonus: number; threeStarBonusEach: number; threeStarMax: number }
     synergy: {
       /** 1명으로 켜지는 고유 시너지는 활성 개수에서 뺀다 */

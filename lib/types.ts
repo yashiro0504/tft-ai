@@ -219,6 +219,18 @@ export interface GroundingReport {
   unsupported: string[]
   /** 수치가 아닌 환각 경고 (제공되지 않은 시너지명, 존재하지 않는 코스트 등) */
   warnings?: string[]
+  /** 의미(엔티티 사실) 오류 — 기물 성급·3성 개수·아이템 소유·시너지 단계가 최종 보드와 다름 (lib/semanticGrounding) */
+  entityErrors?: EntityFactError[]
+}
+
+export interface EntityFactError {
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier'
+  /** 오류가 있는 문장 */
+  text: string
+  /** 데이터 값 */
+  expected: string
+  /** 리포트가 쓴 값 */
+  actual: string
 }
 
 /** 리포트가 참조한 데이터 출처/패치/표본 정보 */
@@ -312,6 +324,19 @@ export interface CoachingAxis {
   verdict?: string
 }
 
+/** 덱 유형 (리롤형/표준형). mixed 는 여러 경기 종합에서 유형이 섞인 경우 */
+export type DeckType = 'reroll' | 'standard' | 'mixed' | 'unknown'
+
+/** 한 경기의 덱 유형 판정 결과 (lib/deckType.ts) */
+export interface DeckTypeInfo {
+  type: Exclude<DeckType, 'mixed'>
+  threeStars: number
+  threeStarCosts: number[]
+  lowCostThreeStars: number
+  carryThreeStar: boolean
+  reason: string
+}
+
 /** 코드가 결정한 이번 리포트의 강의 계획 */
 export interface CoachingPlan {
   focus: CoachingAxisKey
@@ -322,6 +347,10 @@ export interface CoachingPlan {
   /** 강의 기본 개념 문장 */
   drillTemplate: string
   matchCount: number
+  /** 덱 유형 판정 (리롤형이면 템포 축·강의 주제가 리롤 성과 기준으로 바뀐다) */
+  deckType?: DeckType
+  deckTypeLabel?: string
+  deckTypeReason?: string
   /** 초반 종료 경기만 있어 표본이 부족한가 */
   lowSample?: boolean
   /** 점수/강의에서 제외한 초반 종료 경기 수 */
@@ -355,15 +384,28 @@ export interface MetaCoachFeedback {
   mode: 'single' | 'multi'
   metaScore: number
   metaTier: string
-  flexibilityScore: number
   playstyle: string
   overview: string
-  contestAnalysis: string
-  itemAnalysis: string
-  synergyAnalysis: string
-  economyAnalysis: string
-  improvements: string[]
-  actionPlan: string[]
+  /** 다음 판에서 할 행동 3개 (스키마 v2, 2026-10-21.3~) */
+  actions?: string[]
+  /*
+   * 스키마 v1 필드 — 2026-10-21.3 이전에 캐시된 리포트에만 있다. 화면은 있으면 그대로 보여 준다.
+   * v2 에서는 6축 verdict(plan.axes) · 6축 contest 점수 · actions 로 대체.
+   */
+  /** @deprecated v1 — 6축 contest 점수로 대체 */
+  flexibilityScore?: number
+  /** @deprecated v1 — plan.axes contest verdict */
+  contestAnalysis?: string
+  /** @deprecated v1 — plan.axes itemization verdict */
+  itemAnalysis?: string
+  /** @deprecated v1 — plan.axes synergy verdict */
+  synergyAnalysis?: string
+  /** @deprecated v1 — plan.axes economy verdict */
+  economyAnalysis?: string
+  /** @deprecated v1 — actions */
+  improvements?: string[]
+  /** @deprecated v1 — actions · lecture.checklist */
+  actionPlan?: string[]
   /** 강의형 코칭 (코드가 주제 선택, LLM이 본문 작성) */
   lecture?: CoachLecture
   /** 6축 진단 + 강의 계획 (코드 산출) */
@@ -530,6 +572,33 @@ export interface MetaCompRanking {
 }
 
 /** 메타 덱(보드 조합) — Riot 래더 실제 보드를 묶은 덱 (실측) */
+/**
+ * 래더 실측 덱 가이드 (scripts/buildDecksFromBoards.js deckGuide) — 최종 보드 통계.
+ * carryItems 는 '조합 순서'가 아니라 최종 보드 채용률이다.
+ */
+export interface DeckGuide {
+  boards: number
+  /** 채용률 80%+ 기물 */
+  core: { key: string; name: string; usage: number; avgPlacement: number }[]
+  /** 채용률 20~80% 기물 (썼을 때 평균 등수) */
+  flex: { key: string; name: string; usage: number; avgPlacement: number }[]
+  /** 캐리 완성 아이템: 채용률(보드 비율) · 들었을 때 평균 등수 */
+  carryItems: { key: string; name: string; rate: number; avgPlacement: number }[]
+  /** 레벨 → 보드 비율 */
+  levels: Record<string, number>
+  carryThreeStarRate: number
+  /** flexSlots = 대표 구성 칸 수 − 핵심 기물 수 · sharedCarryDecks = 같은 캐리 메타 덱 수 */
+  openness: { coreCount: number; flexSlots: number; sharedCarryDecks: number }
+  /** 이 통계를 만든 보드의 패치별 판 수 (현재 패치 표본이 부족하면 직전 패치를 합친다) */
+  patch?: PatchBasis
+}
+
+/** 통계의 패치 기준 — counts: 패치 → 판 수, mixed: 두 패치 이상을 합쳤는가 */
+export interface PatchBasis {
+  counts: Record<string, number>
+  mixed: boolean
+}
+
 export interface MetaDeckRanking {
   id: string
   name: string
@@ -564,6 +633,8 @@ export interface MetaDeckRanking {
   playRate?: number
   winRate?: number
   placementDist?: number[]
+  /** 래더 실측 덱 가이드 (래더 덱만) */
+  guide?: DeckGuide
 }
 
 export interface TftMetaResponse {
@@ -586,7 +657,10 @@ export interface TftMetaResponse {
   /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) */
   decks: MetaDeckRanking[]
   deckMeta?: {
+    /** decksData.json 빌드 시각 */
     generatedAt: string
+    /** 원본 래더 보드 수집 시각 — 화면의 '갱신'은 이 값 */
+    sourceUpdatedAt?: string
     source: string
     patch: string | null
     deckCount: number

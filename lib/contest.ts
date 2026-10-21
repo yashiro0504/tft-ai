@@ -20,7 +20,7 @@ import { CONTEST_CONFIG, starSensitivity, levelFromScore } from './contestConfig
  */
 
 /** 코어 기물 판정 (임계값은 contestConfig.json) */
-function isCoreUnit(u: SlimMatchUnit): boolean {
+export function isCoreUnit(u: SlimMatchUnit): boolean {
   return (
     (u.tier || 1) >= CONTEST_CONFIG.coreUnitMinTier ||
     (u.items?.length || 0) >= CONTEST_CONFIG.coreUnitMinItems
