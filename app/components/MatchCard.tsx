@@ -17,6 +17,7 @@ import { entityHref, entitySlug } from '@/lib/entitySlug'
 import { champions as SET_CHAMPIONS } from '@/lib/championTraits.json'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
+import { keyMoments } from '@/lib/keyMoments'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -36,7 +37,7 @@ type MatchScore = ReturnType<typeof computeMatchScore>
 
 /**
  * 핵심 지표 패널 (D+C)
- * - 분석 전: 항상 노출되는 "미리 보기" 지표
+ * - 분석 전: 항상 노출되는 "미리 보기" 지표 + 코드가 콕 집은 핵심 장면(lib/keyMoments, AI 미사용)
  * - 분석 중: 인트로 토큰이 도착하는 대로 타이핑되듯 누적
  */
 function MatchQuickStats({
@@ -57,6 +58,8 @@ function MatchQuickStats({
   const comp = (key: 'placement' | 'completion' | 'items' | 'contest') =>
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
+  // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다)
+  const moments = useMemo(() => (early ? [] : keyMoments(match)), [match, early])
 
   return (
     <div
@@ -87,6 +90,17 @@ function MatchQuickStats({
         </span>
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
       </div>
+
+      {!live && moments.length ? (
+        <ul className="mt-2.5 space-y-1.5 border-t border-line pt-2.5" aria-label="이 판의 핵심 장면">
+          {moments.map((mo) => (
+            <li key={mo.kind} className="text-xs leading-relaxed text-ink-soft">
+              <span className="font-semibold text-ink">{mo.title}</span>
+              <span className="text-muted"> — {mo.fact}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       {live ? (
         <p className="mt-2 min-h-[1.5rem] text-sm leading-relaxed text-ink">

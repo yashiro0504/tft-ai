@@ -5,13 +5,14 @@ import type { SlimMatchData, SummonerProfile } from '@/lib/types'
 import { formatRankLabel, formatRankLp, formatRankRecord, rankWinRate } from '@/lib/rank'
 import { PlacementTrend } from './PlacementTrend'
 import { AxisOverview } from './AxisOverview'
+import { HabitOverview } from './HabitOverview'
 import { FavoriteButton } from './FavoriteButton'
 
 /**
  * 소환사 개요 (코치 결과 / 공유용 프로필 페이지 공용).
  *
  * 왼쪽: 티어 엠블럼 · 이름 · 랭크 · 최근 경기 핵심 숫자 · 주력 캐리
- * 오른쪽: 최근 등수 칩 · 요약 타일 · 등수 흐름 그래프 · 6축 진단 · 등수 분포 · 자주 쓴 기물/시너지
+ * 오른쪽: 최근 등수 칩 · 요약 타일 · 등수 흐름 그래프 · 6축 진단 · 반복 습관 · 등수 분포 · 자주 쓴 기물/시너지
  *
  * 모든 수치는 검색으로 받은 최근 경기에서 계산한다 (AI 미사용).
  * LP 변동 그래프는 Riot API 가 LP 기록을 주지 않아 등수 흐름으로 대신한다.
@@ -234,6 +235,9 @@ export function SummonerSummary({
               </span>
             </p>
             <AxisOverview matches={matches} />
+            <div className="mt-5">
+              <HabitOverview matches={matches} />
+            </div>
           </div>
 
           <div className="flex flex-col gap-5">
