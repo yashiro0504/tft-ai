@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
 import { consumeDailyQuota, type QuotaResult } from './quota'
 import { consumeUserQuota } from './userQuota'
+import { isQuotaExempt } from './quotaExempt'
+import { getAuthUser } from './supabase/server'
 import { verifyTurnstile } from './turnstile'
 import { incrMetric, logEvent } from './observability'
 import { RiotApiError } from './riot'
@@ -51,6 +53,12 @@ export async function quotaGuard(
   if (limit <= 0 && !proLimit) return null
 
   let result: QuotaResult | null = null
+
+  // 면제 계정(QUOTA_EXEMPT_USERS)은 쿼터를 소모하지 않는다. getAuthUser 는 요청 단위 캐시라 추가 호출이 없다.
+  if (userId && isQuotaExempt(await getAuthUser())) {
+    incrMetric(`quota.exempt.${bucket}`)
+    return null
+  }
 
   if (userId) {
     result = await consumeUserQuota(userId, bucket, Math.max(0, limit), proLimit ?? Math.max(0, limit))
