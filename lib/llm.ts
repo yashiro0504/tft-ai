@@ -18,7 +18,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.16'
+export const COACH_PROMPT_VERSION = '2026-10-22.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -972,7 +972,7 @@ function mergeMoments(code: KeyMoment[], llm: LectureMoment[] | undefined): Lect
   if (!code.length) return fromLlm.slice(0, 3)
   return code.map((c, i) => {
     const hit = fromLlm.find((x) => x.title.trim() === c.title) ?? fromLlm[i]
-    return { title: c.title, fact: c.fact, why: hit?.why.trim() || '', fix: hit?.fix.trim() || '' }
+    return { kind: c.kind, title: c.title, fact: c.fact, why: hit?.why.trim() || '', fix: hit?.fix.trim() || '' }
   })
 }
 

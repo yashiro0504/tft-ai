@@ -421,6 +421,11 @@ export default function TFTCoachPage() {
                     feedback={overviewFeedback}
                     title={`최근 ${search.matches.length}경기 종합 메타 총평`}
                     matchCount={search.matches.length}
+                    goalSource={
+                      search.isDemo || !search.summonerProfile
+                        ? undefined
+                        : { gameName: search.summonerProfile.gameName, tagLine: search.summonerProfile.tagLine, matches: search.matches }
+                    }
                   />
                 </div>
               )}

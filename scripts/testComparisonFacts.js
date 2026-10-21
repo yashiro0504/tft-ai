@@ -247,6 +247,28 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     check('강의 주제 = 첫 습관 (1성 기물 아이템 → 아이템 축)', fp.focus === 'itemization' && fp.topic === '반복 습관 교정 — 좋은 아이템이 1성 기물에' && fp.axes === plan.axes, JSON.stringify({ focus: fp.focus, topic: fp.topic }))
     check('장면 없으면 강의 계획 그대로', focusOnMoment(plan, [], 'single') === plan)
   }
+  // ── 연습 목표 (lib/goals): 장면 → 다음 3판 숫자 목표 · 설정 이후 경기로 채점 ──
+  {
+    const { goalFromMoment, evaluateGoal, goalText } = require('../lib/goals')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const board = (t, weakItems, extra = {}) => ({
+      ...standard, matchId: `G${t}`, gameDatetime: t, placement: 5, level: 8, lastRound: '5-5', traits: [], lobbyParticipants: [],
+      units: [U('DA_18_Ezreal', '이즈리얼', 4, 2, ['무한의 대검']), U('DA_18_Kennen', '케넨', 5, 2), U('DA_18_Sett', '세트', 4, 2), U('DA_Vi18', '바이', 3, 1, Array.from({ length: weakItems }, (_, i) => `아이템${i}`))],
+      ...extra,
+    })
+    const src = board(100, 5)
+    const g = goalFromMoment({ kind: 'itemsOnWeak', title: '좋은 아이템이 1성 기물에' }, [src])
+    check('목표: 1성 기물 아이템 → 2개 이하 · 기준 5 · since=출처 경기 시각', g && g.dir === 'max' && g.target === 2 && g.baseline === 5 && g.since === 100 && goalText(g) === '1성 기물에 든 아이템 2개 이하', JSON.stringify(g))
+    check('목표: 1명 모자란 시너지는 목표로 바꾸지 않음', goalFromMoment({ kind: 'nearBreakpoint', title: 'x' }, [src]) === null)
+    const later = [board(50, 0), board(200, 1), board(300, 4), board(400, 0, { lastRound: '2-2' }), board(500, 2), board(600, 0)]
+    const pr = evaluateGoal(g, later)
+    check(
+      '채점: 설정 이후 · 초반 종료 제외 · 오래된 순 3판 · 2개 이하면 달성',
+      pr.done && pr.games.map((x) => x.matchId).join(',') === 'G200,G300,G500' && pr.achieved === 2 && pr.average === 2.3,
+      JSON.stringify(pr)
+    )
+    check('채점: 설정 이후 경기가 없으면 진행 0', evaluateGoal(g, [board(50, 0)]).games.length === 0 && !evaluateGoal(g, []).done)
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])

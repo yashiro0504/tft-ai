@@ -5,7 +5,9 @@ import {
   GraduationCap, BookOpen, Target, ClipboardCheck, ArrowRight, Gauge,
 } from 'lucide-react'
 import { useState } from 'react'
-import type { CoachingAxis, MetaCoachFeedback } from '@/lib/types'
+import type { CoachingAxis, MetaCoachFeedback, SlimMatchData } from '@/lib/types'
+import { goalFromMoment, goalStorageKey, goalText, type PracticeGoal } from '@/lib/goals'
+import { useGoal } from '@/lib/useGoal'
 
 interface FeedbackReportProps {
   feedback: MetaCoachFeedback
@@ -15,6 +17,44 @@ interface FeedbackReportProps {
   matchCount?: number
   /** 인라인(경기 카드 내부) 렌더링 시 여백 축소 */
   compact?: boolean
+  /** 연습 목표 설정용 — 이 리포트의 소환사와 분석한 경기 (없으면 목표 버튼을 숨긴다) */
+  goalSource?: GoalSource
+}
+
+interface GoalSource {
+  gameName: string
+  tagLine: string
+  matches: SlimMatchData[]
+}
+
+/** 첫 장면을 다음 3판 목표로 추적 (lib/goals · 브라우저 저장). 진행은 프로필 요약에서 보인다. */
+function GoalButton({ feedback, source }: { feedback: MetaCoachFeedback; source: GoalSource }) {
+  const first = feedback.lecture?.moments?.find((m) => m.kind)
+  const candidate: PracticeGoal | null = first?.kind
+    ? goalFromMoment({ kind: first.kind as never, title: first.title }, source.matches)
+    : null
+  const { goal, setGoal } = useGoal(goalStorageKey(source.gameName, source.tagLine))
+  if (!candidate) return null
+  const same = goal && goal.kind === candidate.kind && goal.since === candidate.since
+  return (
+    <div className="mt-3 rounded-control border border-accent/30 bg-panel px-3 py-2 text-[13px]">
+      <p className="text-ink">
+        <span className="font-semibold">추적할 목표</span> · 다음 {candidate.games}판 {goalText(candidate)}
+        <span className="text-subtle"> (지금 {candidate.baseline}{candidate.unit})</span>
+      </p>
+      {same ? (
+        <p className="mt-1 text-xs font-semibold text-good">추적 중 — 프로필 요약에서 진행을 확인하세요</p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setGoal(candidate)}
+          className="mt-1.5 rounded-control border border-accent bg-accent-bg px-2.5 py-1 text-xs font-bold text-accent transition hover:brightness-110"
+        >
+          {goal ? '이 목표로 바꾸기' : '이 목표 추적하기'}
+        </button>
+      )}
+    </div>
+  )
 }
 
 /** 6축 진단 프로 게이머 HUD 바 */
@@ -84,7 +124,7 @@ function AxisRow({ axis, isFocus }: { axis: CoachingAxis; isFocus: boolean }) {
 }
 
 /** 강의형 코칭 블록 (개념 → 근거 → 대안 → 연습) */
-function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
+function LectureBlock({ feedback, goalSource }: { feedback: MetaCoachFeedback; goalSource?: GoalSource }) {
   const lec = feedback.lecture
   const plan = feedback.plan
   if (!lec) return null
@@ -160,6 +200,7 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
             <Target className="h-3.5 w-3.5" /> 다음 3판 목표
           </p>
           <p className="mt-1.5 text-[14px] leading-relaxed text-ink">{lec.drill}</p>
+          {goalSource ? <GoalButton feedback={feedback} source={goalSource} /> : null}
         </div>
 
         <div className="rounded-card border border-line bg-panel p-4">
@@ -197,7 +238,7 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
  * AI 코칭 리포트 렌더러 (경기별/종합 공용).
  * 기존 app/page.tsx 의 리포트 마크업을 재사용 가능하도록 분리.
  */
-export function FeedbackReport({ feedback, title, matchCount, compact = false }: FeedbackReportProps) {
+export function FeedbackReport({ feedback, title, matchCount, compact = false, goalSource }: FeedbackReportProps) {
   // 스키마 v2: 유연성은 6축 contest 점수(코드 산출). v1 캐시 리포트는 AI 피봇 성향(flexibilityScore)을 그대로 보여 준다.
   const contestAxis = feedback.plan?.axes.find((a) => a.key === 'contest')
   const flex = contestAxis
@@ -439,7 +480,7 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       {showAll ? (
         <>
       {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
-      <LectureBlock feedback={feedback} />
+      <LectureBlock feedback={feedback} goalSource={goalSource} />
 
       {/* 유연성 해설 — 스키마 v1 캐시 리포트에만 있다 (v2 는 위 6축 진단의 contest 한 줄) */}
       {feedback.contestAnalysis ? (
