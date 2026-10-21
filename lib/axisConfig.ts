@@ -1,4 +1,5 @@
 import cfg from './axisConfig.json'
+import type { CoachingAxisKey } from './types'
 
 /**
  * 6축 진단·metaScore 공식 파라미터 (axisConfig.json 기반).
@@ -52,6 +53,8 @@ export interface AxisConfig {
     synergy: {
       /** 1명으로 켜지는 고유 시너지는 활성 개수에서 뺀다 */
       excludeUniqueTraits: boolean
+      /** 이 레벨 이상이면 고유 시너지도 센다 — 5코스트 밸류 보드는 고유 시너지가 곧 보드 가치다 */
+      uniqueTraitsCountFromLevel: number
       /** 이 범위 안의 활성 시너지 개수는 감점하지 않는다 */
       idealActiveMin: number
       idealActiveMax: number
@@ -70,6 +73,8 @@ export interface AxisConfig {
       focusMinGap: number
     }
   }
+  /** 밸류 보드(리롤형 아님 · 평균 Lv.minLevel 이상)에서 강의 주제로 고르지 않을 축 — 점수는 그대로 */
+  valueBoard: { minLevel: number; noFocus: CoachingAxisKey[] }
   metaScore: {
     weights: { placement: number; completion: number; items: number; contest: number }
     boardItemsMax: number

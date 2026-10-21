@@ -157,11 +157,42 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check(
     '혼합이면 템포 지표·강의 모두 두 기준',
     mixedPlan.deckType === 'mixed' &&
-      mixedTempo.metrics.some((x) => x.key === 'levelGap') &&
+      mixedTempo.metrics.some((x) => x.key === 'levelShort') &&
       mixedTempo.metrics.some((x) => x.key === 'carryThreeStar') &&
       mixedTempo.lesson.includes('리롤형은 코어 3성'),
     JSON.stringify(mixedTempo)
   )
+  // ── 밸류 덱 오진단 회귀 (2026-10-21: Lv.10 5코스트 보드에 겹침 강의 · 템포 −36 · 1코 바루스 리롤 추천) ──
+  {
+    const { analyzeContest } = require('../lib/contest')
+    const { openDeckCandidates } = require('../lib/comparisonFacts')
+    const fast10 = { ...standard, level: 10, lastRound: '5-6' }
+    const t = buildCoachingPlan([fast10]).axes.find((a) => a.key === 'tempo')
+    check('템포: 표준(5스테이지 Lv.8)보다 높은 Lv.10 은 감점 없음', t.score === 100, JSON.stringify(t.effects))
+    const mine = [{ id: 'DA_Taric18', name: '타릭', tier: 1, rarity: 5, items: ['수호자의 맹세'] }]
+    const opp = (units) => ({ placement: 2, gameName: 'o', tagLine: 'x', level: 10, lastRound: '6-1', damageToPlayers: 0, traits: [], units, isUser: false })
+    const filler = analyzeContest(mine, [], [opp([{ id: 'DA_Taric18', name: '타릭', tier: 1, rarity: 5, items: [] }])])
+    const core = analyzeContest(mine, [], [opp([{ id: 'DA_Taric18', name: '타릭', tier: 2, rarity: 5, items: [] }])])
+    check('경합: 상대의 1성 무템 기물(칸 채우기)은 세지 않고, 2성은 센다', !filler.isContested && core.isContested, JSON.stringify({ filler: filler.contestScore, core: core.contestScore }))
+    const dup = analyzeContest([...mine, ...mine], [], [opp([{ id: 'DA_Taric18', name: '타릭', tier: 2, rarity: 5, items: [] }])])
+    check('경합: 같은 기물 두 장은 한 번만 센다', dup.unitDetails.length === 1, JSON.stringify(dup.unitDetails))
+    const uniq = analyzeContest(mine, [{ name: '자연의 아버지', tier: 1, count: 1 }], [{ ...opp([]), traits: [{ name: '자연의 아버지', tier: 1, count: 1 }] }])
+    check('경합: 1명짜리 고유 시너지 겹침은 세지 않음', !uniq.isContested, JSON.stringify(uniq.traitDetails))
+    const rerollDeck = {
+      name: '테스트 리롤', avgPlacement: 4, sampleSize: 200, carryKey: 'TFT18_Varus',
+      units: [{ key: 'TFT18_Varus', name: '바루스', cost: 1, star: 3, items: [{ name: '무한의 대검' }, { name: '최후의 속삭임' }] }],
+    }
+    const carryBoard = (level) => ({
+      ...standard, level,
+      units: [{ id: 'DA_18_ElderDragon', name: '장로 드래곤', tier: 2, rarity: 5, items: ['무한의 대검', '최후의 속삭임', '죽음의 검'] }],
+      lobbyParticipants: [opp([])],
+    })
+    check(
+      '빈집 후보: Lv.9 이상 보드에는 저코스트(≤3) 캐리 리롤 덱을 내지 않음 (Lv.8 은 냄)',
+      openDeckCandidates(carryBoard(10), [rerollDeck]).length === 0 && openDeckCandidates(carryBoard(8), [rerollDeck]).length === 1,
+      JSON.stringify(openDeckCandidates(carryBoard(8), [rerollDeck]).map((c) => c.deck.name))
+    )
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])

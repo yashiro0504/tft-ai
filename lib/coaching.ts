@@ -77,7 +77,7 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     .sort((a, b) => (b.rarity ?? 1) - (a.rarity ?? 1) || b.items.length - a.items.length)[0]
   const syn = AXIS_CONFIG.axes.synergy
   const allTraits = m.traits || []
-  const traits = syn.excludeUniqueTraits
+  const traits = syn.excludeUniqueTraits && (m.level || 0) < syn.uniqueTraitsCountFromLevel
     ? allTraits.filter((t) => (BREAKPOINTS[t.name]?.[0] ?? 2) > 1 && (t.count || 0) >= 2)
     : allTraits
   return {
@@ -118,7 +118,7 @@ export interface AxisResult {
 const EFFECT_LABEL: Record<string, string> = {
   base: '기본',
   boardValue: '스테이지 대비 보드 가치',
-  levelGap: '표준 레벨 대비 격차',
+  levelGap: '표준 레벨보다 부족',
   earlyExit: '이른 탈락',
   carryItems: '캐리 아이템',
   boardItems: '보드 전체 아이템',
@@ -180,9 +180,11 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
     return { score: clamp(Math.round(sum(effects))), effects }
   }
   if (!m.stage) return { score: c.unknownStageScore, effects: { unknownStage: c.unknownStageScore } }
+  // 표준보다 낮을 때만 감점한다. 빠른 9·10(밸류 덱, 고성능 증강 판)은 의도한 운영이라 감점하지 않는다
+  // (예전엔 절대값이라 5스테이지 Lv.10 이 −36 이었다). 레벨만 높고 보드가 약하면 완성도·경제 축이 잡는다.
   const effects = {
     base: 100,
-    levelGap: -Math.abs(m.level - expectedLevel(m.stage)) * c.levelGapPenaltyPerLevel,
+    levelGap: -Math.max(0, expectedLevel(m.stage) - m.level) * c.levelGapPenaltyPerLevel,
   }
   return { score: clamp(sum(effects)), effects }
 }
@@ -359,7 +361,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
       const standard: AxisMetric[] = [
         { key: 'level', label: '최종 레벨', value: mean((m) => m.level) },
         { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage) : m.level)) },
-        { key: 'levelGap', label: '표준 대비 격차(절대값)', value: mean((m) => Math.abs(gap(m))), unit: '레벨' },
+        { key: 'levelShort', label: '표준 레벨보다 부족', value: mean((m) => Math.max(0, -gap(m))), unit: '레벨' },
       ]
       return deckType === 'mixed' ? [...standard, ...reroll] : standard
     }
@@ -428,7 +430,7 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
       (s, m) => s + m.three,
       0
     )}회`,
-    synergy: `${basis} 활성 시너지 ${round1(avg(metrics.map((m) => m.activeTraits)))}개 · 최대 겹침 ${round1(
+    synergy: `${basis} 활성 시너지 ${round1(avg(metrics.map((m) => m.activeTraits)))}개 · 주력 시너지 ${round1(
       avg(metrics.map((m) => m.bestTraitCount))
     )}명`,
     contest: `${metrics.filter((m) => m.contested).length}/${base.length}경기 경합 · ${basis} 수렴도 ${round1(
@@ -449,13 +451,19 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
     }
   })
 
-  // 가장 약한 축 = 강의 주제. 단, '경합'은 다른 축보다 focusMinGap 점 이상 낮을 때만 주제로 채택.
+  // 가장 약한 축 = 강의 주제. 단, '경합'은 다른 축보다 focusMinGap 점 이상 낮을 때만 주제로 채택하고,
+  // 레벨 9~10 밸류 덱(리롤형 아님)이면 주제로 삼지 않는다 — 5코스트는 그 레벨에 간 모두가 나눠 쓰니 "비틀기"가 답이 아니다.
   const sorted = [...axes].sort(
     (a, b) => a.score - b.score || ORDER.indexOf(a.key) - ORDER.indexOf(b.key)
   )
-  let focus = sorted[0]
-  if (focus.key === 'contest' && sorted[1] && sorted[1].score - focus.score < AXIS_CONFIG.axes.contest.focusMinGap) {
-    focus = sorted[1]
+  // 밸류 보드(리롤형 아님 · 평균 Lv.9 이상)는 5코스트·고유 시너지로 짜는 판이라 경합("비틀기")·시너지 밀도("주력 시너지 하나")
+  // 강의가 맞지 않는다 → 주제 후보에서 뺀다 (점수·축 한 줄은 그대로). 같은 5코스트를 쓴 상대와의 차이는 보통 2성 수(완성도)다.
+  const vb = AXIS_CONFIG.valueBoard
+  const valueBoard = deck.type !== 'reroll' && avg(metrics.map((m) => m.level)) >= vb.minLevel
+  const eligible = sorted.filter((a) => !(valueBoard && vb.noFocus.includes(a.key)))
+  let focus = eligible[0] ?? sorted[0]
+  if (focus.key === 'contest' && eligible[1] && eligible[1].score - focus.score < AXIS_CONFIG.axes.contest.focusMinGap) {
+    focus = eligible[1]
   }
 
   const sampleWarning = lowSample

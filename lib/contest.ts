@@ -36,12 +36,22 @@ export function analyzeContest(
   userTraits: SlimMatchTrait[],
   opponents: LobbyParticipant[]
 ): ContestAnalysis {
-  const coreUnits = (userUnits || []).filter(isCoreUnit)
+  // 같은 기물을 두 장 올려도(증강 등) 경합은 한 번만 센다 — 성급이 높은 쪽을 남긴다
+  const coreUnits = [
+    ...new Map(
+      (userUnits || [])
+        .filter(isCoreUnit)
+        .sort((a, b) => (b.tier || 1) - (a.tier || 1))
+        .map((u) => [u.id || u.name, u] as const)
+    ).values(),
+  ]
 
-  // 상대별 보유 기물 (id + 이름 모두 담아 매칭 견고화) / 활성 시너지 name 집합
+  // 상대별 보유 기물 (id + 이름 모두 담아 매칭 견고화) / 활성 시너지 name 집합.
+  // 상대도 코어(2성+ 또는 아이템 보유)로 든 기물만 센다 — 1성 무템 5코스트처럼 레벨 9~10 보드에 칸 채우기로 올린
+  // 기물까지 세면 밸류 덱은 거의 항상 '심각'이 된다.
   const oppUnitSets = opponents.map((p) => {
     const set = new Set<string>()
-    for (const u of p.units || []) {
+    for (const u of (p.units || []).filter(isCoreUnit)) {
       if (u.id) set.add(u.id)
       if (u.name) set.add(u.name)
     }
@@ -66,7 +76,8 @@ export function analyzeContest(
     .sort((a, b) => b.weight - a.weight)
 
   // 2. 시너지 경합 (시너지 단계 × 빈도 가중)
-  const myTopTraits = (userTraits || []).slice(0, 4)
+  // 1명으로 켜지는 고유 시너지(자연의 아버지 등)는 그 기물 겹침을 한 번 더 세는 셈이라 뺀다
+  const myTopTraits = (userTraits || []).filter((t) => (t.count || 0) >= 2).slice(0, 4)
   const traitDetails: TraitContestDetail[] = myTopTraits
     .map((t) => {
       let opponentCount = 0
