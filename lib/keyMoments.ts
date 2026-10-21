@@ -1,7 +1,7 @@
 import breakpointData from './traitBreakpoints.json'
 import { entitySlug } from './entitySlug'
 import { boardCarry } from './deckType'
-import { mostSimilarOpponent } from './comparisonFacts'
+import { mostSimilarOpponent } from './similarOpponent'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -124,7 +124,8 @@ function carryOneStar(m: SlimMatchData): KeyMoment | null {
   return {
     kind: 'carryOneStar',
     title: '캐리가 1성',
-    fact: `아이템 ${carry.items.length}개를 든 캐리 ${carry.name}(${carry.rarity}코스트)이 최종 보드에서 1성`,
+    // 기물 이름 받침에 따라 이/가가 갈리므로 조사 없이 쓴다
+    fact: `아이템 ${carry.items.length}개를 든 캐리 ${carry.name}(${carry.rarity}코스트) — 최종 보드에서 1성`,
   }
 }
 
