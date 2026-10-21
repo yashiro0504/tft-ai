@@ -1,18 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info, Database,
 } from 'lucide-react'
 import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
 import { track } from '@/lib/analytics'
-import { AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
+import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
+import { TurnstileWidget } from './TurnstileWidget'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
 import { TraitHex, traitMaxLevel } from './LabUI'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -107,6 +110,17 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   const abortRef = useRef<AbortController | null>(null)
   const quota = useQuota()
   const [isLimitOpen, setIsLimitOpen] = useState(false)
+  /**
+   * 봇 게이트 쿠키가 없거나 만료(프로필 URL 로 바로 들어옴 · 검색 후 2시간 경과 등)면
+   * 카드 안에서 Turnstile 확인을 받고 그 토큰으로 분석을 다시 요청한다. (서버가 쿠키를 새로 발급)
+   */
+  const [needsBotCheck, setNeedsBotCheck] = useState(false)
+  const handleAnalyzeRef = useRef<(turnstileToken?: string) => Promise<void>>(async () => {})
+  const onBotToken = useCallback((token: string | null) => {
+    if (!token) return
+    setNeedsBotCheck(false)
+    void handleAnalyzeRef.current(token)
+  }, [])
 
   // 카드가 사라지면 진행 중인 스트림을 끊는다.
   useEffect(() => {
@@ -145,7 +159,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
     1: { border: 'border-cost-1' },
   }
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (turnstileToken?: string) => {
     if (isAnalyzing) return
     if (quota.exhausted) {
       setIsLimitOpen(true)
@@ -159,7 +173,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
     const controller = new AbortController()
     abortRef.current = controller
-    const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo }
+    const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo, ...(turnstileToken ? { turnstileToken } : {}) }
 
     try {
       let data: TftMatchAnalysisResponse
@@ -194,7 +208,17 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       })
     } catch (err) {
       if (controller.signal.aborted) return
-      const message = err instanceof Error ? err.message : '이 경기 분석 중 오류가 발생했습니다.'
+      // 게이트 거부(쿼터 소모 전): 토큰 없이 막혔고 Turnstile 을 쓸 수 있으면 확인 후 자동 재시도
+      if (err instanceof AnalysisGateError && err.code === 'BOT_GATE_REQUIRED' && !turnstileToken && TURNSTILE_SITE_KEY) {
+        setNeedsBotCheck(true)
+        return
+      }
+      const message =
+        err instanceof AnalysisGateError
+          ? '로봇 확인에 실패했습니다. 소환사 전적을 다시 검색한 뒤 시도해 주세요.'
+          : err instanceof Error
+            ? err.message
+            : '이 경기 분석 중 오류가 발생했습니다.'
       setAnalyzeError(message)
     } finally {
       abortRef.current = null
@@ -203,6 +227,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       setIsAnalyzing(false)
     }
   }
+  handleAnalyzeRef.current = handleAnalyze
 
   return (
     <div data-index={index} className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme}`}>
@@ -411,8 +436,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             <span className="text-xs text-subtle whitespace-nowrap">오늘 {quota.remaining}/{quota.limit}회 남음</span>
             <button
               type="button"
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              onClick={() => void handleAnalyze()}
+              disabled={isAnalyzing || needsBotCheck}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 text-on-accent text-sm font-bold transition cursor-pointer"
             >
               {isAnalyzing ? (
@@ -642,6 +667,14 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           <p className="text-xs text-subtle border-t border-line pt-2">
             ※ 위 수치가 코드로 계산되어 AI 프롬프트에 ‘제공된 사실 데이터’로 전달됩니다. AI는 이 범위 밖은 단정하지 않습니다.
           </p>
+        </div>
+      )}
+
+      {/* 봇 게이트: 카드 안 Turnstile 확인 → 통과하면 분석 자동 재시도 */}
+      {needsBotCheck && (
+        <div className="border-t border-line p-4 text-sm text-muted">
+          <p className="mb-2">로봇 확인을 마치면 이 경기 분석이 자동으로 이어집니다.</p>
+          <TurnstileWidget onToken={onBotToken} />
         </div>
       )}
 

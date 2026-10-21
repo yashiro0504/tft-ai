@@ -56,6 +56,9 @@ jobs:
       - name: Ops check unit tests
         run: npm run test:ops
 
+      - name: Bot gate cookie tests
+        run: npm run test:gate
+
       - name: Build
         run: npm run build
         env:
