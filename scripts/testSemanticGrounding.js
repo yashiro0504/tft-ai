@@ -5,12 +5,13 @@
  *  - 실제 리포트 오류 문장("피들스틱·르블랑·오른 모두 3성", 피들스틱은 1성) 검출
  *  - 정상 문장·일반 표현·상대 이야기·겹치는 이름은 오탐 0
  *  - 리포트 결과(grounding.entityErrors)에 포함 (폴백 경로)
+ *  - 강의 규칙 위반(validateCoachingRules): 리롤형 레벨 지적 · 평균 수준 운영도를 약점으로 · 덱 단정 · 빈집 지어내기 · 피봇 시점
  */
 process.env.DEEPSEEK_API_KEY = ''
 process.env.GEMINI_API_KEY = ''
 require('./_env').loadEnv()
 require('./_ts')
-const { validateEntityFacts, feedbackTexts } = require('../lib/semanticGrounding')
+const { validateEntityFacts, feedbackTexts, validateCoachingRules } = require('../lib/semanticGrounding')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -92,6 +93,20 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   // multi: 판마다 성급이 다르면 어느 판이든 맞으면 통과
   const multi = [gnar[0], { ...gnar[0], units: [{ id: 'TFT18_Gnar', name: '나르', tier: 3, items: [] }] }]
   check('multi: 어느 판이든 맞으면 통과 ("나르 3성")', errs('나르 3성을 만든 판도 있었습니다.', multi).length === 0)
+
+  console.log('강의 규칙 위반')
+  const rules = (text, ctx) => validateCoachingRules([text], { facts: '', mode: 'single', ...ctx }).map((v) => v.type)
+  check('리롤형에 "레벨이 낮다" → rerollLevelBlame', rules('최종 레벨 7로 레벨이 낮아 보드가 약했습니다.', { deckType: 'reroll' }).includes('rerollLevelBlame'))
+  check('리롤형 해설("리롤형이라 레벨이 낮은 건 문제가 아니다")은 통과', rules('리롤형이라 레벨이 낮은 건 문제가 아닙니다.', { deckType: 'reroll' }).length === 0)
+  check('표준형의 레벨 지적은 대상 아님', rules('레벨이 낮아 보드가 약했습니다.', { deckType: 'standard' }).length === 0)
+  const evenFacts = '- 가장 유사한 메타 덱: X · 운영도: 메타 평균 수준'
+  check('평균 수준인데 "메타 평균보다 못 굴렸다" → metaEvenAsWeakness', rules('메타 평균보다 못 굴린 판입니다.', { facts: evenFacts }).includes('metaEvenAsWeakness'))
+  check('평균 수준 아니면 대상 아님', rules('메타 평균보다 못 굴린 판입니다.', { facts: '운영도: 메타 평균보다 못 굴림' }).length === 0)
+  check('"이 덱을 갔어야 했다" → deckMustClaim', rules('처형자 이즈리얼 덱을 갔어야 했습니다.', {}).includes('deckMustClaim'))
+  check('후보 표현("같은 재료로 ~도 가능했다")은 통과', rules('같은 재료로 처형자 이즈리얼 덱도 가능했습니다.', { facts: '빈집 메타 덱 후보' }).length === 0)
+  check('후보 줄 없이 빈집 덱 추천 → openDeckInvented', rules('다음 판엔 빈집 메타 덱을 노리세요.', {}).includes('openDeckInvented'))
+  check('후보 줄 있으면 빈집 덱 언급 통과', rules('빈집 메타 덱 후보로 처형자 이즈리얼이 있었습니다.', { facts: '- 빈집 메타 덱 후보(사후 비교): 처형자 이즈리얼' }).length === 0)
+  check('"3-2에 피봇했어야" → pivotTiming', rules('3-2에 피봇했으면 좋았습니다.', {}).includes('pivotTiming'))
 
   console.log('리포트 통합 (폴백 경로)')
   const { generateMetaCoachFeedback } = require('../lib/llm')

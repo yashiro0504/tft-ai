@@ -204,3 +204,53 @@ export function feedbackTexts(fb: Partial<MetaCoachFeedback>, axisVerdicts?: Rec
   if (axisVerdicts) Object.values(axisVerdicts).forEach(add)
   return out
 }
+
+/* ───────────── 강의 규칙 위반 (프롬프트 규칙 준수 평가) ───────────── */
+
+export type CoachingRuleType =
+  /** 리롤형인데 레벨이 낮다/올려야 한다고 지적 */
+  | 'rerollLevelBlame'
+  /** 운영도가 '메타 평균 수준'인데 메타 평균보다 못했다고 서술 */
+  | 'metaEvenAsWeakness'
+  /** 덱 선택을 "갔어야 했다"로 단정 */
+  | 'deckMustClaim'
+  /** 빈집 후보 줄이 없는데 빈집 덱을 추천 */
+  | 'openDeckInvented'
+  /** 피봇·덱 전환 시점(라운드)을 단정 */
+  | 'pivotTiming'
+
+export interface CoachingRuleViolation {
+  type: CoachingRuleType
+  text: string
+}
+
+const REROLL_LEVEL_BLAME_RE = /레벨(?:이|은)?\s*(?:너무\s*)?(?:낮|부족|모자)|레벨업(?:이|을)?\s*(?:늦|부족)|(?:레벨|렙)을?\s*(?:더\s*)?(?:올려야|올렸어야|높였어야|높여야)/
+/** "리롤형이라 레벨이 낮은 건 문제가 아니다" 같은 정상 해설 */
+const REROLL_EXCUSE_RE = /리롤(?:형|덱)?(?:이라|이므로|이니|에서는|은|는)|문제(?:가|는)?\s*아니|괜찮|정상/
+const META_WEAK_RE = /메타\s*(?:덱\s*)?평균(?:보다|에\s*비해|에)?\s*(?:[^.!?\n]{0,12})?(?:못|낮|부진|뒤처|밑돌|아쉬)/
+const DECK_MUST_RE = /(?:갔어야|가야\s*했|탔어야|타야\s*했|선택했어야|골랐어야|잡았어야)/
+const OPEN_DECK_RE = /빈집\s*(?:메타\s*)?덱/
+const PIVOT_TIMING_RE = /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)/
+
+/**
+ * 프롬프트 규칙(덱 유형·메타 덱 운영도·빈집 후보) 위반 문장. 사전식 휴리스틱이라 평가 지표로 쓴다 (리포트를 막지 않는다).
+ * facts = 모델에 준 프롬프트(사실 블록 포함) — 후보 줄·운영도 판정 유무를 여기서 읽는다.
+ */
+export function validateCoachingRules(
+  texts: string[],
+  ctx: { facts: string; deckType?: string; mode: 'single' | 'multi' }
+): CoachingRuleViolation[] {
+  const out: CoachingRuleViolation[] = []
+  const hasOpenLine = ctx.facts.includes('빈집 메타 덱 후보')
+  const metaEven = ctx.mode === 'single' && ctx.facts.includes('운영도: 메타 평균 수준')
+  for (const text of texts) {
+    for (const s of sentences(text)) {
+      if (ctx.deckType === 'reroll' && REROLL_LEVEL_BLAME_RE.test(s) && !REROLL_EXCUSE_RE.test(s)) out.push({ type: 'rerollLevelBlame', text: s })
+      if (metaEven && META_WEAK_RE.test(s)) out.push({ type: 'metaEvenAsWeakness', text: s })
+      if (DECK_MUST_RE.test(s) && /덱|빈집/.test(s)) out.push({ type: 'deckMustClaim', text: s })
+      if (!hasOpenLine && OPEN_DECK_RE.test(s)) out.push({ type: 'openDeckInvented', text: s })
+      if (PIVOT_TIMING_RE.test(s)) out.push({ type: 'pivotTiming', text: s })
+    }
+  }
+  return out
+}

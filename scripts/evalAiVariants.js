@@ -145,6 +145,18 @@ function timingCounts(obj) {
   return { timingClaims: (text.match(TIMING_CLAIM_RE) || []).length, timingHedges: (text.match(TIMING_HEDGE_RE) || []).length }
 }
 
+/**
+ * 강의 규칙 위반 (lib/semanticGrounding.validateCoachingRules): 리롤형 레벨 지적 · 평균 수준 운영도를 약점으로 ·
+ * 덱 "갔어야" 단정 · 후보 없이 빈집 덱 추천 · 피봇 시점 단정. facts = 모델에 준 프롬프트 전문.
+ */
+function ruleCounts(obj, facts, matches, mode) {
+  const { feedbackTexts, validateCoachingRules } = require('../lib/semanticGrounding')
+  const { buildCoachingPlan } = require('../lib/coaching')
+  const verdicts = Object.fromEntries((Array.isArray(obj.axes) ? obj.axes : []).map((a) => [a && a.key, a && a.verdict]))
+  const list = validateCoachingRules(feedbackTexts(obj, verdicts), { facts, deckType: buildCoachingPlan(matches).deckType, mode })
+  return { ruleViolations: list.length, ruleViolationList: list }
+}
+
 function bigrams(s) {
   const t = s.replace(/[^\p{L}\p{N}]/gu, '')
   const set = new Set()
@@ -326,6 +338,9 @@ async function runWorker(cfg) {
         uniqueDataCitations: parsed ? uniqueDataCitations(parsed) : null,
         repetition: parsed ? repetition(parsed) : null,
         ...(parsed ? timingCounts(parsed) : { timingClaims: null, timingHedges: null }),
+        ...(parsed && report && report.request
+          ? ruleCounts(parsed, JSON.stringify(report.request.messages || report.request.contents || []), fc.matches, fc.mode)
+          : { ruleViolations: null, ruleViolationList: [] }),
         error,
       }
 
@@ -388,7 +403,7 @@ const pct = (xs, p) => {
 }
 const r = (x, d = 3) => (x == null || Number.isNaN(x) ? '' : Math.round(x * 10 ** d) / 10 ** d)
 
-const NUMERIC = ['outputTokens', 'reasoningTokens', 'inputTokens', 'cachedTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition', 'timingClaims', 'timingHedges']
+const NUMERIC = ['outputTokens', 'reasoningTokens', 'inputTokens', 'cachedTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition', 'timingClaims', 'timingHedges', 'ruleViolations']
 
 function summarize(rows) {
   const nums = (k) => rows.map((x) => x[k]).filter((v) => typeof v === 'number')
@@ -490,6 +505,8 @@ function rescore(outDir, variant, fixturePath) {
       meta.entityErrorList = list
       meta.entityErrorsSource = 'raw'
       Object.assign(meta, timingCounts(obj))
+      const promptFile = path.join(dir, 'prompt.txt')
+      if (fs.existsSync(promptFile)) Object.assign(meta, ruleCounts(obj, fs.readFileSync(promptFile, 'utf-8'), matches, meta.mode))
       fs.writeFileSync(metaFile, JSON.stringify(meta, null, 2))
       n++
     }
