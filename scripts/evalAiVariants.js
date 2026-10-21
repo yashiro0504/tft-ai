@@ -308,6 +308,8 @@ async function runWorker(cfg) {
         inputTokens,
         cachedTokens,
         outputTokens,
+        // thinking 모드: 출력 토큰 중 추론 토큰 (출력 상한을 같이 쓴다)
+        reasoningTokens: (usage.completion_tokens_details && usage.completion_tokens_details.reasoning_tokens) || 0,
         finishReason,
         truncated: finishReason === 'length' || finishReason === 'max_tokens',
         latencyMs: report ? report.latencyMs : null,
@@ -386,7 +388,7 @@ const pct = (xs, p) => {
 }
 const r = (x, d = 3) => (x == null || Number.isNaN(x) ? '' : Math.round(x * 10 ** d) / 10 ** d)
 
-const NUMERIC = ['outputTokens', 'inputTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition', 'timingClaims', 'timingHedges']
+const NUMERIC = ['outputTokens', 'reasoningTokens', 'inputTokens', 'cachedTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition', 'timingClaims', 'timingHedges']
 
 function summarize(rows) {
   const nums = (k) => rows.map((x) => x[k]).filter((v) => typeof v === 'number')
