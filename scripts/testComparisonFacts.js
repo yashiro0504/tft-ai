@@ -36,6 +36,12 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     block.includes('- 로비 1등과 비교: 레벨 -2 (7 vs 9) · 기물 수 7 vs 9 · 3성 5 vs 0 · 시너지 단계 합 7 vs 10 · 아이템 13 vs 16'),
     block
   )
+  // 보드 가치 = Σ 코스트 × 장수(1성 1 · 2성 3 · 3성 9)
+  //   나: 베이가 1×9 + 알리스타 2×9 + 오른 1×9 + 렉사이 1×9 + 르블랑 2×9 + 카시오페아 3×3 + 피들스틱 3×1 = 75
+  //   1등: 2성 (5+4+4+5+4+3+3)×3 = 84 + 1성 5+3 = 92
+  check('로비 1등 비교에 보드 가치 = 손계산 (75G vs 92G)', block.includes('아이템 13 vs 16 · 보드 가치 75G vs 92G'), block)
+  const { boardValue } = require('../lib/boardValue')
+  check('보드 가치: 1성 1장 · 2성 3장 · 3성 9장, 코스트 없으면 1', boardValue([{ rarity: 4, tier: 1 }, { rarity: 2, tier: 2 }, { rarity: 1, tier: 3 }, { tier: 2 }]) === 4 + 6 + 9 + 3)
   // 로비 평균(나 제외 7명) 레벨 (9+8+8+8+8+6+6)/7 = 7.57
   check('로비 평균 레벨 = 손계산 (-0.6, 7 vs 7.6)', block.includes('로비 평균(나 제외 7명)과 비교: 레벨 -0.6 (7 vs 7.6)'), block)
   check('블록 머리말 + 인과 아님 명시', block.startsWith('[비교 사실 — 코드 산출, 서술 통계 (원인이 아니다)]'))
@@ -105,6 +111,12 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     JSON.stringify(tempo)
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
+  const completionAxis = plan.axes.find((a) => a.key === 'completion')
+  check(
+    '완성도 축 지표에 보드 가치 75G · 점수 항목(effects)에는 없음',
+    completionAxis.metrics.some((x) => x.key === 'boardValue' && x.value === 75) && !completionAxis.effects.some((e) => e.key === 'boardValue'),
+    JSON.stringify(completionAxis)
+  )
   const economy = plan.axes.find((a) => a.key === 'economy')
   check(
     '리롤형 경제 = 레벨 격차 감점 없음 · 레벨 부족 지표 없음 · 리롤 골드 강의',
@@ -204,6 +216,11 @@ ${mixedFacts}`
     ),
     multiExec
   )
+  // 메타 덱 보드 가치: 코스트·성급이 있는 덱만 (가까운 덱 5기물 3코 2성 = 45G vs 내 보드 TFT18_A~E 코스트 없음 1×3×5 = 15G)
+  const priced = { ...near, units: near.units.map((x) => ({ ...x, cost: 3, star: 2 })) }
+  const pricedLine = buildComparisonFacts({ matches: [board], mode: 'single', combos: [], decks: [priced] })
+  check('메타 덱 줄에 보드 가치 (15G vs 45G)', pricedLine.includes('· 보드 가치 15G vs 메타 덱 45G'), pricedLine)
+  check('코스트·성급 없는 덱은 보드 가치 생략', !withDeck.includes('메타 덱 45G') && !withDeck.includes('vs 메타 덱'), withDeck)
   const multiNone = buildComparisonFacts({ matches: [sample, sample], mode: 'multi', combos: [], decks: [near] })
   check('종합: 메타 덱 판이 없으면 운영도 줄 생략', !multiNone.includes('메타 덱 운영도'), multiNone)
 

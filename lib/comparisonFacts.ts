@@ -3,13 +3,14 @@ import { boardCarry, summarizeDeckTypes } from './deckType'
 import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
+import { boardValue } from './boardValue'
 import type { LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
  * [비교 사실] 블록 — 모델이 계산하지 않아도 되는 비교 수치를 코드가 만든다 (AI-EVAL A2).
  * 모두 서술 통계이며 인과가 아니다. 값이 없거나 유한하지 않은 줄은 생략한다.
  *
- * - single: 로비 1등(내가 1등이면 2등) · 로비 평균(나 제외)과 레벨·3성·시너지 단계 합·아이템 수 비교,
+ * - single: 로비 1등(내가 1등이면 2등) · 로비 평균(나 제외)과 레벨·3성·시너지 단계 합·아이템 수·보드 가치 비교,
  *           가장 유사한 메타 덱(기물 슬러그 Jaccard ≥ 0.6) 평균등수와 이 경기 등수 + 운영도, BIS 일치율
  * - multi:  경기 간 요약(레벨·3성·아이템 평균과 범위) + 메타 덱 운영도 집계 + 전체 BIS 일치율
  *
@@ -35,7 +36,7 @@ export interface DeckFact {
   name: string
   avgPlacement: number | null
   sampleSize: number
-  units: { key: string; name?: string; cost?: number | null; flex?: boolean; items?: { name: string }[] }[]
+  units: { key: string; name?: string; cost?: number | null; star?: number; flex?: boolean; items?: { name: string }[] }[]
   /** 대표 캐리 기물 key (없으면 아이템 최다 기물) */
   carryKey?: string | null
 }
@@ -60,6 +61,8 @@ interface BoardStats {
   threeStars: number
   traitTierSum: number
   items: number
+  /** 보드 가치(G) — lib/boardValue */
+  value: number
 }
 
 function boardStats(b: { level: number; units: SlimMatchUnit[]; traits: SlimMatchTrait[] }): BoardStats {
@@ -69,6 +72,7 @@ function boardStats(b: { level: number; units: SlimMatchUnit[]; traits: SlimMatc
     threeStars: b.units.filter((u) => u.tier === 3).length,
     traitTierSum: b.traits.filter((t) => t.tier > 0).reduce((s, t) => s + t.tier, 0),
     items: b.units.reduce((s, u) => s + (u.items?.length || 0), 0),
+    value: boardValue(b.units),
   }
 }
 
@@ -89,6 +93,7 @@ function compareLine(me: BoardStats, other: BoardStats, digits = 0): string {
     fin(other.threeStars) ? `3성 ${me.threeStars} vs ${f(other.threeStars)}` : '',
     fin(other.traitTierSum) ? `시너지 단계 합 ${me.traitTierSum} vs ${f(other.traitTierSum)}` : '',
     fin(other.items) ? `아이템 ${me.items} vs ${f(other.items)}` : '',
+    fin(other.value) ? `보드 가치 ${me.value}G vs ${f(other.value)}G` : '',
   ]
   return parts.filter(Boolean).join(' · ')
 }
@@ -103,7 +108,7 @@ function lobbyLines(m: SlimMatchData): string[] {
   if (top) out.push(`- 로비 ${targetPlacement}등과 비교: ${compareLine(me, boardStats(top))}`)
   const stats = lobby.map(boardStats)
   const avg = (k: keyof BoardStats) => stats.reduce((s, x) => s + x[k], 0) / stats.length
-  const mean: BoardStats = { level: avg('level'), units: avg('units'), threeStars: avg('threeStars'), traitTierSum: avg('traitTierSum'), items: avg('items') }
+  const mean: BoardStats = { level: avg('level'), units: avg('units'), threeStars: avg('threeStars'), traitTierSum: avg('traitTierSum'), items: avg('items'), value: avg('value') }
   out.push(`- 로비 평균(나 제외 ${stats.length}명)과 비교: ${compareLine(me, mean, 1)}`)
   return out
 }
@@ -174,9 +179,14 @@ function deckLine(m: SlimMatchData, decks: DeckFact[]): string | null {
   const d = ex.deck
   const ref = ex.reliable ? '' : ' · 표본이 적어 참고용'
   const missing = ex.missingCore.length ? ` · 메타 덱 기물 중 내 보드에 없음: ${ex.missingCore.join(', ')}` : ''
+  // 메타 덱 기준 보드 가치: 코스트·성급이 모두 있는 덱만 (표준 보드 = 덱 데이터의 성급)
+  const priced = d.units.length > 0 && d.units.every((u) => u.cost != null && u.star != null)
+  const value = priced
+    ? ` · 보드 가치 ${boardValue(m.units)}G vs 메타 덱 ${boardValue(d.units.map((u) => ({ rarity: u.cost, tier: u.star })))}G`
+    : ''
   return `- 가장 유사한 메타 덱: ${d.name} (유사도 ${r2(ex.similarity).toFixed(2)}, 표본 ${d.sampleSize}판${ref}) · 메타 평균 ${(
     d.avgPlacement as number
-  ).toFixed(2)}등 vs 이 경기 ${m.placement}등 (${signed(ex.delta, 2)}) · 운영도: ${VERDICT_LABEL[ex.verdict]}${missing}`
+  ).toFixed(2)}등 vs 이 경기 ${m.placement}등 (${signed(ex.delta, 2)}) · 운영도: ${VERDICT_LABEL[ex.verdict]}${missing}${value}`
 }
 
 /** 로비 상대(나 제외)가 탄 메타 덱 — 최종 보드 기준 */
@@ -345,7 +355,7 @@ function multiLines(matches: SlimMatchData[]): string[] {
     return `${r1(mean)} (${Math.min(...xs)}~${Math.max(...xs)})`
   }
   return [
-    `- 경기 간 요약(${matches.length}경기): 등수 ${matches.map((m) => m.placement).join('·')} · 레벨 평균 ${span('level')} · 3성 평균 ${span('threeStars')} · 아이템 평균 ${span('items')}`,
+    `- 경기 간 요약(${matches.length}경기): 등수 ${matches.map((m) => m.placement).join('·')} · 레벨 평균 ${span('level')} · 3성 평균 ${span('threeStars')} · 아이템 평균 ${span('items')} · 보드 가치 평균 ${span('value')}G`,
   ]
 }
 

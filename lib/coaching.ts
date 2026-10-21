@@ -11,6 +11,7 @@ import type {
 import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { DECK_TYPE_LABEL, detectDeckType, summarizeDeckInfos } from './deckType'
+import { boardValue } from './boardValue'
 import breakpointData from './traitBreakpoints.json'
 
 /** 시너지 이름 → 브레이크포인트 (예: 나무정령 [3,5,7,9,11]) */
@@ -48,6 +49,8 @@ export interface PerMatchMetrics {
   carryItems: number
   totalItems: number
   units: number
+  /** 보드 가치(G) — 지표만, 점수 미반영 (lib/boardValue) */
+  boardValue: number
   twoPlus: number
   three: number
   /** 3성 기물의 코스트 (오름차순) */
@@ -87,6 +90,7 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     carryItems: carry ? carry.items.length : 0,
     totalItems: units.reduce((s, u) => s + (u.items?.length || 0), 0),
     units: units.length,
+    boardValue: boardValue(units),
     twoPlus: units.filter((u) => (u.tier || 1) >= 2).length,
     three: units.filter((u) => u.tier === 3).length,
     threeStarCosts: deck.threeStarCosts,
@@ -357,6 +361,8 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
         { key: 'units', label: '유닛 수', value: mean((m) => m.units), unit: '개' },
         { key: 'twoPlus', label: '2성 이상', value: mean((m) => m.twoPlus), unit: '개' },
         { key: 'three', label: '3성', value: mean((m) => m.three), unit: '개' },
+        // 점수 미반영 지표 — 스테이지 보정 측정 후 반영 여부 결정 (testAxes 타당도)
+        { key: 'boardValue', label: '보드 가치', value: mean((m) => m.boardValue), unit: 'G' },
       ]
     case 'synergy':
       return [
