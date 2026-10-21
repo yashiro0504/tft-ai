@@ -2,8 +2,8 @@
   "version": 1,
   "generatedAt": "2026-10-18T11:51:50.714Z",
   "source": "lib/decksData.json (기물-시너지 사실 관계만 추출)",
-  "championCount": 67,
-  "traitCount": 25,
+  "championCount": 69,
+  "traitCount": 26,
   "champions": {
     "khazix": {
       "name": "카직스",
@@ -608,6 +608,23 @@
         "Brawler",
         "Sprykin"
       ]
+    },
+    "lux": {
+      "name": "럭스",
+      "cost": 5,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_lux/tft18_lux_square.png",
+      "traits": [
+        "Avatar"
+      ]
+    },
+    "gromp": {
+      "name": "심술두꺼비",
+      "cost": 2,
+      "imgUrl": "https://raw.communitydragon.org/latest/game/assets/characters/tft18_gromp/tft18_gromp_square.png",
+      "traits": [
+        "Riftbeast",
+        "Adaptor"
+      ]
     }
   },
   "traits": {
@@ -710,6 +727,10 @@
     "rival": {
       "name": "경쟁자",
       "iconUrl": "https://cdn.lolchess.gg/upload/images/traits/Rival_normal_1783669720-Rival.svg"
+    },
+    "avatar": {
+      "name": "화신",
+      "iconUrl": "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Avatar.TFT_Set18.png"
     }
   }
 }

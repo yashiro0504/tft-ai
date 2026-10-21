@@ -92,6 +92,31 @@ function lobbyFromSlim(matchId, patch, players) {
 
 /* ───────── 출처별 로더 ───────── */
 
+/**
+ * 골든셋은 2026-10-19 에 캡처돼 8859eb9(10-21) 이전 시너지 오역이 그대로 들어 있다 (시너지는 id 없이 이름만 저장).
+ * 지금 앱이 쓰는 이름(lib/constants translateTrait = 공식 세트18 이름)으로 바꿔 읽는다.
+ */
+const FIXTURE_TRAIT_RENAMES = { 난동꾼: '싸움꾼', 에메랄드: '에메랄드 성위', 라이벌: '경쟁자' }
+const renameTrait = (name) => FIXTURE_TRAIT_RENAMES[name] || name
+
+/**
+ * 옛 이름 '요정' 은 요정(Fae)일 수도, 오역된 날렵이(Sprykin)일 수도 있다.
+ * 보드에서 그 시너지를 가진 기물 수(lib/championTraits)가 인원에 더 가까운 쪽으로 정한다. 둘 다 있으면 하나씩.
+ */
+function fixtureTraits(units, traits) {
+  const ct = require('../lib/championTraits.json').champions
+  const { entitySlug } = require('../lib/entitySlug')
+  const holders = (en) => units.filter((u) => (ct[entitySlug('champion', u.id)]?.traits || []).includes(en)).length
+  const fae = traits.filter((t) => t.name === '요정')
+  const pick =
+    fae.length >= 2
+      ? ['요정', '날렵이']
+      : fae.length === 1
+        ? [Math.abs(holders('Sprykin') - fae[0].count) < Math.abs(holders('Fae') - fae[0].count) ? '날렵이' : '요정']
+        : []
+  return traits.map((t) => ({ ...t, name: t.name === '요정' ? pick.shift() : renameTrait(t.name) }))
+}
+
 function loadFixtures() {
   const data = JSON.parse(fs.readFileSync(FIXTURE_PATH, 'utf-8'))
   const lobbies = new Map()
@@ -99,7 +124,8 @@ function loadFixtures() {
     for (const m of c.matches || []) {
       // 같은 판이 여러 케이스에 들어 있다 (로비원 여러 명의 시점). 로비가 온전한 것만 쓴다.
       if (lobbies.has(m.matchId) || (m.lobbyParticipants || []).length < 8) continue
-      lobbies.set(m.matchId, lobbyFromSlim(m.matchId, null, m.lobbyParticipants))
+      const players = m.lobbyParticipants.map((p) => ({ ...p, traits: fixtureTraits(p.units || [], p.traits || []) }))
+      lobbies.set(m.matchId, lobbyFromSlim(m.matchId, null, players))
     }
   }
   return { source: 'fixtures', label: `골든셋 픽스처 (${path.relative(ROOT, FIXTURE_PATH)})`, lobbies: [...lobbies.values()] }
