@@ -52,3 +52,6 @@ next-env.d.ts
 
 # 자체 집계 덱 프리뷰 (생성물)
 /lib/decksData.preview.json
+
+# 로컬 AI 평가·샘플 산출물 (프롬프트·원시 응답 — 커밋하지 않음)
+tmp/
