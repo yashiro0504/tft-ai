@@ -3,6 +3,7 @@ import { rateLimit, getClientIp } from './rateLimit'
 import { consumeDailyQuota, type QuotaResult } from './quota'
 import { consumeUserQuota } from './userQuota'
 import { isQuotaExempt } from './quotaExempt'
+import { hasOwnerCookie } from './ownerKey'
 import { getAuthUser } from './supabase/server'
 import { verifyTurnstile } from './turnstile'
 import { incrMetric, logEvent } from './observability'
@@ -54,8 +55,9 @@ export async function quotaGuard(
 
   let result: QuotaResult | null = null
 
-  // 면제 계정(QUOTA_EXEMPT_USERS)은 쿼터를 소모하지 않는다. getAuthUser 는 요청 단위 캐시라 추가 호출이 없다.
-  if (userId && isQuotaExempt(await getAuthUser())) {
+  // 운영자 키 쿠키(/owner, QUOTA_EXEMPT_KEY) 또는 면제 계정(QUOTA_EXEMPT_USERS)은 쿼터를 소모하지 않는다.
+  // getAuthUser 는 요청 단위 캐시라 추가 호출이 없다.
+  if (hasOwnerCookie(req) || (userId && isQuotaExempt(await getAuthUser()))) {
     incrMetric(`quota.exempt.${bucket}`)
     return null
   }
