@@ -134,6 +134,27 @@ console.log(failures ? `  불변식 실패 ${failures}건` : '  ✅ 통과')
     console.log(`보드 가치 (로비 보드 ${all.length}개, 점수 미반영)`)
     console.log(`  원시 ρ=${spearman(all.map((b) => b.value), all.map((b) => b.place)).toFixed(2)} · 스테이지 보정 ρ=${n ? (weighted / n).toFixed(2) : '-'} (${n}개, 스테이지별: ${perStage.join(' · ')})`)
   }
+
+  // 경제 축(보드 가치 반영)을 로비 보드 전체에 적용 — 정상 경기 25판보다 표본이 커서 같은 탈락 스테이지끼리 비교할 수 있다
+  const lobbyEco = []
+  for (const c of cases)
+    for (const m of c.matches)
+      for (const p of m.lobbyParticipants || []) {
+        const plan = buildCoachingPlan([{ ...m, placement: p.placement, level: p.level, lastRound: p.lastRound, units: p.units, traits: p.traits || [], lobbyParticipants: [] }])
+        if (!plan.lowSample) lobbyEco.push({ key: `${m.matchId}:${p.placement}`, score: plan.axes.find((a) => a.key === 'economy').score, place: -p.placement, stage: stageOfRound(p.lastRound) })
+      }
+  const ecoBoards = [...new Map(lobbyEco.map((b) => [b.key, b])).values()]
+  if (ecoBoards.length >= 20) {
+    let weighted = 0
+    let n = 0
+    for (const stage of new Set(ecoBoards.map((b) => b.stage))) {
+      const list = ecoBoards.filter((b) => b.stage === stage)
+      if (list.length < 5) continue
+      weighted += spearman(list.map((b) => b.score), list.map((b) => b.place)) * list.length
+      n += list.length
+    }
+    console.log(`경제 축 (로비 보드 ${ecoBoards.length}개): 같은 탈락 스테이지 내 등수 상관 ρ=${n ? (weighted / n).toFixed(2) : '-'}`)
+  }
 }
 
 // ── 스냅샷 비교 ──

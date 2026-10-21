@@ -122,11 +122,16 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     JSON.stringify(tempo)
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
-  const completionAxis = plan.axes.find((a) => a.key === 'completion')
+  const economyAxis = plan.axes.find((a) => a.key === 'economy')
+  // 6스테이지 기준치 90G 대비 75G → (0.833 − 1) × 80 = −13.3
   check(
-    '완성도 축 지표에 보드 가치 75G · 점수 항목(effects)에는 없음',
-    completionAxis.metrics.some((x) => x.key === 'boardValue' && x.value === 75) && !completionAxis.effects.some((e) => e.key === 'boardValue'),
-    JSON.stringify(completionAxis)
+    '경제 축 = 보드 가치 75G / 6스테이지 기준 90G → 항목 −13.3 (잔여 골드 항목 없음)',
+    economyAxis.metrics.some((x) => x.key === 'boardValue' && x.value === 75) &&
+      economyAxis.metrics.some((x) => x.key === 'expectedBoardValue' && x.value === 90) &&
+      economyAxis.effects.some((e) => e.key === 'boardValue' && e.points === -13.3) &&
+      !economyAxis.effects.some((e) => e.key === 'idleGold') &&
+      !economyAxis.metrics.some((x) => x.key === 'goldLeft'),
+    JSON.stringify(economyAxis)
   )
   const economy = plan.axes.find((a) => a.key === 'economy')
   check(
@@ -139,7 +144,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   const stdEconomy = buildCoachingPlan([standard]).axes.find((a) => a.key === 'economy')
   check('표준형 경제는 레벨 부족 지표 유지', stdEconomy.metrics.some((x) => x.key === 'levelShort'), JSON.stringify(stdEconomy.metrics))
   // 3성 2개(오른·렉사이)뿐인 리롤형, 캐리는 카시오페아 2성(베이가 2성과 캐리템 동률 → 코스트) → 템포 100 − 20 − 20 = 60 → 가장 약한 축
-  const thinReroll = { ...sample, units: sample.units.map((u) => ({ ...u, tier: ['오른', '렉사이'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
+  // 보드 가치 45G 는 6스테이지 기준(90G)이면 경제가 더 약해지므로 5스테이지(기준 66G) 탈락으로 둔다
+  const thinReroll = { ...sample, lastRound: '5-1', units: sample.units.map((u) => ({ ...u, tier: ['오른', '렉사이'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
   const rerollTopicPlan = buildCoachingPlan([thinReroll])
   check(
     '리롤형에서 템포가 초점이면 주제 = 리롤 성과',

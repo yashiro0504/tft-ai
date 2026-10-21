@@ -224,7 +224,7 @@ export function serializeMatchesForLLM(
 - 최종 등수: ${m.placement}등 (${m.placement <= 4 ? '순방/승리' : '하위권/탈락'})
 - 로비 경쟁 현황: ${contestStr}
 - 계산 지표(코드 산출): 2성+기물 ${twoStarPlus}개, 3성 ${threeStar}개, 총 장착아이템 ${totalItems}개
-- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 남은 골드: ${m.goldLeft}G, 경기 길이: ${m.gameLengthStr ?? '?'})${augmentLine}${sampleLine}${lobbyLine}
+- 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 경기 길이: ${m.gameLengthStr ?? '?'})${augmentLine}${sampleLine}${lobbyLine}
 - 활성 시너지: ${traitStr}
 - 최종 기물/아이템 구성: ${unitStr}`
     })

@@ -43,13 +43,12 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 export interface PerMatchMetrics {
   placement: number
   top4: boolean
-  goldLeft: number
   level: number
   stage: number
   carryItems: number
   totalItems: number
   units: number
-  /** 보드 가치(G) — 지표만, 점수 미반영 (lib/boardValue) */
+  /** 보드 가치(G) — 경제 축에서 탈락 스테이지 기준치와 비교 (lib/boardValue) */
   boardValue: number
   twoPlus: number
   three: number
@@ -84,7 +83,6 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
   return {
     placement: Math.min(Math.max(m.placement || 8, 1), 8),
     top4: (m.placement || 8) <= 4,
-    goldLeft: m.goldLeft || 0,
     level: m.level || 0,
     stage: stageOfRound(m.lastRound),
     carryItems: carry ? carry.items.length : 0,
@@ -119,7 +117,7 @@ export interface AxisResult {
 
 const EFFECT_LABEL: Record<string, string> = {
   base: '기본',
-  idleGold: '쓰지 않은 골드',
+  boardValue: '스테이지 대비 보드 가치',
   levelGap: '표준 레벨 대비 격차',
   earlyExit: '이른 탈락',
   carryItems: '캐리 아이템',
@@ -135,17 +133,25 @@ const EFFECT_LABEL: Record<string, string> = {
   condition: '경합 조건 점수',
 }
 
+/** 탈락 스테이지의 보드 가치 기준치(G) */
+export function expectedBoardValue(stage: number): number {
+  const table = AXIS_CONFIG.axes.economy.expectedBoardValueByStage
+  return table[String(Math.max(stage, 2))] ?? table.default
+}
+
 function economyAxis(m: PerMatchMetrics): AxisResult {
-  // 잔여 골드만 보면 "다 써서 조기 탈락"이 만점이 된다.
-  // 표준 레벨 대비 격차 + 초반 종료 페널티로 실제 운영을 평가한다.
+  // 잔여 골드는 보지 않는다 — 탈락 직전엔 누구나 리롤로 골드를 다 쓰므로 운영 신호가 아니다
+  // ("다 써서 조기 탈락"이 만점이 되기도 한다). 쓴 골드가 보드로 얼마나 전환됐는가(같은 탈락 스테이지 기준치 대비
+  // 보드 가치) + 표준 레벨 대비 격차 + 초반 종료 페널티로 평가한다.
   // 리롤형은 골드를 레벨이 아니라 리롤(3성)에 쓰는 덱이라 레벨 격차를 감점하지 않는다 (템포 축과 같은 기준).
   const c = AXIS_CONFIG.axes.economy
   const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage) - m.level)
   const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
-  const idle = c.idleGoldExemptPlacements.includes(m.placement) ? 0 : Math.max(0, m.goldLeft - c.idleGoldFree)
+  // 탈락 라운드를 모르면 기준치가 없으므로 보드 가치 항목은 0 (중립)
+  const ratio = m.stage ? m.boardValue / expectedBoardValue(m.stage) : 1
   const effects = {
-    base: 100,
-    idleGold: -idle * c.idleGoldPenaltyPerGold,
+    base: c.base,
+    boardValue: (Math.min(Math.max(ratio, c.boardValueRatioMin), c.boardValueRatioMax) - 1) * c.boardValueWeight,
     levelGap: -levelGap * c.levelGapPenaltyPerLevel,
     earlyExit: -(early?.penalty ?? 0),
   }
@@ -254,7 +260,7 @@ const LESSON: Record<
   economy: {
     label: '경제 운영',
     lesson:
-      '골드와 레벨의 교환비 — 쓸 타이밍에 쓰지 않으면 골드는 그냥 사망 직전의 숫자다.',
+      '골드와 레벨의 교환비 — 결국 다 쓰는 골드다. 레벨로 보드의 그릇을 제때 키웠는가가 경제의 성적표다.',
     topic: '골드는 "언제 쓰느냐"가 전부다 — 레벨·리롤 타이밍 강의',
     byDeck: {
       reroll: {
@@ -330,7 +336,8 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
       // 레벨 부족은 표준형 경기만으로 센다 (리롤형은 공식에서도 감점하지 않는다)
       const standard = metrics.filter((m) => m.deckType !== 'reroll')
       return [
-        { key: 'goldLeft', label: '잔여 골드', value: mean((m) => m.goldLeft), unit: 'G' },
+        { key: 'boardValue', label: '보드 가치', value: mean((m) => m.boardValue), unit: 'G' },
+        { key: 'expectedBoardValue', label: '스테이지 기준 보드 가치', value: mean((m) => expectedBoardValue(m.stage)), unit: 'G' },
         ...(standard.length
           ? [{ key: 'levelShort', label: '표준 레벨보다 부족', value: round1(avg(standard.map((m) => Math.max(0, -gap(m))))), unit: '레벨' }]
           : []),
@@ -361,8 +368,6 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
         { key: 'units', label: '유닛 수', value: mean((m) => m.units), unit: '개' },
         { key: 'twoPlus', label: '2성 이상', value: mean((m) => m.twoPlus), unit: '개' },
         { key: 'three', label: '3성', value: mean((m) => m.three), unit: '개' },
-        // 점수 미반영 지표 — 스테이지 보정 측정 후 반영 여부 결정 (testAxes 타당도)
-        { key: 'boardValue', label: '보드 가치', value: mean((m) => m.boardValue), unit: 'G' },
       ]
     case 'synergy':
       return [
@@ -397,7 +402,9 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
   const deckLabel = DECK_TYPE_LABEL[deck.type]
 
   const detail: Record<CoachingAxisKey, string> = {
-    economy: `${basis} 잔여 골드 ${round1(avg(metrics.map((m) => m.goldLeft)))} · ${basis} 탈락 ${round1(
+    economy: `${basis} 보드 가치 ${round1(avg(metrics.map((m) => m.boardValue)))}G (스테이지 기준 ${round1(
+      avg(metrics.map((m) => expectedBoardValue(m.stage)))
+    )}G) · ${basis} 탈락 ${round1(
       avg(metrics.map((m) => m.stage))
     )}스테이지`,
     itemization: `${basis} 캐리 아이템 ${round1(avg(metrics.map((m) => m.carryItems)))}개 · 보드 총 아이템 ${round1(

@@ -127,16 +127,16 @@ export function set18PortraitUrl(id: string): string | null {
   return `${TFT_UNIT_ASSET_BASE}/tft18_${folder}/tft18_${folder}_square.png`
 }
 
-// 18시즌 및 특별 시너지 보완 사전
-const SPECIAL_TRAITS: Record<string, { ko: string; iconSlug: string }> = {
-  primal: { ko: '원시', iconSlug: 'Trait_Icon_16_Ixtal.png' },
-  rival: { ko: '라이벌', iconSlug: 'Trait_Icon_16_Heroic.png' },
-  sprykin: { ko: '요정', iconSlug: 'Trait_Icon_16_Yordle.png' },
-  emerald: { ko: '에메랄드', iconSlug: 'Trait_Icon_16_Targon.png' },
-  hunter: { ko: '사냥꾼', iconSlug: 'Trait_Icon_16_Demacia.png' },
-  brawler: { ko: '난동꾼', iconSlug: 'Trait_Icon_16_Brawler.png' },
-  juggernaut: { ko: '전쟁기계', iconSlug: 'Trait_Icon_16_Juggernaut.png' },
-}
+/**
+ * 세트18 시너지 사전 (정규화 id 소문자 → 공식 한글명/아이콘). tftData.traitMap 의 18세트 키로만 만든다.
+ * traitMap 에는 세트16 키도 섞여 있어 정규화 id 가 겹친다 (brawler: 난동꾼↔싸움꾼, rapidfire: 기동타격대↔속사포 등).
+ * 예전 수기 보완표는 세트16 이름이라 날렵이(Sprykin)→요정, 에메랄드 성위→에메랄드로 잘못 나왔다.
+ */
+const SET18_TRAITS: Record<string, { name: string; iconUrl: string }> = Object.fromEntries(
+  Object.entries(tftData.traitMap as Record<string, { name: string; iconUrl: string }>)
+    .filter(([key]) => /^DA_/.test(key) && /18/.test(key))
+    .map(([key, entry]) => [normalizeTftId(key).toLowerCase(), entry])
+)
 
 // 세트18 기물 코스트 (수집 데이터에 cost가 없을 때 폴백)
 const CHAMPION_COSTS: Record<string, number> = {
@@ -324,18 +324,9 @@ export function translateTrait(id: string): TranslatedTrait {
   const cleanId = normalizeTftId(id)
   const lower = cleanId.toLowerCase()
 
-  // 1. 특별 18시즌 시너지 확인
-  if (SPECIAL_TRAITS[lower]) {
-    const s = SPECIAL_TRAITS[lower]
-    return {
-      name: s.ko,
-      iconUrl: `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_TFT_VERSION}/img/tft-trait/${s.iconSlug}`,
-    }
-  }
-
-  // 2. DataDragon 공식 데이터베이스 확인 (이미지 URL은 TFT 전용으로 재구성)
+  // DataDragon 공식 데이터 (원본 id → 세트18 정규화 id → 그 외). 이미지 URL은 TFT 전용으로 재구성
   const traitMap = tftData.traitMap as Record<string, { name: string; iconUrl: string }>
-  const entry = traitMap[id] || traitMap[cleanId] || traitMap[lower]
+  const entry = traitMap[id] || SET18_TRAITS[lower] || traitMap[cleanId] || traitMap[lower]
 
   if (entry) {
     const traitFileName = entry.iconUrl.split('/').pop() || `${cleanId}.png`

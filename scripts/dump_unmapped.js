@@ -44,7 +44,12 @@ const SPECIAL_CHAMPS = [
   'murkwolf', 'krug', 'scuttlecrab', 'brambleback', 'sentinel', 'sentry',
   'elderdragon', 'cinderling', 'alune', 'gromp', 'pebbles', 'mamabeak', 'crimsonraptor',
 ]
-const SPECIAL_TRAITS = ['primal', 'rival', 'sprykin', 'emerald', 'hunter', 'brawler', 'juggernaut']
+// constants.ts SET18_TRAITS 와 동일 — traitMap 의 세트18 키(DA_*18*)를 정규화 id 로 색인
+const SET18_TRAITS = new Set(
+  Object.keys(tftData.traitMap || {})
+    .filter((k) => /^DA_/.test(k) && /18/.test(k))
+    .map((k) => normalizeTftId(k).toLowerCase())
+)
 
 // itemMap 카테고리 접두사(Foo/Bar/ID) 제거 인덱스 — constants.ts itemSegmentIndex 와 동일
 const ITEM_SEGMENT_INDEX = (() => {
@@ -81,7 +86,7 @@ function isItemMapped(key) {
 function isTraitMapped(key) {
   const cleanId = normalizeTftId(key)
   const lower = cleanId.toLowerCase()
-  if (SPECIAL_TRAITS.includes(lower)) return true
+  if (SET18_TRAITS.has(lower)) return true
   const m = tftData.traitMap || {}
   return Boolean(m[key] || m[cleanId] || m[lower])
 }
