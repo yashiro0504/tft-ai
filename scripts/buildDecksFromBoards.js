@@ -10,6 +10,8 @@
  *  3. MIN_GAMES 이상 나온 덱만 남기고, 그 보드들의 실제 등수로 평균/TOP4/1등/분포/픽률을 계산한다
  *  4. 대표 구성 = 그 덱 보드의 절반 이상에서 쓰인 기물 (부족하면 빈도순으로 채움), 캐리 아이템 = 가장 많이 쓴 3개
  *  5. 시너지 최대 단계(breakpoint max)를 넘는 기물은 flex 로 표시하고 시너지 count 에서 제외한다
+ *  6. 덱 가이드(guide): 핵심·유동 기물(채용률), 캐리 아이템 채용률과 들었을 때 평균 등수, 레벨 분포, 개방성
+ *     — 최종 보드 통계라 '조합 순서'가 아니라 '최종 보드 채용률'이다
  *
  * 사용법:
  *  node scripts/buildDecksFromBoards.js            # 미리보기 + 표 출력
@@ -28,6 +30,12 @@ const MIN_GAMES = Number(process.env.MIN_GAMES || 30)
 const MAX_DECKS = Number(process.env.MAX_DECKS || 100)
 const MAX_UNITS = Number(process.env.MAX_UNITS || 9)
 const MERGE_OVERLAP = Number(process.env.MERGE_OVERLAP || 0.75)
+/** 덱 가이드: 핵심 기물 채용률 하한 · 유동 기물 채용률 범위 · 표본 하한 · 개수 상한 */
+const GUIDE_CORE_USAGE = 0.8
+const GUIDE_FLEX_USAGE = 0.2
+const GUIDE_MIN_N = 10
+const GUIDE_MAX_FLEX = 6
+const GUIDE_MAX_ITEMS = 5
 
 const BOARDS_PATH = path.join(__dirname, '..', 'data', 'ladderBoards.json')
 const r2 = (x) => Math.round(x * 100) / 100
@@ -251,6 +259,10 @@ function newCluster(label) {
     traitCount: new Map(), // 시너지 → 활성 보드 수
     traitUnits: new Map(), // 시너지 → 유닛 수 합
     traitIds: new Map(),
+    unitPlace: new Map(), // 기물 → 등수 합 (기물을 쓴 보드)
+    carryItemPlace: new Map(), // 캐리 아이템 → 등수 합 (그 아이템을 든 보드)
+    carryItemBoards: new Map(), // 캐리 아이템 → 든 보드 수 (같은 아이템 2개도 1번)
+    carryThree: 0, // 캐리 3성 보드 수
   }
 }
 
@@ -272,11 +284,18 @@ function addBoard(c, board, label) {
       c.unitItems.set(k, m)
     }
     c.unitCount.set(k, (c.unitCount.get(k) || 0) + 1)
+    c.unitPlace.set(k, (c.unitPlace.get(k) || 0) + board.placement)
     c.unitStars.set(k, (c.unitStars.get(k) || 0) + (u.star || 1))
     if (!c.unitIds.has(k)) c.unitIds.set(k, u.id)
     if (k === label.carry) {
       c.carryStars.push(u.star || 1)
+      if ((u.star || 1) >= 3) c.carryThree++
       for (const it of u.items || []) c.carryItems.set(it, (c.carryItems.get(it) || 0) + 1)
+      // 같은 아이템 2개는 한 번만 센다 (그 아이템을 든 보드의 등수)
+      for (const it of new Set((u.items || []).filter(isCompletedItem))) {
+        c.carryItemPlace.set(it, (c.carryItemPlace.get(it) || 0) + board.placement)
+        c.carryItemBoards.set(it, (c.carryItemBoards.get(it) || 0) + 1)
+      }
     }
   }
   for (const t of board.traits) {
@@ -333,7 +352,7 @@ function flexKeys(c) {
 function mergeInto(a, b) {
   a.boards += b.boards
   for (let i = 0; i < 8; i++) a.placements[i] += b.placements[i]
-  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits', 'unitHolders']) {
+  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits', 'unitHolders', 'unitPlace', 'carryItemPlace', 'carryItemBoards']) {
     for (const [k, v] of b[field]) a[field].set(k, (a[field].get(k) || 0) + v)
   }
   for (const field of ['unitIds', 'traitIds']) for (const [k, v] of b[field]) if (!a[field].has(k)) a[field].set(k, v)
@@ -343,6 +362,7 @@ function mergeInto(a, b) {
     a.unitItems.set(k, target)
   }
   a.carryStars.push(...b.carryStars)
+  a.carryThree += b.carryThree
   a.sizes.push(...b.sizes)
   a.levels.push(...b.levels)
 }
@@ -353,6 +373,46 @@ function overlap(a, b) {
   let shared = 0
   for (const k of A) if (B.has(k)) shared++
   return shared / Math.min(A.size, B.size)
+}
+
+/**
+ * 덱 가이드 (래더 최종 보드 통계). key 는 덱 units 와 같은 statKey (런타임 entitySlug 매칭용).
+ * - core: 채용률 80%+ 기물 / flex: 20~80% 기물 (대표 구성 밖 포함) + 썼을 때 평균 등수
+ * - carryItems: 캐리가 든 완성 아이템의 채용률(보드 비율)과 그 아이템을 들었을 때 평균 등수 (표본 10판+)
+ * - levels: 레벨 → 보드 비율 / carryThreeStarRate: 캐리 3성 보드 비율
+ * - openness.flexSlots = 대표 구성 칸 수 − 핵심 기물 수 (sharedCarryDecks 는 buildDecks 에서 채운다)
+ */
+function deckGuide(c) {
+  const usage = (k) => c.unitCount.get(k) / c.boards
+  const unitEntry = (k) => ({
+    key: statKey(c.unitIds.get(k)),
+    name: champInfo(c.unitIds.get(k)).name,
+    usage: r3(usage(k)),
+    avgPlacement: r2(c.unitPlace.get(k) / c.unitCount.get(k)),
+  })
+  const ranked = [...c.unitCount.keys()].sort((a, b) => usage(b) - usage(a))
+  const core = ranked.filter((k) => usage(k) >= GUIDE_CORE_USAGE)
+  const flex = ranked
+    .filter((k) => usage(k) >= GUIDE_FLEX_USAGE && usage(k) < GUIDE_CORE_USAGE && c.unitCount.get(k) >= GUIDE_MIN_N)
+    .slice(0, GUIDE_MAX_FLEX)
+  const carryItems = [...c.carryItemPlace.keys()]
+    .map((id) => ({ id, n: c.carryItemBoards.get(id), place: c.carryItemPlace.get(id) }))
+    .filter((x) => x.n >= GUIDE_MIN_N && itemInfo(x.id).iconUrl)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, GUIDE_MAX_ITEMS)
+    .map((x) => ({ key: x.id, name: itemInfo(x.id).name, rate: r3(x.n / c.boards), avgPlacement: r2(x.place / x.n) }))
+  const levels = {}
+  for (const lv of c.levels) if (lv) levels[lv] = (levels[lv] || 0) + 1
+  for (const lv of Object.keys(levels)) levels[lv] = r3(levels[lv] / c.boards)
+  return {
+    boards: c.boards,
+    core: core.map(unitEntry),
+    flex: flex.map(unitEntry),
+    carryItems,
+    levels,
+    carryThreeStarRate: r3(c.carryThree / c.boards),
+    openness: { coreCount: core.length, flexSlots: Math.max(coreSize(c) - core.length, 0), sharedCarryDecks: 0 },
+  }
 }
 
 function tierFromAvgPlacement(avg) {
@@ -434,6 +494,7 @@ function toDeck(c, totalBoards) {
     sampleSize: c.boards,
     tier: tierFromAvgPlacement(avg),
     carryKey: statKey(c.unitIds.get(carryKey)),
+    guide: deckGuide(c),
   }
 }
 
@@ -490,6 +551,8 @@ function buildDecks(boards, { minGames = MIN_GAMES, maxDecks = MAX_DECKS } = {})
     .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements }))
     .sort((a, b) => a.deck.avgPlacement - b.deck.avgPlacement)
     .slice(0, maxDecks)
+  // 개방성: 같은 캐리를 쓰는 다른 메타 덱 수 (경합·전환 여지)
+  for (const d of decks) d.deck.guide.openness.sharedCarryDecks = decks.filter((o) => o !== d && o.deck.carryKey === d.deck.carryKey).length
 
   return { decks, labeled, clusterCount: clusters.size, mergedCount: merged.length }
 }

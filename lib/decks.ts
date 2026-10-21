@@ -2,6 +2,7 @@ import decksData from './decksData.json'
 import metaStatsData from './metaStats.json'
 import { tierFromAvgPlacement } from './meta'
 import { set18PortraitUrl } from './constants'
+import type { DeckGuide } from './types'
 
 /**
  * 메타 덱(구성) — lib/decksData.json 을 정규화한다.
@@ -53,6 +54,8 @@ interface RawDeck {
   winRate?: number
   /** 1~8등 횟수 */
   placementDist?: number[]
+  /** 래더 실측 덱 가이드 */
+  guide?: DeckGuide
 }
 
 const DATA = decksData as unknown as {
@@ -106,6 +109,8 @@ export interface DeckView {
   winRate?: number
   /** 1~8등 횟수 */
   placementDist?: number[]
+  /** 래더 실측 덱 가이드 */
+  guide?: DeckGuide
 }
 
 export interface DeckMetaInfo {
@@ -192,6 +197,7 @@ function computeDeck(deck: RawDeck, jsonUnitStats = true): DeckView {
     playRate: deck.playRate,
     winRate: deck.winRate,
     placementDist: deck.placementDist,
+    guide: deck.guide,
   }
 }
 

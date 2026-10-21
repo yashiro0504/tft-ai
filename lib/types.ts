@@ -572,6 +572,25 @@ export interface MetaCompRanking {
 }
 
 /** 메타 덱(보드 조합) — Riot 래더 실제 보드를 묶은 덱 (실측) */
+/**
+ * 래더 실측 덱 가이드 (scripts/buildDecksFromBoards.js deckGuide) — 최종 보드 통계.
+ * carryItems 는 '조합 순서'가 아니라 최종 보드 채용률이다.
+ */
+export interface DeckGuide {
+  boards: number
+  /** 채용률 80%+ 기물 */
+  core: { key: string; name: string; usage: number; avgPlacement: number }[]
+  /** 채용률 20~80% 기물 (썼을 때 평균 등수) */
+  flex: { key: string; name: string; usage: number; avgPlacement: number }[]
+  /** 캐리 완성 아이템: 채용률(보드 비율) · 들었을 때 평균 등수 */
+  carryItems: { key: string; name: string; rate: number; avgPlacement: number }[]
+  /** 레벨 → 보드 비율 */
+  levels: Record<string, number>
+  carryThreeStarRate: number
+  /** flexSlots = 대표 구성 칸 수 − 핵심 기물 수 · sharedCarryDecks = 같은 캐리 메타 덱 수 */
+  openness: { coreCount: number; flexSlots: number; sharedCarryDecks: number }
+}
+
 export interface MetaDeckRanking {
   id: string
   name: string
@@ -606,6 +625,8 @@ export interface MetaDeckRanking {
   playRate?: number
   winRate?: number
   placementDist?: number[]
+  /** 래더 실측 덱 가이드 (래더 덱만) */
+  guide?: DeckGuide
 }
 
 export interface TftMetaResponse {

@@ -4,6 +4,7 @@
  * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
  *  - 로비 1등·로비 평균 비교 = 손계산
  *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - 덱 가이드(래더 실측): 핵심·유동 기물 · 캐리 아이템 채용률 · 레벨 분포 · 개방성 등급
  *  - 아이템 재료 매칭 · 로비 메타 덱 · 빈집 메타 덱 후보 (점령·코어 점령·약한·소표본·변형·재료 부족 제외)
  *  - 메타 덱 운영도: ±1등 경계 · 없는 기물(선택 기물 제외, 코스트순, 최대 3) · 종합 집계(표본 충분 판만 평균)
  *  - BIS 일치율 분자/분모 (표본 20판 미만 조합 제외, BIS 통계 없는 기물은 분모에서 제외)
@@ -293,6 +294,49 @@ ${mixedFacts}`
   check('로비 정보 없으면 빈집 후보 없음', openDeckCandidates({ ...me, lobbyParticipants: [] }, lobbyDecksList).length === 0)
   const multiOpen = buildComparisonFacts({ matches: [me, me], mode: 'multi', combos: [], decks: lobbyDecksList })
   check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/빈집|로비 메타 덱/.test(multiOpen), multiOpen)
+
+  console.log('덱 가이드 (래더 실측)')
+  const { opennessLabel } = require('../lib/comparisonFacts')
+  // 내 보드 A(아이템: 보석 건틀릿·쇼진의 창·루덴의 폭풍)·B·C·D·E vs 가이드 덱 A~D + F (유사도 4/6 = 0.67)
+  const gBoard = { ...sample, level: 8, units: [u('A', 2, ['보석 건틀릿', '쇼진의 창', '루덴의 폭풍']), u('B'), u('C'), u('D'), u('E')] }
+  const guideDeck = {
+    name: '가이드 덱',
+    avgPlacement: 4.0,
+    sampleSize: 200,
+    carryKey: 'A',
+    units: ['A', 'B', 'C', 'D', 'F'].map((key) => ({ key, name: key })),
+    guide: {
+      boards: 200,
+      core: [{ key: 'A', name: 'A', usage: 1, avgPlacement: 4 }, { key: 'B', name: 'B', usage: 0.9, avgPlacement: 4 }, { key: 'F', name: 'F', usage: 0.85, avgPlacement: 3.9 }],
+      flex: [{ key: 'C', name: 'C', usage: 0.798, avgPlacement: 4.1 }, { key: 'G', name: 'G', usage: 0.3, avgPlacement: 3.5 }],
+      carryItems: [
+        { key: 'x', name: '쇼진의 창', rate: 0.7, avgPlacement: 3.9 },
+        { key: 'y', name: '모렐로노미콘', rate: 0.5, avgPlacement: 4.123 },
+      ],
+      levels: { 7: 0.03, 8: 0.6, 9: 0.37 },
+      carryThreeStarRate: 0.1,
+      openness: { coreCount: 3, flexSlots: 5, sharedCarryDecks: 2 },
+    },
+  }
+  const gFacts = buildComparisonFacts({ matches: [gBoard], mode: 'single', combos: [], decks: [guideDeck] })
+  check(
+    '가이드 기물: 핵심 3개 중 2개 (없음: F) · 유동 C 채용 79%(내림)',
+    gFacts.includes('- 덱 가이드 기물(래더 200판, 가이드 덱): 핵심 기물(채용 80%+) 3개 중 2개 보유 (없음: F) · 내 유동 기물: C(채용 79%, 썼을 때 평균 4.10등)'),
+    gFacts
+  )
+  check(
+    '가이드 캐리 아이템: 채용률 순 · 내 캐리 A 1/3 (유물 제외)',
+    gFacts.includes('- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): 쇼진의 창 70%(평균 3.90등) · 모렐로노미콘 50%(평균 4.12등) — 내 A 아이템 1/3개가 이 목록에 있음'),
+    gFacts
+  )
+  check(
+    '가이드 운영: 5% 미만 레벨 생략 · 개방성 높음(유동 칸 5)',
+    gFacts.includes('- 덱 가이드 운영: 레벨 분포 8 60% · 9 37% (나 Lv.8) · 캐리 3성 10% · 개방성 높음 (유동 칸 5, 같은 캐리 메타 덱 2개)'),
+    gFacts
+  )
+  check('개방성 등급 경계: 1 낮음 · 2 보통 · 4 보통 · 5 높음', [1, 2, 4, 5].map(opennessLabel).join(',') === '낮음,보통,보통,높음')
+  const noGuide = buildComparisonFacts({ matches: [gBoard], mode: 'single', combos: [], decks: [{ ...guideDeck, guide: undefined }] })
+  check('가이드 없는 덱(DB 구버전 등)은 가이드 줄 생략', !noGuide.includes('덱 가이드'), noGuide)
 
   console.log('BIS 일치율')
   const combos = [

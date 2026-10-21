@@ -4,7 +4,7 @@ import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
 import { boardValue } from './boardValue'
-import type { LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
+import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
  * [비교 사실] 블록 — 모델이 계산하지 않아도 되는 비교 수치를 코드가 만든다 (AI-EVAL A2).
@@ -21,6 +21,9 @@ import type { LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } f
  * 아무도 타지 않은 메타 덱 중 내 캐리 아이템의 '재료'로 그 덱 캐리 핵심템을 조합할 수 있었던 덱을 최대 2개 보여 준다.
  * (보드 전체 아이템을 재료로 풀면 거의 모든 덱이 조합 가능해져 의미가 없다 — 실제 픽스처 38판 중 34판)
  * 최종 보드 기준 사후 비교라 "갔어야 했다"가 아니라 후보 사실이다 (피봇 시점·상점 기물 공급은 데이터에 없다).
+ *
+ * 덱 가이드 (single 만): 내 덱(유사 메타 덱)의 래더 실측 가이드와 내 보드 비교 — 핵심 기물 보유, 내 유동 기물,
+ * 캐리 아이템(최종 보드 채용률 순 — 조합 순서 아님), 레벨 분포, 개방성.
  */
 
 /** unit_item 통계 행 (lib/statsShared MetaComboRanking 의 필요한 필드) */
@@ -39,6 +42,8 @@ export interface DeckFact {
   units: { key: string; name?: string; cost?: number | null; star?: number; flex?: boolean; items?: { name: string }[] }[]
   /** 대표 캐리 기물 key (없으면 아이템 최다 기물) */
   carryKey?: string | null
+  /** 래더 실측 덱 가이드 */
+  guide?: DeckGuide
 }
 
 export const DECK_SIMILARITY_MIN = 0.6
@@ -54,6 +59,9 @@ export const MISSING_CORE_MAX = 3
 export const OPEN_DECK_MAX = 2
 export const OPEN_DECK_MAX_AVG = 4.5
 export const OPEN_DECK_MIN_BUILDABLE = 2
+/** 개방성 등급: 유동 칸(대표 구성 − 핵심 기물) 이 이하면 낮음 / 이 이상이면 높음 (래더 59개 덱 분포 기준 대략 15% / 37%) */
+export const OPENNESS_LOW_MAX = 1
+export const OPENNESS_HIGH_MIN = 5
 
 interface BoardStats {
   level: number
@@ -279,6 +287,62 @@ function openDeckLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   )
 }
 
+export function opennessLabel(flexSlots: number): '낮음' | '보통' | '높음' {
+  return flexSlots <= OPENNESS_LOW_MAX ? '낮음' : flexSlots >= OPENNESS_HIGH_MIN ? '높음' : '보통'
+}
+
+const pct = (x: number) => Math.round(x * 100)
+
+/** 내 덱(유사 메타 덱)의 래더 가이드와 내 보드 비교 — 가이드가 있는 래더 덱만 */
+function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
+  const hit = mostSimilarDeck(m, decks)
+  const g = hit?.deck.guide
+  if (!hit || !g) return []
+  const d = hit.deck
+  const mine = slugSet(m.units.map((u) => u.id))
+  const has = (key: string) => mine.has(entitySlug('champion', key))
+  const out: string[] = []
+
+  const missing = g.core.filter((u) => !has(u.key))
+  const flexUsed = g.flex.filter((u) => has(u.key))
+  out.push(
+    // 핵심 = 채용 80%+ (scripts/buildDecksFromBoards.js GUIDE_CORE_USAGE). 유동 채용률은 내림해 80%로 보이지 않게 한다
+    `- 덱 가이드 기물(래더 ${g.boards}판, ${d.name}): 핵심 기물(채용 80%+) ${g.core.length}개 중 ${g.core.length - missing.length}개 보유${
+      missing.length ? ` (없음: ${missing.map((u) => u.name).join(', ')})` : ''
+    }${
+      flexUsed.length
+        ? ` · 내 유동 기물: ${flexUsed.map((u) => `${u.name}(채용 ${Math.floor(u.usage * 100)}%, 썼을 때 평균 ${u.avgPlacement.toFixed(2)}등)`).join(', ')}`
+        : ''
+    }`
+  )
+
+  if (g.carryItems.length) {
+    // 내 캐리: 메타 덱 캐리 기물이 내 보드에 있으면 그 기물, 없으면 아이템 최다 기물
+    const carrySlug = d.carryKey ? entitySlug('champion', d.carryKey) : ''
+    const myCarry = m.units.find((u) => carrySlug && entitySlug('champion', u.id) === carrySlug) ?? boardCarry(m.units)
+    const names = new Set(g.carryItems.map((i) => i.name))
+    const myItems = myCarry?.items ?? []
+    const matched = myItems.filter((n) => names.has(n)).length
+    out.push(
+      `- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): ${g.carryItems
+        .map((i) => `${i.name} ${pct(i.rate)}%(평균 ${i.avgPlacement.toFixed(2)}등)`)
+        .join(' · ')}${myCarry && myItems.length ? ` — 내 ${myCarry.name} 아이템 ${matched}/${myItems.length}개가 이 목록에 있음` : ''}`
+    )
+  }
+
+  const levels = Object.entries(g.levels)
+    .filter(([, r]) => r >= 0.05)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([lv, r]) => `${lv} ${pct(r)}%`)
+  const o = g.openness
+  out.push(
+    `- 덱 가이드 운영: 레벨 분포 ${levels.join(' · ')} (나 Lv.${m.level}) · 캐리 3성 ${pct(g.carryThreeStarRate)}% · 개방성 ${opennessLabel(
+      o.flexSlots
+    )} (유동 칸 ${o.flexSlots}, 같은 캐리 메타 덱 ${o.sharedCarryDecks}개)`
+  )
+  return out
+}
+
 /** 종합: 메타 덱을 탄 판 수 + 표본 충분한 판의 평균 등수 차이와 판정 분포 */
 function metaExecutionLine(matches: SlimMatchData[], decks: DeckFact[]): string | null {
   const hits = matches.map((m) => metaExecution(m, decks)).filter((x): x is MetaExecution => x !== null)
@@ -380,6 +444,7 @@ export function buildComparisonFacts({
     lines.push(...lobbyLines(m))
     const dl = deckLine(m, decks)
     if (dl) lines.push(dl)
+    lines.push(...guideLines(m, decks))
     const ll = lobbyDeckLine(m, decks)
     if (ll) lines.push(ll)
     lines.push(...openDeckLines(m, decks))

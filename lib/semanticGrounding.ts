@@ -218,6 +218,8 @@ export type CoachingRuleType =
   | 'openDeckInvented'
   /** 피봇·덱 전환 시점(라운드)을 단정 */
   | 'pivotTiming'
+  /** 덱 가이드 '채용률'을 조합(슬램) 순서의 근거로 사용 */
+  | 'guideOrderClaim'
 
 export interface CoachingRuleViolation {
   type: CoachingRuleType
@@ -230,6 +232,7 @@ const REROLL_EXCUSE_RE = /리롤(?:형|덱)?(?:이라|이므로|이니|에서는
 const META_WEAK_RE = /메타\s*(?:덱\s*)?평균(?:보다|에\s*비해|에)?\s*(?:[^.!?\n]{0,12})?(?:못|낮|부진|뒤처|밑돌|아쉬)/
 const DECK_MUST_RE = /(?:갔어야|가야\s*했|탔어야|타야\s*했|선택했어야|골랐어야|잡았어야)/
 const OPEN_DECK_RE = /빈집\s*(?:메타\s*)?덱/
+const GUIDE_ORDER_RE = /채용(?:률)?[^.!?\n]{0,40}(?:먼저|우선|선(?:슬램|조합))|(?:먼저|우선)[^.!?\n]{0,40}채용(?:률)?/
 const PIVOT_TIMING_RE = /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)/
 
 /**
@@ -243,6 +246,7 @@ export function validateCoachingRules(
   const out: CoachingRuleViolation[] = []
   const hasOpenLine = ctx.facts.includes('빈집 메타 덱 후보')
   const metaEven = ctx.mode === 'single' && ctx.facts.includes('운영도: 메타 평균 수준')
+  const hasGuide = ctx.facts.includes('덱 가이드')
   for (const text of texts) {
     for (const s of sentences(text)) {
       if (ctx.deckType === 'reroll' && REROLL_LEVEL_BLAME_RE.test(s) && !REROLL_EXCUSE_RE.test(s)) out.push({ type: 'rerollLevelBlame', text: s })
@@ -250,6 +254,7 @@ export function validateCoachingRules(
       if (DECK_MUST_RE.test(s) && /덱|빈집/.test(s)) out.push({ type: 'deckMustClaim', text: s })
       if (!hasOpenLine && OPEN_DECK_RE.test(s)) out.push({ type: 'openDeckInvented', text: s })
       if (PIVOT_TIMING_RE.test(s)) out.push({ type: 'pivotTiming', text: s })
+      if (hasGuide && GUIDE_ORDER_RE.test(s)) out.push({ type: 'guideOrderClaim', text: s })
     }
   }
   return out

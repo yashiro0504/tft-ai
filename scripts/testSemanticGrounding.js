@@ -107,6 +107,10 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('후보 줄 없이 빈집 덱 추천 → openDeckInvented', rules('다음 판엔 빈집 메타 덱을 노리세요.', {}).includes('openDeckInvented'))
   check('후보 줄 있으면 빈집 덱 언급 통과', rules('빈집 메타 덱 후보로 처형자 이즈리얼이 있었습니다.', { facts: '- 빈집 메타 덱 후보(사후 비교): 처형자 이즈리얼' }).length === 0)
   check('"3-2에 피봇했어야" → pivotTiming', rules('3-2에 피봇했으면 좋았습니다.', {}).includes('pivotTiming'))
+  const guideFacts = '- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): 쇼진의 창 70%'
+  check('가이드 채용률을 순서 근거로 → guideOrderClaim', rules('채용률이 검증된 쇼진의 창을 먼저 슬램하세요.', { facts: guideFacts }).includes('guideOrderClaim'))
+  check('채용률 인용만 하면 통과', rules('쇼진의 창은 이 덱 캐리의 70%가 최종 보드에 들고 있습니다.', { facts: guideFacts }).length === 0)
+  check('가이드 없으면 대상 아님', rules('채용률 높은 템을 먼저 만드세요.', {}).length === 0)
 
   console.log('리포트 통합 (폴백 경로)')
   const { generateMetaCoachFeedback } = require('../lib/llm')

@@ -49,6 +49,7 @@ export function toMetaDeck(d: DeckView): MetaDeckRanking {
     playRate: d.playRate,
     winRate: d.winRate,
     placementDist: d.placementDist,
+    guide: d.guide,
   }
 }
 
