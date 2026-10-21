@@ -29,7 +29,8 @@ function baseKey(value: string): string {
 export function entitySlug(kind: EntityKind, key: string): string {
   const k = baseKey(key)
   // 기물: 'lux18base' → 'lux', 'gnar18' → 'gnar' (AP/AD 같은 변형 꼬리는 남긴다: 'gromp18ap' → 'gromp18ap')
-  if (kind === 'champion') return k.replace(/\d+base$/, '').replace(/\d+$/, '')
+  // 'gnarsmall' → 'gnar': 통계 키(tftStats.statChampKey)·번역(constants.translateChampion)과 같이 Small 꼬리를 뗀다
+  if (kind === 'champion') return k.replace(/small$/, '').replace(/\d+base$/, '').replace(/\d+$/, '')
   // 시너지: 'emerald18' → 'emerald'
   if (kind === 'trait') return k.replace(/\d+$/, '')
   return k

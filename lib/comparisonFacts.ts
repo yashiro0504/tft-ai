@@ -13,6 +13,7 @@ import type { DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchT
  * 모두 서술 통계이며 인과가 아니다. 값이 없거나 유한하지 않은 줄은 생략한다.
  *
  * - single: 로비 1등(내가 1등이면 2등) · 로비 평균(나 제외)과 레벨·3성·시너지 단계 합·아이템 수·보드 가치 비교,
+ *           같은 구성 상대(코어 기물 코스트 가중 유사도 ≥ 0.5 · 겹치는 코어 기물 4개+)와 레벨·2성·겹치는 기물 성급·아이템·보드 가치 비교,
  *           가장 유사한 메타 덱(기물 슬러그 Jaccard ≥ 0.6) 평균등수와 이 경기 등수 + 운영도, BIS 일치율
  * - multi:  경기 간 요약(레벨·3성·아이템 평균과 범위) + 메타 덱 운영도 집계 + 전체 BIS 일치율
  *
@@ -69,6 +70,11 @@ export const OPEN_DECK_MIN_BUILDABLE = 2
 /** 개방성 등급: 유동 칸(대표 구성 − 핵심 기물) 이 이하면 낮음 / 이 이상이면 높음 (래더 59개 덱 분포 기준 대략 15% / 37%) */
 export const OPENNESS_LOW_MAX = 1
 export const OPENNESS_HIGH_MIN = 5
+/** 같은 구성 상대: 코스트 가중 유사도 하한 · 겹치는 기물 최소 개수 · 성급 차이 최대 표시 개수 */
+export const SIMILAR_OPPONENT_MIN = 0.5
+export const SIMILAR_OPPONENT_MIN_SHARED = 4
+const SIMILAR_OPPONENT_CORE_COST = 4
+const SIMILAR_OPPONENT_MAX_DIFF = 6
 
 interface BoardStats {
   level: number
@@ -126,6 +132,89 @@ function lobbyLines(m: SlimMatchData): string[] {
   const mean: BoardStats = { level: avg('level'), units: avg('units'), threeStars: avg('threeStars'), traitTierSum: avg('traitTierSum'), items: avg('items'), value: avg('value') }
   out.push(`- 로비 평균(나 제외 ${stats.length}명)과 비교: ${compareLine(me, mean, 1)}`)
   return out
+}
+
+export interface SimilarOpponent {
+  opponent: LobbyParticipant
+  /** 코어 기물의 코스트 가중 Jaccard (기물 슬러그, 성급 무시) */
+  similarity: number
+  /** 겹치는 코어 기물 — 내 성급 · 상대 성급 (같은 기물 여러 장이면 최고 성급), 코스트 높은 순 */
+  shared: { name: string; cost: number; mine: number; theirs: number }[]
+}
+
+/** 같은 구성 판정에 쓰는 코어 기물: 4코스트+ 또는 contest 코어(2성+ 또는 아이템 보유) — 1성 무템 저코스트 채우기 기물 제외 */
+function isSimilarityCore(u: SlimMatchUnit): boolean {
+  return (u.rarity || 1) >= SIMILAR_OPPONENT_CORE_COST || isCoreUnit(u)
+}
+
+/** 코어 기물 슬러그 → 최고 성급 기물 (같은 기물 여러 장이면 성급 높은 쪽) */
+function coreBySlug(units: SlimMatchUnit[]): Map<string, SlimMatchUnit> {
+  const out = new Map<string, SlimMatchUnit>()
+  for (const u of units.filter(isSimilarityCore)) {
+    const s = entitySlug('champion', u.id)
+    if (!s) continue
+    const prev = out.get(s)
+    if (!prev || (u.tier || 1) > (prev.tier || 1)) out.set(s, u)
+  }
+  return out
+}
+
+/**
+ * 로비에서 최종 보드가 나와 가장 비슷한 상대 (나 제외).
+ * 유사도 = 코어 기물(isSimilarityCore)의 코스트 가중 Jaccard(기물 슬러그 기준, 성급 무시).
+ * 채우기 기물까지 세면 다른 덱끼리도 공용 기물로 겹친다(픽스처: 아리·알룬 캐리 vs 돌거북 리롤이 기물 5개 공유).
+ * 픽스처 38판에서 실제 같은 구성은 0.84, 나머지는 최대 0.33.
+ * SIMILAR_OPPONENT_MIN 이상이고 겹치는 코어 기물이 SIMILAR_OPPONENT_MIN_SHARED 개 이상일 때만. 같으면 등수 높은 상대.
+ */
+export function mostSimilarOpponent(m: { units: SlimMatchUnit[]; lobbyParticipants?: LobbyParticipant[] }): SimilarOpponent | null {
+  const mine = coreBySlug(m.units)
+  if (!mine.size) return null
+  const cost = (u: SlimMatchUnit) => Math.max(u.rarity || 1, 1)
+  let best: SimilarOpponent | null = null
+  const opponents = (m.lobbyParticipants || []).filter((p) => !p.isUser).sort((a, b) => a.placement - b.placement)
+  for (const p of opponents) {
+    const theirs = coreBySlug(p.units)
+    let inter = 0
+    let total = 0
+    const shared: SimilarOpponent['shared'] = []
+    for (const [s, u] of mine) {
+      total += cost(u)
+      const t = theirs.get(s)
+      if (!t) continue
+      inter += cost(u)
+      shared.push({ name: u.name, cost: cost(u), mine: u.tier || 1, theirs: t.tier || 1 })
+    }
+    for (const [s, t] of theirs) if (!mine.has(s)) total += cost(t)
+    const similarity = total ? inter / total : 0
+    if (!best || similarity > best.similarity) {
+      best = { opponent: p, similarity, shared: shared.sort((a, b) => b.cost - a.cost) }
+    }
+  }
+  return best && best.similarity >= SIMILAR_OPPONENT_MIN && best.shared.length >= SIMILAR_OPPONENT_MIN_SHARED ? best : null
+}
+
+/** "- 같은 구성 상대(2등, 겹치는 코어 기물 7개 · 유사도 0.71)와 비교(나 6등): 레벨 … · 2성 이상 … · 코어 기물 성급 차이 … · 아이템 … · 보드 가치 …" */
+function similarOpponentLine(m: SlimMatchData): string | null {
+  const hit = mostSimilarOpponent(m)
+  if (!hit) return null
+  const o = hit.opponent
+  const me = boardStats(m)
+  const them = boardStats(o)
+  const twoPlus = (units: SlimMatchUnit[]) => units.filter((u) => (u.tier || 1) >= 2).length
+  const diff = hit.shared.filter((s) => s.mine !== s.theirs)
+  const same = hit.shared.length - diff.length
+  const shown = diff.slice(0, SIMILAR_OPPONENT_MAX_DIFF).map((s) => `${s.name} ${s.mine}★ vs ${s.theirs}★`)
+  const more = diff.length > shown.length ? ` 외 ${diff.length - shown.length}개` : ''
+  const stars = diff.length
+    ? `코어 기물 성급 차이: ${shown.join(', ')}${more}${same ? ` (같은 성급 ${same}개)` : ''}`
+    : `겹치는 코어 기물 성급 모두 같음`
+  return `- 같은 구성 상대(${o.placement}등, 겹치는 코어 기물 ${hit.shared.length}개 · 유사도 ${r2(hit.similarity).toFixed(2)})와 비교(나 ${m.placement}등): ${[
+    `레벨 ${signed(me.level - them.level)} (${me.level} vs ${them.level})`,
+    `2성 이상 ${twoPlus(m.units)} vs ${twoPlus(o.units)}`,
+    stars,
+    `아이템 ${me.items} vs ${them.items}`,
+    `보드 가치 ${me.value}G vs ${them.value}G`,
+  ].join(' · ')}`
 }
 
 function slugSet(keys: string[]): Set<string> {
@@ -421,7 +510,11 @@ function metaExecutionLine(matches: SlimMatchData[], decks: DeckFact[]): string 
   )} · 못 굴림 ${count('worse')})${tail}`
 }
 
-/** 기물 슬러그 → BIS 아이템 이름 상위 3개 (표본 ≥ 20, 평균등수 오름차순) */
+/**
+ * 기물 슬러그 → BIS 아이템 이름 상위 3개 (표본 ≥ 20, 채용 판 수 내림차순 · 같으면 평균등수 오름차순).
+ * 평균등수 순으로 고르면 표본이 작은 비주류 아이템(오차 ±2.29/√n — n=40이면 ±0.36)이 위로 올라와
+ * 주류 빌드(예: 장로 드래곤 무한의 대검 315판)가 BIS에서 빠지고 일치율이 0%로 나온다 — 래더 덱 가이드와 같은 채용률 기준을 쓴다.
+ */
 export function bisBySlug(combos: ComboFact[]): Map<string, string[]> {
   const by = new Map<string, ComboFact[]>()
   for (const c of combos) {
@@ -431,7 +524,14 @@ export function bisBySlug(combos: ComboFact[]): Map<string, string[]> {
     by.get(slug)!.push(c)
   }
   const out = new Map<string, string[]>()
-  for (const [slug, list] of by) out.set(slug, [...list].sort((a, b) => a.avgPlacement - b.avgPlacement).slice(0, 3).map((c) => c.itemName))
+  for (const [slug, list] of by)
+    out.set(
+      slug,
+      [...list]
+        .sort((a, b) => b.sampleSize - a.sampleSize || a.avgPlacement - b.avgPlacement)
+        .slice(0, 3)
+        .map((c) => c.itemName)
+    )
   return out
 }
 
@@ -470,7 +570,7 @@ function bisLine(units: SlimMatchUnit[], bis: Map<string, string[]>, scope: stri
   const carry = withCarry && res.carry
     ? `${res.carry.name} ${res.carry.matched}/${res.carry.items.length} (${res.carry.items.map((x) => `${x.name} ${x.ok ? '✓' : '✗'}`).join(', ')}) · `
     : ''
-  return `- BIS 일치율: ${carry}${scope} ${res.matched}/${res.slots} (${pct}%) — BIS 통계가 있는 기물의 아이템 기준, 상위 3개(표본 ${BIS_MIN_SAMPLE}판 이상)`
+  return `- BIS 일치율: ${carry}${scope} ${res.matched}/${res.slots} (${pct}%) — BIS 통계가 있는 기물의 아이템 기준, 기물별 채용 상위 3개(표본 ${BIS_MIN_SAMPLE}판 이상)`
 }
 
 function multiLines(matches: SlimMatchData[]): string[] {
@@ -504,6 +604,8 @@ export function buildComparisonFacts({
     // 덱 유형: 최종 보드의 3성 개수·코스트·레벨로 코드가 판정 (리롤형이면 템포 해석이 달라진다)
     lines.push(`- 덱 유형: ${summarizeDeckTypes([m]).line}`)
     lines.push(...lobbyLines(m))
+    const sl = similarOpponentLine(m)
+    if (sl) lines.push(sl)
     const dl = deckLine(m, decks)
     if (dl) lines.push(dl)
     lines.push(...guideLines(m, decks))
