@@ -196,7 +196,8 @@ const sortRows = (rows) =>
     const d0 = fbDecks.decks[0]
     const page = await entity.getEntityPage('champion', entitySlug('champion', d0.units[0].key))
     const jd = page && page.decks.find((d) => d.id === d0.id)
-    check('엔티티 페이지(JSON): 덱 링크 유지', jd && jd.linkable === true && jd.fromDb === false, JSON.stringify(jd))
+    check('엔티티 페이지(JSON): 덱 링크 유지 · 쿼리 없는 /deck/<id>', jd && jd.linkable === true && jd.fromDb === false && jd.href === `/deck/${d0.id}`, JSON.stringify(jd))
+    check('getDeckById: DB 미설정이면 null (JSON 폴백은 페이지가)', (await fallback.getDeckById(d0.id)) === null)
   }
 
   // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1).
@@ -414,13 +415,33 @@ async function apiChecks(db, mem) {
   const decks = await stats.getDecks({ patch: '16.20', tier: 'master' })
   check('덱: db · stat_comp.deck → 화면 덱 · 표본 부족(12 < 15)', decks.source === 'db' && decks.decks.length === 1 && decks.decks[0].id === sampleDeck.id && decks.decks[0].lowSample === true && decks.totalBoards === 960)
   check('덱: DB 덱에는 JSON 기물 수치를 붙이지 않음', decks.decks[0].units.every((u) => !u.stat))
-  // 엔티티 페이지: DB 덱은 id 가 JSON 덱과 겹쳐도 /deck/[id](다른 패치 스냅샷)로 링크하지 않는다 (REVIEW R8)
+  // 엔티티 페이지: DB 덱은 /deck/[id]?patch=&tier= 로 링크 — 덱 페이지가 stat_comp 에서 같은 덱을 연다
+  // (R8 에서는 링크를 막았지만 UI 스프린트 S1 에서 덱 페이지가 DB 덱을 해석하게 됐다)
   for (const k of Object.keys(require.cache)) if (/entityData\.ts$/.test(k)) delete require.cache[k]
   const entity = require('../lib/entityData')
   const { entitySlug } = require('../lib/entitySlug')
   const champPage = await entity.getEntityPage('champion', entitySlug('champion', decks.decks[0].units[0].key))
   const dbDeck = champPage && champPage.decks.find((d) => d.id === sampleDeck.id)
-  check('엔티티 페이지: DB 덱은 링크 안 함 · DB 집계 표시', dbDeck && dbDeck.fromDb === true && dbDeck.linkable === false, JSON.stringify(dbDeck))
+  check(
+    '엔티티 페이지: DB 덱 링크 = /deck/<id>?patch=16.20&tier=master · DB 집계 표시',
+    dbDeck && dbDeck.fromDb === true && dbDeck.linkable === true && dbDeck.href === `/deck/${sampleDeck.id}?patch=16.20&tier=master`,
+    JSON.stringify(dbDeck)
+  )
+
+  // 덱 1개 조회 (UI 스프린트 S1 — /deck/[id] 의 DB 해석)
+  const byId = await stats.getDeckById(sampleDeck.id, { patch: '16.20', tier: 'master' })
+  check('getDeckById: patch·tier 지정 → 같은 덱 · 패치/티어 반환', byId && byId.deck.id === sampleDeck.id && byId.patch === '16.20' && byId.tierMin === 'master' && byId.deck.sampleSize === 12, JSON.stringify(byId && { id: byId.deck.id, patch: byId.patch, tier: byId.tierMin, n: byId.deck.sampleSize }))
+  check('getDeckById: 없는 id → null', (await stats.getDeckById('ladder-nope-nope')) === null)
+  // 같은 comp_id 를 이전 패치(16.9 — 문자열로는 16.20 보다 큼)·다른 티어에도 넣는다
+  await db.query('select tft_replace_comps($1, $2, $3::jsonb)', ['16.9', 'MASTER', JSON.stringify([{ ...compRow, games: 40, deck: { ...sampleDeck, games: 40 } }])])
+  await db.query('select tft_replace_comps($1, $2, $3::jsonb)', ['16.20', 'DIAMOND', JSON.stringify([{ ...compRow, games: 30, deck: { ...sampleDeck, games: 30 } }])])
+  const latest = await stats.getDeckById(sampleDeck.id)
+  check('getDeckById: patch 없으면 숫자 비교 최신 패치(16.20 > 16.9) · 티어는 마스터+ 우선', latest && latest.patch === '16.20' && latest.tierMin === 'master' && latest.deck.sampleSize === 12, JSON.stringify(latest && { patch: latest.patch, tier: latest.tierMin }))
+  const diamond = await stats.getDeckById(sampleDeck.id, { tier: 'diamond' })
+  check('getDeckById: tier 지정 → 그 티어 덱', diamond && diamond.tierMin === 'diamond' && diamond.deck.sampleSize === 30)
+  const oldPatch = await stats.getDeckById(sampleDeck.id, { patch: '16.9' })
+  check('getDeckById: patch 지정 → 그 패치 덱', oldPatch && oldPatch.patch === '16.9' && oldPatch.deck.sampleSize === 40)
+  await db.query(`delete from stat_comp where patch = '16.9' or tier_min = 'DIAMOND'`)
   const chDecks = await stats.getDecks({ patch: '16.20', tier: 'challenger' })
   check('덱: 기본 아닌 필터에 덱이 없으면 빈 목록 (db)', chDecks.source === 'db' && chDecks.decks.length === 0)
 
@@ -428,6 +449,7 @@ async function apiChecks(db, mem) {
   const broken = loadStatsLib(fakeSupabase(db, { failRpc: true }))
   const fb = await broken.getStats('unit', f)
   check('DB 오류 → JSON 폴백 (db_error)', fb.source === 'json' && fb.fallbackReason === 'db_error' && fb.rows.length > 0)
+  check('getDeckById: DB 오류 → null (예외를 밖으로 던지지 않음)', (await broken.getDeckById(sampleDeck.id)) === null)
 }
 
 function loadPglite() {

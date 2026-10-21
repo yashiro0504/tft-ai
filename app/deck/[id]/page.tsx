@@ -9,6 +9,8 @@ import { ShareButton } from '@/app/components/ShareButton'
 import { DeckViewTracker } from '@/app/components/DeckViewTracker'
 import { SITE_URL } from '@/lib/site'
 import { entityHref } from '@/lib/entitySlug'
+import { getDeckById } from '@/lib/tftStats'
+import { TIER_FILTER_OPTIONS, type TierFilter } from '@/lib/statsShared'
 import '../../rank/rank.css'
 import '../deck.css'
 
@@ -19,9 +21,52 @@ export function generateStaticParams() {
   return getDeckViews().map((deck) => ({ id: deck.id }))
 }
 
-const getDeck = cache((id: string): DeckView | null => {
-  return getDeckViews().find((deck) => deck.id === id) ?? null
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
+
+interface ResolvedDeckPage {
+  deck: DeckView
+  source: 'db' | 'json'
+  /** DB 덱일 때만 */
+  patch: string | null
+  tierMin: TierFilter | null
+}
+
+const PATCH_RE = /^\d{1,2}\.\d{1,2}$/
+
+/** ?patch=&tier= 검증 (모르는 값은 무시) */
+function parseDeckQuery(sp: Record<string, string | string[] | undefined>): { patch: string | null; tier: TierFilter | null } {
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
+  const patch = one(sp.patch)
+  const tier = one(sp.tier).toLowerCase()
+  return {
+    patch: PATCH_RE.test(patch) ? patch : null,
+    tier: TIER_FILTER_OPTIONS.some((t) => t.id === tier) ? (tier as TierFilter) : null,
+  }
+}
+
+/**
+ * 덱 해석 (metadata 와 본문이 요청 안에서 같은 결과를 쓴다).
+ * - ?patch=&tier= 가 있으면 DB(stat_comp) 덱 우선 — 메타 대시보드·엔티티 페이지의 DB 덱 링크
+ * - 없으면 빌드 타임 JSON 덱 (기존 정적 덱 수치 유지)
+ * - JSON 에 없는 id 는 DB 최신 패치 덱 (DB-only 덱이 404 가 되지 않게)
+ */
+const resolveDeck = cache(async (id: string, patch: string | null, tier: TierFilter | null): Promise<ResolvedDeckPage | null> => {
+  if (patch || tier) {
+    const db = await getDeckById(id, { patch, tier })
+    if (db) return { deck: db.deck, source: 'db', patch: db.patch, tierMin: db.tierMin }
+  }
+  const json = getDeckViews().find((deck) => deck.id === id)
+  if (json) return { deck: json, source: 'json', patch: null, tierMin: null }
+  const db = await getDeckById(id, { patch, tier })
+  return db ? { deck: db.deck, source: 'db', patch: db.patch, tierMin: db.tierMin } : null
 })
+
+/** DB 덱은 해석된 패치·티어를 쿼리에 실어 공유해도 같은 덱이 열리게 한다 */
+function deckPath(id: string, r: ResolvedDeckPage): string {
+  return r.source === 'db' && r.patch && r.tierMin ? `/deck/${id}?patch=${r.patch}&tier=${r.tierMin}` : `/deck/${id}`
+}
+
+const tierLabel = (t: TierFilter) => TIER_FILTER_OPTIONS.find((o) => o.id === t)?.label ?? t
 
 function pct(value: number | null | undefined) {
   return typeof value === 'number' ? `${Math.round(value * 100)}%` : '-'
@@ -33,16 +78,21 @@ function avg(value: number | null | undefined) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: SearchParams
 }): Promise<Metadata> {
   const { id } = await params
-  const deck = getDeck(id)
-  const canonical = `${SITE_URL}/deck/${id}`
+  const q = parseDeckQuery(await searchParams)
+  const resolved = await resolveDeck(id, q.patch, q.tier)
 
-  if (!deck) {
+  if (!resolved) {
     return { title: '덱을 찾을 수 없습니다', robots: { index: false, follow: false } }
   }
+  const { deck } = resolved
+  // 쿼리로 연 DB 덱은 그 패치·티어가 canonical (같은 id 의 JSON 덱과 수치가 다르다)
+  const canonical = `${SITE_URL}${q.patch || q.tier ? deckPath(id, resolved) : `/deck/${id}`}`
 
   const title = `${deck.name} 덱 — 평균 ${avg(deck.avgPlacement)}위 · TOP4 ${pct(deck.top4Rate)}`
   const description = `TFT 시즌 18 ${deck.name} 덱. 평균 ${avg(deck.avgPlacement)}위, 순방률 ${pct(deck.top4Rate)}, 표본 ${deck.sampleSize.toLocaleString()}판. 유닛·아이템·시너지 구성을 확인하세요.`
@@ -63,10 +113,13 @@ export async function generateMetadata({
   }
 }
 
-export default async function DeckPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DeckPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   const { id } = await params
-  const deck = getDeck(id)
-  if (!deck) notFound()
+  const q = parseDeckQuery(await searchParams)
+  const resolved = await resolveDeck(id, q.patch, q.tier)
+  if (!resolved) notFound()
+  const { deck } = resolved
+  const fromDb = resolved.source === 'db'
 
   const meta = getDeckMetaInfo()
   const tier = (deck.tier || 'C').toUpperCase()
@@ -107,7 +160,16 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
               <h1>{deck.name}</h1>
             </div>
             <p className="rk-deck-meta">
-              {meta.patch ? `패치 ${meta.patch}` : '패치 정보 없음'}
+              {fromDb && resolved.patch && resolved.tierMin ? (
+                <>
+                  패치 {resolved.patch} · {tierLabel(resolved.tierMin)} 집계
+                  <span className="rk-deck-flex-badge" title="Supabase 래더 집계(stat_comp) 덱 — 하루 1회 갱신">DB 집계</span>
+                </>
+              ) : meta.patch ? (
+                `패치 ${meta.patch}`
+              ) : (
+                '패치 정보 없음'
+              )}
               <span className="rk-sep">/</span>
               평균 <b>{avg(deck.avgPlacement)}</b>위
               <span className="rk-sep">/</span>
@@ -119,7 +181,7 @@ export default async function DeckPage({ params }: { params: Promise<{ id: strin
               {flexCount ? ` (플렉스 ${flexCount})` : ''}
             </p>
             <div className="rk-deck-actions">
-              <ShareButton path={`/deck/${deck.id}`} label="덱 링크 복사" surface="deck_page" />
+              <ShareButton path={deckPath(deck.id, resolved)} label="덱 링크 복사" surface="deck_page" />
               <Link href="/rank" className="rk-deck-link">
                 랭킹으로 돌아가기
               </Link>

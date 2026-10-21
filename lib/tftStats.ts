@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './supabase/config'
 import { getChampionCost, translateChampion, translateItem, translateTrait } from './constants'
 import { buildMetaPayload, toMetaDeck } from './metaPayload'
-import { deckViewsFromRaw } from './decks'
+import { deckViewsFromRaw, type DeckView } from './decks'
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
@@ -447,6 +447,70 @@ export async function getDecks(filter: Pick<StatFilter, 'patch' | 'tier'>): Prom
     },
     jsonDecks
   )
+}
+
+/* ------------------------------------------------------------------ */
+/* 덱 1개 (/deck/[id] — DB 집계 덱)                                     */
+/* ------------------------------------------------------------------ */
+
+export interface ResolvedDeck {
+  deck: DeckView
+  patch: string
+  tierMin: TierFilter
+  updatedAt?: string
+}
+
+interface DeckRow {
+  deck: unknown
+  patch: string
+  tier_min: string
+  updated_at: string
+}
+
+/** 패치 내림차순: '16.20' > '16.9' (문자열 비교 금지). 숫자.숫자가 아니면 뒤로 */
+function comparePatchDesc(a: string, b: string): number {
+  const pa = /^(\d+)\.(\d+)$/.exec(a)
+  const pb = /^(\d+)\.(\d+)$/.exec(b)
+  if (pa && pb) return Number(pb[1]) - Number(pa[1]) || Number(pb[2]) - Number(pa[2])
+  if (pa) return -1
+  if (pb) return 1
+  return b.localeCompare(a)
+}
+
+/** 같은 패치에 여러 티어 필터가 있으면: 요청 티어 → 마스터+(대시보드 기본) → 그마+ → 챌린저 → 다이아+ */
+const DECK_TIER_PREFERENCE: TierFilter[] = ['master', 'grandmaster', 'challenger', 'diamond']
+
+/**
+ * stat_comp 에서 comp_id 로 덱 1개. patch 가 없으면 최신 패치(숫자 비교).
+ * DB 미설정·없음·오류(타임아웃·RLS·형식)는 null — JSON 덱 폴백은 호출하는 페이지가 정한다.
+ */
+export async function getDeckById(id: string, opts: { patch?: string | null; tier?: TierFilter | null } = {}): Promise<ResolvedDeck | null> {
+  const c = db()
+  if (!c || !id) return null
+  try {
+    const rows = await withTimeout<DeckRow[]>((signal) => {
+      let q = c.from('stat_comp').select('deck, patch, tier_min, updated_at').eq('comp_id', id)
+      if (opts.patch) q = q.eq('patch', opts.patch)
+      if (opts.tier) q = q.eq('tier_min', tierArg(opts.tier))
+      return q.abortSignal(signal)
+    })
+    if (!rows?.length) return null
+    const latest = [...new Set(rows.map((r) => r.patch))].sort(comparePatchDesc)[0]
+    const order = opts.tier ? [opts.tier, ...DECK_TIER_PREFERENCE] : DECK_TIER_PREFERENCE
+    const rank = (r: DeckRow) => {
+      const i = order.indexOf(String(r.tier_min).toLowerCase() as TierFilter)
+      return i < 0 ? order.length : i
+    }
+    const row = rows
+      .filter((r) => r.patch === latest)
+      .sort((a, b) => rank(a) - rank(b) || (b.updated_at > a.updated_at ? 1 : b.updated_at < a.updated_at ? -1 : 0))[0]
+    const deck = deckViewsFromRaw([row.deck])[0]
+    if (!deck) return null
+    return { deck, patch: row.patch, tierMin: String(row.tier_min).toLowerCase() as TierFilter, updatedAt: row.updated_at }
+  } catch (err) {
+    logEvent('warn', 'deck_by_id_failed', { id, ...errorFields(err) })
+    return null
+  }
 }
 
 /** 테스트용: 메모·클라이언트 초기화 */
