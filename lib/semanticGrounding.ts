@@ -200,6 +200,7 @@ export function feedbackTexts(fb: Partial<MetaCoachFeedback>, axisVerdicts?: Rec
   if (fb.lecture) {
     const l = fb.lecture
     ;[l.concept, l.why, l.evidence, l.alternative, l.drill, l.checklist].forEach(add)
+    for (const x of l.moments || []) [x.why, x.fix].forEach(add)
   }
   if (axisVerdicts) Object.values(axisVerdicts).forEach(add)
   return out

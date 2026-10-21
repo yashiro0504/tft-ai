@@ -111,9 +111,30 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
               <BookOpen className="h-3.5 w-3.5" /> 개념 · 원리
             </p>
             <p className="text-[14px] leading-relaxed text-ink-soft">{lec.concept}</p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{lec.why}</p>
+            {lec.moments?.length ? null : <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{lec.why}</p>}
           </div>
 
+          {lec.moments?.length ? (
+            // 핵심 장면 (프롬프트 2026-10-21.14~): 장면 사실(코드) → 왜 문제였나 → 다음 판 행동
+            <ol className="space-y-3">
+              {lec.moments.map((mo, i) => (
+                <li key={i} className="rounded-card border border-line bg-sunken p-3.5">
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
+                    <Gauge className="h-3.5 w-3.5" /> 장면 {i + 1} · {mo.title}
+                  </p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink">{mo.fact}</p>
+                  {mo.why ? <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{mo.why}</p> : null}
+                  {mo.fix ? (
+                    <p className="mt-2 flex items-start gap-1.5 rounded-control border border-accent/25 bg-accent-bg px-2.5 py-2 text-[13px] leading-relaxed text-ink-soft">
+                      <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                      <span>{mo.fix}</span>
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <>
           <div className="rounded-card border border-line bg-sunken p-3.5">
             <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
               <Gauge className="h-3.5 w-3.5" /> 이 데이터에서의 근거
@@ -127,13 +148,15 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
             </p>
             <p className="text-[14px] leading-relaxed text-ink-soft">{lec.alternative}</p>
           </div>
+            </>
+          )}
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="rounded-card border border-accent/25 bg-accent-bg p-4">
           <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
-            <Target className="h-3.5 w-3.5" /> 다음 3판 연습 과제
+            <Target className="h-3.5 w-3.5" /> 다음 3판 목표
           </p>
           <p className="mt-1.5 text-[14px] leading-relaxed text-ink">{lec.drill}</p>
         </div>

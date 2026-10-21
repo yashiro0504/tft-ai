@@ -75,7 +75,9 @@ export const OPEN_DECK_LOW_CARRY_COST = 3
 export const OPENNESS_LOW_MAX = 1
 export const OPENNESS_HIGH_MIN = 5
 /** 같은 구성 상대: 코스트 가중 유사도 하한 · 겹치는 기물 최소 개수 · 성급 차이 최대 표시 개수 */
-export const SIMILAR_OPPONENT_MIN = 0.5
+// 0.5 였으나 Lv.10 밸류 보드(KR_8427579901)가 같은 5코스트 5개를 쓴 2등과 0.44 로 빠졌다 — 5코스트끼리는 나머지 칸이
+// 서로 달라도 같은 판이다. 픽스처의 다른 덱끼리는 최대 0.33 이라 0.4 도 여유가 있다 (겹치는 코어 4개+ 조건은 그대로).
+export const SIMILAR_OPPONENT_MIN = 0.4
 export const SIMILAR_OPPONENT_MIN_SHARED = 4
 const SIMILAR_OPPONENT_CORE_COST = 4
 const SIMILAR_OPPONENT_MAX_DIFF = 6
@@ -167,7 +169,7 @@ function coreBySlug(units: SlimMatchUnit[]): Map<string, SlimMatchUnit> {
  * 로비에서 최종 보드가 나와 가장 비슷한 상대 (나 제외).
  * 유사도 = 코어 기물(isSimilarityCore)의 코스트 가중 Jaccard(기물 슬러그 기준, 성급 무시).
  * 채우기 기물까지 세면 다른 덱끼리도 공용 기물로 겹친다(픽스처: 아리·알룬 캐리 vs 돌거북 리롤이 기물 5개 공유).
- * 픽스처 38판에서 실제 같은 구성은 0.84, 나머지는 최대 0.33.
+ * 픽스처 38판에서 실제 같은 구성은 0.84, 나머지는 최대 0.33. 밸류 보드 실전 판(5코스트 5개 공유)은 0.44.
  * SIMILAR_OPPONENT_MIN 이상이고 겹치는 코어 기물이 SIMILAR_OPPONENT_MIN_SHARED 개 이상일 때만. 같으면 등수 높은 상대.
  */
 export function mostSimilarOpponent(m: { units: SlimMatchUnit[]; lobbyParticipants?: LobbyParticipant[] }): SimilarOpponent | null {

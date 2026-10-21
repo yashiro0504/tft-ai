@@ -1,9 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan } from './types'
+import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan, LectureMoment } from './types'
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
 import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
+import { keyMoments, type KeyMoment } from './keyMoments'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
 import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
@@ -16,7 +17,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.13'
+export const COACH_PROMPT_VERSION = '2026-10-21.14'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -157,21 +158,26 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 }
 
 const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강사다. 모든 리포트를 "한 편의 강의"로 만든다.
-목표: 점수 나열이나 팩폭이 아니라, 유저가 다음 판에서 바로 쓸 수 있는 **원리 + 판단 기준 + 연습 과제**를 남긴다.
+목표: 점수 나열이나 일반론이 아니라, **이 판에서 실제로 일어난 장면을 콕 집어** 왜 문제였고 다음 판에 무엇을 할지 남긴다.
+일반론(원리 정의)은 한 문장뿐이다. 나머지는 모두 이 판의 기물·성급·아이템·수치로 말한다.
 
 ★★★ 이번 강의 주제는 코드가 이미 결정했다 ★★★
 - 프롬프트의 [이번 강의 주제]와 [6축 진단]을 그대로 사용한다. 임의로 다른 주제를 만들지 마라.
 - '유연성(로비 수렴도 대응, key: contest)'은 6개 축 중 하나일 뿐이다. 주제가 경합일 때만 본문 중심에 두고, 그 외에는 axes 항목의 한 줄로만 다뤄라.
 - "겹쳐서(대깨) 졌다"는 인과 단정 금지. 겹침은 조건이고, 판단(비틀었는가)만 평가하라.
 
-[강의 본문 구성 — 반드시 이 순서]
-1) concept: 이번 주제의 개념/원리를 일반화해 정의 (2~3문장, 특정 판에 매몰되지 않게)
-2) why: 그 원리가 왜 이기는지 인과 설명 (1~2문장)
-3) evidence: 이 유저 데이터에서 원리가 어긋난 지점 (제공된 수치 최소 2개 직접 인용)
-4) alternative: 그 순간의 더 나은 선택 (행동 + 타이밍 + 판단 기준 수치)
-5) drill: 다음 3판 동안 지킬 연습 과제 1개 (측정 가능하게, 형식: "<라운드>에 <레벨> 도달 시 <지표> <기준값>")
-   - 기준값 숫자는 [6축 진단]의 세부 지표·감점 항목에서 가져온다. 이 지시문에 있는 형식 자체를 숫자 예시로 쓰지 마라.
-6) checklist: 실전 체크리스트 3~5개 (짧은 명령문, 중복 금지)
+[강의 본문 구성 — 핵심 장면 중심]
+1) concept: 이번 주제의 원리 한 문장 (이 리포트에서 일반론은 이 한 문장뿐)
+2) moments: [핵심 장면] 블록의 장면을 블록 순서대로 하나씩 해설한다 (블록에 있는 장면 수만큼, 최대 3개).
+   - title: 장면 제목 그대로
+   - fact: 장면의 사실 줄을 그대로 옮긴다 (기물·성급·개수·수치를 바꾸지 마라)
+   - why: 이 판에서 그게 왜 보드를 약하게 만들었는지 1~2문장. 제공된 수치·기물로만 말한다
+     (예: 같은 아이템이 2성 기물에 있었다면 / 같은 구성 상대와의 성급 차이). 등수의 원인으로 단정하지는 마라.
+   - fix: 다음 판 같은 상황에서 할 구체적 행동 1~2문장 (어떤 기물·아이템을 어떻게). 라운드·타이밍 숫자는 만들지 마라.
+   - [핵심 장면] 블록이 없거나 비어 있으면 [6축 진단]의 초점 축 지표로 장면 1개를 만든다 (title: 초점 축 이름).
+3) drill: 다음 3판 동안 지킬 목표 1개 — 최종 보드로 확인할 수 있는 숫자 목표로 (예: 기물 성급·2성 수·아이템 위치).
+   라운드·레벨 도달 시점은 데이터에 없으니 넣지 마라.
+4) checklist: 실전 체크리스트 3개 (짧은 명령문, moments 의 fix 를 그대로 복사하지 마라)
 
 [진단 6축]
 - 코드가 계산한 axes 점수를 그대로 쓴다. 점수를 새로 만들지 마라.
@@ -237,11 +243,11 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   "overview": "서로 다른 축 3개를 각각 한 문장으로 요약 (3문장)",
   "lecture": {
     "topic": "<[이번 강의 주제] 그대로>",
-    "concept": "개념/원리 정의 2~3문장",
-    "why": "왜 중요한가 1~2문장",
-    "evidence": "이 데이터 근거 (수치 2개 이상 인용)",
-    "alternative": "그 순간의 더 나은 선택 (행동+타이밍)",
-    "drill": "다음 3판 연습 과제 1개",
+    "concept": "원리 한 문장",
+    "moments": [
+      { "title": "<장면 제목>", "fact": "<장면 사실 줄 그대로>", "why": "이 판에서 왜 문제였나", "fix": "다음 판 행동" }
+    ],
+    "drill": "다음 3판 최종 보드 숫자 목표 1개",
     "checklist": ["체크1", "체크2", "체크3"]
   },
   "axes": [
@@ -709,6 +715,14 @@ export async function generateMetaCoachFeedback(
 
   // 강의 계획: 가장 약한 축을 코드가 결정 (LLM이 주제를 바꾸지 못하게 고정)
   const plan = buildCoachingPlan(matches)
+  // 핵심 장면: 최종 보드에서 코드가 콕 집은 사실 (단일 경기만). 강의 본문(moments)은 이 장면들을 해설한다.
+  const moments = mode === 'single' && matches[0] && !plan.lowSample ? keyMoments(matches[0]) : []
+  const momentFacts = moments.length
+    ? [
+        '[핵심 장면 — 코드 산출, 강의 moments 는 이 순서대로 해설하라. 사실 줄은 그대로 옮겨라]',
+        ...moments.map((x, i) => `${i + 1}. ${x.title}: ${x.fact}`),
+      ].join('\n')
+    : '[핵심 장면]\n※ 코드가 콕 집은 장면이 없다. [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
   const planFacts = [
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
@@ -783,6 +797,8 @@ ${metaFacts}
 ${comparisonFacts ? `
 ${comparisonFacts}
 ` : ''}
+${momentFacts}
+
 ${scoreFacts}
 
 ${planFacts}
@@ -805,7 +821,7 @@ ${qualityFacts}
       axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
     }
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
-    const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb)
+    const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb, moments)
     // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
     const actions = fb.actions?.length ? fb.actions.slice(0, 3) : lecture.checklist.slice(0, 3)
     return {
@@ -907,12 +923,27 @@ function defaultChecklist(plan: CoachingPlan): string[] {
   ]
 }
 
+/**
+ * 핵심 장면: 제목·사실은 코드 값을 그대로 쓰고(LLM 이 수치를 바꿔도 덮어씀), why·fix 만 LLM 것을 쓴다.
+ * 코드 장면이 없으면(종합 분석 등) LLM 이 초점 축으로 만든 장면을 그대로 둔다.
+ */
+function mergeMoments(code: KeyMoment[], llm: LectureMoment[] | undefined): LectureMoment[] {
+  const fromLlm = (llm || []).filter((x) => x.why.trim() || x.fix.trim())
+  if (!code.length) return fromLlm.slice(0, 3)
+  return code.map((c, i) => {
+    const hit = fromLlm.find((x) => x.title.trim() === c.title) ?? fromLlm[i]
+    return { title: c.title, fact: c.fact, why: hit?.why.trim() || '', fix: hit?.fix.trim() || '' }
+  })
+}
+
 function normalizeLecture(
   lecture: CoachLecture | undefined,
   plan: CoachingPlan,
-  fb: MetaCoachFeedback
+  fb: MetaCoachFeedback,
+  codeMoments: KeyMoment[] = []
 ): CoachLecture {
   const focus = plan.axes.find((a) => a.key === plan.focus)
+  const moments = mergeMoments(codeMoments, lecture?.moments)
   const checklist = (lecture?.checklist || []).map((s) => String(s).trim()).filter(Boolean)
   const merged = checklist.length >= 3 ? checklist : [...checklist, ...defaultChecklist(plan)]
   return {
@@ -921,15 +952,17 @@ function normalizeLecture(
     why:
       lecture?.why?.trim() ||
       `이 축의 점수는 ${focus?.score ?? 0}/100 입니다. ${focus?.detail ?? ''} — 이 지표는 보드 강도와 직결되므로 다음 판에서 가장 먼저 손봐야 할 지점입니다.`,
-    evidence: lecture?.evidence?.trim() || fb.overview || focus?.detail || '',
+    evidence: lecture?.evidence?.trim() || moments.map((x) => x.fact).join(' / ') || fb.overview || focus?.detail || '',
     alternative:
       lecture?.alternative?.trim() ||
+      moments.find((x) => x.fix)?.fix ||
       fb.actions?.[0] ||
       '다음 판에는 같은 라운드에서 한 번 더 멈춰 판단해 보세요.',
     drill:
       lecture?.drill?.trim() ||
       `다음 3판은 ${plan.focusLabel} 하나만 의식하세요. ${plan.drillTemplate}`,
     checklist: [...new Set(merged)].slice(0, 5),
+    ...(moments.length ? { moments } : {}),
   }
 }
 
@@ -973,6 +1006,16 @@ function parseJsonFeedback(
             drill: typeof rawLecture.drill === 'string' ? rawLecture.drill : '',
             checklist: Array.isArray(rawLecture.checklist)
               ? rawLecture.checklist.filter((s: unknown): s is string => typeof s === 'string')
+              : [],
+            moments: Array.isArray(rawLecture.moments)
+              ? rawLecture.moments
+                  .filter((x: unknown): x is Record<string, unknown> => Boolean(x) && typeof x === 'object')
+                  .map((x: Record<string, unknown>) => ({
+                    title: typeof x.title === 'string' ? x.title : '',
+                    fact: typeof x.fact === 'string' ? x.fact : '',
+                    why: typeof x.why === 'string' ? x.why : '',
+                    fix: typeof x.fix === 'string' ? x.fix : '',
+                  }))
               : [],
           }
         : undefined

@@ -196,6 +196,27 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       JSON.stringify(openDeckCandidates(carryBoard(8), [rerollDeck]).map((c) => c.deck.name))
     )
   }
+  // ── 핵심 장면 (lib/keyMoments): 같은 구성 상위 상대 성급 차이 · 1성 중복 · 1성 기물 아이템 ──
+  {
+    const { keyMoments } = require('../lib/keyMoments')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const core = (t) => [U('DA_18_GnarSmall', '나르', 5, 2), U('DA_18_ElderDragon', '장로 드래곤', 5, 2), U('DA_18_Ivern', '아이번', 5, t), U('DA_Taric18', '타릭', 5, t), U('DA_Amumu18', '아무무', 4, t)]
+    const me = {
+      ...standard, placement: 6, level: 10, lastRound: '5-6', traits: [],
+      units: [...core(1), U('DA_Taric18', '타릭', 5, 1), U('DA_Vi18', '바이', 3, 1, ['수은', '가고일 돌갑옷', '쓸데없이 큰 지팡이']), U('DA_Amumu18', '아무무', 4, 1, ['찬란한 워모그의 갑옷'])],
+    }
+    me.lobbyParticipants = [
+      { placement: 2, gameName: 'o', tagLine: 'x', level: 10, lastRound: '6-5', damageToPlayers: 0, traits: [], units: core(2), isUser: false },
+      { placement: 6, gameName: 'me', tagLine: 'x', level: 10, lastRound: '5-6', damageToPlayers: 0, traits: [], units: me.units, isUser: true },
+    ]
+    const km = keyMoments(me)
+    check('핵심 장면: 같은 구성 상위 상대 성급 차이가 1순위', km[0]?.kind === 'sameComp' && /아이번 1★ vs 2★/.test(km[0].fact) && /2등/.test(km[0].title), JSON.stringify(km[0]))
+    check('핵심 장면: 같은 기물 1성 여러 장 (타릭 2장)', km.some((x) => x.kind === 'duplicateCopies' && /타릭 1성 2장/.test(x.fact)), JSON.stringify(km))
+    check('핵심 장면: 1성 기물 아이템 · 찬란한 아이템', km.some((x) => x.kind === 'itemsOnWeak' && /찬란한 워모그의 갑옷\(아무무\)/.test(x.fact)), JSON.stringify(km))
+    check('핵심 장면: 최대 3개', km.length <= 3)
+    const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
+    check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])
