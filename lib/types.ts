@@ -362,6 +362,17 @@ export interface CoachingPlan {
 }
 
 /** LLM이 작성하는 강의 본문 */
+/** 핵심 장면 해설 — title·fact 는 코드(lib/keyMoments)가 정하고, why·fix 는 LLM 이 쓴다 */
+export interface LectureMoment {
+  title: string
+  /** 코드가 뽑은 사실 줄 (기물·성급·수치) */
+  fact: string
+  /** 이 판에서 왜 보드를 약하게 했나 */
+  why: string
+  /** 다음 판 같은 상황에서 할 행동 */
+  fix: string
+}
+
 export interface CoachLecture {
   /** 강의 제목 (코드가 정한 topic 을 그대로 사용) */
   topic: string
@@ -377,6 +388,8 @@ export interface CoachLecture {
   drill: string
   /** 실전 체크리스트 3~5개 */
   checklist: string[]
+  /** 핵심 장면 해설 (프롬프트 2026-10-21.14~). 있으면 화면은 evidence/alternative 대신 이것을 보여 준다 */
+  moments?: LectureMoment[]
 }
 
 // 전문 메타 코칭 응답 결과

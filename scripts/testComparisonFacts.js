@@ -10,12 +10,15 @@
  *  - 아이템 재료 매칭 · 로비 메타 덱 · 빈집 메타 덱 후보 (점령·코어 점령·약한·소표본·변형·재료 부족 제외)
  *  - 메타 덱 운영도: ±1등 경계 · 없는 기물(선택 기물 제외, 코스트순, 최대 3) · 종합 집계(표본 충분 판만 평균)
  *  - BIS 일치율 분자/분모 (표본 20판 미만 조합 제외, BIS 통계 없는 기물은 분모에서 제외)
+ *  - BIS = 채용 상위 3 (평균등수 순이면 소표본 비주류템이 올라와 장로 드래곤 주류 빌드가 0% — KR_8427579901 회귀)
+ *  - 나르(GnarSmall) 슬러그 = 통계 키 Gnar
+ *  - 같은 구성 상대: 코어 기물 코스트 가중 유사도 · 성급 차이 손계산 · 임계 미만/공용 기물만 겹치면 생략
  *  - 실제 픽스처 6경기에서 NaN/Infinity 없음
  */
 require('./_env').loadEnv()
 process.env.NEXT_PUBLIC_SUPABASE_URL = ''
 require('./_ts')
-const { buildComparisonFacts, bisBySlug, bisMatch, metaExecution, mostSimilarDeck } = require('../lib/comparisonFacts')
+const { buildComparisonFacts, bisBySlug, bisMatch, metaExecution, mostSimilarDeck, mostSimilarOpponent } = require('../lib/comparisonFacts')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -192,6 +195,27 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       openDeckCandidates(carryBoard(10), [rerollDeck]).length === 0 && openDeckCandidates(carryBoard(8), [rerollDeck]).length === 1,
       JSON.stringify(openDeckCandidates(carryBoard(8), [rerollDeck]).map((c) => c.deck.name))
     )
+  }
+  // ── 핵심 장면 (lib/keyMoments): 같은 구성 상위 상대 성급 차이 · 1성 중복 · 1성 기물 아이템 ──
+  {
+    const { keyMoments } = require('../lib/keyMoments')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const core = (t) => [U('DA_18_GnarSmall', '나르', 5, 2), U('DA_18_ElderDragon', '장로 드래곤', 5, 2), U('DA_18_Ivern', '아이번', 5, t), U('DA_Taric18', '타릭', 5, t), U('DA_Amumu18', '아무무', 4, t)]
+    const me = {
+      ...standard, placement: 6, level: 10, lastRound: '5-6', traits: [],
+      units: [...core(1), U('DA_Taric18', '타릭', 5, 1), U('DA_Vi18', '바이', 3, 1, ['수은', '가고일 돌갑옷', '쓸데없이 큰 지팡이']), U('DA_Amumu18', '아무무', 4, 1, ['찬란한 워모그의 갑옷'])],
+    }
+    me.lobbyParticipants = [
+      { placement: 2, gameName: 'o', tagLine: 'x', level: 10, lastRound: '6-5', damageToPlayers: 0, traits: [], units: core(2), isUser: false },
+      { placement: 6, gameName: 'me', tagLine: 'x', level: 10, lastRound: '5-6', damageToPlayers: 0, traits: [], units: me.units, isUser: true },
+    ]
+    const km = keyMoments(me)
+    check('핵심 장면: 같은 구성 상위 상대 성급 차이가 1순위', km[0]?.kind === 'sameComp' && /아이번 1★ vs 2★/.test(km[0].fact) && /2등/.test(km[0].title), JSON.stringify(km[0]))
+    check('핵심 장면: 같은 기물 1성 여러 장 (타릭 2장)', km.some((x) => x.kind === 'duplicateCopies' && /타릭 1성 2장/.test(x.fact)), JSON.stringify(km))
+    check('핵심 장면: 1성 기물 아이템 · 찬란한 아이템', km.some((x) => x.kind === 'itemsOnWeak' && /찬란한 워모그의 갑옷\(아무무\)/.test(x.fact)), JSON.stringify(km))
+    check('핵심 장면: 최대 3개', km.length <= 3)
+    const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
+    check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
   }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
@@ -517,7 +541,16 @@ ${mixedFacts}`
     { champKey: 'Lux18_Base', itemName: 'P', avgPlacement: 3.0, sampleSize: 25 },
   ]
   const bis = bisBySlug(combos)
-  check('BIS = 표본 20판 이상 중 평균등수 상위 3 (X, W, Y)', JSON.stringify(bis.get('ahri')) === JSON.stringify(['X', 'W', 'Y']), JSON.stringify([...bis]))
+  check('BIS = 표본 20판 이상 중 채용 상위 3 (X 50, Y 40, W 30)', JSON.stringify(bis.get('ahri')) === JSON.stringify(['X', 'Y', 'W']), JSON.stringify([...bis]))
+  check(
+    'BIS 채용 판 수가 같으면 평균등수 좋은 쪽',
+    JSON.stringify(
+      bisBySlug([
+        { champKey: 'Jax', itemName: 'A', avgPlacement: 4.2, sampleSize: 30 },
+        { champKey: 'Jax', itemName: 'B', avgPlacement: 3.8, sampleSize: 30 },
+      ]).get('jax')
+    ) === JSON.stringify(['B', 'A'])
+  )
   const units = [
     { id: 'DA_18_Ahri', name: '아리', tier: 2, items: ['X', 'Y', 'Z'] },
     { id: 'TFT18_Garen', name: '가렌', tier: 2, items: ['Q'] }, // BIS 통계 없음 → 분모 제외
@@ -527,6 +560,126 @@ ${mixedFacts}`
   check('보드 전체 3/4 (아리 2/3 + 럭스 1/1, 가렌 제외)', res.matched === 3 && res.slots === 4, JSON.stringify(res))
   const bl = buildComparisonFacts({ matches: [{ ...sample, units, lobbyParticipants: [] }], mode: 'single', combos, decks: [] })
   check('BIS 줄: 캐리 대조 ✓/✗ · 75%', bl.includes('- BIS 일치율: 아리 2/3 (X ✓, Y ✓, Z ✗) · 보드 전체 3/4 (75%)'), bl)
+
+  // KR_8427579901 회귀: 장로 드래곤 무한의 대검·죽음의 검·최후의 속삭임이 0/3 이던 원인 — 평균등수 순 BIS 가
+  // 표본 42판 붉은 덩굴정령(3.21)을 고르고 315판 무한의 대검(3.70)을 뺐다. (lib/metaStats.json 실측 수치)
+  const elder = [
+    { champKey: 'ElderDragon', itemName: '무한의 대검', avgPlacement: 3.7, sampleSize: 315 },
+    { champKey: 'ElderDragon', itemName: '최후의 속삭임', avgPlacement: 3.96, sampleSize: 173 },
+    { champKey: 'ElderDragon', itemName: '스테락의 도전', avgPlacement: 3.59, sampleSize: 133 },
+    { champKey: 'ElderDragon', itemName: '죽음의 검', avgPlacement: 3.92, sampleSize: 109 },
+    { champKey: 'ElderDragon', itemName: '타격대의 철퇴', avgPlacement: 3.68, sampleSize: 96 },
+    { champKey: 'ElderDragon', itemName: '붉은 덩굴정령', avgPlacement: 3.21, sampleSize: 42 },
+    { champKey: 'Gnar', itemName: '스테락의 도전', avgPlacement: 3.41, sampleSize: 66 },
+  ]
+  const elderBis = bisBySlug(elder)
+  check(
+    '장로 드래곤 BIS = 무한의 대검 · 최후의 속삭임 · 스테락의 도전',
+    JSON.stringify(elderBis.get('elderdragon')) === JSON.stringify(['무한의 대검', '최후의 속삭임', '스테락의 도전']),
+    JSON.stringify([...elderBis])
+  )
+  const elderRes = bisMatch(
+    [
+      { id: 'DA_18_ElderDragon', name: '장로 드래곤', tier: 1, items: ['무한의 대검', '죽음의 검', '최후의 속삭임'] },
+      { id: 'DA_18_GnarSmall', name: '나르', tier: 1, items: ['스테락의 도전'] },
+    ],
+    elderBis
+  )
+  check('장로 드래곤 2/3 · 나르(GnarSmall) 1/1 → 보드 전체 3/4', elderRes.matched === 3 && elderRes.slots === 4, JSON.stringify(elderRes))
+  const { entitySlug } = require('../lib/entitySlug')
+  check(
+    '나르 슬러그: DA_18_GnarSmall · TFT18_Gnar · Gnar → gnar (통계 키와 같음), 변형 꼬리는 유지',
+    ['DA_18_GnarSmall', 'TFT18_GnarSmall', 'TFT18_Gnar', 'Gnar'].every((k) => entitySlug('champion', k) === 'gnar') &&
+      entitySlug('champion', 'DA_Gromp18_AP') === 'gromp18ap'
+  )
+
+  console.log('같은 구성 상대 (KR_8427579901 유형: Lv.10 5코 밸류 6등 vs 같은 5코 2성 2등)')
+  const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+  const Opp = (placement, level, units) => ({ placement, gameName: `p${placement}`, level, lastRound: '6-1', damageToPlayers: 0, traits: [], units, isUser: false })
+  const myUnits = [
+    U('DA_18_GnarSmall', '나르', 5, 1),
+    U('DA_18_ElderDragon', '장로 드래곤', 5, 1, ['무한의 대검', '죽음의 검', '최후의 속삭임']),
+    U('DA_Amumu18', '아무무', 4, 1, ['가고일 돌갑옷']),
+    U('DA_18_Ivern', '아이번', 5, 1),
+    U('DA_Taric18', '타릭', 5, 1, ['워모그의 갑옷']),
+    U('DA_Sentinel18', '감시자', 4, 1),
+    U('DA_18_Soraka', '소라카', 4, 2),
+    U('DA_18_Sett', '세트', 4, 1, ['크라운가드']),
+    U('DA_Scuttlecrab18', '바위 게', 2, 2),
+    U('DA_18_Sentry', '조약돌', 1, 1), // 1성 무템 1코 → 코어 아님
+  ]
+  const second = Opp(2, 10, [
+    U('TFT18_Gnar', '나르', 5, 2),
+    U('DA_18_ElderDragon', '장로 드래곤', 5, 2, ['무한의 대검', '스테락의 도전', '최후의 속삭임']),
+    U('DA_Amumu18', '아무무', 4, 2, ['가고일 돌갑옷']),
+    U('DA_18_Ivern', '아이번', 5, 2),
+    U('DA_Taric18', '타릭', 5, 2, ['워모그의 갑옷']),
+    U('DA_18_Soraka', '소라카', 4, 2),
+    U('DA_Lux18_Base', '럭스', 5, 1),
+    U('DA_18_Alune', '알룬', 5, 1),
+    U('DA_Scuttlecrab18', '바위 게', 2, 2),
+  ])
+  // 1등은 리롤 Lv.8 (공용 기물 감시자·조약돌만 겹침), 4등은 장로·타릭만 겹침
+  const first = Opp(1, 8, [
+    U('DA_Krug18', '돌거북', 3, 3, ['스테락의 도전']),
+    U('DA_18_Sapling', '불타는 묘목', 1, 3),
+    U('DA_Sentinel18', '감시자', 4, 2),
+    U('DA_18_Sentry', '조약돌', 1, 2),
+  ])
+  const fourth = Opp(4, 9, [
+    U('DA_18_ElderDragon', '장로 드래곤', 5, 1, ['무한의 대검']),
+    U('DA_Taric18', '타릭', 5, 1),
+    U('DA_18_Alune', '알룬', 5, 2),
+    U('DA_Lux18_Base', '럭스', 5, 2),
+  ])
+  const value = { ...sample, placement: 6, level: 10, units: myUnits, traits: [], lobbyParticipants: [first, second, fourth] }
+  const sim = mostSimilarOpponent(value)
+  // 코어: 나 38(조약돌 제외) · 2등 40 · 겹침 나르5+장로5+아무무4+아이번5+타릭5+소라카4+바위 게2 = 30 → 30/(38+40−30) = 0.625
+  check(
+    '가장 비슷한 상대 = 2등 · 유사도 0.625 · 겹치는 코어 기물 7개',
+    sim && sim.opponent.placement === 2 && Math.abs(sim.similarity - 0.625) < 1e-9 && sim.shared.length === 7,
+    JSON.stringify(sim && { p: sim.opponent.placement, s: sim.similarity, n: sim.shared.length })
+  )
+  const vb = buildComparisonFacts({ matches: [value], mode: 'single', combos: [], decks: [] })
+  // 2성 이상: 나 소라카·바위 게 2 / 2등 7 · 아이템 3+1+1+1=6 vs 3+1+1=5
+  // 보드 가치: 나 5+5+4+5+5+4+4×3+4+2×3+1 = 51 / 2등 (5+5+4+5+5+4+2)×3 + 5 + 5 = 100
+  check(
+    '같은 구성 상대 줄 = 손계산',
+    vb.includes(
+      '- 같은 구성 상대(2등, 겹치는 코어 기물 7개 · 유사도 0.63)와 비교(나 6등): 레벨 0 (10 vs 10) · 2성 이상 2 vs 7 · 코어 기물 성급 차이: 나르 1★ vs 2★, 장로 드래곤 1★ vs 2★, 아이번 1★ vs 2★, 타릭 1★ vs 2★, 아무무 1★ vs 2★ (같은 성급 2개) · 아이템 6 vs 5 · 보드 가치 51G vs 100G'
+    ),
+    vb
+  )
+  check(
+    '로비 1등 비교 줄은 유지 · 같은 구성 줄은 그 다음',
+    vb.indexOf('- 로비 1등과 비교:') >= 0 && vb.indexOf('- 로비 1등과 비교:') < vb.indexOf('- 같은 구성 상대('),
+    vb
+  )
+  check('같은 구성 줄에 인과 표현 없음', !/때문|원인|그래서|졌다/.test(vb.split('\n').find((l) => l.startsWith('- 같은 구성 상대(')) || ''))
+  const sameStars = {
+    ...value,
+    lobbyParticipants: [{ ...second, units: second.units.map((u) => ({ ...u, tier: myUnits.find((m) => m.name === u.name)?.tier ?? u.tier })) }],
+  }
+  check(
+    '겹치는 코어 기물 성급이 모두 같으면 "모두 같음"',
+    buildComparisonFacts({ matches: [sameStars], mode: 'single', combos: [], decks: [] }).includes('겹치는 코어 기물 성급 모두 같음')
+  )
+  check(
+    '공용 기물만 겹치는 상대뿐이면 줄 생략',
+    !buildComparisonFacts({ matches: [{ ...value, lobbyParticipants: [first, fourth] }], mode: 'single', combos: [], decks: [] }).includes('같은 구성 상대')
+  )
+  // 겹치는 코어 3개(나르·장로·아이번)뿐이면 유사도 1이어도 생략
+  const trio = [myUnits[0], myUnits[1], myUnits[3]]
+  check('겹치는 코어 기물 4개 미만이면 생략', mostSimilarOpponent({ ...value, units: trio, lobbyParticipants: [Opp(3, 9, trio.map((u) => ({ ...u, tier: 2 })))] }) === null)
+  check(
+    '같은 유사도면 등수 높은 상대',
+    mostSimilarOpponent({ ...value, lobbyParticipants: [{ ...second, placement: 5 }, { ...second, placement: 3 }] })?.opponent.placement === 3
+  )
+  const aliAlune = fixture.cases.find((c) => c.name === 'Seed01 contested-top4 4등 5-6').matches[0]
+  check('픽스처: 아리·알룬 캐리 vs 돌거북 리롤(공용 기물 5개 공유)은 같은 구성 아님', mostSimilarOpponent(aliAlune) === null)
+  const seed05 = fixture.cases.find((c) => c.name === 'Seed05 contested-bot4 5등 5-3').matches[0]
+  const s05 = mostSimilarOpponent(seed05)
+  check('픽스처: Seed05 5등 ↔ 6등 같은 구성(돌거북·덩굴정령…)', s05 && s05.opponent.placement === 6 && s05.similarity > 0.8, JSON.stringify(s05 && s05.similarity))
 
   console.log('실제 픽스처 6경기 (JSON 메타 통계)')
   const { getStats, getDecks } = require('../lib/tftStats')
