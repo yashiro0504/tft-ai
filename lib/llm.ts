@@ -213,9 +213,10 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   후보 줄이 없으면 빈집 덱을 추천하지 마라(코드가 조건을 만족하는 덱을 찾지 못한 것이다).
 
 ★★★ 라운드 타이밍 단정 금지 ★★★
-- 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·잔여 골드·탈락 라운드만 있다).
+- 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·탈락 라운드만 있다).
 - "언제 레벨업/리롤했다", "레벨에 쓰지 않아서 졌다"처럼 시점이나 원인을 단정하지 마라.
-  최종 레벨·잔여 골드·탈락 라운드로 추정한 경우 "최종 상태 기준으로 보면"이라고 밝혀라.
+  최종 레벨·탈락 라운드로 추정한 경우 "최종 상태 기준으로 보면"이라고 밝혀라.
+- 잔여 골드로 경제를 평가하지 마라. 탈락 직전엔 누구나 리롤로 골드를 다 쓰므로 "골드를 남겼다/안 썼다"는 근거가 되지 않는다.
 
 [문체]
 - 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
@@ -330,7 +331,7 @@ function buildIntroFacts(match: SlimMatchData, mode: 'single' | 'multi'): IntroF
       : ''
 
   const facts = [
-    `- 경기: ${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료 · 잔여 ${match.goldLeft}G`,
+    `- 경기: ${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료`,
     `- 보드: 유닛 ${match.units.length} · 2성+ ${twoPlus} · 3성 ${three} · 활성 시너지 ${match.traits.length}${
       traits.length ? ` (${traits.map((t) => `${t.name} ${t.count}`).join(', ')})` : ''
     }`,
@@ -891,7 +892,7 @@ function defaultChecklist(plan: CoachingPlan): string[] {
   return [
     `${plan.focusLabel} 지표를 매 라운드 시작 전에 한 번 확인`,
     '결정 전 5초: 지금 쓰는 골드/아이템이 3라운드 뒤에도 유효한가',
-    '판 종료 후 잔여 골드·탈락 라운드 기록해 추세 확인',
+    '판 종료 후 최종 레벨·탈락 라운드 기록해 추세 확인',
   ]
 }
 

@@ -30,10 +30,14 @@ export interface AxisConfig {
   }
   axes: {
     economy: {
-      idleGoldFree: number
-      idleGoldPenaltyPerGold: number
-      /** 이 등수는 잔여 골드를 보지 않는다 (1등은 게임이 끝나 남은 골드가 낭비가 아님) */
-      idleGoldExemptPlacements: number[]
+      /** 보드 가치가 스테이지 기준치와 같을 때의 점수 */
+      base: number
+      /** 탈락 스테이지별 보드 가치 기준치(G) — 골든셋 로비 보드 194개의 스테이지별 중앙값 */
+      expectedBoardValueByStage: Record<string, number>
+      /** (보드 가치 / 기준치 − 1) × weight 를 가감한다. 비율은 [RatioMin, RatioMax] 로 자른다 */
+      boardValueWeight: number
+      boardValueRatioMin: number
+      boardValueRatioMax: number
       levelGapPenaltyPerLevel: number
       earlyExitPenalty: { maxStage: number; penalty: number }[]
     }
