@@ -1,6 +1,6 @@
 {
-  "scoringVersion": "v5",
-  "generatedAt": "2026-10-21T05:36:33.114Z",
+  "scoringVersion": "v6",
+  "generatedAt": "2026-10-21T06:59:43.734Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -8,7 +8,7 @@
       "axes": {
         "economy": 97,
         "itemization": 100,
-        "tempo": 81,
+        "tempo": 91,
         "completion": 80,
         "synergy": 87,
         "contest": 80
@@ -26,9 +26,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 96,
+        "economy": 99,
         "itemization": 89,
-        "tempo": 85,
+        "tempo": 93,
         "completion": 81,
         "synergy": 90,
         "contest": 83
@@ -106,9 +106,9 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 100,
         "itemization": 82,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 85,
         "synergy": 100,
         "contest": 95
@@ -288,7 +288,7 @@
       "axes": {
         "economy": 94,
         "itemization": 100,
-        "tempo": 80,
+        "tempo": 100,
         "completion": 79,
         "synergy": 75,
         "contest": 65

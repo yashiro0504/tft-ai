@@ -317,16 +317,21 @@ function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   )
 
   if (g.carryItems.length) {
-    // 내 캐리: 메타 덱 캐리 기물이 내 보드에 있으면 그 기물, 없으면 아이템 최다 기물
-    const carrySlug = d.carryKey ? entitySlug('champion', d.carryKey) : ''
-    const myCarry = m.units.find((u) => carrySlug && entitySlug('champion', u.id) === carrySlug) ?? boardCarry(m.units)
+    // 내 캐리: 메타 덱 캐리 기물이 내 보드에 있으면 그 기물, 없으면 보드 캐리 (deckType.boardCarry 와 같은 정의)
+    const myCarry = boardCarry(m.units, d.carryKey)
+    const deckCarry = d.units.find((u) => d.carryKey && entitySlug('champion', u.key) === entitySlug('champion', d.carryKey))
+    const sameCarry = Boolean(myCarry && d.carryKey && entitySlug('champion', myCarry.id) === entitySlug('champion', d.carryKey))
     const names = new Set(g.carryItems.map((i) => i.name))
     const myItems = myCarry?.items ?? []
     const matched = myItems.filter((n) => names.has(n)).length
+    const compare =
+      myCarry && myItems.length
+        ? ` — ${sameCarry || !deckCarry ? '' : `메타 덱 캐리 ${deckCarry.name || deckCarry.key}는 내 보드에 없음 · `}내 캐리 ${myCarry.name} 아이템 ${matched}/${myItems.length}개가 이 목록에 있음`
+        : ''
     out.push(
       `- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): ${g.carryItems
         .map((i) => `${i.name} ${pct(i.rate)}%(평균 ${i.avgPlacement.toFixed(2)}등)`)
-        .join(' · ')}${myCarry && myItems.length ? ` — 내 ${myCarry.name} 아이템 ${matched}/${myItems.length}개가 이 목록에 있음` : ''}`
+        .join(' · ')}${compare}`
     )
   }
 
@@ -451,22 +456,24 @@ export function buildComparisonFacts({
     const bl = bisLine(m.units, bis, '보드 전체', true)
     if (bl) lines.push(bl)
   } else {
-    // 강의 계획(buildCoachingPlan)과 같은 표본 — 초반 종료 판 제외 — 으로 세어야 프롬프트 안 숫자가 일치한다.
+    // 강의 계획(buildCoachingPlan)·점수(computeScoreBreakdown)와 같은 표본 — 초반 종료 판 제외 — 으로
+    // 모든 multi 줄을 센다. 섞이면 프롬프트 안에서 "2판 기준"과 "3판 기준"이 충돌한다.
     const { sample } = scoringSample(matches)
     lines.push(`- 덱 유형: ${summarizeDeckTypes(sample).line}`)
-    lines.push(...multiLines(matches))
+    lines.push(...multiLines(sample))
     const ml = metaExecutionLine(sample, decks)
     if (ml) lines.push(ml)
     const bl = bisLine(
-      matches.flatMap((m) => m.units),
+      sample.flatMap((m) => m.units),
       bis,
-      `${matches.length}경기 전체`,
+      `${sample.length}경기 전체`,
       // 여러 판의 기물이 섞이므로 캐리 한 명 대조는 생략
       false
     )
     if (bl) lines.push(bl)
   }
-  const clean = lines.filter((l) => !/NaN|Infinity/.test(l))
+  // 계산이 깨진 줄(NaN·Infinity·undefined 문자열)은 통째로 뺀다
+  const clean = lines.filter((l) => !/NaN|Infinity|undefined/.test(l))
   if (!clean.length) return ''
   return ['[비교 사실 — 코드 산출, 서술 통계 (원인이 아니다)]', ...clean].join('\n')
 }

@@ -1,4 +1,5 @@
 import { AXIS_CONFIG } from './axisConfig'
+import { entitySlug } from './entitySlug'
 import type { DeckType, DeckTypeInfo, SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -19,14 +20,36 @@ export const DECK_TYPE_LABEL: Record<DeckType, string> = {
   unknown: '판정 불가',
 }
 
+/** 탱커·하이브리드 아이템 (scripts/buildDecksFromBoards.js TANK_ITEMS·HYBRID_ITEMS 의 한글명) — 캐리 판별에서 세지 않는다 */
+const NON_CARRY_ITEMS = new Set([
+  '가고일 돌갑옷', '워모그의 갑옷', '수호자의 맹세', '정령의 형상', '적응형 투구', '태양불꽃 망토',
+  '굳건한 심장', '용의 발톱', '저녁갑주', '덤불 조끼', '이온 충격기',
+  '크라운가드', '거인의 결의', '스테락의 도전', '도적의 장갑',
+])
+
+const carryItemCount = (u: SlimMatchUnit) => (u.items || []).filter((n) => !NON_CARRY_ITEMS.has(n)).length
+
 /**
- * 덱의 실제 캐리 = 아이템을 가장 많이 든 기물, 동률이면 코스트 높은 쪽.
- * (아이템 축의 '최고 코스트 기물' 캐리와는 다르다 — 리롤 덱은 아이템을 든 저코스트가 캐리다.)
+ * 보드의 캐리 — 템포 점수(캐리 3성)·덱 유형 판정·덱 가이드·빈집 후보가 모두 이 정의를 쓴다.
+ * 1) preferKey(유사 메타 덱의 carryKey)가 내 보드에 있으면 그 기물
+ * 2) 캐리 아이템(탱커·하이브리드 제외)이 가장 많은 기물 → 동률이면 성급 높은 쪽 → 코스트 높은 쪽
+ * (덱 빌더의 '딜템 최다 기물' 캐리와 같은 방향. 아이템 축의 '최고 코스트 기물'과는 다른 개념이다)
  */
-export function boardCarry(units: SlimMatchUnit[]): SlimMatchUnit | undefined {
+export function boardCarry(units: SlimMatchUnit[], preferKey?: string | null): SlimMatchUnit | undefined {
+  if (preferKey) {
+    const slug = entitySlug('champion', preferKey)
+    const hit = units.find((u) => entitySlug('champion', u.id) === slug)
+    if (hit) return hit
+  }
   return units
     .slice()
-    .sort((a, b) => (b.items?.length ?? 0) - (a.items?.length ?? 0) || (b.rarity ?? 1) - (a.rarity ?? 1))[0]
+    .sort(
+      (a, b) =>
+        carryItemCount(b) - carryItemCount(a) ||
+        (b.tier || 1) - (a.tier || 1) ||
+        (b.rarity ?? 1) - (a.rarity ?? 1) ||
+        (b.items?.length ?? 0) - (a.items?.length ?? 0)
+    )[0]
 }
 
 export function detectDeckType(m: SlimMatchData): DeckTypeInfo {
@@ -63,8 +86,9 @@ export function detectDeckType(m: SlimMatchData): DeckTypeInfo {
     (lowCostOk || rerollCarry) &&
     m.level <= cfg.maxLevel
 
+  // 캐리를 이름으로 밝혀 둔다 — 템포의 '캐리 3성'이 어느 기물 이야기인지 프롬프트에서 헷갈리지 않게
   const reason = `3성 ${threeStarUnits.length}개${costs.length ? `(${costs.join('·')}코)` : ''} · Lv.${m.level}${
-    carryThreeStar ? ' · 캐리 3성' : ''
+    carry ? ` · 캐리 ${carry.name} ${carry.tier || 1}성` : ''
   }`
 
   return { ...base, type: reroll ? 'reroll' : 'standard', reason }

@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './supabase/config'
 import { getChampionCost, translateChampion, translateItem, translateTrait } from './constants'
 import { buildMetaPayload, toMetaDeck } from './metaPayload'
-import { deckViewsFromRaw } from './decks'
+import { deckViewsFromRaw, getDeckViews } from './decks'
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
@@ -389,16 +389,19 @@ export async function getStats(type: StatType, filter: StatFilter): Promise<Stat
 /* 덱                                                                  */
 /* ------------------------------------------------------------------ */
 
-function jsonDecks(reason: string): DecksResponse {
+function jsonDecks(reason: string, withGuide = false): DecksResponse {
   const p = buildMetaPayload()
+  // 공개 payload 덱에는 guide 가 없다 → AI 경로는 덱 뷰에서 guide 포함으로 다시 만든다
+  const decks = withGuide ? getDeckViews().map((d) => toMetaDeck(d, { withGuide: true })) : p.decks
   return {
     success: true,
     source: 'json',
     filter: null,
     patch: p.patch,
-    updatedAt: p.deckMeta?.generatedAt,
+    // 빌드 시각이 아니라 원본 래더 보드 수집 시각
+    updatedAt: p.deckMeta?.sourceUpdatedAt,
     minSample: MIN_SAMPLE.deck,
-    decks: p.decks.map((d) => withSample(d, MIN_SAMPLE.deck)),
+    decks: decks.map((d) => withSample(d, MIN_SAMPLE.deck)),
     fallbackReason: reason,
   }
 }
@@ -412,23 +415,29 @@ interface CompRow {
 /**
  * 덱 티어표 (패치 × 티어 필터, 기간 없음 — 수집기가 하루 1회 패치 전체로 묶는다).
  * 기본 필터(마스터+)에 덱이 하나도 없으면(첫 덱 잡 전) JSON 폴백, 다른 필터는 빈 목록을 그대로 돌려준다.
+ * opts.withGuide: 래더 덱 가이드 포함 (AI 프롬프트 전용 — 공개 응답에는 넣지 않는다)
  */
-export async function getDecks(filter: Pick<StatFilter, 'patch' | 'tier'>): Promise<DecksResponse> {
+export async function getDecks(
+  filter: Pick<StatFilter, 'patch' | 'tier'>,
+  opts: { withGuide?: boolean } = {}
+): Promise<DecksResponse> {
+  const withGuide = Boolean(opts.withGuide)
+  const fallback = (reason: string) => jsonDecks(reason, withGuide)
   const filters = await getMetaFilters()
-  if (filters.source !== 'db') return jsonDecks(filters.fallbackReason || 'no_db')
+  if (filters.source !== 'db') return fallback(filters.fallbackReason || 'no_db')
   const patch = resolvePatch(filters, filter.patch)
   const c = db()
-  if (!patch || !c) return jsonDecks('empty')
+  if (!patch || !c) return fallback('empty')
   return memoized(
-    `decks:${patch}:${filter.tier}`,
+    `decks:${patch}:${filter.tier}${withGuide ? ':guide' : ''}`,
     async () => {
       try {
         const rows = await withTimeout<CompRow[]>((signal) =>
           c.from('stat_comp').select('deck, total_boards, updated_at').eq('patch', patch).eq('tier_min', tierArg(filter.tier)).abortSignal(signal)
         )
-        if (!rows?.length && filter.tier === DEFAULT_TIER) return jsonDecks('empty')
+        if (!rows?.length && filter.tier === DEFAULT_TIER) return fallback('empty')
         const decks = deckViewsFromRaw((rows ?? []).map((r) => r.deck))
-          .map(toMetaDeck)
+          .map((d) => toMetaDeck(d, { withGuide }))
           .map((d) => withSample(d, MIN_SAMPLE.deck))
         const updatedAt = (rows ?? []).reduce<string | undefined>((m, r) => (!m || r.updated_at > m ? r.updated_at : m), undefined)
         return {
@@ -442,10 +451,10 @@ export async function getDecks(filter: Pick<StatFilter, 'patch' | 'tier'>): Prom
         } satisfies DecksResponse
       } catch (err) {
         logEvent('warn', 'decks_db_failed', errorFields(err))
-        return jsonDecks(fallbackReason(err))
+        return fallback(fallbackReason(err))
       }
     },
-    jsonDecks
+    fallback
   )
 }
 

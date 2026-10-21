@@ -111,6 +111,12 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('가이드 채용률을 순서 근거로 → guideOrderClaim', rules('채용률이 검증된 쇼진의 창을 먼저 슬램하세요.', { facts: guideFacts }).includes('guideOrderClaim'))
   check('채용률 인용만 하면 통과', rules('쇼진의 창은 이 덱 캐리의 70%가 최종 보드에 들고 있습니다.', { facts: guideFacts }).length === 0)
   check('가이드 없으면 대상 아님', rules('채용률 높은 템을 먼저 만드세요.', {}).length === 0)
+  // 외부 리뷰(2026-10-21)에서 찾은 미탐·오탐 — 문장으로 고정
+  check('미탐 수정: "레벨을 올려 Lv.8" (리롤형) → rerollLevelBlame', rules('남은 골드로 레벨을 올려 Lv.8 도달을 노리는 선택이 낫습니다.', { deckType: 'reroll' }).includes('rerollLevelBlame'))
+  check('미탐 수정: "겹친 시점이 비틀기 신호" → pivotTiming', rules('피들스틱이 1성인 채 상대 2명과 겹친 시점이 비틀기 신호입니다.', {}).includes('pivotTiming'))
+  check('오탐 수정: "빈집 덱 후보가 없었습니다" 통과', rules('빈집 덱 후보가 없었습니다.', {}).length === 0)
+  check('오탐 수정: "피봇 시점이 3-2인지는 데이터로 알 수 없습니다" 통과', rules('피봇 시점이 3-2인지는 데이터로 알 수 없습니다.', {}).length === 0)
+  check('오탐 수정: "채용률을 먼저 보라는 뜻은 아닙니다" 통과', rules('채용률을 먼저 보라는 뜻은 아닙니다.', { facts: guideFacts }).length === 0)
 
   console.log('리포트 통합 (폴백 경로)')
   const { generateMetaCoachFeedback } = require('../lib/llm')

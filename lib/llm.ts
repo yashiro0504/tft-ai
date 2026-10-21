@@ -16,7 +16,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.9'
+export const COACH_PROMPT_VERSION = '2026-10-21.10'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -670,7 +670,8 @@ export async function generateMetaCoachFeedback(
   // 비교 사실: 같은 기본 필터의 기물×아이템(BIS)·메타 덱 (메모 캐시라 buildMetaFacts 와 중복 호출 비용 없음)
   const [comboStats, deckStats] = await Promise.all([
     getStats('unit_item', DEFAULT_FILTER),
-    getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier }),
+    // 덱 가이드(guide)는 AI 프롬프트에서만 쓴다 — 공개 응답에는 포함하지 않는다
+    getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier }, { withGuide: true }),
   ])
   const comparisonFacts = buildComparisonFacts({
     matches,
@@ -698,7 +699,6 @@ export async function generateMetaCoachFeedback(
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
     `- 초점 축: ${plan.focusLabel} (${plan.focus})`,
-    `- 덱 유형: ${plan.deckTypeReason ?? '판정 불가'}`,
     `- 기본 개념 문장(참고): ${plan.drillTemplate}`,
     '',
     '[6축 진단 — 코드 산출 점수, 그대로 사용]',

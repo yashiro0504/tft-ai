@@ -226,17 +226,21 @@ export interface CoachingRuleViolation {
   text: string
 }
 
-const REROLL_LEVEL_BLAME_RE = /레벨(?:이|은)?\s*(?:너무\s*)?(?:낮|부족|모자)|레벨업(?:이|을)?\s*(?:늦|부족)|(?:레벨|렙)을?\s*(?:더\s*)?(?:올려야|올렸어야|높였어야|높여야)/
+const REROLL_LEVEL_BLAME_RE = /레벨(?:이|은)?\s*(?:너무\s*)?(?:낮|부족|모자)|레벨업(?:이|을)?\s*(?:늦|부족)|(?:레벨|렙)을?\s*(?:더\s*)?(?:올려|올리|올렸|높여|높이|높였)/
 /** "리롤형이라 레벨이 낮은 건 문제가 아니다" 같은 정상 해설 */
 const REROLL_EXCUSE_RE = /리롤(?:형|덱)?(?:이라|이므로|이니|에서는|은|는)|문제(?:가|는)?\s*아니|괜찮|정상/
 const META_WEAK_RE = /메타\s*(?:덱\s*)?평균(?:보다|에\s*비해|에)?\s*(?:[^.!?\n]{0,12})?(?:못|낮|부진|뒤처|밑돌|아쉬)/
 const DECK_MUST_RE = /(?:갔어야|가야\s*했|탔어야|타야\s*했|선택했어야|골랐어야|잡았어야)/
 const OPEN_DECK_RE = /빈집\s*(?:메타\s*)?덱/
 const GUIDE_ORDER_RE = /채용(?:률)?[^.!?\n]{0,40}(?:먼저|우선|선(?:슬램|조합))|(?:먼저|우선)[^.!?\n]{0,40}채용(?:률)?/
-const PIVOT_TIMING_RE = /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)/
+const PIVOT_TIMING_RE =
+  /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)|(?:비틀|피봇|갈아타)[^.!?\n]{0,15}(?:신호|시점|타이밍|순간)|(?:시점|타이밍|순간)[^.!?\n]{0,15}(?:비틀|피봇|갈아타)/
+/** 부정·불가 서술 ("후보가 없었습니다", "데이터로 알 수 없습니다", "~라는 뜻은 아닙니다") — 주장형 규칙에서 제외 */
+const NEGATED_RE = /없었|없습니다|없다|없음|없어|않|아닙니다|아니다|아닌|알\s*수\s*없|모릅|모른/
 
 /**
  * 프롬프트 규칙(덱 유형·메타 덱 운영도·빈집 후보) 위반 문장. 사전식 휴리스틱이라 평가 지표로 쓴다 (리포트를 막지 않는다).
+ * '위반 0'은 이 휴리스틱 기준일 뿐이다 — 알려진 미탐·오탐은 scripts/testSemanticGrounding.js 에 문장으로 고정해 둔다.
  * facts = 모델에 준 프롬프트(사실 블록 포함) — 후보 줄·운영도 판정 유무를 여기서 읽는다.
  */
 export function validateCoachingRules(
@@ -251,6 +255,8 @@ export function validateCoachingRules(
     for (const s of sentences(text)) {
       if (ctx.deckType === 'reroll' && REROLL_LEVEL_BLAME_RE.test(s) && !REROLL_EXCUSE_RE.test(s)) out.push({ type: 'rerollLevelBlame', text: s })
       if (metaEven && META_WEAK_RE.test(s)) out.push({ type: 'metaEvenAsWeakness', text: s })
+      // 아래 주장형 규칙은 부정·불가 서술이면 위반이 아니다
+      if (NEGATED_RE.test(s)) continue
       if (DECK_MUST_RE.test(s) && /덱|빈집/.test(s)) out.push({ type: 'deckMustClaim', text: s })
       if (!hasOpenLine && OPEN_DECK_RE.test(s)) out.push({ type: 'openDeckInvented', text: s })
       if (PIVOT_TIMING_RE.test(s)) out.push({ type: 'pivotTiming', text: s })

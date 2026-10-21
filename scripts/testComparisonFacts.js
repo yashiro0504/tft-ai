@@ -51,7 +51,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
 
   console.log('덱 유형 판정')
   const { detectDeckType, summarizeDeckTypes } = require('../lib/deckType')
-  // 기준 샘플: 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리(카시오페아 2성)
+  // 기준 샘플: 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리 베이가 3성 (베이가·카시오페아 캐리템 3개 동률 → 성급 높은 베이가, 알리스타는 탱커템만)
   const info = detectDeckType(sample)
   check(
     '기준 샘플 = 리롤형 (3성 5개, 1·2코)',
@@ -60,7 +60,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   )
   check(
     '비교 사실에 덱 유형 줄',
-    block.includes('- 덱 유형: 리롤형 — 3성 5개(1·1·1·2·2코) · Lv.7'),
+    block.includes('- 덱 유형: 리롤형 — 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리 베이가 3성'),
     block
   )
   const standard = {
@@ -71,11 +71,19 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('3성 없으면 표준형', detectDeckType(standard).type === 'standard', JSON.stringify(detectDeckType(standard)))
   const few = { ...sample, units: sample.units.slice(0, 3) }
   check('기물 3개면 판정 불가', detectDeckType(few).type === 'unknown', JSON.stringify(detectDeckType(few)))
-  const carryThree = {
+  check('캐리 = 캐리템 동률이면 성급 높은 쪽 (베이가 3성, 카시오페아 2성 아님)', info.carryThreeStar === true && info.reason.endsWith('캐리 베이가 3성'), JSON.stringify(info))
+  // 탱커템 3개(알리스타)는 캐리템 0개 — 캐리템 2개 든 2성이 캐리
+  const tankItems = {
     ...sample,
-    units: sample.units.map((u) => ({ ...u, tier: u.name === '카시오페아' ? 3 : u.tier })),
+    units: [
+      { id: 'TFT18_T', name: '탱커', rarity: 2, tier: 3, items: ['워모그의 갑옷', '가고일 돌갑옷', '크라운가드'] },
+      { id: 'TFT18_D', name: '딜러', rarity: 3, tier: 2, items: ['보석 건틀릿', '쇼진의 창'] },
+      ...sample.units.slice(2, 5).map((u) => ({ ...u, items: [] })),
+    ],
   }
-  check('캐리 3성 판정', detectDeckType(carryThree).carryThreeStar === true, JSON.stringify(detectDeckType(carryThree)))
+  check('탱커·하이브리드 템은 캐리 판별에서 제외', detectDeckType(tankItems).reason.endsWith('캐리 딜러 2성'), detectDeckType(tankItems).reason)
+  const { boardCarry } = require('../lib/deckType')
+  check('메타 덱 carryKey 가 보드에 있으면 우선', boardCarry(sample.units, 'Cassiopeia').name === '카시오페아')
   const mixed = summarizeDeckTypes([sample, standard])
   check(
     '여러 판 유형 혼합 = mixed',
@@ -105,10 +113,10 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('리롤형 판정이 강의 계획에 반영', plan.deckType === 'reroll' && plan.deckTypeLabel === '리롤형', JSON.stringify(plan.deckType))
   const tempo = plan.axes.find((a) => a.key === 'tempo')
   check(
-    '리롤 템포 = 100 − 3성 부족 0 − 캐리 3성 미완성 20 = 80 (표준형과 같은 100점 척도)',
-    tempo.score === 80 &&
+    '리롤 템포 = 100 − 3성 부족 0 − 캐리(베이가) 3성 미완성 0 = 100 (표준형과 같은 100점 척도)',
+    tempo.score === 100 &&
       tempo.effects.some((e) => e.key === 'missingThreeStars' && e.points === 0) &&
-      tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === -20),
+      tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === 0),
     JSON.stringify(tempo)
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
@@ -128,8 +136,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   )
   const stdEconomy = buildCoachingPlan([standard]).axes.find((a) => a.key === 'economy')
   check('표준형 경제는 레벨 부족 지표 유지', stdEconomy.metrics.some((x) => x.key === 'levelShort'), JSON.stringify(stdEconomy.metrics))
-  // 3성 2개(베이가·오른)뿐인 리롤형 → 템포 100 − 20 − 20 = 60 → 가장 약한 축
-  const thinReroll = { ...sample, units: sample.units.map((u) => ({ ...u, tier: ['베이가', '오른'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
+  // 3성 2개(오른·렉사이)뿐인 리롤형, 캐리는 카시오페아 2성(베이가 2성과 캐리템 동률 → 코스트) → 템포 100 − 20 − 20 = 60 → 가장 약한 축
+  const thinReroll = { ...sample, units: sample.units.map((u) => ({ ...u, tier: ['오른', '렉사이'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
   const rerollTopicPlan = buildCoachingPlan([thinReroll])
   check(
     '리롤형에서 템포가 초점이면 주제 = 리롤 성과',
@@ -149,6 +157,11 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])
+  check(
+    '종합: 경기 간 요약도 같은 표본 (초반 종료 1판 제외 → 2경기)',
+    mixedFacts.includes('- 경기 간 요약(2경기): 등수 5·5 ·') && !mixedFacts.includes('(3경기)'),
+    mixedFacts
+  )
   check(
     '종합: 비교 사실과 강의 계획의 덱 유형 줄이 같은 표본(초반 종료 제외)',
     mixedFacts.includes(`- 덱 유형: ${earlyPlan.deckTypeReason}`) && earlyPlan.deckTypeReason.includes('/2판'),
@@ -326,7 +339,7 @@ ${mixedFacts}`
   )
   check(
     '가이드 캐리 아이템: 채용률 순 · 내 캐리 A 1/3 (유물 제외)',
-    gFacts.includes('- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): 쇼진의 창 70%(평균 3.90등) · 모렐로노미콘 50%(평균 4.12등) — 내 A 아이템 1/3개가 이 목록에 있음'),
+    gFacts.includes('- 덱 가이드 캐리 아이템(최종 보드 채용률 순, 조합 순서 아님): 쇼진의 창 70%(평균 3.90등) · 모렐로노미콘 50%(평균 4.12등) — 내 캐리 A 아이템 1/3개가 이 목록에 있음'),
     gFacts
   )
   check(
@@ -364,7 +377,11 @@ ${mixedFacts}`
   const { DEFAULT_FILTER } = require('../lib/statsShared')
   const { EVAL_CASES } = require('./evalAiVariants')
   const comboRows = (await getStats('unit_item', DEFAULT_FILTER)).rows
-  const decks = (await getDecks(DEFAULT_FILTER)).decks
+  const decks = (await getDecks(DEFAULT_FILTER, { withGuide: true })).decks
+  const publicDecks = (await getDecks(DEFAULT_FILTER)).decks
+  check('공개 덱 응답에는 guide 없음 · AI 경로(withGuide)에는 있음', publicDecks.every((d) => !d.guide) && decks.some((d) => d.guide))
+  const { buildMetaPayload } = require('../lib/metaPayload')
+  check('공개 메타 payload(/meta)에 guide 없음', buildMetaPayload().decks.every((d) => !d.guide))
   let bad = 0
   const lineCounts = []
   for (const c of EVAL_CASES) {

@@ -571,7 +571,10 @@ function main() {
 
   const out = {
     version: 2,
+    /** 이 파일을 빌드한 시각 (데이터 수집일이 아니다) */
     generatedAt: new Date().toISOString(),
+    /** 원본 래더 보드의 수집 시각 (data/ladderBoards.json updatedAt) — 화면·sitemap 의 '갱신'은 이 값을 쓴다 */
+    sourceUpdatedAt: data.updatedAt || null,
     source: 'riot-ladder-boards',
     sourceUrl: null,
     patch: `set${data.set}`,

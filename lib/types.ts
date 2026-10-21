@@ -649,7 +649,10 @@ export interface TftMetaResponse {
   /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) */
   decks: MetaDeckRanking[]
   deckMeta?: {
+    /** decksData.json 빌드 시각 */
     generatedAt: string
+    /** 원본 래더 보드 수집 시각 — 화면의 '갱신'은 이 값 */
+    sourceUpdatedAt?: string
     source: string
     patch: string | null
     deckCount: number

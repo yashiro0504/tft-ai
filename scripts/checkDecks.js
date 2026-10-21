@@ -75,6 +75,8 @@ function main() {
   check('deckCount 불일치', data.deckCount === decks.length, `${data.deckCount} vs ${decks.length}`)
   check('덱이 10개 미만', decks.length >= 10, String(decks.length))
   check('generatedAt 없음/형식 오류', Boolean(data.generatedAt && !Number.isNaN(Date.parse(data.generatedAt))))
+  check('sourceUpdatedAt 형식 오류', data.sourceUpdatedAt == null || !Number.isNaN(Date.parse(data.sourceUpdatedAt)), String(data.sourceUpdatedAt))
+  warn('sourceUpdatedAt 없음 (빌드 시각이 갱신일로 표시됨)', Boolean(data.sourceUpdatedAt))
   check('patch 없음', Boolean(data.patch))
   check('unitMatchRate 낮음', typeof data.unitMatchRate === 'number' && data.unitMatchRate >= 0.9, String(data.unitMatchRate))
   check('외부 큐레이션 출처', !/lolchess|롤체지지/i.test(String(data.source || '')), String(data.source))
@@ -162,13 +164,33 @@ function main() {
     const carry = units.find((unit) => unit.lolchessKey === norm(deck.carryKey)) || units[0]
     warn(`${tag}: 캐리 BIS 부족`, (carry?.items?.length || 0) >= 2, `${carry?.name || '?'} ${carry?.items?.length || 0}개`)
 
+    // 덱 가이드 불변식 (래더 실측 덱만 guide 가 있다 — scripts/buildDecksFromBoards.js deckGuide)
+    if (deck.guide) {
+      const g = deck.guide
+      const fin = (x) => typeof x === 'number' && Number.isFinite(x)
+      const place = (x) => fin(x) && x >= 1 && x <= 8
+      check(`${tag}: guide.boards 이상`, fin(g.boards) && g.boards >= 1 && g.boards === deck.games, `${g.boards} vs games ${deck.games}`)
+      for (const u of g.core || []) check(`${tag}: guide.core 채용률/등수`, fin(u.usage) && u.usage >= 0.8 && u.usage <= 1 && place(u.avgPlacement) && u.key && u.name, JSON.stringify(u))
+      for (const u of g.flex || []) check(`${tag}: guide.flex 채용률/등수`, fin(u.usage) && u.usage >= 0.2 && u.usage < 0.8 && place(u.avgPlacement) && u.key && u.name, JSON.stringify(u))
+      const coreKeys = new Set((g.core || []).map((u) => u.key))
+      check(`${tag}: guide 핵심·유동 기물 중복`, (g.flex || []).every((u) => !coreKeys.has(u.key)))
+      for (const it of g.carryItems || []) check(`${tag}: guide.carryItems 채용률/등수`, fin(it.rate) && it.rate > 0 && it.rate <= 1 && place(it.avgPlacement) && it.name, JSON.stringify(it))
+      const rates = (g.carryItems || []).map((it) => it.rate)
+      check(`${tag}: guide.carryItems 채용률 내림차순`, rates.every((r, i) => i === 0 || rates[i - 1] >= r), rates.join(','))
+      const levelSum = Object.values(g.levels || {}).reduce((a, b) => a + b, 0)
+      check(`${tag}: guide.levels 합 ≈ 1`, Math.abs(levelSum - 1) <= 0.02, String(levelSum))
+      check(`${tag}: guide.carryThreeStarRate 범위`, fin(g.carryThreeStarRate) && g.carryThreeStarRate >= 0 && g.carryThreeStarRate <= 1)
+      const o = g.openness || {}
+      check(`${tag}: guide.openness 이상`, Number.isInteger(o.flexSlots) && o.flexSlots >= 0 && o.coreCount === (g.core || []).length && Number.isInteger(o.sharedCarryDecks) && o.sharedCarryDecks >= 0, JSON.stringify(o))
+    }
+
     const signature = units.map((unit) => unit.lolchessKey).sort().join(',')
     check(`${tag}: 유닛 조합 중복`, !signatures.has(signature))
     signatures.add(signature)
   })
 
   console.log(`파일: ${path.relative(path.join(__dirname, '..'), FILE)}`)
-  console.log(`출처: ${data.source} · 패치: ${data.patch} · 갱신: ${data.generatedAt}`)
+  console.log(`출처: ${data.source} · 패치: ${data.patch} · 원본 수집: ${data.sourceUpdatedAt || '-'} · 빌드: ${data.generatedAt}`)
   console.log(`덱 ${decks.length}개 · 유닛 매칭률 ${data.unitMatchRate} · 중복 조합 0`)
 
   if (warnings.length > 0) {

@@ -60,6 +60,7 @@ interface RawDeck {
 
 const DATA = decksData as unknown as {
   generatedAt: string
+  sourceUpdatedAt?: string | null
   source: string
   sourceUrl?: string
   patch: string | null
@@ -114,7 +115,10 @@ export interface DeckView {
 }
 
 export interface DeckMetaInfo {
+  /** decksData.json 빌드 시각 */
   generatedAt: string
+  /** 원본 래더 보드 수집 시각 (없으면 generatedAt) — 사용자에게 보이는 '갱신'은 이 값 */
+  sourceUpdatedAt: string
   source: string
   patch: string | null
   deckCount: number
@@ -124,6 +128,7 @@ export interface DeckMetaInfo {
 export function getDeckMetaInfo(): DeckMetaInfo {
   return {
     generatedAt: DATA.generatedAt,
+    sourceUpdatedAt: DATA.sourceUpdatedAt || DATA.generatedAt,
     source: DATA.source,
     patch: DATA.patch,
     deckCount: DATA.deckCount,
