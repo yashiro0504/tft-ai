@@ -20,6 +20,13 @@ export function isOwnerKeyConfigured(): boolean {
   return Boolean(ownerKey())
 }
 
+/** 설정 진단 (키 값은 노출하지 않는다): 미등록 / 16자 미만 / 정상 */
+export function ownerKeyStatus(): 'missing' | 'too_short' | 'ok' {
+  const raw = (process.env.QUOTA_EXEMPT_KEY || '').trim()
+  if (!raw) return 'missing'
+  return raw.length >= MIN_KEY_LENGTH ? 'ok' : 'too_short'
+}
+
 function token(key: string): string {
   return createHmac('sha256', key).update('tftlab-owner-v1').digest('hex')
 }

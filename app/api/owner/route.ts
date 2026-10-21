@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimitGuard, readJson, isNextResponse } from '@/lib/apiUtils'
-import { checkOwnerKey, clearOwnerCookie, hasOwnerCookie, isOwnerKeyConfigured, issueOwnerCookie } from '@/lib/ownerKey'
+import { checkOwnerKey, clearOwnerCookie, hasOwnerCookie, isOwnerKeyConfigured, issueOwnerCookie, ownerKeyStatus } from '@/lib/ownerKey'
 import { logEvent } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
 const headers = { 'Cache-Control': 'no-store' }
 
-/** 운영자 쿠키 상태 */
+/** 운영자 쿠키 상태 + 키 설정 진단 (키 값은 노출하지 않는다. 어느 배포·환경이 응답했는지 확인용) */
 export async function GET(req: NextRequest) {
-  return NextResponse.json({ success: true, configured: isOwnerKeyConfigured(), exempt: hasOwnerCookie(req) }, { headers })
+  return NextResponse.json(
+    {
+      success: true,
+      configured: isOwnerKeyConfigured(),
+      exempt: hasOwnerCookie(req),
+      keyStatus: ownerKeyStatus(),
+      vercelEnv: process.env.VERCEL_ENV ?? null,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    },
+    { headers }
+  )
 }
 
 /** 운영자 키 확인 → 쿼터 면제 쿠키 발급. 무차별 대입을 막으려고 IP당 분당 5회로 제한한다. */
