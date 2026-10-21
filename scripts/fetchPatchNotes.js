@@ -171,16 +171,27 @@ async function run() {
     pages = []
     for (const slug of slugs) pages.push({ html: await get(BASE + slug), url: BASE + slug })
   }
-  const patches = pages
-    .map(({ html, url }) => parsePage(html, url))
-    .filter((p) => p.patch && p.publishedAt)
-    .sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))
+  const fetched = pages.map(({ html, url }) => parsePage(html, url)).filter((p) => p.patch && p.publishedAt)
 
+  // 목록 페이지는 최근 글만 보여 줄 수 있다 — 같은 세트의 기존 패치는 이번에 못 받았어도 남긴다 (덱 빌드 패치 태깅이 쓴다)
+  let prev = null
+  try {
+    prev = JSON.parse(fs.readFileSync(OUT, 'utf-8'))
+  } catch {
+    /* 첫 실행 */
+  }
+  const byPatch = new Map()
+  if (!FILES.length && prev && prev.set === Number(SET)) for (const p of prev.patches || []) byPatch.set(p.patch, p)
+  for (const p of fetched) byPatch.set(p.patch, p)
+  const patches = [...byPatch.values()].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))
+
+  // 내용이 같으면 fetchedAt 도 그대로 둔다 (매일 워크플로가 빈 변경을 커밋하지 않게)
+  const same = prev && prev.set === Number(SET) && JSON.stringify(prev.patches) === JSON.stringify(patches)
   const out = {
     _comment: 'TFT 공식 패치 노트의 변경 목록(사실)만 저장. 해설 산문은 저장하지 않음. scripts/fetchPatchNotes.js 로 생성.',
     source: LIST_URL,
     set: Number(SET),
-    fetchedAt: new Date().toISOString(),
+    fetchedAt: same && prev.fetchedAt ? prev.fetchedAt : new Date().toISOString(),
     patches,
   }
   fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n', 'utf-8')

@@ -83,6 +83,8 @@ async function main() {
 
   const data = load()
   const have = new Set(data.boards.map((b) => `${b.matchId}:${b.player}`))
+  // (판, 등수)는 선수 키와 무관하게 한 보드를 가리킨다 — TOP_PLAYER_SALT 없이 재실행해 선수 키가 바뀌어도 같은 보드를 두 번 넣지 않는다
+  const haveSeat = new Set(data.boards.map((b) => `${b.matchId}:${b.placement}`))
   const matchCache = new Map()
   let added = 0
   let skipped = 0
@@ -107,8 +109,13 @@ async function main() {
         }
         const p = (info.participants || []).find((x) => x.puuid === player.puuid)
         if (!p) continue
-        data.boards.push({ matchId: id, datetime: info.game_datetime, ...toBoard(p, player) })
         have.add(`${id}:${player.key}`)
+        if (haveSeat.has(`${id}:${p.placement}`)) {
+          skipped++
+          continue
+        }
+        data.boards.push({ matchId: id, datetime: info.game_datetime, ...toBoard(p, player) })
+        haveSeat.add(`${id}:${p.placement}`)
         added++
       } catch (e) {
         failed++
@@ -120,7 +127,7 @@ async function main() {
   }
   save(data)
   console.log(`\n✅ 저장 → ${OUT}`)
-  console.log(`   새 보드 ${added} · 제외(다른 세트/큐) ${skipped} · 실패 ${failed} · 매치 요청 ${matchCache.size}회 · 누적 ${data.boards.length}`)
+  console.log(`   새 보드 ${added} · 제외(다른 세트·큐·중복 보드) ${skipped} · 실패 ${failed} · 매치 요청 ${matchCache.size}회 · 누적 ${data.boards.length}`)
 }
 
 main().catch((e) => {
