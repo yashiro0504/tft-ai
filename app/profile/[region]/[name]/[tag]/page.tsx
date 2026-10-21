@@ -10,6 +10,7 @@ import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
 import { SummonerSummary } from '@/app/components/SummonerSummary'
+import { loadDeckReport } from '@/lib/deckReport'
 import { SITE_URL } from '@/lib/site'
 
 export const revalidate = 120
@@ -132,6 +133,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     data.rank
   )
   const sharePath = `/profile/kr/${encodeURIComponent(data.gameName)}/${encodeURIComponent(data.tagLine)}`
+  const deckReport = await loadDeckReport(data.matches)
 
   return (
     <div className="min-h-screen bg-app text-ink">
@@ -150,7 +152,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </span>
         </nav>
 
-        <SummonerSummary profile={stats} matches={data.matches} as="h1">
+        <SummonerSummary profile={stats} matches={data.matches} deckReport={deckReport} as="h1">
           <ShareButton path={sharePath} />
           {data.isDemo ? (
             <span className="rounded-control border border-accent/50 bg-accent-bg px-2.5 py-1.5 text-xs font-bold text-accent">

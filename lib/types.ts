@@ -473,6 +473,8 @@ export interface TftSearchResponse {
   fetchedAt?: number
   /** 이 시각(epoch ms) 이후에 다시 전적 갱신 가능 */
   refreshAvailableAt?: number
+  /** 내 덱 성적표 (lib/deckReport, 서버 계산 · 캐시 밖에서 붙인다). 덱 데이터를 못 읽으면 null */
+  deckReport?: import('./deckReportShared').DeckReport | null
   error?: string
 }
 

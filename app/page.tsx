@@ -345,7 +345,7 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} matches={search.matches}>
+              <SummonerSummary profile={search.summonerProfile} matches={search.matches} deckReport={search.deckReport}>
                 {search.isDemo ? null : (
                   <>
                     <RefreshMatchesButton
