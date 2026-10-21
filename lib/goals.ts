@@ -76,11 +76,11 @@ export function goalFromMoment(moment: Pick<KeyMoment, 'kind' | 'title'>, matche
   const baselineOf = (kind: GoalKind) => round1(avg(source.map((m) => measureGoal(kind, m))))
   switch (moment.kind) {
     case 'itemsOnWeak':
-      return { ...base, kind: 'itemsOnWeak', label: '1성 기물에 든 아이템', dir: 'max', target: ITEMS_ON_WEAK_MIN - 1, unit: '개', baseline: baselineOf('itemsOnWeak') }
+      return { ...base, kind: 'itemsOnWeak', label: '1성 1~3코스트 기물에 든 아이템', dir: 'max', target: ITEMS_ON_WEAK_MIN - 1, unit: '개', baseline: baselineOf('itemsOnWeak') }
     case 'duplicateCopies':
       return { ...base, kind: 'duplicateCopies', label: '같은 기물 1성을 여러 장 올린 묶음', dir: 'max', target: 0, unit: '개', baseline: baselineOf('duplicateCopies') }
     case 'carryOneStar':
-      return { ...base, kind: 'carryOneStar', label: '1성으로 끝난 캐리', dir: 'max', target: 0, unit: '명', baseline: baselineOf('carryOneStar') }
+      return { ...base, kind: 'carryOneStar', label: '1성으로 끝난 저코스트 캐리', dir: 'max', target: 0, unit: '명', baseline: baselineOf('carryOneStar') }
     case 'emptySlots':
       return { ...base, kind: 'emptySlots', label: '최종 보드 빈칸', dir: 'max', target: 0, unit: '칸', baseline: baselineOf('emptySlots') }
     case 'sameComp': {

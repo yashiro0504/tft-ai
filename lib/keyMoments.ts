@@ -18,8 +18,14 @@ export interface KeyMoment {
 }
 
 export const KEY_MOMENTS_MAX = 3
-/** 1성 기물에 든 완성 아이템이 이 이상이면 장면으로 본다 (여러 판 습관도 같은 기준) */
+/** 1성 저코스트 기물에 든 완성 아이템이 이 이상이면 장면으로 본다 (여러 판 습관도 같은 기준) */
 export const ITEMS_ON_WEAK_MIN = 3
+/**
+ * '약한 1성'으로 보는 코스트 상한. 4·5코스트 1성은 후반에 BIS 를 몰아주는 게 정상 운영이라
+ * (예: 1등 판의 1성 장로 드래곤 무한의 대검·최후의 속삭임) 아이템이 "1성에 묶였다"고 보지 않는다.
+ */
+export const WEAK_MAX_COST = 3
+const isWeakOneStar = (u: SlimMatchUnit) => (u.tier || 1) === 1 && (u.rarity || 1) <= WEAK_MAX_COST
 
 const BREAKPOINTS: Record<string, number[]> = Object.fromEntries(
   Object.values((breakpointData as { traits: Record<string, { name: string; breakpoints: number[] }> }).traits).map(
@@ -52,9 +58,9 @@ export function duplicateGroups(m: SlimMatchData): { name: string; count: number
   return [...groups.values()].filter((g) => g.length >= 2).map((g) => ({ name: g[0].name, count: g.length }))
 }
 
-/** 1성 기물에 든 아이템 (찬란한 아이템 포함) */
+/** 1성 저코스트(1~3코) 기물에 든 아이템 (찬란한 아이템 포함) */
 export function weakItems(m: SlimMatchData) {
-  const units = m.units.filter((u) => (u.tier || 1) === 1 && (u.items?.length || 0) > 0)
+  const units = m.units.filter((u) => isWeakOneStar(u) && (u.items?.length || 0) > 0)
   return {
     units,
     count: units.reduce((s, u) => s + u.items.length, 0),
@@ -63,10 +69,10 @@ export function weakItems(m: SlimMatchData) {
   }
 }
 
-/** 아이템 2개+ 든 캐리가 1성이면 그 기물 */
+/** 아이템 2개+ 든 캐리가 1성 저코스트(1~3코)면 그 기물 (4·5코 1성 캐리는 후반 정상 운영) */
 export function oneStarCarry(m: SlimMatchData): SlimMatchUnit | null {
   const carry = boardCarry(m.units)
-  return carry && (carry.tier || 1) === 1 && (carry.items?.length || 0) >= 2 ? carry : null
+  return carry && isWeakOneStar(carry) && (carry.items?.length || 0) >= 2 ? carry : null
 }
 
 export function emptySlotCount(m: SlimMatchData): number {
@@ -111,8 +117,8 @@ function itemsOnWeak(m: SlimMatchData): KeyMoment | null {
   if (w.count < ITEMS_ON_WEAK_MIN && !w.radiant.length) return null
   return {
     kind: 'itemsOnWeak',
-    title: '좋은 아이템이 1성 기물에',
-    fact: `아이템 ${w.total}개 중 ${w.count}개가 1성 기물(${w.units.map((u) => `${u.name} ${u.items.length}개`).join(', ')})에 들어감${
+    title: '아이템이 1성 저코스트 기물에',
+    fact: `아이템 ${w.total}개 중 ${w.count}개가 1성 1~3코스트 기물(${w.units.map((u) => `${u.name} ${u.items.length}개`).join(', ')})에 들어감${
       w.radiant.length ? ` · 그중 찬란한 아이템 ${w.radiant.length}개: ${w.radiant.map((r) => `${r.item}(${r.unit})`).join(', ')}` : ''
     }`,
   }
@@ -123,7 +129,7 @@ function carryOneStar(m: SlimMatchData): KeyMoment | null {
   if (!carry) return null
   return {
     kind: 'carryOneStar',
-    title: '캐리가 1성',
+    title: '저코스트 캐리가 1성',
     // 기물 이름 받침에 따라 이/가가 갈리므로 조사 없이 쓴다
     fact: `아이템 ${carry.items.length}개를 든 캐리 ${carry.name}(${carry.rarity}코스트) — 최종 보드에서 1성`,
   }
@@ -132,7 +138,7 @@ function carryOneStar(m: SlimMatchData): KeyMoment | null {
 function emptySlots(m: SlimMatchData): KeyMoment | null {
   const empty = emptySlotCount(m)
   if (empty <= 0) return null
-  return { kind: 'emptySlots', title: '보드 빈칸', fact: `Lv.${m.level} 인데 최종 보드 기물 ${m.units.length}개 — ${empty}칸 비움` }
+  return { kind: 'emptySlots', title: '보드 빈칸', fact: `Lv.${m.level} = 보드 ${m.level}칸 중 ${m.units.length}칸 사용 — ${empty}칸 비움` }
 }
 
 function nearBreakpoint(m: SlimMatchData): KeyMoment | null {
@@ -143,6 +149,26 @@ function nearBreakpoint(m: SlimMatchData): KeyMoment | null {
     title: '1명 모자란 시너지',
     fact: `다음 단계까지 1명 남은 시너지: ${near.map((n) => `${n.trait} ${n.count}명 → ${n.next}명`).join(', ')}`,
   }
+}
+
+/**
+ * 상위권 판의 이긴 요인 — 최종 보드에서 코드가 확인한 강점 (단일 경기, 순방 판에만 쓴다).
+ * 1등 판 강의가 "문제점 나열"이 되지 않도록, 장면(다듬을 점)보다 먼저 프롬프트에 준다.
+ */
+export function winFactors(m: SlimMatchData): string[] {
+  const out: string[] = []
+  const threes = m.units.filter((u) => (u.tier || 1) >= 3)
+  if (threes.length) out.push(`3성 ${threes.length}개: ${threes.map((u) => `${u.name}(${u.rarity}코)`).join(', ')}`)
+  const deep = (m.traits || []).filter((t) => (t.tier || 0) >= 2).sort((a, b) => (b.tier || 0) - (a.tier || 0) || (b.count || 0) - (a.count || 0))
+  if (deep.length) out.push(`높은 단계 시너지: ${deep.map((t) => `${t.name} ${t.count}명(${t.tier}단계)`).join(', ')}`)
+  const lobby = (m.lobbyParticipants || []).filter((p) => !p.isUser)
+  if (lobby.length) {
+    const lobbyTwo = lobby.reduce((s, p) => s + twoPlus(p.units), 0) / lobby.length
+    out.push(`2성 이상 ${twoPlus(m.units)}개 (로비 평균 ${Math.round(lobbyTwo * 10) / 10}개) · 최종 레벨 ${m.level}`)
+  }
+  const contest = m.contestedInfo
+  if (contest?.level) out.push(`로비 경합 ${contest.level} (강도 ${contest.contestScore}/100)`)
+  return out
 }
 
 /** 단일 경기의 핵심 장면 (우선순위 순, 최대 KEY_MOMENTS_MAX 개). 해당 없으면 빈 배열. */

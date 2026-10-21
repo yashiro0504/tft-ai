@@ -93,7 +93,7 @@ const DETECTORS: Detector[] = [
   },
   {
     kind: 'itemsOnWeak',
-    title: '좋은 아이템이 1성 기물에',
+    title: '아이템이 1성 저코스트 기물에',
     measure: (m) => {
       const w = weakItems(m)
       return w.count >= ITEMS_ON_WEAK_MIN || w.radiant.length ? w : null
@@ -101,14 +101,14 @@ const DETECTORS: Detector[] = [
     describe: (hits) => {
       const ws = hits.map((h) => h.v as ReturnType<typeof weakItems>)
       const radiant = ws.filter((w) => w.radiant.length).length
-      return `아이템이 1성 기물에 몰림 (판당 평균 ${round1(avg(ws.map((w) => w.count)))}개 / 전체 ${round1(avg(ws.map((w) => w.total)))}개)${
-        radiant ? ` · 찬란한 아이템이 1성 기물에 간 판 ${radiant}회` : ''
+      return `아이템이 1성 1~3코스트 기물에 몰림 (판당 평균 ${round1(avg(ws.map((w) => w.count)))}개 / 전체 ${round1(avg(ws.map((w) => w.total)))}개)${
+        radiant ? ` · 찬란한 아이템이 1성 1~3코스트 기물에 간 판 ${radiant}회` : ''
       }`
     },
   },
   {
     kind: 'carryOneStar',
-    title: '캐리가 1성으로 끝남',
+    title: '저코스트 캐리가 1성으로 끝남',
     measure: oneStarCarry,
     describe: (hits) => `아이템 든 캐리가 1성으로 끝남 (${tally(hits.map((h) => (h.v as NonNullable<ReturnType<typeof oneStarCarry>>).name))})`,
   },
