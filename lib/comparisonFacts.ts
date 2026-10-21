@@ -4,6 +4,7 @@ import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
 import { boardValue } from './boardValue'
+import { getChampionCost } from './constants'
 import { boardPatchChanges, patchAt, type PatchNote } from './patchNotes'
 import { topPlayerMeta, topPlayerStats, type TopPlayerDeckStats } from './topPlayers'
 import type { DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
@@ -66,6 +67,9 @@ export const MISSING_CORE_MAX = 3
 export const OPEN_DECK_MAX = 2
 export const OPEN_DECK_MAX_AVG = 4.5
 export const OPEN_DECK_MIN_BUILDABLE = 2
+/** 이 레벨 이상까지 올린 판에는 캐리 코스트가 OPEN_DECK_LOW_CARRY_COST 이하인 덱(리롤 덱)을 빈집 후보로 내지 않는다 */
+export const OPEN_DECK_HIGH_LEVEL = 9
+export const OPEN_DECK_LOW_CARRY_COST = 3
 /** 개방성 등급: 유동 칸(대표 구성 − 핵심 기물) 이 이하면 낮음 / 이 이상이면 높음 (래더 59개 덱 분포 기준 대략 15% / 37%) */
 export const OPENNESS_LOW_MAX = 1
 export const OPENNESS_HIGH_MIN = 5
@@ -253,6 +257,8 @@ export interface OpenDeckCandidate {
  * (그 덱 캐리가 내 보드에 없음), 표본이 충분하고 메타 평균이 OPEN_DECK_MAX_AVG 이하이고, 그 덱 캐리 핵심템을
  * 내 캐리(아이템 최다 기물) 아이템의 재료로 OPEN_DECK_MIN_BUILDABLE 개 이상 조합할 수 있는 덱.
  * 조합 가능 수 많은 순 → 메타 평균 좋은 순.
+ * Lv.9 이상까지 올린 판(밸류·고코스트 운영)에는 저코스트 캐리 리롤 덱을 내지 않는다 — 운영 방향이 달라 같은 재료라도
+ * "갈 수 있었던 덱"이 아니다 (예: Lv.10 5코스트 보드에 1코스트 바루스 리롤 추천).
  */
 export function openDeckCandidates(m: SlimMatchData, decks: DeckFact[]): OpenDeckCandidate[] {
   const opponents = (m.lobbyParticipants || []).filter((p) => !p.isUser)
@@ -272,6 +278,8 @@ export function openDeckCandidates(m: SlimMatchData, decks: DeckFact[]): OpenDec
     if (d.avgPlacement == null || !fin(d.avgPlacement) || d.avgPlacement > OPEN_DECK_MAX_AVG) continue
     const carry = deckCarry(d)
     if (!carry) continue
+    const carryCost = carry.cost ?? getChampionCost(carry.key) ?? 0
+    if (m.level >= OPEN_DECK_HIGH_LEVEL && carryCost > 0 && carryCost <= OPEN_DECK_LOW_CARRY_COST) continue
     const carrySlug = entitySlug('champion', carry.key)
     if (mySlugs.has(carrySlug)) continue
     if (oppCore.has(carrySlug)) continue
