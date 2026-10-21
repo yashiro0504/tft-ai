@@ -105,7 +105,7 @@ export function UserMenu() {
           <div className="mt-2 flex items-center justify-between rounded-control border border-line bg-sunken px-2.5 py-1.5">
             <span className="text-muted">오늘 AI 분석</span>
             <span className="font-mono font-bold text-ink">
-              {analysisUsed}/{analysisLimit}
+              {analysisLimit > 0 ? `${analysisUsed}/${analysisLimit}` : `${analysisUsed} · 무제한`}
             </span>
           </div>
           <Link

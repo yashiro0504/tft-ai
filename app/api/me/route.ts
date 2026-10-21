@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 import { createSupabaseServerClient, getAuthUser } from '@/lib/supabase/server'
 import { dailyQuotaLimit } from '@/lib/quota'
+import { isQuotaExempt } from '@/lib/quotaExempt'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,8 +53,10 @@ export async function GET() {
     if (row && typeof row.bucket === 'string') usage[row.bucket] = Number(row.used) || 0
   }
 
-  const limits =
-    plan === 'pro'
+  // 0 = 무제한 (QUOTA_* 와 같은 규칙). 면제 계정은 전부 무제한
+  const limits = isQuotaExempt(user)
+    ? { search: 0, analysis: 0, overview: 0 }
+    : plan === 'pro'
       ? {
           search: dailyQuotaLimit('QUOTA_SEARCH_PRO_PER_DAY', 200),
           analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10),
