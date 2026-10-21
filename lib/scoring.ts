@@ -2,6 +2,7 @@ import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
 import { isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { completionAxis, contestAxis } from './coaching'
+import { slotsUsed } from './boardSlots'
 
 /**
  * 결정론적 점수 산출 (LLM 미사용)
@@ -32,6 +33,8 @@ export function scoreToTier(score: number): string {
 interface RawMetrics {
   placement: number
   units: number
+  /** 보드 칸 합 (lib/boardSlots) */
+  slotsUsed: number
   twoPlus: number
   three: number
   items: number
@@ -48,6 +51,7 @@ function readMetrics(m: SlimMatchData): RawMetrics {
   return {
     placement: Math.min(Math.max(m.placement || 8, 1), 8),
     units: units.length,
+    slotsUsed: slotsUsed(units),
     twoPlus: units.filter((u) => (u.tier || 1) >= 2).length,
     three: units.filter((u) => u.tier === 3).length,
     items: units.reduce((sum, u) => sum + (u.items?.length || 0), 0),

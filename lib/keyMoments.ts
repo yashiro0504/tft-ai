@@ -2,6 +2,7 @@ import breakpointData from './traitBreakpoints.json'
 import { entitySlug } from './entitySlug'
 import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
+import { slotsUsed } from './boardSlots'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -75,8 +76,9 @@ export function oneStarCarry(m: SlimMatchData): SlimMatchUnit | null {
   return carry && isWeakOneStar(carry) && (carry.items?.length || 0) >= 2 ? carry : null
 }
 
+/** 레벨만큼의 칸 중 비운 칸 (장로 드래곤처럼 2칸 차지하는 기물 반영 — lib/boardSlots) */
 export function emptySlotCount(m: SlimMatchData): number {
-  return Math.max(0, (m.level || 0) - m.units.length)
+  return Math.max(0, (m.level || 0) - slotsUsed(m.units))
 }
 
 /** 다음 단계까지 1명 남은 시너지 (1명짜리 고유 시너지 제외) */
@@ -138,7 +140,7 @@ function carryOneStar(m: SlimMatchData): KeyMoment | null {
 function emptySlots(m: SlimMatchData): KeyMoment | null {
   const empty = emptySlotCount(m)
   if (empty <= 0) return null
-  return { kind: 'emptySlots', title: '보드 빈칸', fact: `Lv.${m.level} = 보드 ${m.level}칸 중 ${m.units.length}칸 사용 — ${empty}칸 비움` }
+  return { kind: 'emptySlots', title: '보드 빈칸', fact: `Lv.${m.level} = 보드 ${m.level}칸 중 ${slotsUsed(m.units)}칸 사용 — ${empty}칸 비움` }
 }
 
 function nearBreakpoint(m: SlimMatchData): KeyMoment | null {
