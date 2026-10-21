@@ -1,13 +1,15 @@
 {
   "_comment": "챌린저 LP 상위 랭커의 최근 랭크 보드를 메타 덱별로 집계 (선수 식별자 없음). scripts/buildTopPlayerGuide.js 로 생성.",
-  "generatedAt": "2026-10-21T08:16:06.243Z",
+  "generatedAt": "2026-10-21T08:42:52.824Z",
   "sourceUpdatedAt": "2026-10-21T08:15:57.598Z",
   "region": "kr",
+  "currentPatch": "18.5",
+  "previousPatch": "18.4",
   "players": 28,
   "boards": 243,
-  "matchedBoards": 172,
+  "matchedBoards": 171,
   "decks": {
-    "소환사 자이라": {
+    "소환사 소라카": {
       "boards": 13,
       "players": 11,
       "avgPlacement": 2.92,
@@ -15,23 +17,23 @@
       "carryThreeStarRate": 0,
       "carryItems": [
         {
-          "name": "공허의 지팡이",
+          "name": "대천사의 지팡이",
           "rate": 0.538
         },
         {
-          "name": "처형자 상징",
-          "rate": 0.385
+          "name": "주문술사 상징",
+          "rate": 0.231
         },
         {
-          "name": "쇼진의 창",
-          "rate": 0.308
+          "name": "마법공학 총검",
+          "rate": 0.231
         },
         {
-          "name": "붉은 덩굴정령",
+          "name": "라바돈의 죽음모자",
           "rate": 0.154
         },
         {
-          "name": "내셔의 이빨",
+          "name": "적응형 투구",
           "rate": 0.154
         }
       ],
@@ -57,7 +59,14 @@
           "name": "자이라",
           "usage": 0.923
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 9,
+          "18.5": 4
+        },
+        "mixed": true
+      }
     },
     "처형자 아지르": {
       "boards": 4,
@@ -96,7 +105,13 @@
           "name": "티모",
           "usage": 0.5
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 4
+        },
+        "mixed": false
+      }
     },
     "엄호대 케일": {
       "boards": 3,
@@ -135,7 +150,13 @@
           "name": "헤카림",
           "usage": 0.333
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     },
     "개화 렝가": {
       "boards": 3,
@@ -187,13 +208,19 @@
           "name": "감시자",
           "usage": 0.333
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     },
     "주문술사 베이가": {
-      "boards": 5,
+      "boards": 4,
       "players": 3,
-      "avgPlacement": 4.6,
-      "top4Rate": 0.4,
+      "avgPlacement": 4.5,
+      "top4Rate": 0.5,
       "carryThreeStarRate": 1,
       "carryItems": [
         {
@@ -201,32 +228,38 @@
           "rate": 1
         },
         {
-          "name": "푸른 파수꾼",
-          "rate": 0.6
+          "name": "루덴의 폭풍",
+          "rate": 0.5
         },
         {
-          "name": "루덴의 폭풍",
-          "rate": 0.4
+          "name": "푸른 파수꾼",
+          "rate": 0.5
         },
         {
           "name": "마법공학 총검",
-          "rate": 0.4
+          "rate": 0.5
         },
         {
           "name": "새벽심장",
-          "rate": 0.2
+          "rate": 0.25
         }
       ],
       "levels": {
-        "7": 0.8,
-        "8": 0.2
+        "7": 1
       },
       "extraUnits": [
         {
           "name": "카시오페아",
-          "usage": 0.8
+          "usage": 0.75
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 1,
+          "18.5": 3
+        },
+        "mixed": true
+      }
     },
     "기원자 알룬": {
       "boards": 4,
@@ -261,7 +294,14 @@
           "name": "타릭",
           "usage": 1
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "처형자 카직스": {
       "boards": 17,
@@ -309,7 +349,14 @@
           "name": "아펠리오스",
           "usage": 0.471
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 15,
+          "18.5": 2
+        },
+        "mixed": true
+      }
     },
     "협곡야수 드레이븐": {
       "boards": 9,
@@ -360,7 +407,14 @@
           "name": "알룬",
           "usage": 0.444
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 7,
+          "18.5": 2
+        },
+        "mixed": true
+      }
     },
     "엄호대 아칼리": {
       "boards": 10,
@@ -400,7 +454,14 @@
           "name": "코그모",
           "usage": 0.4
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 9,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "주문술사 알룬": {
       "boards": 3,
@@ -451,7 +512,13 @@
           "name": "르블랑",
           "usage": 1
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     },
     "처형자 아리": {
       "boards": 8,
@@ -490,39 +557,46 @@
           "name": "오른",
           "usage": 1
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 7,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "전쟁기계 아이번": {
-      "boards": 4,
-      "players": 4,
-      "avgPlacement": 3.25,
-      "top4Rate": 0.75,
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3,
+      "top4Rate": 0.667,
       "carryThreeStarRate": 0,
       "carryItems": [
         {
           "name": "붉은 덩굴정령",
-          "rate": 0.5
+          "rate": 0.667
         },
         {
           "name": "라바돈의 죽음모자",
-          "rate": 0.25
+          "rate": 0.333
         },
         {
           "name": "전쟁기계 상징",
-          "rate": 0.25
+          "rate": 0.333
         },
         {
           "name": "공허의 지팡이",
-          "rate": 0.25
+          "rate": 0.333
         },
         {
           "name": "쇼진의 창",
-          "rate": 0.25
+          "rate": 0.333
         }
       ],
       "levels": {
-        "8": 0.25,
-        "9": 0.75
+        "8": 0.333,
+        "9": 0.667
       },
       "extraUnits": [
         {
@@ -530,18 +604,25 @@
           "usage": 1
         },
         {
+          "name": "바위 게",
+          "usage": 1
+        },
+        {
           "name": "라칸",
-          "usage": 0.75
+          "usage": 0.667
         },
         {
           "name": "마오카이",
-          "usage": 0.75
-        },
-        {
-          "name": "니달리",
-          "usage": 0.5
+          "usage": 0.667
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 1,
+          "18.5": 2
+        },
+        "mixed": true
+      }
     },
     "기원자 모르가나": {
       "boards": 10,
@@ -588,7 +669,14 @@
           "name": "알룬",
           "usage": 0.4
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 6,
+          "18.5": 4
+        },
+        "mixed": true
+      }
     },
     "협곡야수 장로 드래곤": {
       "boards": 3,
@@ -639,7 +727,13 @@
           "name": "타릭",
           "usage": 0.667
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     },
     "엄호대 카시오페아": {
       "boards": 4,
@@ -687,7 +781,13 @@
           "name": "오른",
           "usage": 0.75
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 4
+        },
+        "mixed": false
+      }
     },
     "협곡야수 조약돌": {
       "boards": 10,
@@ -739,7 +839,14 @@
           "name": "라칸",
           "usage": 0.4
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 7,
+          "18.5": 3
+        },
+        "mixed": true
+      }
     },
     "싸움꾼 니달리": {
       "boards": 3,
@@ -780,14 +887,17 @@
           "usage": 1
         },
         {
-          "name": "요릭",
-          "usage": 0.667
-        },
-        {
           "name": "세주아니",
           "usage": 0.333
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 2,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "기원자 티모": {
       "boards": 3,
@@ -838,33 +948,40 @@
           "name": "코그모",
           "usage": 0.333
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 2,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
-    "협곡야수 심술두꺼비": {
+    "협곡야수 어스름늑대": {
       "boards": 4,
       "players": 4,
       "avgPlacement": 2.25,
       "top4Rate": 0.75,
-      "carryThreeStarRate": 0.25,
+      "carryThreeStarRate": 0.5,
       "carryItems": [
         {
-          "name": "보석 건틀릿",
+          "name": "구인수의 격노검",
+          "rate": 0.5
+        },
+        {
+          "name": "최후의 속삭임",
+          "rate": 0.5
+        },
+        {
+          "name": "크라켄의 분노",
           "rate": 0.25
         },
         {
-          "name": "내셔의 이빨",
+          "name": "수은",
           "rate": 0.25
         },
         {
-          "name": "모렐로노미콘",
-          "rate": 0.25
-        },
-        {
-          "name": "푸른 파수꾼",
-          "rate": 0.25
-        },
-        {
-          "name": "기원자 상징",
+          "name": "스테락의 도전",
           "rate": 0.25
         }
       ],
@@ -874,7 +991,7 @@
       },
       "extraUnits": [
         {
-          "name": "덩굴정령",
+          "name": "심술두꺼비",
           "usage": 1
         },
         {
@@ -885,7 +1002,13 @@
           "name": "코그모",
           "usage": 0.5
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 4
+        },
+        "mixed": false
+      }
     },
     "선봉대 모르가나": {
       "boards": 3,
@@ -937,47 +1060,59 @@
           "name": "아이번",
           "usage": 0.333
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 2,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "개화 유나라": {
-      "boards": 11,
-      "players": 7,
-      "avgPlacement": 2.36,
-      "top4Rate": 0.909,
-      "carryThreeStarRate": 0.909,
+      "boards": 6,
+      "players": 5,
+      "avgPlacement": 2.17,
+      "top4Rate": 1,
+      "carryThreeStarRate": 0.833,
       "carryItems": [
         {
           "name": "쇼진의 창",
-          "rate": 0.818
+          "rate": 0.667
         },
         {
           "name": "타격대의 철퇴",
-          "rate": 0.545
+          "rate": 0.5
         },
         {
           "name": "죽음의 검",
-          "rate": 0.364
-        },
-        {
-          "name": "최후의 속삭임",
-          "rate": 0.364
+          "rate": 0.333
         },
         {
           "name": "무한의 대검",
-          "rate": 0.273
+          "rate": 0.333
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.333
         }
       ],
       "levels": {
-        "7": 0.182,
-        "8": 0.727,
-        "9": 0.091
+        "8": 0.833,
+        "9": 0.167
       },
       "extraUnits": [
         {
           "name": "아지르",
-          "usage": 0.636
+          "usage": 0.667
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.5": 6
+        },
+        "mixed": false
+      }
     },
     "선봉대 알룬": {
       "boards": 3,
@@ -1028,7 +1163,14 @@
           "name": "라칸",
           "usage": 0.667
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 2,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "선봉대 아펠리오스": {
       "boards": 4,
@@ -1078,7 +1220,14 @@
           "name": "라칸",
           "usage": 0.5
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3,
+          "18.5": 1
+        },
+        "mixed": true
+      }
     },
     "적응가 아펠리오스": {
       "boards": 5,
@@ -1118,7 +1267,59 @@
           "name": "아이번",
           "usage": 0.4
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 4,
+          "18.5": 1
+        },
+        "mixed": true
+      }
+    },
+    "전쟁기계 니달리": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 5.33,
+      "top4Rate": 0.333,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 0.333
+        },
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "8": 0.333,
+        "9": 0.667
+      },
+      "extraUnits": [
+        {
+          "name": "자이라",
+          "usage": 1
+        },
+        {
+          "name": "마오카이",
+          "usage": 1
+        },
+        {
+          "name": "세주아니",
+          "usage": 0.667
+        },
+        {
+          "name": "아이번",
+          "usage": 0.333
+        }
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     },
     "처형자 자이라": {
       "boards": 3,
@@ -1161,7 +1362,13 @@
           "name": "티모",
           "usage": 0.667
         }
-      ]
+      ],
+      "patch": {
+        "counts": {
+          "18.4": 3
+        },
+        "mixed": false
+      }
     }
   }
 }

@@ -589,6 +589,14 @@ export interface DeckGuide {
   carryThreeStarRate: number
   /** flexSlots = 대표 구성 칸 수 − 핵심 기물 수 · sharedCarryDecks = 같은 캐리 메타 덱 수 */
   openness: { coreCount: number; flexSlots: number; sharedCarryDecks: number }
+  /** 이 통계를 만든 보드의 패치별 판 수 (현재 패치 표본이 부족하면 직전 패치를 합친다) */
+  patch?: PatchBasis
+}
+
+/** 통계의 패치 기준 — counts: 패치 → 판 수, mixed: 두 패치 이상을 합쳤는가 */
+export interface PatchBasis {
+  counts: Record<string, number>
+  mixed: boolean
 }
 
 export interface MetaDeckRanking {

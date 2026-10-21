@@ -1,4 +1,5 @@
 import topData from './topPlayerGuide.json'
+import type { PatchBasis } from './types'
 
 /**
  * 상위 랭커 운영 (scripts/buildTopPlayerGuide.js → lib/topPlayerGuide.json) — 서버 전용(AI 프롬프트).
@@ -14,6 +15,8 @@ export interface TopPlayerDeckStats {
   carryItems: { name: string; rate: number }[]
   levels: Record<string, number>
   extraUnits: { name: string; usage: number }[]
+  /** 패치별 판 수 (현재 패치 판이 TOP_MIN_BOARDS 미만이면 직전 패치를 합친다) */
+  patch?: PatchBasis
 }
 
 interface TopPlayerGuide {

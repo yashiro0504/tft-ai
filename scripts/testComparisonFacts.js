@@ -4,6 +4,7 @@
  * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
  *  - 로비 1등·로비 평균 비교 = 손계산
  *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - 패치 분리: 현재 패치 우선·부족하면 직전 패치 혼합 · 패치 기준 표기
  *  - 상위 랭커 운영: 줄 형식 · 표본 하한 · 집계본 형식
  *  - 덱 가이드(래더 실측): 핵심·유동 기물 · 캐리 아이템 채용률 · 레벨 분포 · 개방성 등급
  *  - 아이템 재료 매칭 · 로비 메타 덱 · 빈집 메타 덱 후보 (점령·코어 점령·약한·소표본·변형·재료 부족 제외)
@@ -381,6 +382,33 @@ ${mixedFacts}`
     Object.values(topReal.decks || {}).every((d) => d.boards >= 1 && d.players >= 1 && d.players <= d.boards && d.avgPlacement >= 1 && d.avgPlacement <= 8 && d.carryItems.every((i) => i.rate > 0 && i.rate <= 1)),
     JSON.stringify(Object.keys(topReal.decks || {}))
   )
+
+  console.log('패치 분리')
+  const { choosePatchDecks } = require('./buildDecksFromBoards')
+  const { patchBasisLabel } = require('../lib/comparisonFacts')
+  const mk = (id, games, avg, carryKey = id) => ({ id, games, avgPlacement: avg, carryKey, guide: { openness: { sharedCarryDecks: -1 } } })
+  // A: 현재 패치 40판(≥30) → 현재 패치 덱 · B: 현재 패치 10판 → 혼합 덱 · C: 현재 패치에만 있는 새 덱 35판 · D: 현재 20판(신규, 미달) 제외
+  const chosen = choosePatchDecks([mk('A', 40, 3.9), mk('B', 10, 3.0), mk('C', 35, 4.5, 'A'), mk('D', 20, 3.5)], [mk('A', 90, 4.0), mk('B', 60, 4.2)], 30)
+  check(
+    '패치 선택: 현재 패치 표본 충분하면 현재만, 부족하면 혼합, 신규 덱은 기준 이상만 · 평균 등수 순',
+    chosen.map((d) => `${d.id}:${d.games}`).join(',') === 'A:40,B:60,C:35',
+    chosen.map((d) => `${d.id}:${d.games}`).join(',')
+  )
+  check('패치 선택 뒤 같은 캐리 덱 수 다시 셈 (A·C 같은 캐리)', chosen.find((d) => d.id === 'A').guide.openness.sharedCarryDecks === 1 && chosen.find((d) => d.id === 'B').guide.openness.sharedCarryDecks === 0)
+  const notes2 = [
+    { patch: '18.4', publishedAt: '2026-10-06T18:00:00.000Z', sections: [] },
+    { patch: '18.5', publishedAt: '2026-10-20T18:00:00.000Z', sections: [] },
+  ]
+  check('패치 기준 표기: 단일 = "18.4 기준"', patchBasisLabel({ counts: { 18.4: 87 }, mixed: false }, Date.parse('2026-10-10T00:00:00Z'), notes2) === '18.4 기준')
+  check(
+    '패치 기준 표기: 혼합 = "18.4·18.5 혼합(18.5 12판)"',
+    patchBasisLabel({ counts: { 18.5: 12, 18.4: 75 }, mixed: true }, Date.parse('2026-10-21T00:00:00Z'), notes2) === '18.4·18.5 혼합(18.5 12판)'
+  )
+  check(
+    '경기 패치가 기준에 없으면 "이 경기는 18.5 추정, 패치 다름"',
+    patchBasisLabel({ counts: { 18.4: 87 }, mixed: false }, Date.parse('2026-10-21T00:00:00Z'), notes2) === '18.4 기준 · 이 경기는 18.5 추정, 패치 다름'
+  )
+  check('패치 정보 없으면 표기 없음 (DB 경로 등)', patchBasisLabel(undefined, Date.now(), notes2) === '')
 
   console.log('패치 노트')
   const { parseBody } = require('./fetchPatchNotes')

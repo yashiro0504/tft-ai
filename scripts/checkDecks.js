@@ -181,6 +181,11 @@ function main() {
       check(`${tag}: guide.levels 합 ≈ 1`, Math.abs(levelSum - 1) <= 0.02, String(levelSum))
       check(`${tag}: guide.carryThreeStarRate 범위`, fin(g.carryThreeStarRate) && g.carryThreeStarRate >= 0 && g.carryThreeStarRate <= 1)
       const o = g.openness || {}
+      if (g.patch) {
+        const sum = Object.values(g.patch.counts || {}).reduce((a, b) => a + b, 0)
+        check(`${tag}: guide.patch 판 수 합 = boards`, sum === g.boards, `${sum} vs ${g.boards}`)
+        check(`${tag}: guide.patch.mixed 일치`, g.patch.mixed === Object.keys(g.patch.counts).length > 1)
+      }
       check(`${tag}: guide.openness 이상`, Number.isInteger(o.flexSlots) && o.flexSlots >= 0 && o.coreCount === (g.core || []).length && Number.isInteger(o.sharedCarryDecks) && o.sharedCarryDecks >= 0, JSON.stringify(o))
     }
 

@@ -4,9 +4,9 @@ import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
 import { boardValue } from './boardValue'
-import { boardPatchChanges, type PatchNote } from './patchNotes'
+import { boardPatchChanges, patchAt, type PatchNote } from './patchNotes'
 import { topPlayerMeta, topPlayerStats, type TopPlayerDeckStats } from './topPlayers'
-import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
+import type { DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
  * [비교 사실] 블록 — 모델이 계산하지 않아도 되는 비교 수치를 코드가 만든다 (AI-EVAL A2).
@@ -300,6 +300,19 @@ export function opennessLabel(flexSlots: number): '낮음' | '보통' | '높음'
 
 const pct = (x: number) => Math.round(x * 100)
 
+/**
+ * 통계의 패치 기준 표기: "18.4 기준" / "18.4·18.5 혼합(18.5 12판)".
+ * 경기 패치(게시 시각 기준 추정)가 기준에 없으면 "· 이 경기는 18.5 추정, 패치 다름"을 덧붙인다.
+ */
+export function patchBasisLabel(basis: PatchBasis | undefined, matchAtMs?: number, notes?: PatchNote[]): string {
+  if (!basis || !Object.keys(basis.counts).length) return ''
+  const patches = Object.keys(basis.counts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  const latest = patches[patches.length - 1]
+  const label = patches.length > 1 ? `${patches.join('·')} 혼합(${latest} ${basis.counts[latest]}판)` : `${patches[0]} 기준`
+  const matchPatch = patchAt(matchAtMs, notes)?.patch
+  return matchPatch && !patches.includes(matchPatch) ? `${label} · 이 경기는 ${matchPatch} 추정, 패치 다름` : label
+}
+
 /** 내 덱의 상위 랭커 운영 줄 (표본 부족이면 null). top 은 테스트용 주입 */
 export function topPlayerLine(m: SlimMatchData, deck: DeckFact, top?: TopPlayerDeckStats, totalPlayers = topPlayerMeta().players): string | null {
   const s = top ?? topPlayerStats(deck.name)
@@ -307,7 +320,8 @@ export function topPlayerLine(m: SlimMatchData, deck: DeckFact, top?: TopPlayerD
   const items = s.carryItems.slice(0, 3).map((i) => `${i.name} ${pct(i.rate)}%`)
   const level = Object.entries(s.levels).sort((a, b) => b[1] - a[1])[0]
   const extra = s.extraUnits.slice(0, 3).map((u) => `${u.name} ${pct(u.usage)}%`)
-  return `- 상위 랭커 운영(챌린저 LP 상위 ${totalPlayers}명 최근 판 중 ${deck.name} ${s.boards}판 · ${s.players}명): 평균 ${s.avgPlacement.toFixed(2)}등 · TOP4 ${pct(
+  const basis = patchBasisLabel(s.patch, m.gameDatetime)
+  return `- 상위 랭커 운영(챌린저 LP 상위 ${totalPlayers}명 최근 판 중 ${deck.name} ${s.boards}판 · ${s.players}명${basis ? `, ${basis}` : ''}): 평균 ${s.avgPlacement.toFixed(2)}등 · TOP4 ${pct(
     s.top4Rate
   )}%${items.length ? ` · 캐리 아이템 ${items.join(' · ')}` : ''}${level ? ` · 최빈 레벨 ${level[0]}(${pct(level[1])}%, 나 Lv.${m.level})` : ''} · 캐리 3성 ${pct(s.carryThreeStarRate)}%${
     extra.length ? ` · 핵심 외 자주 쓴 기물 ${extra.join(' · ')}` : ''
@@ -328,7 +342,7 @@ function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   const flexUsed = g.flex.filter((u) => has(u.key))
   out.push(
     // 핵심 = 채용 80%+ (scripts/buildDecksFromBoards.js GUIDE_CORE_USAGE). 유동 채용률은 내림해 80%로 보이지 않게 한다
-    `- 덱 가이드 기물(래더 ${g.boards}판, ${d.name}): 핵심 기물(채용 80%+) ${g.core.length}개 중 ${g.core.length - missing.length}개 보유${
+    `- 덱 가이드 기물(래더 ${g.boards}판${g.patch ? ` · ${patchBasisLabel(g.patch, m.gameDatetime)}` : ''}, ${d.name}): 핵심 기물(채용 80%+) ${g.core.length}개 중 ${g.core.length - missing.length}개 보유${
       missing.length ? ` (없음: ${missing.map((u) => u.name).join(', ')})` : ''
     }${
       flexUsed.length
