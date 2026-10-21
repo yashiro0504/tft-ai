@@ -19,6 +19,7 @@ const { unitSlots } = require('../lib/boardSlots')
 const { getChampionCost } = require('../lib/constants')
 const championTraits = require('../lib/championTraits.json')
 const breakpointData = require('../lib/traitBreakpoints.json')
+const tftData = require('../lib/tftData.json')
 
 /** 후보 기준: 기물이 나온 보드 수 하한 · 해당 비율 하한 · 기준선 대비 배수 하한 */
 const MIN_BOARDS = 10
@@ -26,8 +27,17 @@ const MIN_RATE = 0.5
 const MIN_LIFT = 3
 /** 3번 탐지기: 이만큼 나와야 "한 번도 없음" 을 사실로 본다 */
 const MIN_SEEN_NEVER = 30
-/** 이미 아는 시너지 2명 계산 (기물|시너지) — Riot 인원 값이 맞으므로 코드에서 고칠 것 없음 (lib/boardSlots 주석) */
-const KNOWN_TRAIT_DOUBLE = new Set(['elderdragon|협곡야수'])
+/**
+ * 이미 아는 시너지 인원 초과 (기물|시너지 → 이유). Riot 인원 값이 맞으므로 코드에서 고칠 것 없음.
+ *  - 장로 드래곤: 협곡야수 2명 (lib/boardSlots 주석)
+ *  - 카직스: 경쟁자 고유 능력 — 처치 관여로 진화해 처형자·속사포·약탈자·주문술사 중 하나를 영구히 얻는다 (Community Dragon 세트18 설명)
+ *  - 럭스: 화신 — 형태(DA_18_Lux_Coven 등 9종)마다 시너지가 하나 더 붙는데, 매치 데이터 기물 id 는 DA_Lux18_Base 그대로다
+ */
+const KNOWN_TRAIT_EXCESS = new Map([
+  ['elderdragon|협곡야수', '2명 계산'],
+  ...['처형자', '속사포', '약탈자', '주문술사'].map((t) => [`khazix|${t}`, '진화로 시너지 획득']),
+  ...['검은 가시', '개화', '악의 여단', '나무정령', '요정', '지옥불', '달빛', '원시', '햇빛'].map((t) => [`lux|${t}`, '형태로 시너지 획득']),
+])
 
 const slugOf = (u) => entitySlug('champion', u.id || '') || u.id
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d
@@ -36,6 +46,24 @@ const isAsciiKey = (s) => /^[\x20-\x7e]+$/.test(String(s || ''))
 
 /** 시너지 한글명 → 단계표 (lib/traitBreakpoints) */
 const TRAIT_BY_NAME = new Map(Object.values(breakpointData.traits).map((t) => [t.name, t]))
+/** 현재 세트 시너지 공식 한글명 (tftData 세트18 키). 이 이름인데 단계표에 없으면 단계 없는 특수 시너지(예: 일월식)다 */
+const SET_TRAIT_NAMES = new Set(
+  Object.entries(tftData.traitMap)
+    .filter(([key]) => /^DA_/.test(key) && /18/.test(key))
+    .map(([, t]) => t.name)
+)
+
+/** lib/championTraits 키 규칙 (scripts/extractChampionTraits norm) — 'DA_Nidalee18_AP' → 'nidalee' */
+const traitKeyOf = (u) =>
+  String(u.id || '')
+    .replace(/^TFT\d*_/i, '')
+    .replace(/^DA_\d*_/i, '')
+    .replace(/^DA_/i, '')
+    .replace(/_Base$/i, '')
+    .replace(/Base$/i, '')
+    .replace(/_(AP|AD)$/i, '')
+    .replace(/\d+$/i, '')
+    .toLowerCase()
 /** 기물 슬러그 → 시너지 한글명 Set (lib/championTraits 의 영문 키를 단계표·시너지 사전 한글명으로) */
 const CHAMP_TRAITS = new Map(
   Object.entries(championTraits.champions).map(([slug, c]) => [
@@ -45,6 +73,8 @@ const CHAMP_TRAITS = new Map(
     ),
   ])
 )
+/** 기물의 시너지 한글명 Set (사전에 없으면 undefined) */
+const champTraitsOf = (u) => CHAMP_TRAITS.get(traitKeyOf(u)) || CHAMP_TRAITS.get(slugOf(u))
 
 /**
  * 조건(cond)이 참인 보드 비율을, 기물 U 가 있는 보드 vs 없는 보드로 비교한다.
@@ -119,10 +149,10 @@ function emblemCount(units, traitName) {
 
 function detectTraitCounts(boards) {
   // 모든 기물의 시너지를 아는 보드만 (모르는 기물이 있으면 기대 인원을 셀 수 없다)
-  const usable = boards.filter((b) => b.units.every((u) => CHAMP_TRAITS.has(slugOf(u))))
+  const usable = boards.filter((b) => b.units.every((u) => Boolean(champTraitsOf(u))))
   /** 보드·시너지별 초과 인원 */
   const excessOf = (b, t) => {
-    const holders = new Set(b.units.filter((u) => CHAMP_TRAITS.get(slugOf(u)).has(t.name)).map(slugOf))
+    const holders = new Set(b.units.filter((u) => champTraitsOf(u).has(t.name)).map(slugOf))
     return (t.count || 0) - holders.size - emblemCount(b.units, t.name)
   }
   // 시너지 단위 표본: (보드, 시너지, 보드의 기물 슬러그들, 사전상 그 시너지를 가진 기물, 초과 여부)
@@ -130,7 +160,7 @@ function detectTraitCounts(boards) {
     (b.traits || []).map((t) => ({
       trait: t.name,
       units: [...new Set(b.units.map(slugOf))],
-      holders: new Set(b.units.filter((u) => CHAMP_TRAITS.get(slugOf(u)).has(t.name)).map(slugOf)),
+      holders: new Set(b.units.filter((u) => champTraitsOf(u).has(t.name)).map(slugOf)),
       names: new Map(b.units.map((u) => [slugOf(u), u.name])),
       excess: excessOf(b, t) > 0,
     }))
@@ -169,7 +199,7 @@ function detectTraitCounts(boards) {
   for (;;) {
     const top = liftRows(pool).find(isCandidate)
     if (!top) break
-    rows.push({ ...top, known: KNOWN_TRAIT_DOUBLE.has(top.key) })
+    rows.push({ ...top, known: KNOWN_TRAIT_EXCESS.get(top.key) || null })
     pool = pool.filter((p) => !(p.trait === top.trait && p.units.includes(top.slug)))
   }
   return { usable: usable.length, skipped: boards.length - usable.length, pairs: allPairs.length, excessPairs, rows }
@@ -199,18 +229,18 @@ function detectNeverUpgraded(boards) {
 /* ───────── 4. 사전 누락 ───────── */
 
 function detectDictGaps(boards) {
-  const gap = { cost: new Map(), champName: new Map(), traitMap: new Map(), itemName: new Map(), traitName: new Map(), breakpoints: new Map() }
+  const gap = { cost: new Map(), champName: new Map(), traitMap: new Map(), itemName: new Map(), traitName: new Map(), breakpoints: new Map(), noBreakpoints: new Map() }
   const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1)
   for (const b of boards) {
     for (const u of b.units) {
       if (getChampionCost(u.id) === undefined) bump(gap.cost, u.id)
       if (isAsciiKey(u.name)) bump(gap.champName, u.id)
-      if (!CHAMP_TRAITS.has(slugOf(u))) bump(gap.traitMap, u.id)
+      if (!champTraitsOf(u)) bump(gap.traitMap, u.id)
       for (const [i, item] of (u.items || []).entries()) if (isAsciiKey(item)) bump(gap.itemName, u.itemIds?.[i] || item)
     }
     for (const t of b.traits || []) {
       if (isAsciiKey(t.name)) bump(gap.traitName, t.traitId || t.name)
-      else if (!TRAIT_BY_NAME.has(t.name)) bump(gap.breakpoints, t.name)
+      else if (!TRAIT_BY_NAME.has(t.name)) bump(SET_TRAIT_NAMES.has(t.name) ? gap.noBreakpoints : gap.breakpoints, t.name)
     }
   }
   const sorted = (m) => [...m].sort((a, b) => b[1] - a[1])
@@ -250,7 +280,7 @@ function report(label, lobbies, boards, slots, traits, never, gaps) {
     ''
   )
   if (traits.rows.length) {
-    const what = (r) => (r.known ? '이미 앎 (2명 계산)' : r.kind === 'double' ? '🆕 2명으로 세는 후보' : '🆕 사전에서 이 시너지가 빠진 후보')
+    const what = (r) => (r.known ? `이미 앎 (${r.known})` : r.kind === 'double' ? '🆕 2명으로 세는 후보' : '🆕 사전에서 이 시너지가 빠진 후보')
     L.push('| 기물 | 시너지 | 나온 경우 | 초과 비율 | 다른 경우 | 배수 | 해석 |', '|---|---|---:|---:|---:|---:|---|')
     L.push(...traits.rows.map((r) => `| ${r.name} (\`${r.slug}\`) | ${r.trait} | ${r.n} | ${pct(r.rate)} | ${pct(r.base)} | ×${round(r.lift, 1)} | ${what(r)} |`), '')
     L.push(
@@ -276,6 +306,9 @@ function report(label, lobbies, boards, slots, traits, never, gaps) {
     L.push(`- **${title}** (${where}): ${rows.slice(0, 12).map(([k, n]) => `\`${k}\` ×${n}`).join(', ')}${rows.length > 12 ? ` 외 ${rows.length - 12}개` : ''}`)
   }
   if (!anyGap) L.push('누락 없음.')
+  if (gaps.noBreakpoints.length) {
+    L.push('', `참고 — 단계가 없는 세트 시너지 (정상, 장면 대상 아님): ${gaps.noBreakpoints.map(([k, n]) => `${k} ×${n}`).join(', ')}`)
+  }
   L.push('')
   return { md: L.join('\n'), anyGap }
 }

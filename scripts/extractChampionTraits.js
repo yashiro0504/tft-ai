@@ -52,6 +52,21 @@ for (const deck of decks.decks || []) {
   }
 }
 
+/**
+ * 덱 데이터에 한 번도 안 나와 빠지는 세트18 기물 보충 (Community Dragon ko_kr/en_us 세트 18 기준).
+ * scripts/detectGameFacts.js '사전 누락' 이 찾았다 (2026-10-22).
+ * 럭스는 기본형만 — 시너지 1개씩 더 붙는 변형(DA_18_Lux_Coven 등)은 별도 기물 키라 여기서 다루지 않는다.
+ */
+const SUPPLEMENT_TRAITS = {
+  avatar: { name: '화신', iconUrl: 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/tft-trait/Trait_Icon_18_Avatar.TFT_Set18.png' },
+}
+const SUPPLEMENT_CHAMPIONS = {
+  lux: { name: '럭스', cost: 5, imgUrl: 'https://raw.communitydragon.org/latest/game/assets/characters/tft18_lux/tft18_lux_square.png', traits: ['Avatar'] },
+  gromp: { name: '심술두꺼비', cost: 2, imgUrl: 'https://raw.communitydragon.org/latest/game/assets/characters/tft18_gromp/tft18_gromp_square.png', traits: ['Riftbeast', 'Adaptor'] },
+}
+for (const [key, entry] of Object.entries(SUPPLEMENT_TRAITS)) traits[key] = traits[key] || entry
+for (const [key, entry] of Object.entries(SUPPLEMENT_CHAMPIONS)) champions[key] = champions[key] || entry
+
 const output = {
   version: 1,
   generatedAt: new Date().toISOString(),
