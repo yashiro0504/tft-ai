@@ -592,6 +592,28 @@ function choosePatchDecks(currentDecks, mixedDecks, minGames = MIN_GAMES) {
   return chosen
 }
 
+/**
+ * 완전히 같은 8유닛 조합은 한 덱만 남긴다 (표본 큰 쪽 유지).
+ *
+ * buildDecks 는 "핵심 유닛"만 비교해 합치므로, 캐리 판별만 다른 동일 조합이 남을 수 있다.
+ * checkDecks.js 의 유닛 조합 중복 검사와 동일한 signature(lolchessKey 정렬) 를 쓴다.
+ */
+function dedupeByUnits(decks) {
+  const best = new Map()
+  for (const d of decks) {
+    const sig = (d.units || []).map((u) => u.lolchessKey).sort().join(',')
+    const prev = best.get(sig)
+    if (!prev) {
+      best.set(sig, d)
+      continue
+    }
+    const keepNew = (d.games || 0) > (prev.games || 0)
+    if (process.env.DEBUG_MERGE) console.log(`drop(same 8 units) ${keepNew ? prev.name : d.name}`)
+    if (keepNew) best.set(sig, d)
+  }
+  return [...best.values()]
+}
+
 function main() {
   if (!fs.existsSync(BOARDS_PATH)) {
     console.error('data/ladderBoards.json 이 없습니다. 먼저 node scripts/collectLadderBoards.js 를 실행하세요.')
@@ -619,14 +641,17 @@ function main() {
     boards = allBoards.filter((b) => b.patch === current || b.patch === previous)
     const builtCurrent = buildDecks(currentBoards)
     const builtMixed = buildDecks(boards)
-    decks = choosePatchDecks(builtCurrent.decks.map((d) => d.deck), builtMixed.decks.map((d) => d.deck)).slice(0, MAX_DECKS)
+    decks = dedupeByUnits(choosePatchDecks(builtCurrent.decks.map((d) => d.deck), builtMixed.decks.map((d) => d.deck)))
+      .sort((a, b) => a.avgPlacement - b.avgPlacement)
+      .slice(0, MAX_DECKS)
+    setSharedCarry(decks)
     ;({ labeled, clusterCount, mergedCount } = builtMixed)
     console.log(`패치: 현재 ${current} ${currentBoards.length}보드 · 직전 ${previous ?? '-'} ${boards.length - currentBoards.length}보드 · 제외(더 이전) ${allBoards.length - boards.length}보드`)
   } else {
     // 패치 노트가 없으면 예전처럼 전체 보드
     boards = allBoards
     const built = buildDecks(boards)
-    decks = built.decks.map((d) => d.deck)
+    decks = dedupeByUnits(built.decks.map((d) => d.deck))
     ;({ labeled, clusterCount, mergedCount } = built)
   }
   const built = { clusterCount, mergedCount }
