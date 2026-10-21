@@ -5,6 +5,7 @@ import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
 import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
 import { keyMoments, type KeyMoment } from './keyMoments'
+import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
 import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
@@ -17,7 +18,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.14'
+export const COACH_PROMPT_VERSION = '2026-10-21.16'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -175,6 +176,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
      (예: 같은 아이템이 2성 기물에 있었다면 / 같은 구성 상대와의 성급 차이). 등수의 원인으로 단정하지는 마라.
    - fix: 다음 판 같은 상황에서 할 구체적 행동 1~2문장 (어떤 기물·아이템을 어떻게). 라운드·타이밍 숫자는 만들지 마라.
    - [핵심 장면] 블록이 없거나 비어 있으면 [6축 진단]의 초점 축 지표로 장면 1개를 만든다 (title: 초점 축 이름).
+   - 종합 분석이면 장면은 "여러 판에 반복된 습관"이다. why 는 반복 횟수·평균 수치로, fix 는 다음 판들에서 지킬 규칙으로 쓴다.
 3) drill: 다음 3판 동안 지킬 목표 1개 — 최종 보드로 확인할 수 있는 숫자 목표로 (예: 기물 성급·2성 수·아이템 위치).
    라운드·레벨 도달 시점은 데이터에 없으니 넣지 마라.
 4) checklist: 실전 체크리스트 3개 (짧은 명령문, moments 의 fix 를 그대로 복사하지 마라)
@@ -714,15 +716,22 @@ export async function generateMetaCoachFeedback(
     : '[코드 산출 점수]\n※ 산출 불가 (경기 데이터 없음)'
 
   // 강의 계획: 가장 약한 축을 코드가 결정 (LLM이 주제를 바꾸지 못하게 고정)
-  const plan = buildCoachingPlan(matches)
-  // 핵심 장면: 최종 보드에서 코드가 콕 집은 사실 (단일 경기만). 강의 본문(moments)은 이 장면들을 해설한다.
-  const moments = mode === 'single' && matches[0] && !plan.lowSample ? keyMoments(matches[0]) : []
+  const basePlan = buildCoachingPlan(matches)
+  // 핵심 장면: 코드가 콕 집은 사실. 단일 경기는 그 판의 장면(lib/keyMoments), 종합 분석은 여러 판에 반복된 습관(lib/habits).
+  // 강의 본문(moments)은 이 장면들을 해설한다.
+  const moments: KeyMoment[] = basePlan.lowSample ? [] : mode === 'single' ? (matches[0] ? keyMoments(matches[0]) : []) : habitPatterns(matches)
+  // 장면이 있으면 강의 주제를 첫 장면에 맞춘다 — 가장 약한 축(예: 유연성)과 장면(예: 1성 기물 아이템)이 따로 놀지 않게
+  const plan = focusOnMoment(basePlan, moments, mode)
   const momentFacts = moments.length
     ? [
-        '[핵심 장면 — 코드 산출, 강의 moments 는 이 순서대로 해설하라. 사실 줄은 그대로 옮겨라]',
+        mode === 'single'
+          ? '[핵심 장면 — 코드 산출, 강의 moments 는 이 순서대로 해설하라. 사실 줄은 그대로 옮겨라]'
+          : '[핵심 장면 = 최근 경기에서 반복된 습관 — 코드 산출, 강의 moments 는 이 순서대로 해설하라. 사실 줄은 그대로 옮겨라. "N/M판"과 등수 비교는 서술 통계다 — 원인으로 단정하지 마라]',
         ...moments.map((x, i) => `${i + 1}. ${x.title}: ${x.fact}`),
       ].join('\n')
-    : '[핵심 장면]\n※ 코드가 콕 집은 장면이 없다. [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
+    : mode === 'single'
+      ? '[핵심 장면]\n※ 코드가 콕 집은 장면이 없다. [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
+      : '[핵심 장면 = 반복 습관]\n※ 최근 경기에서 반복된 장면이 없다(한두 판에만 나왔다). 습관이라고 단정하지 말고, [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
   const planFacts = [
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
@@ -754,7 +763,9 @@ export async function generateMetaCoachFeedback(
     ? plan.focus === 'contest'
       ? '분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명 중 경쟁자들과의 기물 겹침, 대깨/유연성 판단 및 구체적 승패 요인을 데이터 근거로 해부하라. 한 판뿐이므로 "평균"이 아니라 "이 경기"로 서술하라.'
       : `분석 모드: [단일 경기 정밀 분석] - 해당 판 로비 8명과 비교해 이번 강의 주제(${plan.focusLabel}) 중심으로 구체적 승패 요인을 데이터 근거로 해부하라. 기물 겹침은 contest 축 한 줄로만 다룬다. 한 판뿐이므로 "평균"이 아니라 "이 경기"로 서술하라.`
-    : `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
+    : plan.focus === 'contest'
+      ? `분석 모드: [최근 ${matches.length}경기 종합 분석] - 여러 판의 덱 다양성, 기물 겹침 시 대처 패턴, 고착된 습관을 데이터 근거로 종합 진단하라.`
+      : `분석 모드: [최근 ${matches.length}경기 종합 분석] - [핵심 장면]의 반복 습관과 이번 강의 주제(${plan.focusLabel}) 중심으로, 여러 판에 걸친 패턴을 데이터 근거로 종합 진단하라. 기물 겹침은 contest 축 한 줄로만 다룬다.`
 
   const qualityFacts = [
     '[표본 품질 — 코드 판정]',
@@ -921,6 +932,35 @@ function defaultChecklist(plan: CoachingPlan): string[] {
     '결정 전 5초: 지금 쓰는 골드/아이템이 3라운드 뒤에도 유효한가',
     '판 종료 후 최종 레벨·탈락 라운드 기록해 추세 확인',
   ]
+}
+
+/** 장면 종류 → 강의 축 */
+const MOMENT_AXIS: Record<KeyMoment['kind'], CoachingAxisKey> = {
+  sameComp: 'completion',
+  duplicateCopies: 'completion',
+  itemsOnWeak: 'itemization',
+  carryOneStar: 'completion',
+  emptySlots: 'completion',
+  nearBreakpoint: 'synergy',
+}
+
+/**
+ * 첫 장면(가장 중요한 장면·가장 자주 반복된 습관)의 축을 강의 초점으로 삼고 주제를 장면 제목으로 바꾼다.
+ * 6축 점수·축별 진단은 그대로 — 주제·초점만 바뀐다. 장면이 없으면 기존 계획(가장 약한 축) 그대로.
+ */
+export function focusOnMoment(plan: CoachingPlan, moments: KeyMoment[], mode: 'single' | 'multi'): CoachingPlan {
+  const first = moments[0]
+  if (!first) return plan
+  const key = MOMENT_AXIS[first.kind]
+  const axis = plan.axes.find((a) => a.key === key)
+  if (!axis) return plan
+  return {
+    ...plan,
+    focus: key,
+    focusLabel: axis.label,
+    topic: mode === 'multi' ? `반복 습관 교정 — ${first.title}` : `이 판의 핵심 장면 — ${first.title}`,
+    drillTemplate: axis.lesson,
+  }
 }
 
 /**

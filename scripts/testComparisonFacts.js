@@ -217,6 +217,36 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
     check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
   }
+  // ── 여러 판 반복 습관 (lib/habits) · 강의 주제 = 첫 장면 (focusOnMoment) ──
+  {
+    const { habitPatterns } = require('../lib/habits')
+    const { focusOnMoment } = require('../lib/llm')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const game = (placement, weak) => ({
+      ...standard, matchId: `H${placement}${weak}`, placement, level: 8, lastRound: '5-5', traits: [], lobbyParticipants: [],
+      units: [
+        U('DA_18_Ezreal', '이즈리얼', 4, 2, ['무한의 대검']),
+        U('DA_18_Kennen', '케넨', 5, 2),
+        U('DA_18_Sett', '세트', 4, 2),
+        U('DA_18_Ahri', '아리', 4, 2),
+        U('DA_18_Diana', '다이애나', 3, 2),
+        U('DA_18_Morgana', '모르가나', 4, 2),
+        U('DA_18_Leona', '레오나', 1, 2),
+        weak ? U('DA_Vi18', '바이', 3, 1, ['수은', '가고일 돌갑옷', '찬란한 워모그의 갑옷']) : U('DA_Vi18', '바이', 3, 2),
+      ],
+    })
+    const worse = [game(7, 1), game(6, 1), game(8, 1), game(3, 0), game(2, 0)]
+    const hs = habitPatterns(worse)
+    const weak = hs.find((h) => h.kind === 'itemsOnWeak')
+    check('습관: 3/5판 1성 기물 아이템 · 찬란한 · 있던 판/없던 판 등수', Boolean(weak) && /^3\/5판/.test(weak.fact) && /찬란한 아이템이 1성 기물에 간 판 3회/.test(weak.fact) && /있던 판 평균 7등 \/ 없던 판 2\.5등/.test(weak.fact), JSON.stringify(hs))
+    const better = [game(2, 1), game(1, 1), game(3, 1), game(7, 0), game(8, 0)]
+    check('습관: 있던 판이 확실히 더 좋은 등수면 습관이 아님', !habitPatterns(better).some((h) => h.kind === 'itemsOnWeak'), JSON.stringify(habitPatterns(better)))
+    check('습관: 집계 판 3판 미만이면 없음', habitPatterns(worse.slice(0, 2)).length === 0)
+    const plan = buildCoachingPlan(worse)
+    const fp = focusOnMoment(plan, hs, 'multi')
+    check('강의 주제 = 첫 습관 (1성 기물 아이템 → 아이템 축)', fp.focus === 'itemization' && fp.topic === '반복 습관 교정 — 좋은 아이템이 1성 기물에' && fp.axes === plan.axes, JSON.stringify({ focus: fp.focus, topic: fp.topic }))
+    check('장면 없으면 강의 계획 그대로', focusOnMoment(plan, [], 'single') === plan)
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])
