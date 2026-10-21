@@ -51,6 +51,13 @@ function numEnv(name: string, fallback: number): number {
 }
 
 const LLM_TIMEOUT_MS = Math.floor(numEnv('LLM_TIMEOUT_MS', 45_000))
+/** 전체 리포트 출력 상한 (인트로 240 은 별도). 기본 3400 — 평가 하네스가 변형별로 바꾼다 */
+const DEEPSEEK_MAX_TOKENS = Math.floor(numEnv('DEEPSEEK_MAX_TOKENS', 3400))
+/**
+ * 리포트 제공자 강제: deepseek | gemini. 비우면 DeepSeek → Gemini → 결정론적 폴백.
+ * 강제하면 다른 제공자로 넘어가지 않아 평가에서 제공자가 섞이지 않는다 (실패 시 결정론적 폴백).
+ */
+const LLM_PROVIDER = process.env.LLM_PROVIDER === 'deepseek' || process.env.LLM_PROVIDER === 'gemini' ? process.env.LLM_PROVIDER : ''
 /**
  * 대략적 단가(USD / 1M tokens). 과금 변동 시 env 로 보정한다.
  * DeepSeek 기본값은 deepseek-flash 피크 단가(2026-10 기준, 오프피크는 절반) — 예산 가드가 보수적으로 동작하도록.
@@ -240,7 +247,7 @@ async function callDeepSeek(prompt: string): Promise<string> {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
-      body: deepSeekBody(SYSTEM_INSTRUCTION, prompt, 3400, { response_format: { type: 'json_object' } }),
+      body: deepSeekBody(SYSTEM_INSTRUCTION, prompt, DEEPSEEK_MAX_TOKENS, { response_format: { type: 'json_object' } }),
       signal: controller.signal,
     })
 
@@ -782,8 +789,8 @@ ${qualityFacts}
     return finalize(generateFallbackMetaFeedback(gameName, matches, mode), true)
   }
 
-  // 1. DeepSeek API 키가 있는 경우 우선 사용
-  if (DEEPSEEK_API_KEY) {
+  // 1. DeepSeek API 키가 있는 경우 우선 사용 (LLM_PROVIDER=gemini 면 건너뜀)
+  if (DEEPSEEK_API_KEY && LLM_PROVIDER !== 'gemini') {
     try {
       const text = await callDeepSeek(prompt)
       const parsed = parseJsonFeedback(text)
@@ -794,8 +801,8 @@ ${qualityFacts}
     }
   }
 
-  // 2. Gemini API 키가 있는 경우 사용 (GEMINI_MODEL 로 모델 지정)
-  if (GEMINI_API_KEY) {
+  // 2. Gemini API 키가 있는 경우 사용 (GEMINI_MODEL 로 모델 지정, LLM_PROVIDER=deepseek 면 건너뜀)
+  if (GEMINI_API_KEY && LLM_PROVIDER !== 'deepseek') {
     try {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
       const model = genAI.getGenerativeModel({
