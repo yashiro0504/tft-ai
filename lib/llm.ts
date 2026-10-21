@@ -16,7 +16,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.2'
+export const COACH_PROMPT_VERSION = '2026-10-21.3'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -176,7 +176,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 [진단 6축]
 - 코드가 계산한 axes 점수를 그대로 쓴다. 점수를 새로 만들지 마라.
 - 각 축에 verdict(한 줄 진단, 25자 내외)를 붙인다. 축끼리 문장이 겹치면 안 된다.
-- contestAnalysis/itemAnalysis/synergyAnalysis/economyAnalysis 는 각 축 해설이며, 강의 본문(lecture)과 문장을 복사하지 마라.
+- actions 는 다음 판에서 할 행동 3개다(서로 다른 축, 측정 가능하게). lecture.checklist·axes verdict 와 문장을 복사하지 마라.
 
 ★★★ 데이터 접지(Grounding) ★★★
 - TFT 메타 '기억'은 현재 패치와 다를 수 있다. 오직 프롬프트에 '제공된 수치/사실'만 근거로 쓴다.
@@ -208,7 +208,6 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 {
   "metaScore": <[코드 산출 점수]의 metaScore 정수>,
   "metaTier": "<[코드 산출 점수]의 metaTier>",
-  "flexibilityScore": <0~100 정수>,
   "playstyle": "성향 한 줄",
   "overview": "서로 다른 축 3개를 각각 한 문장으로 요약 (3문장)",
   "lecture": {
@@ -228,12 +227,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
     { "key": "synergy", "verdict": "한 줄 진단" },
     { "key": "contest", "verdict": "한 줄 진단" }
   ],
-  "contestAnalysis": "유연성: 로비 수렴도에 어떻게 대응했는지 1~2문장",
-  "itemAnalysis": "아이템 설계 해설",
-  "synergyAnalysis": "시너지 설계 해설",
-  "economyAnalysis": "경제/템포 해설",
-  "improvements": ["개선점 1", "개선점 2", "개선점 3"],
-  "actionPlan": ["실전 가이드 1", "실전 가이드 2", "실전 가이드 3"]
+  "actions": ["다음 판 행동 1", "다음 판 행동 2", "다음 판 행동 3"]
 }`
 
 /** 짧은 인트로(핵심 진단) 전용 시스템 지시 — 전체 리포트와 별도 호출 */
@@ -711,7 +705,7 @@ export async function generateMetaCoachFeedback(
         .join('\n')
     }),
     '※ axes 배열에는 위 6개 key 를 모두 넣고, score/점수는 위 코드 값을 그대로 인용하라.',
-    '※ 초점 축이 contest 가 아니라면 로비 경합은 axes 의 한 줄 + contestAnalysis 로만 다루고, lecture 주제로 삼지 마라.',
+    '※ 초점 축이 contest 가 아니라면 로비 경합은 axes 의 contest 한 줄로만 다루고, lecture 주제로 삼지 마라.',
     ...(plan.sampleWarning ? [`- 표본: ${plan.sampleWarning}`] : []),
   ].join('\n')
   const modeContext = mode === 'single'
@@ -782,8 +776,11 @@ ${qualityFacts}
     }
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
     const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb)
+    // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
+    const actions = fb.actions?.length ? fb.actions.slice(0, 3) : lecture.checklist.slice(0, 3)
     return {
       ...fb,
+      actions,
       mode,
       metaScore: scoring ? scoring.total : fb.metaScore,
       metaTier: scoring ? scoring.tier : fb.metaTier,
@@ -795,7 +792,7 @@ ${qualityFacts}
       grounding: {
         ...validateFeedbackGrounding(fb, prompt),
         // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조
-        entityErrors: validateEntityFacts(feedbackTexts({ ...fb, lecture }, axisVerdicts), matches),
+        entityErrors: validateEntityFacts(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches),
       },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),
@@ -897,7 +894,7 @@ function normalizeLecture(
     evidence: lecture?.evidence?.trim() || fb.overview || focus?.detail || '',
     alternative:
       lecture?.alternative?.trim() ||
-      (fb.actionPlan && fb.actionPlan[0]) ||
+      fb.actions?.[0] ||
       '다음 판에는 같은 라운드에서 한 번 더 멈춰 판단해 보세요.',
     drill:
       lecture?.drill?.trim() ||
@@ -927,8 +924,11 @@ function parseJsonFeedback(
 
     const obj = JSON.parse(cleanJson)
     if (obj.overview) {
-      const flexibility = typeof obj.flexibilityScore === 'number' ? Math.min(Math.max(obj.flexibilityScore, 0), 100) : 55
-      const playstyle = obj.playstyle || (flexibility < 45 ? '대깨 고집형 빌드업' : flexibility > 70 ? '빈집 탐색 유연형' : '하이브리드 템포형')
+      const playstyle = typeof obj.playstyle === 'string' ? obj.playstyle.trim() : ''
+      const strings = (v: unknown): string[] =>
+        Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string' && s.trim().length > 0) : []
+      // v2 actions (모델이 v1 형식으로 답하면 improvements 를 행동으로 쓴다)
+      const actions = strings(obj.actions).length ? strings(obj.actions) : strings(obj.improvements)
       const llmScore = typeof obj.metaScore === 'number' ? Math.min(Math.max(obj.metaScore, 0), 100) : 0
 
       // 강의 본문 (없으면 finalize 에서 코드가 채움)
@@ -961,19 +961,10 @@ function parseJsonFeedback(
         mode: (obj.mode as 'single' | 'multi') || 'single',
         metaScore: llmScore,
         metaTier: obj.metaTier || calculateTier(llmScore),
-        flexibilityScore: flexibility,
         playstyle,
         overview: obj.overview,
-        contestAnalysis: obj.contestAnalysis || '로비 내 타 유저들과의 기물 경합이 일부 발생하였으나 기용 템포에서 차이를 보였습니다.',
-        itemAnalysis: obj.itemAnalysis || '아이템 배분이 주력 딜러에게 집중될 필요가 있습니다.',
-        synergyAnalysis: obj.synergyAnalysis || '앞라인 탱커 시너지 보강이 권장됩니다.',
-        economyAnalysis: obj.economyAnalysis || '탈락 라운드 대비 골드 소모 타이밍 조절이 필요합니다.',
-        improvements: Array.isArray(obj.improvements) && obj.improvements.length > 0
-          ? obj.improvements
-          : ['메인 캐리 기물의 3신기 아이템 집중 완성', '앞라인 2성 탱커 확보 우선순위 상향', '피 관리 구간에서의 과감한 리롤 타이밍 조정'],
-        actionPlan: Array.isArray(obj.actionPlan) && obj.actionPlan.length > 0
-          ? obj.actionPlan
-          : ['초반 2-1~3-2 구간 피 관리를 위한 연승/연패 확실한 노선 선택', '4-1 라운드 7레벨 핵심 딜러 2성작 완료 후 레벨업', '3-2 라운드까지 앞라인 2성과 핵심 아이템을 확정해 중반 템포 확보'],
+        // 비면 finalize 가 강의 체크리스트로 채운다
+        actions: actions.length ? actions : undefined,
         lecture,
         fullMarkdown: rawText,
       }
@@ -997,16 +988,6 @@ function generateFallbackMetaFeedback(
 ): MetaCoachFeedback {
   const latest = matches[0] || { placement: 6, level: 8, lastRound: '5-1', goldLeft: 24, units: [], traits: [] }
   const avgPlacement = matches.reduce((acc, m) => acc + m.placement, 0) / (matches.length || 1)
-  const hasAugments = matches.some((m) => (m.augments?.length || 0) > 0)
-
-  const actionPlan = [
-    '매 라운드 준비 시간 초반 5초 동안 상대 필드를 정찰하여 겹친 기물 여부 체크할 것',
-    '아이템 조합 시 딜템 3개 + 탱템 3개 구조를 확정하고 남는 템만 서브 기물에 장착할 것',
-    '4-1 혹은 4-2 라운드 7/8레벨 도달 시점 필드 2성작 상태를 점검하고 피가 낮다면 즉시 롤 다운 진행',
-  ]
-  if (hasAugments) {
-    actionPlan.push('증강체 선택 시 덱 파워를 즉각 올려주는 전투 증강을 최소 1개 이상 확보하여 템포 유지')
-  }
 
   // 겹침/경합 강도에 따른 유연성 점수 (경합 강도가 높을수록 유연성 낮음)
   const contestScores = matches
@@ -1024,30 +1005,18 @@ function generateFallbackMetaFeedback(
   score = Math.min(Math.max(score, 35), 98)
   const tier = calculateTier(score)
 
-  const contestAnalysis = mode === 'single'
-    ? (latest.contestedInfo?.isContested
-      ? `로비 내 ${latest.contestedInfo.opponentCount}명의 경쟁자가 동일한 핵심 시너지(${latest.contestedInfo.contestedTraits.join(', ') || '메인 시너지'})를 동시에 기용하여 4~5스테이지 기물 풀 고갈이 발생했습니다. 겹침을 감지하고도 덱을 우회하지 않고 대깨로 밀어붙여 2성작 타이밍이 크게 지연되었습니다.`
-      : `로비 내 다른 유저들과 메인 시너지 겹침이 거의 없는 '빈집'을 효과적으로 선점했습니다. 기물 선점 경쟁에서는 매우 유리했으나 중후반 덱 밸류 업그레이드 타이밍이 아쉬웠습니다.`)
-    : `최근 ${matches.length}경기를 종합 분석한 결과, 초반 손패와 무관하게 선호하는 특정 덱을 강제로 대깨 치는 경향이 ${flexibility < 50 ? '높게' : '낮게'} 나타났습니다. 로비 정찰을 통해 겹친 유저를 확인하고 과감하게 피봇하는 유연성이 절실합니다.`
-
   return {
     mode,
     metaScore: score,
     metaTier: tier,
-    flexibilityScore: flexibility,
     playstyle,
     overview: mode === 'single'
       ? `단일 경기 분석 결과: ${latest.placement}위로 마감하였으며, 메타 덱의 기본 시너지는 구성되었으나 로비 내 경쟁 구도 대응 및 핵심 캐리 아이템 집중도에서 전력 누수가 발생했습니다.`
       : `최근 ${matches.length}경기 종합 분석 결과: 평균 ${avgPlacement.toFixed(1)}등을 기록 중이며, 덱 풀의 다양성과 기물 겹침 상황에서의 유연한 피봇 판단력이 순방의 핵심 분기점으로 나타났습니다.`,
-    contestAnalysis,
-    itemAnalysis: `메인 딜러에게 3신기 핵심 코어템이 완벽히 몰리지 못하고 보조 기물들로 아이템이 분산되어 후반 DPS 한계점에 부딪혔습니다. 특히 메인 탱커의 방어 아이템(워모그, 가고일 등) 3부위 완성이 늦어져 상대 주력 딜러의 화력을 버텨내지 못했습니다.`,
-    synergyAnalysis: `시너지를 폭넓게 활성화하려다 보니 실질적인 덱의 코어 시너지(고티어 시너지)의 단계가 낮아졌습니다. 앞라인 탱커 기물들의 2성작이 미흡한 상태에서 뒷라인 딜러만 배치되어 전투 초반 진형이 붕괴되는 구조적 취약점이 관찰되었습니다.`,
-    economyAnalysis: `${latest.lastRound} 탈락 시점에 잔여 골드가 ${latest.goldLeft}G 남아있던 점으로 미루어볼 때, 체력이 30 이하로 내려간 위험 구간에서 과감하게 골드를 소모하여 2성작을 완성하는 리롤 템포 전환 타이밍을 놓쳤습니다.`,
-    improvements: [
-      '로비 정찰 기반의 피봇 판단: 2-5 및 3-2 라운드에 타 유저 필드를 확인하고 2명 이상 겹쳤다면 즉시 대체 딜러/시너지로 선회해야 합니다.',
-      '메인 캐리 기물 아이템 3신기 우선 완성: 서브 딜러에게 템을 나누지 말고, 메인 캐리 1명에게 완제품 3개를 몰아준 뒤 메인 탱커 3방템을 구축해야 합니다.',
-      '체력 관리 기반의 유연한 리롤 전환: 체력이 35 이하로 떨어지는 4~5스테이지 구간에서는 50골드 이자에 집착하지 말고 20~30골드까지 과감히 소모해 필드 파워를 반등시켜야 합니다.',
+    actions: [
+      '로비 정찰 기반의 피봇 판단: 2-5 및 3-2 라운드에 타 유저 필드를 확인하고 2명 이상 겹쳤다면 대체 딜러/시너지를 검토합니다.',
+      '메인 캐리 기물 아이템 집중: 서브 딜러에게 템을 나누지 말고, 메인 캐리 1명에게 완제품 3개를 몰아준 뒤 메인 탱커 방템을 구축합니다.',
+      '체력 기준 리롤 전환: 체력이 35 이하로 떨어지는 4~5스테이지에서는 이자보다 필드 파워를 우선해 20~30골드까지 소모합니다.',
     ],
-    actionPlan,
   }
 }

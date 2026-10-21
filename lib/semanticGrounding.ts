@@ -52,7 +52,7 @@ function sentences(text: string): string[] {
 }
 
 /** 상대·로비 비교 문장 (사용자 보드 사실이 아님). "2등은 …, 4등도 …" 처럼 다른 순위가 주어인 문장 포함 */
-const OPPONENT_RE = /상대|경쟁자|로비\s*[1-8]등|1등\s*(?:플레이어|유저)|다른\s*플레이어|[1-8]등(?:은|는|도|이|의)\s/
+const OPPONENT_RE = /상대|경쟁자|로비\s*[1-8]등|1등\s*(?:플레이어|유저)|다른\s*플레이어|상위\s*(?:보드|유저|플레이어)|[1-8]등(?:은|는|도|이|의)\s/
 
 /** 처방·목표·가정 문장 (최종 보드에 대한 사실 주장이 아님) */
 const PRESCRIPTIVE_RE = /세요|십시오|하라|해야|했어야|줬어야|합시다|목표|금지|권장|노리세요|만들어야|다면|라면|이면\s|일\s*때|할\s*때|\d-\d\s*까지|(?:확보|달성|완성)\s*[.!]?$/
@@ -135,8 +135,10 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
 
       // 2) 3성 개수: "3성 N개"
       for (const m of s.matchAll(/3성\s*(\d+)\s*개/g)) {
-        // "3성 1개 이상/미만/없이" 는 기준값이지 개수 주장이 아니다
-        if (/^\s*(?:이상|이하|미만|초과|없이|가\s*되면)/.test(s.slice((m.index ?? 0) + m[0].length))) continue
+        // "3성 1개 이상/미만/없이", "3성 3개 확보 시점에·확보 시·확보까지만" 은 기준값이지 개수 주장이 아니다
+        const after = s.slice((m.index ?? 0) + m[0].length)
+        if (/^\s*(?:이상|이하|미만|초과|없이|가\s*되면)/.test(after)) continue
+        if (/^\s*(?:를|을)?\s*(?:확보|만들|완성)?\s*(?:한|할|하는)?\s*(?:시점|시(?=\s|$|,)|시에|까지|전|후|하면|되면)/.test(after)) continue
         const n = Number(m[1])
         if (!threeStarCounts.has(n)) {
           push({ type: 'three_star_count', text: s, expected: `3성 ${[...threeStarCounts].join('/')}개`, actual: `3성 ${n}개` })
@@ -187,6 +189,8 @@ export function feedbackTexts(fb: Partial<MetaCoachFeedback>, axisVerdicts?: Rec
   }
   add(fb.playstyle)
   add(fb.overview)
+  add(fb.actions)
+  // 스키마 v1 필드 (이전 형식 응답·캐시)
   add(fb.contestAnalysis)
   add(fb.itemAnalysis)
   add(fb.synergyAnalysis)

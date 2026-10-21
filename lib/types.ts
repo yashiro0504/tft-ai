@@ -367,15 +367,28 @@ export interface MetaCoachFeedback {
   mode: 'single' | 'multi'
   metaScore: number
   metaTier: string
-  flexibilityScore: number
   playstyle: string
   overview: string
-  contestAnalysis: string
-  itemAnalysis: string
-  synergyAnalysis: string
-  economyAnalysis: string
-  improvements: string[]
-  actionPlan: string[]
+  /** 다음 판에서 할 행동 3개 (스키마 v2, 2026-10-21.3~) */
+  actions?: string[]
+  /*
+   * 스키마 v1 필드 — 2026-10-21.3 이전에 캐시된 리포트에만 있다. 화면은 있으면 그대로 보여 준다.
+   * v2 에서는 6축 verdict(plan.axes) · 6축 contest 점수 · actions 로 대체.
+   */
+  /** @deprecated v1 — 6축 contest 점수로 대체 */
+  flexibilityScore?: number
+  /** @deprecated v1 — plan.axes contest verdict */
+  contestAnalysis?: string
+  /** @deprecated v1 — plan.axes itemization verdict */
+  itemAnalysis?: string
+  /** @deprecated v1 — plan.axes synergy verdict */
+  synergyAnalysis?: string
+  /** @deprecated v1 — plan.axes economy verdict */
+  economyAnalysis?: string
+  /** @deprecated v1 — actions */
+  improvements?: string[]
+  /** @deprecated v1 — actions · lecture.checklist */
+  actionPlan?: string[]
   /** 강의형 코칭 (코드가 주제 선택, LLM이 본문 작성) */
   lecture?: CoachLecture
   /** 6축 진단 + 강의 계획 (코드 산출) */

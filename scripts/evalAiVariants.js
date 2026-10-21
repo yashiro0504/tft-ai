@@ -92,6 +92,27 @@ function schemaErrorsV1(obj) {
   return errs
 }
 
+/** 스키마 v2 (2026-10-21.3) — v1 의 중복 해설·flexibilityScore·improvements·actionPlan 제거, actions 추가 */
+function schemaErrorsV2(obj) {
+  if (!obj || typeof obj !== 'object') return ['not_json']
+  const errs = []
+  const str = (k, o = obj) => typeof o[k] === 'string' && o[k].trim().length > 0
+  if (typeof obj.metaScore !== 'number') errs.push('metaScore')
+  for (const k of ['metaTier', 'playstyle', 'overview']) if (!str(k)) errs.push(k)
+  if (!Array.isArray(obj.actions) || obj.actions.length < 3 || !obj.actions.every((x) => typeof x === 'string' && x.trim())) errs.push('actions')
+  const l = obj.lecture
+  if (!l || typeof l !== 'object') errs.push('lecture')
+  else {
+    for (const k of ['topic', 'concept', 'why', 'evidence', 'alternative', 'drill']) if (!str(k, l)) errs.push(`lecture.${k}`)
+    if (!Array.isArray(l.checklist) || !l.checklist.length) errs.push('lecture.checklist')
+  }
+  const keys = Array.isArray(obj.axes) ? obj.axes.filter((a) => a && typeof a.verdict === 'string' && a.verdict.trim()).map((a) => a.key) : []
+  for (const k of AXES) if (!keys.includes(k)) errs.push(`axes.${k}`)
+  // v1 잔재가 남아 있으면 스키마 위반 (토큰 절감 확인용)
+  for (const k of ['flexibilityScore', 'contestAnalysis', 'itemAnalysis', 'synergyAnalysis', 'economyAnalysis', 'improvements', 'actionPlan']) if (k in obj) errs.push(`v1:${k}`)
+  return errs
+}
+
 /** 서술 문자열 전부 (점수·등급·축 key 제외) */
 function narrativeStrings(obj) {
   const out = []
@@ -267,7 +288,7 @@ async function runWorker(cfg) {
       const costUsd = price
         ? ((inputTokens - cachedTokens) * price.in + cachedTokens * price.cached + outputTokens * price.out) / 1_000_000
         : 0
-      const schemaErrors = cfg.schema === 'v1' ? schemaErrorsV1(parsed) : []
+      const schemaErrors = cfg.schema === 'v2' ? schemaErrorsV2(parsed) : schemaErrorsV1(parsed)
       const g = result && result.grounding
       const meta = {
         variant: cfg.variant,
@@ -533,4 +554,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { EVAL_CASES, schemaErrorsV1, uniqueDataCitations, repetition, extractJson }
+module.exports = { EVAL_CASES, schemaErrorsV1, schemaErrorsV2, uniqueDataCitations, repetition, extractJson }

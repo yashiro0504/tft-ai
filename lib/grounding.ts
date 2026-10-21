@@ -156,6 +156,8 @@ export function validateFeedbackGrounding(
     feedback.lecture?.alternative,
     feedback.lecture?.drill,
     ...(feedback.lecture?.checklist || []),
+    ...(feedback.actions || []),
+    // 스키마 v1 필드 (이전 형식 응답)
     ...(feedback.improvements || []),
     ...(feedback.actionPlan || []),
   ]
