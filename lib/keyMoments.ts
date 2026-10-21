@@ -173,11 +173,15 @@ export function winFactors(m: SlimMatchData): string[] {
   return out
 }
 
-/** 단일 경기의 핵심 장면 (우선순위 순, 최대 KEY_MOMENTS_MAX 개). 해당 없으면 빈 배열. */
-export function keyMoments(m: SlimMatchData): KeyMoment[] {
+/** 해당하는 장면 전부 (우선순위 순, 개수 제한 없음) — 규칙 검증(scripts/checkSceneRules)용 */
+export function allKeyMoments(m: SlimMatchData): KeyMoment[] {
   if (!m?.units?.length) return []
   return [sameComp, duplicateCopies, itemsOnWeak, carryOneStar, emptySlots, nearBreakpoint]
     .map((f) => f(m))
     .filter((x): x is KeyMoment => Boolean(x))
-    .slice(0, KEY_MOMENTS_MAX)
+}
+
+/** 단일 경기의 핵심 장면 (우선순위 순, 최대 KEY_MOMENTS_MAX 개). 해당 없으면 빈 배열. */
+export function keyMoments(m: SlimMatchData): KeyMoment[] {
+  return allKeyMoments(m).slice(0, KEY_MOMENTS_MAX)
 }
