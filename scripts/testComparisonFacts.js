@@ -4,13 +4,14 @@
  * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
  *  - 로비 1등·로비 평균 비교 = 손계산
  *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - 메타 덱 운영도: ±1등 경계 · 없는 기물(선택 기물 제외, 코스트순, 최대 3) · 종합 집계(표본 충분 판만 평균)
  *  - BIS 일치율 분자/분모 (표본 20판 미만 조합 제외, BIS 통계 없는 기물은 분모에서 제외)
  *  - 실제 픽스처 6경기에서 NaN/Infinity 없음
  */
 require('./_env').loadEnv()
 process.env.NEXT_PUBLIC_SUPABASE_URL = ''
 require('./_ts')
-const { buildComparisonFacts, bisBySlug, bisMatch, mostSimilarDeck } = require('../lib/comparisonFacts')
+const { buildComparisonFacts, bisBySlug, bisMatch, metaExecution, mostSimilarDeck } = require('../lib/comparisonFacts')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -143,6 +144,57 @@ ${mixedFacts}`
   check('임계(0.6) 미만이면 덱 줄 생략', !noDeck.includes('메타 덱'), noDeck)
   const small = buildComparisonFacts({ matches: [board], mode: 'single', combos: [], decks: [{ ...near, sampleSize: 12 }] })
   check('덱 표본 30판 미만이면 "참고용"', small.includes('표본 12판 · 표본이 적어 참고용'))
+
+  console.log('메타 덱 운영도')
+  check(
+    '운영도 줄: +0.79 = 평균 수준 · 없는 기물 F',
+    withDeck.includes('(+0.79) · 운영도: 메타 평균 수준 · 메타 덱 기물 중 내 보드에 없음: F'),
+    withDeck
+  )
+  const at4 = { ...near, avgPlacement: 4 }
+  check('경계: 3등 vs 메타 4등 (−1) = 잘 굴림', metaExecution({ ...board, placement: 3 }, [at4]).verdict === 'better')
+  check('경계: 5등 vs 메타 4등 (+1) = 못 굴림', metaExecution({ ...board, placement: 5 }, [at4]).verdict === 'worse')
+  check('경계 안: 4등 vs 메타 4.21등 (−0.21) = 평균 수준', metaExecution({ ...board, placement: 4 }, [near]).verdict === 'even')
+  // 보드 13개(A~M) vs 덱 A~K + X(4코)·W(2코)·Y(1코)·V(1코)·Z(3코, 선택 기물) → 11/18 = 0.61
+  const big = { ...sample, placement: 4, units: 'ABCDEFGHIJKLM'.split('').map((k) => ({ id: `TFT18_${k}`, name: k, tier: 2, items: [] })) }
+  const bigDeck = {
+    name: '큰 덱',
+    avgPlacement: 4.5,
+    sampleSize: 80,
+    units: [
+      ...'ABCDEFGHIJK'.split('').map((key) => ({ key, name: key, cost: 1 })),
+      { key: 'X', name: '엑스', cost: 4 },
+      { key: 'W', name: '더블유', cost: 2 },
+      { key: 'Y', name: '와이', cost: 1 },
+      { key: 'V', name: '브이', cost: 1 },
+      { key: 'Z', name: '제트', cost: 3, flex: true },
+    ],
+  }
+  const bigEx = metaExecution(big, [bigDeck])
+  check(
+    '없는 기물 = 선택 기물 제외 · 코스트 높은 순 · 최대 3개 (엑스, 더블유, 와이)',
+    bigEx && bigEx.missingCore.join(',') === '엑스,더블유,와이',
+    JSON.stringify(bigEx && bigEx.missingCore)
+  )
+  check('메타 덱 데이터 없으면 운영도 없음', metaExecution(board, []) === null)
+  // 종합: b1 5등(+0.79 평균 수준) · b2 3등(−1.21 잘 굴림) · b3 표본 12판 덱(참고용) · 실제 픽스처(메타 덱 없음) · 초반 종료(제외)
+  const other = { ...board, placement: 6, units: ['P', 'Q', 'R', 'S', 'T'].map((k) => ({ id: `TFT18_${k}`, name: k, tier: 2, items: [] })) }
+  const otherDeck = { name: '소표본 덱', avgPlacement: 3.5, sampleSize: 12, units: ['P', 'Q', 'R', 'S', 'U'].map((key) => ({ key })) }
+  const multiExec = buildComparisonFacts({
+    matches: [board, { ...board, placement: 3 }, other, sample, { ...board, lastRound: '2-2' }],
+    mode: 'multi',
+    combos: [],
+    decks: [near, otherDeck],
+  })
+  check(
+    '종합 운영도: 3/4판 (초반 종료 제외) · 표본 충분 2판 평균 −0.21 · 분포 · 참고용 1판',
+    multiExec.includes(
+      '- 메타 덱 운영도: 메타 덱 3/4판 · 표본 충분 2판 평균 -0.21등 (잘 굴림 1 · 평균 수준 1 · 못 굴림 0) · 표본 적은 덱 1판은 참고용(평균 제외)'
+    ),
+    multiExec
+  )
+  const multiNone = buildComparisonFacts({ matches: [sample, sample], mode: 'multi', combos: [], decks: [near] })
+  check('종합: 메타 덱 판이 없으면 운영도 줄 생략', !multiNone.includes('메타 덱 운영도'), multiNone)
 
   console.log('BIS 일치율')
   const combos = [

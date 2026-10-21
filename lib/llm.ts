@@ -16,7 +16,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.4'
+export const COACH_PROMPT_VERSION = '2026-10-21.5'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -195,6 +195,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 
 - [비교 사실] 블록(로비 1등·로비 평균·유사 메타 덱·BIS 일치율)은 코드가 계산한 서술 통계다. 수치는 그대로 인용하되
   "그래서 졌다"처럼 원인으로 단정하지 마라. 차이를 근거로 한 개선 제안은 "~를 비교하면"처럼 비교로 표현하라.
+- 메타 덱 운영도(메타 평균등수 대비 내 등수)는 점수가 아니다. 점수·등급 해설에 섞지 마라.
+  '메타 평균 수준'이면 강의 근거로 쓰지 마라. '못 굴림'의 원인은 "내 보드에 없음"으로 제공된 기물처럼 확인된 사실로만 설명하고,
+  그 외 원인(타이밍·리롤 횟수 등)을 지어내지 마라. '참고용' 표시가 있으면 참고용임을 밝혀라.
 
 ★★★ 라운드 타이밍 단정 금지 ★★★
 - 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·잔여 골드·탈락 라운드만 있다).

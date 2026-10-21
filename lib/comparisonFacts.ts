@@ -8,8 +8,11 @@ import type { LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } f
  * 모두 서술 통계이며 인과가 아니다. 값이 없거나 유한하지 않은 줄은 생략한다.
  *
  * - single: 로비 1등(내가 1등이면 2등) · 로비 평균(나 제외)과 레벨·3성·시너지 단계 합·아이템 수 비교,
- *           가장 유사한 메타 덱(기물 슬러그 Jaccard ≥ 0.6) 평균등수와 이 경기 등수, BIS 일치율
- * - multi:  경기 간 요약(레벨·3성·아이템 평균과 범위) + 전체 BIS 일치율
+ *           가장 유사한 메타 덱(기물 슬러그 Jaccard ≥ 0.6) 평균등수와 이 경기 등수 + 운영도, BIS 일치율
+ * - multi:  경기 간 요약(레벨·3성·아이템 평균과 범위) + 메타 덱 운영도 집계 + 전체 BIS 일치율
+ *
+ * 메타 덱 운영도: "메타 덱을 탔을 때 그 덱이 원래 내는 성적만큼 굴렸는가" (내 등수 − 메타 덱 평균등수).
+ * 점수(metaScore·6축)에는 넣지 않는다. 한 판 등수 편차가 커서 ±1등 안쪽은 '평균 수준'으로 본다.
  */
 
 /** unit_item 통계 행 (lib/statsShared MetaComboRanking 의 필요한 필드) */
@@ -25,7 +28,7 @@ export interface DeckFact {
   name: string
   avgPlacement: number | null
   sampleSize: number
-  units: { key: string }[]
+  units: { key: string; name?: string; cost?: number | null; flex?: boolean }[]
 }
 
 export const DECK_SIMILARITY_MIN = 0.6
@@ -33,6 +36,10 @@ export const DECK_SIMILARITY_MIN = 0.6
 export const BIS_MIN_SAMPLE = 20
 /** 메타 덱 평균이 이보다 적은 표본이면 "참고용" */
 const DECK_REFERENCE_SAMPLE = 30
+/** 운영도 판정 여유: 메타 평균과 이 등수 이상 차이 나야 잘/못 굴림 */
+export const META_EXECUTION_MARGIN = 1
+/** 메타 덱 기물 중 내 보드에 없는 기물을 최대 몇 개 보여 줄까 */
+export const MISSING_CORE_MAX = 3
 
 interface BoardStats {
   level: number
@@ -108,13 +115,68 @@ export function mostSimilarDeck(m: SlimMatchData, decks: DeckFact[]): { deck: De
   return best && best.similarity >= DECK_SIMILARITY_MIN ? best : null
 }
 
-function deckLine(m: SlimMatchData, decks: DeckFact[]): string | null {
+export type MetaExecutionVerdict = 'better' | 'even' | 'worse'
+
+const VERDICT_LABEL: Record<MetaExecutionVerdict, string> = {
+  better: '메타 평균보다 잘 굴림',
+  even: '메타 평균 수준',
+  worse: '메타 평균보다 못 굴림',
+}
+
+export interface MetaExecution {
+  deck: DeckFact
+  similarity: number
+  /** 내 등수 − 메타 덱 평균등수 (음수 = 메타 평균보다 잘함) */
+  delta: number
+  verdict: MetaExecutionVerdict
+  /** 메타 덱 표본이 DECK_REFERENCE_SAMPLE 이상인가 (집계 평균에는 이것만 쓴다) */
+  reliable: boolean
+  /** 메타 덱 기물 중 내 보드에 없는 기물 (선택 기물 제외, 코스트 높은 순, 최대 MISSING_CORE_MAX) */
+  missingCore: string[]
+}
+
+/** 한 경기의 메타 덱 운영도. 유사 메타 덱이 없거나 평균등수가 없으면 null */
+export function metaExecution(m: SlimMatchData, decks: DeckFact[]): MetaExecution | null {
   const hit = mostSimilarDeck(m, decks)
   if (!hit || hit.deck.avgPlacement == null || !fin(hit.deck.avgPlacement)) return null
   const d = hit.deck
-  const avg = d.avgPlacement as number
-  const ref = d.sampleSize < DECK_REFERENCE_SAMPLE ? ' · 표본이 적어 참고용' : ''
-  return `- 가장 유사한 메타 덱: ${d.name} (유사도 ${r2(hit.similarity).toFixed(2)}, 표본 ${d.sampleSize}판${ref}) · 메타 평균 ${avg.toFixed(2)}등 vs 이 경기 ${m.placement}등 (${signed(m.placement - avg, 2)})`
+  const delta = m.placement - (d.avgPlacement as number)
+  const verdict: MetaExecutionVerdict =
+    delta <= -META_EXECUTION_MARGIN ? 'better' : delta >= META_EXECUTION_MARGIN ? 'worse' : 'even'
+  const mine = slugSet(m.units.map((u) => u.id))
+  const missingCore = d.units
+    .filter((u) => !u.flex && !mine.has(entitySlug('champion', u.key)))
+    .sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0))
+    .slice(0, MISSING_CORE_MAX)
+    .map((u) => u.name || u.key)
+  return { deck: d, similarity: hit.similarity, delta, verdict, reliable: d.sampleSize >= DECK_REFERENCE_SAMPLE, missingCore }
+}
+
+function deckLine(m: SlimMatchData, decks: DeckFact[]): string | null {
+  const ex = metaExecution(m, decks)
+  if (!ex) return null
+  const d = ex.deck
+  const ref = ex.reliable ? '' : ' · 표본이 적어 참고용'
+  const missing = ex.missingCore.length ? ` · 메타 덱 기물 중 내 보드에 없음: ${ex.missingCore.join(', ')}` : ''
+  return `- 가장 유사한 메타 덱: ${d.name} (유사도 ${r2(ex.similarity).toFixed(2)}, 표본 ${d.sampleSize}판${ref}) · 메타 평균 ${(
+    d.avgPlacement as number
+  ).toFixed(2)}등 vs 이 경기 ${m.placement}등 (${signed(ex.delta, 2)}) · 운영도: ${VERDICT_LABEL[ex.verdict]}${missing}`
+}
+
+/** 종합: 메타 덱을 탄 판 수 + 표본 충분한 판의 평균 등수 차이와 판정 분포 */
+function metaExecutionLine(matches: SlimMatchData[], decks: DeckFact[]): string | null {
+  const hits = matches.map((m) => metaExecution(m, decks)).filter((x): x is MetaExecution => x !== null)
+  if (!hits.length) return null
+  const reliable = hits.filter((h) => h.reliable)
+  const weak = hits.length - reliable.length
+  const head = `- 메타 덱 운영도: 메타 덱 ${hits.length}/${matches.length}판`
+  const tail = weak ? ` · 표본 적은 덱 ${weak}판은 참고용(평균 제외)` : ''
+  if (!reliable.length) return `${head}${tail}`
+  const mean = reliable.reduce((s, h) => s + h.delta, 0) / reliable.length
+  const count = (v: MetaExecutionVerdict) => reliable.filter((h) => h.verdict === v).length
+  return `${head} · 표본 충분 ${reliable.length}판 평균 ${signed(mean, 2)}등 (잘 굴림 ${count('better')} · 평균 수준 ${count(
+    'even'
+  )} · 못 굴림 ${count('worse')})${tail}`
 }
 
 /** 기물 슬러그 → BIS 아이템 이름 상위 3개 (표본 ≥ 20, 평균등수 오름차순) */
@@ -206,8 +268,11 @@ export function buildComparisonFacts({
     if (bl) lines.push(bl)
   } else {
     // 강의 계획(buildCoachingPlan)과 같은 표본 — 초반 종료 판 제외 — 으로 세어야 프롬프트 안 숫자가 일치한다.
-    lines.push(`- 덱 유형: ${summarizeDeckTypes(scoringSample(matches).sample).line}`)
+    const { sample } = scoringSample(matches)
+    lines.push(`- 덱 유형: ${summarizeDeckTypes(sample).line}`)
     lines.push(...multiLines(matches))
+    const ml = metaExecutionLine(sample, decks)
+    if (ml) lines.push(ml)
     const bl = bisLine(
       matches.flatMap((m) => m.units),
       bis,
