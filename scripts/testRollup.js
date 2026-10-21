@@ -189,6 +189,115 @@ const sortRows = (rows) =>
     fbUnits.source === 'json' && fbUnits.filter === null && fbUnits.rows.length > 0 && fbUnits.rows.every((r) => typeof r.lowSample === 'boolean' && r.margin > 0)
   )
   check('덱: decksData.json 폴백', fbDecks.source === 'json' && fbDecks.decks.length > 0 && fbDecks.decks.every((d) => d.lowSample === d.sampleSize < 15))
+  {
+    // JSON 모드 엔티티 페이지: 정적 /deck/[id] 가 있는 덱은 그대로 링크 (REVIEW R8)
+    const entity = require('../lib/entityData')
+    const { entitySlug } = require('../lib/entitySlug')
+    const d0 = fbDecks.decks[0]
+    const page = await entity.getEntityPage('champion', entitySlug('champion', d0.units[0].key))
+    const jd = page && page.decks.find((d) => d.id === d0.id)
+    check('엔티티 페이지(JSON): 덱 링크 유지', jd && jd.linkable === true && jd.fromDb === false, JSON.stringify(jd))
+  }
+
+  // ?unit= 필터는 메모 캐시 객체를 고치면 안 된다 (REVIEW R1).
+  // 라우트는 filterStatsByUnit 결과만 응답하므로(route.ts 주석) 라우트 회귀는 이 순수 함수 테스트로 고정한다.
+  const fbCombos = await fallback.getStats('unit_item', shared.DEFAULT_FILTER)
+  const comboCount = fbCombos.rows.length
+  const someChamp = fbCombos.rows[0] && fbCombos.rows[0].champKey
+  const onlyOne = shared.filterStatsByUnit(fbCombos, String(someChamp))
+  check(
+    'unit 필터: 원본 rows 불변 · 새 객체 반환',
+    comboCount > 0 && fbCombos.rows.length === comboCount && onlyOne !== fbCombos && onlyOne.rows !== fbCombos.rows && onlyOne.rows.length > 0 && onlyOne.rows.length < comboCount,
+    `${comboCount} → ${fbCombos.rows.length} / ${onlyOne.rows.length}`
+  )
+  check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
+  // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
+  const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
+  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3)
+  const unitInputs = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase(), `DA_18_${someChamp}`, `DA_${someChamp}`, `${someChamp}18_Base`]
+  const variants = unitInputs.map((u) => shared.filterStatsByUnit(fbCombos, u))
+  check(
+    `unit 필터: ${unitInputs.join(' · ')} 같은 결과 · 응답 unit = 슬러그`,
+    variants.every((v) => v.unit === slug && v.success && JSON.stringify(v.rows) === JSON.stringify(variants[0].rows)) && variants[0].rows.length > 0,
+    variants.map((v) => `${v.unit}:${v.rows.length}`).join(' ')
+  )
+  check('unit 필터: 거른 뒤에도 totalBoards · filter 는 그대로', onlyOne.totalBoards === fbCombos.totalBoards && onlyOne.filter === fbCombos.filter)
+  const lux = shared.filterStatsByUnit({ ...fbCombos, rows: [{ champKey: 'Lux18_Base', key: 'Lux18_Base|x' }] }, 'lux')
+  check('unit 필터: 원본 키 Lux18_Base 도 슬러그 lux 로 찾음', lux.rows.length === 1)
+
+  console.log('헬스 (lib/llmStatus — 공개 응답에서 LLM 오류 본문 제거, FOLLOWUP F2)')
+  {
+    const ls = require('../lib/llmStatus')
+    check('오류 없으면 null', ls.redactLlmError(null, { includeBody: false }) === null)
+    ls.recordLlmHttpError({ provider: 'deepseek', model: 'deepseek-flash', status: 400, body: 'org-xyz request-id 123' })
+    const err = ls.lastLlmHttpError()
+    const pub = ls.redactLlmError(err, { includeBody: false })
+    const auth = ls.redactLlmError(err, { includeBody: true })
+    check('공개: body 키 없음 · model/status/at 유지', !('body' in pub) && pub.model === 'deepseek-flash' && pub.status === 400 && Boolean(pub.at) && !JSON.stringify(pub).includes('org-xyz'))
+    check('인증: body 포함 · 원본 불변', auth.body === 'org-xyz request-id 123' && err.body === 'org-xyz request-id 123')
+  }
+
+  // DB 장애 네거티브 캐시 (REVIEW R5): 타임아웃 1회 뒤 FAIL_TTL 동안은 DB 를 기다리지 않고 바로 폴백
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://hang.test'
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon'
+  process.env.STATS_DB_TIMEOUT_MS = '300'
+  let hangCalls = 0
+  const hanging = (signal) => {
+    hangCalls++
+    return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
+  }
+  const slow = loadStatsLib({ rpc: () => ({ abortSignal: hanging }) })
+  let t = Date.now()
+  const firstFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
+  const firstMs = Date.now() - t
+  t = Date.now()
+  const secondFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
+  const secondMs = Date.now() - t
+  check(
+    'DB 타임아웃 2회: 첫 요청만 대기, 두 번째는 즉시 폴백',
+    firstMs >= 250 && secondMs < 50 && hangCalls === 1,
+    `${firstMs}ms / ${secondMs}ms · DB 호출 ${hangCalls}회`
+  )
+  check(
+    'DB 장애 폴백 응답 스키마 유지 (source · fallbackReason · filter)',
+    [firstFail, secondFail].every((r) => r.source === 'json' && r.fallbackReason === 'db_error' && r.filter === null && r.rows.length > 0)
+  )
+
+  // stats 키 자체의 네거티브 캐시 (FOLLOWUP F3): 필터 RPC 는 정상, 통계 RPC 만 멈춤
+  let queryCalls = 0
+  const filterRows = [{ patch: '16.20', tier_bucket: 'MASTER', matches: 10, first_date: '2026-10-19', last_date: '2026-10-20' }]
+  const partial = loadStatsLib({
+    rpc: (fn) => ({
+      abortSignal: (signal) => {
+        if (fn === 'tft_stat_filters') return Promise.resolve({ data: filterRows, error: null })
+        queryCalls++
+        return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
+      },
+    }),
+  })
+  t = Date.now()
+  const qFirst = await partial.getStats('unit', shared.DEFAULT_FILTER)
+  const qFirstMs = Date.now() - t
+  const callsAfterFirst = queryCalls
+  t = Date.now()
+  const qSecond = await partial.getStats('unit', shared.DEFAULT_FILTER)
+  const qSecondMs = Date.now() - t
+  check(
+    'stats 키 failMemo: 필터 성공 + 통계 RPC 타임아웃 → 두 번째는 DB 재시도 없이 즉시 폴백',
+    (await partial.getMetaFilters()).source === 'db' &&
+      qFirstMs >= 250 &&
+      qSecondMs < 50 &&
+      callsAfterFirst === 2 &&
+      queryCalls === 2 &&
+      [qFirst, qSecond].every((r) => r.source === 'json' && r.fallbackReason === 'db_error'),
+    `${qFirstMs}ms / ${qSecondMs}ms · 통계 RPC ${queryCalls}회`
+  )
+  await partial.getStats('item', shared.DEFAULT_FILTER)
+  check('stats 키 failMemo 는 키 단위 (다른 type 은 DB 재시도)', queryCalls === 4, `통계 RPC ${queryCalls}회`)
+
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL
+  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  delete process.env.STATS_DB_TIMEOUT_MS
 
   await sqlChecks()
 })()
@@ -305,6 +414,13 @@ async function apiChecks(db, mem) {
   const decks = await stats.getDecks({ patch: '16.20', tier: 'master' })
   check('덱: db · stat_comp.deck → 화면 덱 · 표본 부족(12 < 15)', decks.source === 'db' && decks.decks.length === 1 && decks.decks[0].id === sampleDeck.id && decks.decks[0].lowSample === true && decks.totalBoards === 960)
   check('덱: DB 덱에는 JSON 기물 수치를 붙이지 않음', decks.decks[0].units.every((u) => !u.stat))
+  // 엔티티 페이지: DB 덱은 id 가 JSON 덱과 겹쳐도 /deck/[id](다른 패치 스냅샷)로 링크하지 않는다 (REVIEW R8)
+  for (const k of Object.keys(require.cache)) if (/entityData\.ts$/.test(k)) delete require.cache[k]
+  const entity = require('../lib/entityData')
+  const { entitySlug } = require('../lib/entitySlug')
+  const champPage = await entity.getEntityPage('champion', entitySlug('champion', decks.decks[0].units[0].key))
+  const dbDeck = champPage && champPage.decks.find((d) => d.id === sampleDeck.id)
+  check('엔티티 페이지: DB 덱은 링크 안 함 · DB 집계 표시', dbDeck && dbDeck.fromDb === true && dbDeck.linkable === false, JSON.stringify(dbDeck))
   const chDecks = await stats.getDecks({ patch: '16.20', tier: 'challenger' })
   check('덱: 기본 아닌 필터에 덱이 없으면 빈 목록 (db)', chDecks.source === 'db' && chDecks.decks.length === 0)
 
@@ -329,7 +445,9 @@ function loadPglite() {
 async function sqlChecks() {
   const mod = loadPglite()
   if (!mod) {
-    console.log('SQL (PGlite) — 건너뜀: PGlite 없음 (PGLITE_PATH 로 지정하면 0005·0006 을 실제로 실행해 비교)')
+    // CI 는 REQUIRE_PGLITE=1 — 실서비스 SQL 이 검증 없이 통과하지 않게 한다
+    check('SQL (PGlite) 로드', !process.env.REQUIRE_PGLITE, 'REQUIRE_PGLITE=1 인데 @electric-sql/pglite 를 불러오지 못함 (npm ci 확인)')
+    console.log('SQL (PGlite) — 건너뜀: PGlite 없음 (npm install 또는 PGLITE_PATH 로 지정하면 0005·0006 을 실제로 실행해 비교)')
     return
   }
   console.log('SQL (PGlite: 0005 + 0006 실행 · JS 결과와 비교)')

@@ -6,6 +6,7 @@ import { dailyQuotaLimit } from '@/lib/quota'
 import { getLlmBudgetStatus } from '@/lib/llmBudget'
 import { turnstileStatus } from '@/lib/turnstile'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
+import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, lastLlmHttpError, redactLlmError } from '@/lib/llmStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,6 +56,12 @@ export async function GET(req: NextRequest) {
   if (!turnstile.enforced && turnstile.siteKeyConfigured) {
     warnings.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY만 설정됨: 서버 검증이 비활성입니다.')
   }
+  const llmError = lastLlmHttpError()
+  if (llmError && llmError.status >= 400 && llmError.status < 500 && llmError.status !== 429) {
+    warnings.push(
+      `DeepSeek ${llmError.status} (${llmError.at}): 모델 ID(${llmError.model})·thinking 파라미터가 API 스펙과 맞는지 확인하세요. AI 코칭이 폴백으로 응답 중일 수 있습니다.`
+    )
+  }
   if (process.env.NODE_ENV === 'production' && !process.env.RIOT_API_KEY) {
     warnings.push('프로덕션에 RIOT_API_KEY 미설정: 검색이 503으로 실패합니다.')
   }
@@ -67,6 +74,13 @@ export async function GET(req: NextRequest) {
     integrations: {
       riot: Boolean(process.env.RIOT_API_KEY),
       deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
+      deepseekModel: DEEPSEEK_MODEL,
+      deepseekThinking: DEEPSEEK_THINKING,
+      /**
+       * 이 인스턴스의 마지막 LLM HTTP 오류 (llm.http_<status> 카운터는 metrics 에).
+       * 오류 본문(body)은 HEALTH_TOKEN 으로 인증된 요청에만 — 토큰이 없는 배포는 공개 응답이라 뺀다.
+       */
+      lastLlmHttpError: redactLlmError(llmError, { includeBody: Boolean(token) }),
       gemini: Boolean(process.env.GEMINI_API_KEY),
       turnstile,
       supabase: isSupabaseConfigured(),

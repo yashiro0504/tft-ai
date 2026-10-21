@@ -144,7 +144,57 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   }
 
   const quiet = { log() {}, warn() {}, error: console.error }
-  const { main } = require('./collectDb')
+  // collectDb 는 require 시점에 createMemoryStore 를 구조 분해하므로 그 전에 감싼다 (집계 실패 · 시드 손상 시나리오용)
+  const storeMod = require('./collect/store')
+  const realCreateMemoryStore = storeMod.createMemoryStore
+  let brokenRollup = false
+  let corruptSeed = false
+  let preloadOld = false
+  /** null 이 아니면 rawSizeMb 를 이 값으로 고정 (용량 가드 시나리오) */
+  let fakeSizeMb = null
+  /** 마지막으로 만든 저장소의 prune 호출 수 */
+  let pruneCalls = 0
+  storeMod.createMemoryStore = () => {
+    const s = realCreateMemoryStore()
+    pruneCalls = 0
+    const origPrune = s.prune.bind(s)
+    s.prune = async (k) => {
+      pruneCalls++
+      return origPrune(k)
+    }
+    if (fakeSizeMb !== null) s.rawSizeMb = async () => fakeSizeMb
+    if (corruptSeed) {
+      // 시드 갱신 직후 c1 의 암호문을 깨뜨린다 (다른 키로 만든 시드 흉내)
+      const origUpsert = s.upsertSeeds.bind(s)
+      s.upsertSeeds = async (rows) => {
+        await origUpsert(rows)
+        for (const seed of s._state.seeds.values()) if (sc.decrypt(seed.puuid_enc) === 'c1') seed.puuid_enc = 'broken.token'
+      }
+    }
+    if (brokenRollup || preloadOld) {
+      // 이전 패치 1판을 미리 넣어 둔다
+      const origLoadDict = s.loadDict.bind(s)
+      s.loadDict = async () => {
+        await origLoadDict()
+        const oldRaw = fakeMatch('KR_OLD', { at: Date.UTC(2026, 9, 1), version: 'Version 15.19.1' })
+        await s.ensureDict(collectDictKeys(oldRaw))
+        const o = normalizeMatch(oldRaw, { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
+        await s.ingest(o.match, o.boards)
+        if (preloadOld) {
+          // 용량 가드 시나리오: 수집 전에도 최신 패치 판이 있어야 KEEP_PATCHES=1 정리가 이전 패치를 지운다
+          const cur = normalizeMatch(fakeMatch('KR_CUR'), { platform: 'kr', tierBucket: 'MASTER' }, s.dictId)
+          await s.ingest(cur.match, cur.boards)
+        }
+      }
+    }
+    if (brokenRollup) {
+      s.refreshRollup = async () => {
+        throw new Error('rollup boom')
+      }
+    }
+    return s
+  }
+  const { main, CFG, shouldPrune, shouldPruneOnLimit, resolveLimitConfig, refreshAggregates, collectionDeadline } = require('./collectDb')
   const first = await main({ log: quiet })
   const st = first.store._state
   check('1회차: 랭크 6판 적재', first.stats.matches_added === 6, `added=${first.stats.matches_added}`)
@@ -161,6 +211,107 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   check('집계: 적재한 6판이 모두 일별 집계에 들어감', rolled === 6 && !first.aggregates.error, `집계 ${rolled}판`)
   check('집계: 판 티어별 조합 (CHALLENGER · GRANDMASTER · MASTER)', st.rollups.size === 3, [...st.rollups.keys()].join(', '))
   check('덱 클러스터: 최신 패치 × 티어 필터 4개 갱신', first.aggregates.latestPatch === '15.20' && st.comps.size === 4)
+
+  console.log('집계 실패 시 원본 정리 건너뜀 (REVIEW R2)')
+  check('shouldPrune: 집계 오류면 false · 성공이면 true', shouldPrune({ error: 'x' }) === false && shouldPrune({ error: null }) === true && shouldPrune(null) === false)
+  brokenRollup = true
+  const broken = await main({ log: quiet })
+  brokenRollup = false
+  const bst = broken.store._state
+  check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
+  check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
+
+  console.log('용량 가드: 소프트/하드 한도 분리 (FOLLOWUP F1)')
+  const lim = { maxRawMb: 400, maxRawMbHard: 480, pruneOnLimit: false }
+  check(
+    'shouldPruneOnLimit: 한도 이하 false · 소프트 opt-in 만 · 하드는 항상',
+    shouldPruneOnLimit(400, lim) === false &&
+      shouldPruneOnLimit(450, lim) === false &&
+      shouldPruneOnLimit(450, { ...lim, pruneOnLimit: true }) === true &&
+      shouldPruneOnLimit(481, lim) === true
+  )
+  // 하드 < 소프트 설정 방어 (FOLLOWUP2 G1)
+  const r1 = resolveLimitConfig(400, 480)
+  const r2 = resolveLimitConfig(500, 480)
+  check('resolveLimitConfig: 정상 설정 유지 · 하드 < 소프트면 소프트로 보정', r1.maxRawMb === 400 && r1.maxRawMbHard === 480 && r2.maxRawMb === 500 && r2.maxRawMbHard === 500, JSON.stringify([r1, r2]))
+  const inverted = { ...r2, pruneOnLimit: false }
+  check(
+    '하드 < 소프트(500/480): 490MB 정리 없음 · 501MB 하드 정리 · 보정 전 cfg 를 넘겨도 같음',
+    shouldPruneOnLimit(490, inverted) === false &&
+      shouldPruneOnLimit(501, inverted) === true &&
+      shouldPruneOnLimit(490, { maxRawMb: 500, maxRawMbHard: 480, pruneOnLimit: false }) === false
+  )
+  check('정상 설정(400/480) 450MB 는 PRUNE_ON_LIMIT 에 따름', shouldPruneOnLimit(450, { ...r1, pruneOnLimit: false }) === false && shouldPruneOnLimit(450, { ...r1, pruneOnLimit: true }) === true)
+
+  // 집계가 계속 실패해 이전 패치 원본(KR_OLD)이 쌓인 상황
+  const runWithSize = async (mb, pruneOnLimit, limits = { maxRawMb: 400, maxRawMbHard: 480 }) => {
+    const saved = { pruneOnLimit: CFG.pruneOnLimit, maxRawMb: CFG.maxRawMb, maxRawMbHard: CFG.maxRawMbHard }
+    Object.assign(CFG, { pruneOnLimit }, resolveLimitConfig(limits.maxRawMb, limits.maxRawMbHard))
+    fakeSizeMb = mb
+    preloadOld = true
+    // 하드 한도 정리는 log.error 로 남는다 (테스트 출력에서는 숨김)
+    const r = await main({ log: { ...quiet, error() {} } })
+    preloadOld = false
+    fakeSizeMb = null
+    Object.assign(CFG, saved)
+    return { r, calls: pruneCalls, st: r.store._state }
+  }
+  const soft = await runWithSize(450, false)
+  check(
+    '소프트 한도 기본: 정리 없이 수집 중단 · KR_OLD 보존 · note',
+    soft.calls === 0 && soft.st.matches.has('KR_OLD') && soft.r.stats.matches_added === 0 && /용량 한도 초과/.test(soft.st.runs[0].note || ''),
+    `prune=${soft.calls} note=${soft.st.runs[0].note}`
+  )
+  const optIn = await runWithSize(450, true)
+  check('소프트 한도 + PRUNE_ON_LIMIT=1: 정리', optIn.calls === 1 && !optIn.st.matches.has('KR_OLD'), `prune=${optIn.calls}`)
+  const hardRun = await runWithSize(500, false)
+  check(
+    '하드 한도: 설정과 무관하게 정리 · note',
+    hardRun.calls === 1 && !hardRun.st.matches.has('KR_OLD') && /하드 한도 초과/.test(hardRun.st.runs[0].note || ''),
+    `prune=${hardRun.calls} note=${hardRun.st.runs[0].note}`
+  )
+
+  // G1 통합: MAX_RAW_MB=500 / HARD=480 → 490MB 는 한도 이하라 정리·건너뜀 없음, 501MB 는 하드 정리
+  const below = await runWithSize(490, false, { maxRawMb: 500, maxRawMbHard: 480 })
+  check(
+    '하드 < 소프트 설정 · 490MB: 정리 없음 · 하드 note 없음 · 수집 진행',
+    below.calls <= 1 && below.st.matches.has('KR_CUR') && !/하드 한도 초과|용량 한도 초과/.test(below.st.runs[0].note || '') && below.r.stats.matches_added > 0,
+    `prune=${below.calls} added=${below.r.stats.matches_added} note=${below.st.runs[0].note}`
+  )
+  const above = await runWithSize(501, false, { maxRawMb: 500, maxRawMbHard: 480 })
+  check('하드 < 소프트 설정 · 501MB: 하드 정리 + note', above.calls === 1 && /하드 한도 초과\(501MB > 500MB\)/.test(above.st.runs[0].note || ''), above.st.runs[0].note)
+
+  console.log('시드 복호화 실패 격리 (REVIEW R9)')
+  corruptSeed = true
+  const withBad = await main({ log: quiet })
+  corruptSeed = false
+  const wst = withBad.store._state
+  // c1 의 판(KR_1·KR_3)만 빠지고 나머지 시드의 판은 수집된다 (KR_2 는 g1 에도 있음)
+  check('복호화 불가 시드 1건 → 나머지 시드 수집 계속', withBad.stats.matches_added === 4 && !wst.matches.has('KR_1') && wst.matches.has('KR_2') && wst.matches.has('KR_6'), `added=${withBad.stats.matches_added}`)
+  check('실패 시드 수가 실행 기록에 남음', /시드 복호화 실패 1건/.test(wst.runs[0].note || ''), wst.runs[0].note)
+
+  console.log('덱 클러스터 시간 확보 (REVIEW R3)')
+  const MIN = 60 * 1000
+  check('수집 종료 = MAX_MINUTES − 7분 (짧은 실행은 절반)', collectionDeadline(0, 50) === 43 * MIN && collectionDeadline(0, 10) === 5 * MIN)
+  const deckStore = realCreateMemoryStore()
+  for (const id of ['KR_D1', 'KR_D2']) {
+    const r = fakeMatch(id)
+    await deckStore.ensureDict(collectDictKeys(r))
+    const n = normalizeMatch(r, { platform: 'kr', tierBucket: 'MASTER' }, deckStore.dictId)
+    await deckStore.ingest(n.match, n.boards)
+  }
+  const t0 = Date.now()
+  const runDeadline = t0 + 50 * MIN
+  // 수집이 자기 몫(43분)을 다 쓰고 마지막 판 조회로 90초 넘친 시점
+  const exhausted = await refreshAggregates({ store: deckStore, dirty: new Set(), deadline: runDeadline, log: quiet, now: () => collectionDeadline(t0, 50) + 90 * 1000 })
+  check('수집이 시간을 다 써도 덱 클러스터 재빌드', !exhausted.error && exhausted.comps && deckStore._state.comps.size === 4, JSON.stringify(exhausted))
+  const warns = []
+  const lateStore = realCreateMemoryStore()
+  await lateStore.ensureDict(collectDictKeys(fakeMatch('KR_D3')))
+  const n3 = normalizeMatch(fakeMatch('KR_D3'), { platform: 'kr', tierBucket: 'MASTER' }, lateStore.dictId)
+  await lateStore.ingest(n3.match, n3.boards)
+  const late = await refreshAggregates({ store: lateStore, dirty: new Set(), deadline: runDeadline, log: { ...quiet, warn: (m) => warns.push(m) }, now: () => runDeadline - MIN })
+  check('정말 시간이 없으면 미루고 note · 24시간+ 미갱신 경고', late.comps === null && /미룸/.test(late.note) && /미갱신/.test(late.note) && warns.some((w) => /덱 클러스터/.test(w)), `${late.note} / ${warns.join(' | ')}`)
 })()
   .catch((e) => {
     failures++

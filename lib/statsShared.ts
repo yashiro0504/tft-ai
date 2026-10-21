@@ -6,6 +6,7 @@ import type {
   MetaItemRanking,
   MetaTraitRanking,
 } from './types'
+import { entitySlug } from './entitySlug'
 
 /**
  * 데이터 플랫폼 v2 (Phase B) — 필터·표본 규칙. 서버(API·AI 프롬프트)와 클라이언트(메타 대시보드)가 같이 쓴다.
@@ -122,9 +123,12 @@ export interface StatsResponse<T = StatRow> {
   filter: (StatFilter & { patch: string }) | null
   /** 폴백 JSON 의 패치 라벨 (예: set18) */
   patch?: string
+  /** 필터 안 전체 보드 (unit 으로 걸러도 거르기 전 분모) */
   totalBoards?: number
   totalMatches?: number
   minSample: number
+  /** type=unit_item&unit= 으로 거른 기물 슬러그 */
+  unit?: string
   rows: T[]
   /** db 를 쓰지 못한 이유 (운영 확인용) */
   fallbackReason?: string
@@ -161,6 +165,16 @@ export interface MetaFiltersResponse {
   defaults: { patch: string | null; tier: TierFilter; days: DaysFilter }
   minSample: typeof MIN_SAMPLE
   fallbackReason?: string
+}
+
+/**
+ * 기물×아이템 응답을 한 기물로 거른다. 원본(메모 캐시가 들고 있는 객체)은 건드리지 않고 새 객체를 돌려준다.
+ * unit 은 화면 슬러그('ahri')·수집 키('Ahri', 'Lux18_Base')·Riot ID('TFT18_Ahri') 모두 같은 기물로 맞춘다.
+ * totalBoards 는 거르기 전 분모(필터 안 전체 보드) 그대로다.
+ */
+export function filterStatsByUnit<T extends StatRow>(res: StatsResponse<T>, unit: string): StatsResponse<T> {
+  const u = entitySlug('champion', unit)
+  return { ...res, unit: u, rows: res.rows.filter((r) => 'champKey' in r && entitySlug('champion', r.champKey) === u) }
 }
 
 /** 표본 필드 채우기 */

@@ -8,7 +8,7 @@
  *  4) 일별 집계: 이번 실행에 들어온(또는 티어가 바뀐) (game_date, patch, tier_bucket) 조합만 다시 계산
  *     하루 1회(DECK_REFRESH_HOURS)는 원본의 모든 조합을 다시 계산하고, 최신 패치 덱 클러스터(stat_comp)를 다시 만든다
  *  5) 원본 정리: 최근 KEEP_PATCHES 개 패치만 남김 (무료 플랜 500MB 대응, 집계는 영구)
- * MAX_MINUTES 가 지나거나 MAX_MATCHES 를 채우면 멈춘다. 다음 실행이 커서부터 이어 간다.
+ * 수집(2·3)은 MAX_MINUTES 보다 7분 일찍 멈춰 덱 클러스터 몫을 남긴다. MAX_MATCHES 를 채워도 멈춘다. 다음 실행이 커서부터 이어 간다.
  *
  * 사용법:
  *   node scripts/collectDb.js                 # Supabase 적재 (SUPABASE_SERVICE_ROLE_KEY 필요)
@@ -20,7 +20,8 @@
  *   NEXT_PUBLIC_SUPABASE_URL (또는 SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY(32자+)
  *   RIOT_MIN_INTERVAL_MS=1250   개발 키 기준. 프로덕션 키는 34 (한도 60%)
  *   MAX_MINUTES=50 · MAX_MATCHES=200(무료 플랜: 시간당 200판 ≈ 패치당 6.4만 판 ≈ 170MB, 실측 2.6KB/판) · SEED_TIERS=challenger,grandmaster,master · MASTER_LIMIT=1000
- *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1 · MAX_RAW_MB=400
+ *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1
+ *   MAX_RAW_MB=400(소프트: 넘으면 수집만 중단) · MAX_RAW_MB_HARD=480(하드: 넘으면 무조건 정리) · PRUNE_ON_LIMIT=0(1 이면 소프트에서도 정리)
  *   SET_NUMBER=18 · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=20 · COMP_MIN_GAMES=8
  */
 const crypto = require('crypto')
@@ -42,6 +43,9 @@ const num = (name, def) => {
 
 const DRY_RUN = process.argv.includes('--dry-run')
 const ROLLUP_ONLY = process.argv.includes('--rollup-only')
+/** 설정 원값 (보정 전) — 하드 < 소프트 경고용 */
+const RAW_LIMITS = { soft: num('MAX_RAW_MB', 400), hard: num('MAX_RAW_MB_HARD', 480) }
+const LIMITS = resolveLimitConfig(RAW_LIMITS.soft, RAW_LIMITS.hard)
 const CFG = {
   region: env('RIOT_REGION', 'asia'),
   platform: env('RIOT_PLATFORM', 'kr'),
@@ -57,13 +61,19 @@ const CFG = {
   idsPerSeed: num('IDS_PER_SEED', 20),
   lookbackDays: num('NEW_SEED_LOOKBACK_DAYS', 2),
   keepPatches: num('KEEP_PATCHES', 1),
-  maxRawMb: num('MAX_RAW_MB', 400),
+  maxRawMb: LIMITS.maxRawMb,
+  maxRawMbHard: LIMITS.maxRawMbHard,
+  pruneOnLimit: process.env.PRUNE_ON_LIMIT === '1',
   setNumber: num('SET_NUMBER', 18),
   rankedQueue: num('RANKED_QUEUE', 1100),
   deckRefreshHours: num('DECK_REFRESH_HOURS', 20),
 }
 /** 덱 클러스터는 원본 1패치를 다 읽으므로 남은 시간이 이보다 적으면 다음 실행으로 미룬다 */
 const DECK_JOB_MIN_MS = 5 * 60 * 1000
+/** 수집 루프는 MAX_MINUTES 보다 이만큼 일찍 멈춰 덱 클러스터 몫을 남긴다 (마지막 판 조회가 넘치는 여유 2분 포함) */
+const DECK_JOB_RESERVE_MS = DECK_JOB_MIN_MS + 2 * 60 * 1000
+/** 최신 패치 덱 클러스터가 이보다 오래되면 경고 */
+const DECK_STALE_WARN_MS = 24 * 60 * 60 * 1000
 /** 시드 커서와 실제 판 시각 사이 여유 (startTime 기준이 판 시작인지 끝인지와 무관하게 놓치지 않게) */
 const CURSOR_OVERLAP_MS = 60 * 60 * 1000
 
@@ -124,20 +134,26 @@ async function refreshSeeds({ riot, store, seedCrypto, log }) {
   return rows.length
 }
 
+/** 수집(실패 재시도·시드 순회) 종료 시각. 짧은 실행에서도 수집 시간이 0 이 되지 않게 절반은 남긴다 */
+function collectionDeadline(startedAt, maxMinutes = CFG.maxMinutes) {
+  const total = maxMinutes * 60 * 1000
+  return startedAt + Math.max(total - DECK_JOB_RESERVE_MS, total / 2)
+}
+
 /**
  * 4) 일별 집계 갱신.
  *  - 매 실행: dirty 조합(이번 실행에 적재·티어 상향된 판의 (game_date, patch, tier_bucket))만 다시 계산
  *  - 최신 패치 덱 클러스터가 DECK_REFRESH_HOURS 보다 오래됐으면(하루 1회): 원본의 모든 조합 + 덱 클러스터
  * 0006 마이그레이션 전이거나 실패해도 수집 결과는 그대로 두고 경고만 남긴다 (다음 일 1회 전체 재계산이 메운다).
  */
-async function refreshAggregates({ store, dirty, deadline, log, force = false }) {
-  const out = { combos: 0, comps: null, latestPatch: null, error: null }
+async function refreshAggregates({ store, dirty, deadline, log, force = false, now = Date.now }) {
+  const out = { combos: 0, comps: null, latestPatch: null, error: null, note: '' }
   try {
     const raw = await store.rawCombos()
     const latest = raw.reduce((best, c) => (!best || c.game_date > best.game_date ? c : best), null)
     out.latestPatch = latest?.patch ?? null
-    const compsAt = out.latestPatch ? await store.compsUpdatedAt(out.latestPatch) : Date.now()
-    const daily = force || Date.now() - compsAt > CFG.deckRefreshHours * 60 * 60 * 1000
+    const compsAt = out.latestPatch ? await store.compsUpdatedAt(out.latestPatch) : now()
+    const daily = force || now() - compsAt > CFG.deckRefreshHours * 60 * 60 * 1000
 
     const keys = new Set(dirty)
     if (daily) for (const c of raw) keys.add(comboKey(c.game_date, c.patch, c.tier_bucket))
@@ -149,14 +165,46 @@ async function refreshAggregates({ store, dirty, deadline, log, force = false })
     if (keys.size) log.log(`  집계 갱신: ${keys.size}개 조합${daily ? ' (일 1회 전체 재계산)' : ''}`)
 
     if (daily && out.latestPatch) {
-      if (force || deadline - Date.now() > DECK_JOB_MIN_MS) out.comps = await rebuildComps(store, out.latestPatch, { log })
-      else log.log('  덱 클러스터: 남은 시간이 부족해 다음 실행으로 미룸')
+      if (force || deadline - now() > DECK_JOB_MIN_MS) out.comps = await rebuildComps(store, out.latestPatch, { log })
+      else {
+        out.note = '덱 클러스터 미룸(시간 부족)'
+        log.log('  덱 클러스터: 남은 시간이 부족해 다음 실행으로 미룸')
+        // compsAt 0 = 아직 한 번도 만들지 않음
+        const staleMs = compsAt ? now() - compsAt : Infinity
+        if (staleMs > DECK_STALE_WARN_MS) {
+          const hours = Number.isFinite(staleMs) ? `${Math.floor(staleMs / 3600000)}시간` : '한 번도'
+          out.note += ` · 덱 클러스터 ${hours} 미갱신`
+          log.warn(`⚠️  최신 패치(${out.latestPatch}) 덱 클러스터가 ${hours} 갱신되지 않았습니다 — npm run collect:db:rollup 으로 수동 갱신하세요`)
+        }
+      }
     }
   } catch (e) {
     out.error = e.message
     log.warn(`⚠️  집계 실패 — supabase/migrations/0006_tft_rollups.sql 적용 여부를 확인하세요: ${e.message}`)
   }
   return out
+}
+
+/** 집계가 성공했을 때만 원본을 정리한다 */
+function shouldPrune(aggregates) {
+  return Boolean(aggregates) && !aggregates.error
+}
+
+/**
+ * 시작 시 용량 가드에서 원본을 정리할지.
+ * 소프트 한도(MAX_RAW_MB)는 opt-in(PRUNE_ON_LIMIT=1) — 실행 끝 정리(shouldPrune)가 막혀 원본이 쌓인 경우가 대부분이라
+ * 집계 상태를 모른 채 지우지 않는다. 하드 한도(MAX_RAW_MB_HARD)는 DB 자체를 지키는 최후 수단이라 항상 정리.
+ */
+function shouldPruneOnLimit(sizeMb, cfg = CFG) {
+  const { maxRawMb, maxRawMbHard } = resolveLimitConfig(cfg.maxRawMb, cfg.maxRawMbHard)
+  if (sizeMb > maxRawMbHard) return true
+  if (sizeMb > maxRawMb) return cfg.pruneOnLimit
+  return false
+}
+
+/** 소프트/하드 한도 정규화 — 하드가 소프트보다 작으면 소프트로 올린다 (설정 실수로 소프트 이하에서 하드 정리되지 않게) */
+function resolveLimitConfig(softMb, hardMb) {
+  return { maxRawMb: softMb, maxRawMbHard: Math.max(hardMb, softMb) }
 }
 
 /** --rollup-only: Riot 호출 없이 원본 전체로 집계·덱 클러스터를 다시 만든다 */
@@ -171,6 +219,7 @@ async function rollupOnly(store, log) {
 async function main({ log = console } = {}) {
   const startedAt = Date.now()
   const deadline = startedAt + CFG.maxMinutes * 60 * 1000
+  const collectUntil = collectionDeadline(startedAt)
   if (ROLLUP_ONLY) {
     const store = makeStore()
     if (!store) {
@@ -210,16 +259,32 @@ async function main({ log = console } = {}) {
     const patchAt = (gameAtMs) => patchForTime(calendar, gameAtMs)
     log.log(`  패치 달력: ${calendar.map((p) => p.patch).sort().join(', ') || '(비어 있음)'}`)
 
-    // 0) 용량 가드 (무료 플랜)
+    // 0) 용량 가드 (무료 플랜): 소프트 한도는 수집만 멈추고, 하드 한도·opt-in 일 때만 정리
+    if (RAW_LIMITS.hard < RAW_LIMITS.soft) {
+      log.warn(`  MAX_RAW_MB_HARD(${RAW_LIMITS.hard}) < MAX_RAW_MB(${RAW_LIMITS.soft}) → 하드 한도를 ${CFG.maxRawMbHard}MB 로 보정`)
+    }
     let sizeMb = await store.rawSizeMb()
     if (sizeMb > CFG.maxRawMb) {
-      const removed = await store.prune(CFG.keepPatches)
-      sizeMb = await store.rawSizeMb()
-      log.warn(`  원본 ${sizeMb}MB > 한도 ${CFG.maxRawMb}MB → 정리 ${removed}판`)
+      if (shouldPruneOnLimit(sizeMb)) {
+        const hard = sizeMb > CFG.maxRawMbHard
+        const removed = await store.prune(CFG.keepPatches)
+        const before = sizeMb
+        sizeMb = await store.rawSizeMb()
+        if (hard) {
+          stats.note = `하드 한도 초과(${before}MB > ${CFG.maxRawMbHard}MB) — 집계 상태와 무관하게 원본 ${removed}판 정리`
+          log.error(`❌ ${stats.note}`)
+        } else {
+          log.warn(`  원본 ${before}MB > 한도 ${CFG.maxRawMb}MB → 정리 ${removed}판 (PRUNE_ON_LIMIT=1)`)
+        }
+      }
       if (sizeMb > CFG.maxRawMb) {
-        stats.note = `용량 한도 초과(${sizeMb}MB) — 수집 건너뜀`
-        log.warn(`⚠️  ${stats.note}. KEEP_PATCHES 를 줄이거나 플랜을 올리세요.`)
-        return
+        const note = `용량 한도 초과(${sizeMb}MB > ${CFG.maxRawMb}MB) — 수집 건너뜀`
+        stats.note = [stats.note, note].filter(Boolean).join(' · ')
+        log.warn(
+          `⚠️  ${note}. 집계 실패로 정리가 막혔는지(tft_collect_runs.note) 확인 후 수동 정리하거나 PRUNE_ON_LIMIT=1, ` +
+            `또는 KEEP_PATCHES 를 줄이거나 플랜을 올리세요.`
+        )
+        return { store, stats, aggregates }
       }
     }
 
@@ -269,18 +334,31 @@ async function main({ log = console } = {}) {
 
     // 2) 실패 재시도
     for (const f of await store.failures(50)) {
-      if (Date.now() > deadline) break
+      if (Date.now() > collectUntil) break
       tally(await fetchAndIngest(f.match_id, f.tier_bucket, f.attempts))
     }
 
     // 3) 시드 순회 (가장 오래 확인 안 한 선수부터)
     let seedsChecked = 0
-    outer: while (Date.now() < deadline && stats.matches_added < CFG.maxMatches) {
+    let seedDecryptFailures = 0
+    outer: while (Date.now() < collectUntil && stats.matches_added < CFG.maxMatches) {
       const batch = await store.nextSeeds(50)
       if (!batch.length) break
+      let batchDecryptFailures = 0
       for (const seed of batch) {
-        if (Date.now() > deadline || stats.matches_added >= CFG.maxMatches) break outer
-        const puuid = seedCrypto.decrypt(seed.puuid_enc)
+        if (Date.now() > collectUntil || stats.matches_added >= CFG.maxMatches) break outer
+        let puuid
+        try {
+          puuid = seedCrypto.decrypt(seed.puuid_enc)
+        } catch (e) {
+          // TFT_SEED_KEY 교체·손상 시드: 이 시드만 건너뛰고 커서를 밀어 다음 배치에서 다시 잡히지 않게 한다
+          // (다음 시드 갱신이 새 키로 다시 만들고, 오래된 행은 pruneStaleSeeds 가 지운다)
+          seedDecryptFailures++
+          batchDecryptFailures++
+          log.warn(`  시드 복호화 실패 (건너뜀): ${e.message}`)
+          await store.markSeedChecked(seed.puuid_hash, { checkedAt: new Date().toISOString(), lastMatchAt: null })
+          continue
+        }
         const since = seed.last_match_at
           ? new Date(seed.last_match_at).getTime() - CURSOR_OVERLAP_MS
           : Date.now() - CFG.lookbackDays * 24 * 60 * 60 * 1000
@@ -309,7 +387,7 @@ async function main({ log = console } = {}) {
         let lastGameAt = seed.last_match_at ? new Date(seed.last_match_at).getTime() : 0
         for (const id of ids) {
           if (existing.has(id) || skippedThisRun.has(id)) continue
-          if (Date.now() > deadline || stats.matches_added >= CFG.maxMatches) break
+          if (Date.now() > collectUntil || stats.matches_added >= CFG.maxMatches) break
           const r = await fetchAndIngest(id, seed.tier)
           tally(r)
           if (r.gameAt) lastGameAt = Math.max(lastGameAt, r.gameAt)
@@ -325,15 +403,25 @@ async function main({ log = console } = {}) {
           )
         }
       }
+      if (batchDecryptFailures === batch.length) {
+        log.warn('⚠️  배치의 시드를 하나도 복호화하지 못했습니다 — TFT_SEED_KEY 를 확인하세요 (시드 순회 중단)')
+        break
+      }
       if (batch.length < 50) break
     }
+    if (seedDecryptFailures) stats.note = [stats.note, `시드 복호화 실패 ${seedDecryptFailures}건`].filter(Boolean).join(' · ')
 
     // 4) 일별 집계 (원본 정리 전에: 정리될 패치의 마지막 판까지 집계에 남긴다)
     aggregates = await refreshAggregates({ store, dirty, deadline, log })
 
-    // 5) 원본 정리
-    const removed = await store.prune(CFG.keepPatches)
-    if (removed) log.log(`  원본 정리: 이전 패치 ${removed}판 삭제 (최근 ${CFG.keepPatches}패치 보관)`)
+    // 5) 원본 정리 — 집계가 실패했으면 건너뛴다 (집계되지 않은 원본을 지우면 복구할 수 없다)
+    if (shouldPrune(aggregates)) {
+      const removed = await store.prune(CFG.keepPatches)
+      if (removed) log.log(`  원본 정리: 이전 패치 ${removed}판 삭제 (최근 ${CFG.keepPatches}패치 보관)`)
+    } else {
+      stats.note = [stats.note, '집계 실패로 원본 정리를 건너뜀'].filter(Boolean).join(' · ')
+      log.warn('  집계 실패 → 원본 정리를 건너뜁니다 (다음 실행에서 재시도)')
+    }
   } catch (e) {
     stats.note = e.message
     if (e instanceof KeyError) log.error(`❌ ${e.message} — GitHub secret RIOT_API_KEY 를 확인하세요`)
@@ -343,6 +431,7 @@ async function main({ log = console } = {}) {
     // 수집이 중간에 멈췄어도(키 만료 등) 이미 적재한 판은 집계에 넣는다
     if (!aggregates && dirty.size) aggregates = await refreshAggregates({ store, dirty, deadline: 0, log })
     if (aggregates?.error) stats.note = [stats.note, `집계 실패: ${aggregates.error}`].filter(Boolean).join(' · ').slice(0, 500)
+    if (aggregates?.note) stats.note = [stats.note, aggregates.note].filter(Boolean).join(' · ').slice(0, 500)
     stats.riot_calls = riot.calls
     await store.finishRun(runId, stats).catch(() => {})
     const counts = await store.counts().catch(() => ({}))
@@ -363,4 +452,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { main, CFG }
+module.exports = { main, CFG, shouldPrune, shouldPruneOnLimit, resolveLimitConfig, refreshAggregates, collectionDeadline, DECK_JOB_MIN_MS }

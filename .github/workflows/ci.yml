@@ -47,8 +47,14 @@ jobs:
       - name: DB collector tests
         run: npm run test:collect
 
-      - name: Rollup / deck cluster tests
+      - name: Rollup / deck cluster tests (+ SQL parity on PGlite)
         run: npm run test:rollup
+        env:
+          # PGlite 가 없으면 SQL(0005·0006) 패리티·RLS 검증이 건너뛰어지므로 실패로 처리
+          REQUIRE_PGLITE: "1"
+
+      - name: Ops check unit tests
+        run: npm run test:ops
 
       - name: Build
         run: npm run build
@@ -90,6 +96,13 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$deck")
           echo "$deck -> $code"
           test "$code" = "200"
+
+          # 잘못된 퍼센트 인코딩 슬러그는 500 이 아니라 404
+          for path in /champions/a%25b /items/a%25b /traits/a%25b; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$path")
+            echo "$path -> $code"
+            test "$code" = "404"
+          done
 
           echo "smoke ok"
 

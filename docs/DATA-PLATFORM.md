@@ -256,12 +256,18 @@ create table stat_comp (
 | 경로 | 내용 | 캐시 |
 | --- | --- | --- |
 | `GET /api/tft/stats?type=unit&patch=&tier=&days=` | 기물·아이템·시너지 표 | `s-maxage=600, stale-while-revalidate=3600` |
-| `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS) | 동일 |
+| `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS). `unit` 은 슬러그(`ahri`)·수집 키(`Ahri`)·Riot ID(`TFT18_Ahri`) 모두 허용, 응답 `unit` = 맞춘 슬러그, `totalBoards` 는 거르기 전 분모 | 동일 |
 | `GET /api/tft/decks?patch=&tier=` | 덱 티어표 | 동일 |
-| `GET /api/tft/explore?units=&items=` | 조건부 통계 (원본 GIN 쿼리) | 30분 · 요청 rate limit |
 | `GET /api/tft/meta/filters` | 사용 가능한 패치·표본 수 | 10분 |
 
+Phase C 예정 (미구현):
+
+| 경로 | 내용 | 캐시 |
+| --- | --- | --- |
+| `GET /api/tft/explore?units=&items=` | 조건부 통계 (원본 GIN 쿼리) | 30분 · 요청 rate limit |
+
 - 기존 `lib/metaStats.json` / `decksData.json` 은 **폴백**으로 남긴다 (DB 장애 시·로컬 개발). 앱은 API → 실패 시 JSON 순서로 읽는다.
+  DB 오류(`db_error`)가 나면 그 키는 20초 동안 DB 를 다시 기다리지 않고 바로 JSON 으로 폴백한다 (`lib/tftStats.ts` failMemo).
 - AI 코칭 프롬프트의 `[메타 실측 통계]`도 같은 API 의 "최신 패치 · 마스터+ · 7일" 값을 쓴다 → 리포트에 패치·표본 n 이 정확히 찍힌다.
 
 ---
@@ -271,7 +277,9 @@ create table stat_comp (
 - 통계 테이블에는 닉네임·태그·PUUID 를 넣지 않는다 (지금 `collectLadderBoards.js` 원칙 유지).
 - 시드 테이블은 다음 호출을 위해 PUUID 가 필요하므로 `puuid_enc`(수집기에서 AES-256-GCM 암호화) + `puuid_hash`(HMAC-SHA256)로 저장하고 anon 접근을 막는다.
   두 키는 GitHub secret `TFT_SEED_KEY` 하나에서 HKDF 로 만든다 (`scripts/collect/seedCrypto.js`). 키를 잃어도 시드는 다음 날 리그 목록에서 다시 만들어진다.
+  그동안 복호화할 수 없는 시드는 건너뛰고(커서만 밀고) 나머지 시드로 수집을 계속하며, 건수를 `tft_collect_runs.note` 에 남긴다.
 - 원본 보드 보관: **최근 1패치** (`KEEP_PATCHES`, 무료 플랜 결정). 매 실행 끝에 `tft_prune_raw` 로 이전 패치를 지운다. 일별 집계(Phase B)는 영구 보관.
+  집계 갱신이 실패한 실행에서는 원본 정리를 건너뛴다(집계되지 않은 원본을 지우지 않도록, `note` 에 사유).
 - Riot 정책상 통계·전적 표시는 허용 범위이며, 페이지 하단 비제휴 고지는 이미 있다. 프로덕션 키 신청서에 수집 범위(티어·지역·보관 기간)를 그대로 적는다.
 
 ---
@@ -312,15 +320,17 @@ create table stat_comp (
 - [x] `/api/tft/stats`, `/api/tft/decks`, `/api/tft/meta/filters` (`lib/tftStats.ts`, DB 실패 시 JSON 폴백, `source` 로 구분)
 - [x] 메타 대시보드에 패치·티어·기간 필터, 표본 부족(회색·티어 제외·맨 아래)·± 표시
 - [x] AI 프롬프트의 메타 통계를 같은 집계(최신 패치 · 마스터+ · 7일)로 교체 (`COACH_PROMPT_VERSION` 2026-10-20.1)
-- [x] 테스트: `npm run test:rollup` (JS 집계 · 덱 클러스터 · JSON 폴백, CI 포함). PGlite 가 있으면 0005+0006 을 실제로 돌려
-      SQL 결과 = JS 결과(필터 160조합) · 멱등 · 티어 상향 · RLS · `lib/tftStats` 응답까지 비교 (`PGLITE_PATH=… npm run test:rollup`)
+- [x] 테스트: `npm run test:rollup` (JS 집계 · 덱 클러스터 · JSON 폴백, CI 포함). `@electric-sql/pglite`(devDependency)로 0005+0006 을
+      실제로 돌려 SQL 결과 = JS 결과(필터 160조합) · 멱등 · 티어 상향 · RLS · `lib/tftStats` 응답까지 비교. CI 는 `REQUIRE_PGLITE=1` 로 건너뜀을 실패 처리
+- [x] 기물·아이템·시너지 상세 페이지 (`/champions/[slug]` 추천 아이템(BIS) · `/items/[slug]` · `/traits/[slug]`, `lib/entityData.ts`) — 같은 집계, DB 덱은 `/deck` 링크 없이 'DB 집계' 표시
 - [ ] 운영: 0006 적용 후 `npm run collect:db:rollup` 1회 (§13) · 필터 조합별 p95 측정
 - 완료 기준: 필터 조합별 응답 p95 < 300ms(CDN 미스 기준), JSON 폴백 동작 확인
 
 ### Phase C — 확장 (프로덕션 키 승인 후)
 
 - [ ] 시드를 다이아까지 확대, 시간당 수집량 상향
-- [ ] 기물×아이템 BIS 페이지, 조건부 탐색기(`/api/tft/explore`)
+- [ ] 조건부 탐색기(`/api/tft/explore`) — 기물×아이템 BIS 는 Phase B 의 `/champions/[slug]` 로 구현됨
+- [ ] `/deck/[id]` 를 DB 덱(`stat_comp`) 기반으로 전환 (지금은 빌드 타임 JSON 덱만 페이지가 있음)
 - [ ] 보관 정리 잡, 대시보드에 "수집 현황"(오늘 판 수·패치별 표본)
 - [ ] (선택) 다른 지역 (JP/NA) — 지역별 한도가 따로라 같은 구조로 확장
 
@@ -369,7 +379,13 @@ create table stat_comp (
 6. **프로덕션 키 승인 후** — Repository *variables* 에 `RIOT_MIN_INTERVAL_MS=34` (한도 60%), 필요하면 `MAX_MATCHES` 상향.
    GitHub secret · Vercel env 의 `RIOT_API_KEY` 를 함께 교체한다.
 
-조절 변수 (Repository variables, 없으면 기본값): `RIOT_MIN_INTERVAL_MS`(2500) · `MAX_MATCHES`(200) · `SEED_TIERS`(challenger,grandmaster,master) · `MASTER_LIMIT`(1000) · `KEEP_PATCHES`(1) · `MAX_RAW_MB`(400)
+조절 변수 (Repository variables, 없으면 기본값): `RIOT_MIN_INTERVAL_MS`(2500) · `MAX_MATCHES`(200) · `SEED_TIERS`(challenger,grandmaster,master) · `MASTER_LIMIT`(1000) · `KEEP_PATCHES`(1) · `MAX_RAW_MB`(400) · `MAX_RAW_MB_HARD`(480) · `PRUNE_ON_LIMIT`(0)
+
+> **용량 가드 (실행 시작 시)**: 원본이 `MAX_RAW_MB`(소프트)를 넘으면 **정리하지 않고 수집만 건너뛴다** (`tft_collect_runs.note` 에 사유).
+> 실행 끝 정리는 집계가 성공한 실행에서만 돌므로, 소프트 한도를 넘었다는 건 대개 집계가 실패해 이전 패치가 남았다는 뜻이다 →
+> `note` 의 집계 실패 사유를 먼저 고치면 다음 실행 끝에서 정리된다. 집계 상태와 무관하게 정리하려면 `PRUNE_ON_LIMIT=1`.
+> `MAX_RAW_MB_HARD`(하드)를 넘으면 DB 를 지키기 위해 설정과 무관하게 정리하고 `log.error` + `note` 를 남긴다 (집계 안 된 판은 복구 불가).
+> 하드 한도를 소프트보다 작게 설정하면(예: `MAX_RAW_MB=500`, `MAX_RAW_MB_HARD=480`) 하드는 소프트 값으로 보정된다(실행 로그에 경고).
 
 > 개발 키를 쓰는 동안은 기본 간격 2500ms(약 48회/2분)로 키 한도(100회/2분)의 절반만 쓴다. 나머지는 사이트의 전적 검색 몫이다.
 
@@ -394,6 +410,24 @@ create table stat_comp (
    ```
    앱: `/api/tft/meta/filters` 의 `source` 가 `db` 면 `/meta` 에 필터가 나타난다. `json` 이면 `fallbackReason` 을 본다
    (`supabase_not_configured` · `empty` · `db_error`).
+
+5. **덱 클러스터 신선도 (일일 점검)** — 덱 재빌드가 미뤄지면 `tft_collect_runs.note` 와 수집 로그에만 남으므로 따로 본다.
+   ```sql
+   -- 최신 패치 덱 클러스터 신선도 (24시간 초과면 경고)
+   select patch, tier_min, count(*) as decks, max(updated_at) as last_built,
+          now() - max(updated_at) as age
+     from stat_comp
+    group by 1, 2
+    order by last_built desc;
+   ```
+   또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
+   판정은 **최신 패치**(가장 높은 `숫자.숫자` 패치) 행의 `max(updated_at)` 기준 — 위 SQL 결과에서 최신 패치 줄들을 본다.
+   이전 패치가 최근에 다시 빌드됐어도 최신 패치가 늦으면 미충족이다.
+   - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행.
+   - **72시간 초과** → 수집 워크플로(`collect-db.yml`) 실패 여부 · `RIOT_API_KEY` 만료 · 0006 적용 상태를 함께 확인.
+
+수집기는 `MAX_MINUTES` 보다 7분 일찍 수집을 멈춰 덱 클러스터 몫을 남긴다. 그래도 미루면 `note` 에 남기고, 최신 패치 덱이 24시간 이상
+갱신되지 않았으면 경고한다(위 `stat_comp` 의 `max(updated_at)` 확인 → `npm run collect:db:rollup` 으로 수동 갱신).
 
 조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 15판 미만을 표본 부족으로 표시)
 

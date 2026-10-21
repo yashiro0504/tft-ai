@@ -69,8 +69,10 @@ export interface EntityDeck {
   avgPlacement: number | null
   top4Rate: number | null
   sampleSize: number
-  /** /deck/[id] 정적 페이지가 있는 덱만 링크 */
+  /** /deck/[id] 정적 페이지가 있는 덱만 링크 (DB 집계 덱은 id 가 겹쳐도 다른 패치·수치라 링크하지 않는다) */
   linkable: boolean
+  /** Supabase stat_comp 집계 덱 */
+  fromDb: boolean
 }
 
 export interface EntityPageData {
@@ -144,14 +146,19 @@ const loadAll = cache(async () => {
     traits: traits.rows as (MetaTraitRanking & Row)[],
     combos: combos.rows as (MetaComboRanking & Row)[],
     decks: decks.decks as (MetaDeckRanking & { lowSample?: boolean })[],
+    deckSource: decks.source,
     minSample: { unit: units.minSample, item: items.minSample, trait: traits.minSample, combo: combos.minSample },
   }
 })
 
 const linkableDeckIds = cache(() => new Set(getDeckViews().map((d) => d.id)))
 
-function deckLinks(decks: (MetaDeckRanking & { lowSample?: boolean })[], match: (d: MetaDeckRanking) => boolean): EntityDeck[] {
+function deckLinks(
+  { decks, deckSource }: { decks: (MetaDeckRanking & { lowSample?: boolean })[]; deckSource: StatSource },
+  match: (d: MetaDeckRanking) => boolean
+): EntityDeck[] {
   const ids = linkableDeckIds()
+  const fromDb = deckSource === 'db'
   return decks
     .filter(match)
     .sort(byAvg)
@@ -163,7 +170,8 @@ function deckLinks(decks: (MetaDeckRanking & { lowSample?: boolean })[], match: 
       avgPlacement: d.avgPlacement,
       top4Rate: d.top4Rate,
       sampleSize: d.sampleSize,
-      linkable: ids.has(d.id),
+      linkable: !fromDb && ids.has(d.id),
+      fromDb,
     }))
 }
 
@@ -217,7 +225,7 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
     related: bis,
     relatedTitle: '추천 아이템 (평균등수 순)',
     tags,
-    decks: deckLinks(all.decks, (d) => d.units.some((u) => entitySlug('champion', u.key) === slug || u.name === name)),
+    decks: deckLinks(all, (d) => d.units.some((u) => entitySlug('champion', u.key) === slug || u.name === name)),
   }
 }
 
@@ -256,7 +264,7 @@ async function itemPage(slug: string): Promise<EntityPageData | null> {
     related: holders,
     relatedTitle: '이 아이템을 잘 쓰는 기물',
     tags: [],
-    decks: deckLinks(all.decks, (d) => d.units.some((u) => (u.items ?? []).some((it) => entitySlug('item', it.key) === slug))),
+    decks: deckLinks(all, (d) => d.units.some((u) => (u.items ?? []).some((it) => entitySlug('item', it.key) === slug))),
   }
 }
 
@@ -302,12 +310,21 @@ async function traitPage(slug: string): Promise<EntityPageData | null> {
     related: members,
     relatedTitle: '이 시너지의 기물 (코스트 순)',
     tags: [],
-    decks: deckLinks(all.decks, (d) => d.traits.some((t) => entitySlug('trait', t.key) === slug || t.name === name)),
+    decks: deckLinks(all, (d) => d.traits.some((t) => entitySlug('trait', t.key) === slug || t.name === name)),
+  }
+}
+
+/** Next.js 가 이미 디코딩한 params 에 '%' 가 남아 있으면 decodeURIComponent 가 URIError 를 던진다 → 원문 그대로 */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
   }
 }
 
 export const getEntityPage = cache(async (kind: EntityKind, slug: string): Promise<EntityPageData | null> => {
-  const s = decodeURIComponent(slug).toLowerCase()
+  const s = safeDecode(slug).toLowerCase()
   if (!/^[a-z0-9]{1,60}$/.test(s)) return null
   if (kind === 'champion') return championPage(s)
   if (kind === 'item') return itemPage(s)

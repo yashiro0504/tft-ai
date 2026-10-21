@@ -61,6 +61,9 @@
   text-decoration: none;
 }
 a.rk-ent-rowlink:hover { border-color: var(--rk-accent); }
+/* 상세 페이지가 없는 행 (DB 집계 덱 등) — 링크처럼 보이지 않게 */
+.rk-ent-rowlink.is-static { cursor: default; }
+.rk-ent-rowlink.is-static:hover { border-color: var(--rk-line); }
 .rk-ent-rowname { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rk-ent-rowname em {
   margin-left: 6px;
