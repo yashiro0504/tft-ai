@@ -37,7 +37,7 @@
     "test:collect": "node scripts/testCollect.js",
     "test:rollup": "node scripts/testRollup.js",
     "test:ops": "node scripts/testOps.js",
-    "test:ai": "node scripts/testSemanticGrounding.js",
+    "test:ai": "node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js",
     "inspect:match": "node scripts/inspectMatch.js",
     "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:collect && npm run test:rollup && npm run test:ops && npm run test:ai && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",

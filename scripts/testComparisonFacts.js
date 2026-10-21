@@ -1,0 +1,95 @@
+/**
+ * [비교 사실] 블록 테스트 — lib/comparisonFacts.ts (AI-EVAL A2).
+ *
+ * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
+ *  - 로비 1등·로비 평균 비교 = 손계산
+ *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - BIS 일치율 분자/분모 (표본 20판 미만 조합 제외, BIS 통계 없는 기물은 분모에서 제외)
+ *  - 실제 픽스처 6경기에서 NaN/Infinity 없음
+ */
+require('./_env').loadEnv()
+process.env.NEXT_PUBLIC_SUPABASE_URL = ''
+require('./_ts')
+const { buildComparisonFacts, bisBySlug, bisMatch, mostSimilarDeck } = require('../lib/comparisonFacts')
+
+let failures = 0
+function check(label, condition, detail = '') {
+  if (condition) console.log(`  ✅ ${label}`)
+  else {
+    failures++
+    console.error(`  ❌ ${label}${detail ? ` — ${detail}` : ''}`)
+  }
+}
+
+const fixture = require('../data/evalMatches.json')
+const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 6-1').matches[0]
+
+;(async () => {
+  console.log('로비 비교 (KR_8414975456, 5등)')
+  const block = buildComparisonFacts({ matches: [sample], mode: 'single', combos: [], decks: [] })
+  // 손계산: 나 Lv7 · 기물 7 · 3성 5 · 시너지 단계 2+1×5=7 · 아이템 3+3+2+1+0+3+1=13
+  //        1등 Lv9 · 기물 9 · 3성 0 · 시너지 단계 2+1×8=10 · 아이템 3+3+3+3+1+0+0+3+0=16
+  check(
+    '로비 1등 비교 = 손계산',
+    block.includes('- 로비 1등과 비교: 레벨 -2 (7 vs 9) · 기물 수 7 vs 9 · 3성 5 vs 0 · 시너지 단계 합 7 vs 10 · 아이템 13 vs 16'),
+    block
+  )
+  // 로비 평균(나 제외 7명) 레벨 (9+8+8+8+8+6+6)/7 = 7.57
+  check('로비 평균 레벨 = 손계산 (-0.6, 7 vs 7.6)', block.includes('로비 평균(나 제외 7명)과 비교: 레벨 -0.6 (7 vs 7.6)'), block)
+  check('블록 머리말 + 인과 아님 명시', block.startsWith('[비교 사실 — 코드 산출, 서술 통계 (원인이 아니다)]'))
+  const win = fixture.cases.find((c) => c.name === 'Seed02 win 1등 6-5').matches[0]
+  check('내가 1등이면 로비 2등과 비교', buildComparisonFacts({ matches: [win], mode: 'single', combos: [], decks: [] }).includes('- 로비 2등과 비교:'))
+
+  console.log('메타 덱 유사도')
+  const board = { ...sample, units: ['TFT18_A', 'TFT18_B', 'TFT18_C', 'TFT18_D', 'TFT18_E'].map((id) => ({ id, name: id, tier: 2, items: [] })) }
+  const near = { name: '가까운 덱', avgPlacement: 4.21, sampleSize: 120, units: ['A', 'B', 'C', 'D', 'F'].map((key) => ({ key })) } // 4/6 = 0.67
+  const far = { name: '먼 덱', avgPlacement: 3.9, sampleSize: 300, units: ['A', 'B', 'X', 'Y', 'Z'].map((key) => ({ key })) } // 2/8 = 0.25
+  const hit = mostSimilarDeck(board, [far, near])
+  check('Jaccard 최고 덱 선택 (4/6 = 0.67)', hit && hit.deck.name === '가까운 덱' && Math.abs(hit.similarity - 4 / 6) < 1e-9)
+  const withDeck = buildComparisonFacts({ matches: [board], mode: 'single', combos: [], decks: [far, near] })
+  check('유사 덱 줄: 이름·유사도·표본·평균 vs 등수 차', withDeck.includes('- 가장 유사한 메타 덱: 가까운 덱 (유사도 0.67, 표본 120판) · 메타 평균 4.21등 vs 이 경기 5등 (+0.79)'), withDeck)
+  const noDeck = buildComparisonFacts({ matches: [board], mode: 'single', combos: [], decks: [far] })
+  check('임계(0.6) 미만이면 덱 줄 생략', !noDeck.includes('메타 덱'), noDeck)
+  const small = buildComparisonFacts({ matches: [board], mode: 'single', combos: [], decks: [{ ...near, sampleSize: 12 }] })
+  check('덱 표본 30판 미만이면 "참고용"', small.includes('표본 12판 · 표본이 적어 참고용'))
+
+  console.log('BIS 일치율')
+  const combos = [
+    { champKey: 'Ahri', itemName: 'X', avgPlacement: 3.1, sampleSize: 50 },
+    { champKey: 'Ahri', itemName: 'Y', avgPlacement: 3.5, sampleSize: 40 },
+    { champKey: 'Ahri', itemName: 'W', avgPlacement: 3.2, sampleSize: 30 },
+    { champKey: 'Ahri', itemName: 'Z', avgPlacement: 2.9, sampleSize: 10 }, // 표본 미달 → 제외
+    { champKey: 'Ahri', itemName: 'V', avgPlacement: 4.0, sampleSize: 25 }, // 4위 → 제외
+    { champKey: 'Lux18_Base', itemName: 'P', avgPlacement: 3.0, sampleSize: 25 },
+  ]
+  const bis = bisBySlug(combos)
+  check('BIS = 표본 20판 이상 중 평균등수 상위 3 (X, W, Y)', JSON.stringify(bis.get('ahri')) === JSON.stringify(['X', 'W', 'Y']), JSON.stringify([...bis]))
+  const units = [
+    { id: 'DA_18_Ahri', name: '아리', tier: 2, items: ['X', 'Y', 'Z'] },
+    { id: 'TFT18_Garen', name: '가렌', tier: 2, items: ['Q'] }, // BIS 통계 없음 → 분모 제외
+    { id: 'DA_Lux18_Base', name: '럭스', tier: 1, items: ['P'] },
+  ]
+  const res = bisMatch(units, bis)
+  check('보드 전체 3/4 (아리 2/3 + 럭스 1/1, 가렌 제외)', res.matched === 3 && res.slots === 4, JSON.stringify(res))
+  const bl = buildComparisonFacts({ matches: [{ ...sample, units, lobbyParticipants: [] }], mode: 'single', combos, decks: [] })
+  check('BIS 줄: 캐리 대조 ✓/✗ · 75%', bl.includes('- BIS 일치율: 아리 2/3 (X ✓, Y ✓, Z ✗) · 보드 전체 3/4 (75%)'), bl)
+
+  console.log('실제 픽스처 6경기 (JSON 메타 통계)')
+  const { getStats, getDecks } = require('../lib/tftStats')
+  const { DEFAULT_FILTER } = require('../lib/statsShared')
+  const { EVAL_CASES } = require('./evalAiVariants')
+  const comboRows = (await getStats('unit_item', DEFAULT_FILTER)).rows
+  const decks = (await getDecks(DEFAULT_FILTER)).decks
+  let bad = 0
+  const lineCounts = []
+  for (const c of EVAL_CASES) {
+    const fc = fixture.cases.find((x) => x.name === c.name)
+    const b = buildComparisonFacts({ matches: fc.matches, mode: fc.mode, combos: comboRows, decks })
+    if (/NaN|Infinity|undefined/.test(b)) bad++
+    lineCounts.push(`${c.id}:${b.split('\n').length - 1}`)
+  }
+  check('NaN/Infinity/undefined 없음 · 케이스마다 1줄 이상', bad === 0 && lineCounts.every((x) => Number(x.split(':')[1]) >= 1), lineCounts.join(' '))
+
+  console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 비교 사실 테스트 통과')
+  if (failures) process.exitCode = 1
+})()

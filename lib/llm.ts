@@ -2,7 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan } from './types'
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
-import { getStats } from './tftStats'
+import { getDecks, getStats } from './tftStats'
+import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
 import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
@@ -15,7 +16,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-21.1'
+export const COACH_PROMPT_VERSION = '2026-10-21.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -190,6 +191,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
 - 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
 - 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
+
+- [비교 사실] 블록(로비 1등·로비 평균·유사 메타 덱·BIS 일치율)은 코드가 계산한 서술 통계다. 수치는 그대로 인용하되
+  "그래서 졌다"처럼 원인으로 단정하지 마라. 차이를 근거로 한 개선 제안은 "~를 비교하면"처럼 비교로 표현하라.
 
 ★★★ 라운드 타이밍 단정 금지 ★★★
 - 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·잔여 골드·탈락 라운드만 있다).
@@ -658,6 +662,17 @@ export async function generateMetaCoachFeedback(
 ): Promise<MetaCoachFeedback> {
   const matchSerialized = serializeMatchesForLLM(matches, { includeLobby: mode === 'single' })
   const { text: metaFacts, provenance } = await buildMetaFacts()
+  // 비교 사실: 같은 기본 필터의 기물×아이템(BIS)·메타 덱 (메모 캐시라 buildMetaFacts 와 중복 호출 비용 없음)
+  const [comboStats, deckStats] = await Promise.all([
+    getStats('unit_item', DEFAULT_FILTER),
+    getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier }),
+  ])
+  const comparisonFacts = buildComparisonFacts({
+    matches,
+    mode,
+    combos: comboStats.rows.filter((r): r is StatRow & ComboFact => 'champKey' in r),
+    decks: deckStats.decks,
+  })
   const scoring = computeScoreBreakdown(matches)
   const scoreFacts = scoring
     ? [
@@ -741,7 +756,9 @@ ${matchSerialized}
 ${metaNote}
 
 ${metaFacts}
-
+${comparisonFacts ? `
+${comparisonFacts}
+` : ''}
 ${scoreFacts}
 
 ${planFacts}
