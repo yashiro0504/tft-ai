@@ -1,12 +1,12 @@
 {
-  "scoringVersion": "v4",
-  "generatedAt": "2026-10-21T04:03:21.711Z",
+  "scoringVersion": "v5",
+  "generatedAt": "2026-10-21T05:36:33.114Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 97,
         "itemization": 100,
         "tempo": 81,
         "completion": 80,
@@ -26,7 +26,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 92,
+        "economy": 96,
         "itemization": 89,
         "tempo": 85,
         "completion": 81,
@@ -43,10 +43,10 @@
       }
     },
     "Seed02 최근 5경기": {
-      "focus": "economy",
+      "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 92,
         "itemization": 89,
         "tempo": 96,
         "completion": 90,
@@ -66,7 +66,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 95,
+        "economy": 100,
         "itemization": 93,
         "tempo": 93,
         "completion": 90,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 97,
         "itemization": 63,
         "tempo": 80,
         "completion": 92,
@@ -283,10 +283,10 @@
       }
     },
     "Seed01 contested-bot4 5등 6-1": {
-      "focus": "economy",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 70,
+        "economy": 94,
         "itemization": 100,
         "tempo": 80,
         "completion": 79,

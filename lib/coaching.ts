@@ -134,8 +134,9 @@ const EFFECT_LABEL: Record<string, string> = {
 function economyAxis(m: PerMatchMetrics): AxisResult {
   // 잔여 골드만 보면 "다 써서 조기 탈락"이 만점이 된다.
   // 표준 레벨 대비 격차 + 초반 종료 페널티로 실제 운영을 평가한다.
+  // 리롤형은 골드를 레벨이 아니라 리롤(3성)에 쓰는 덱이라 레벨 격차를 감점하지 않는다 (템포 축과 같은 기준).
   const c = AXIS_CONFIG.axes.economy
-  const levelGap = Math.max(0, expectedLevel(m.stage) - m.level)
+  const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage) - m.level)
   const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
   const idle = c.idleGoldExemptPlacements.includes(m.placement) ? 0 : Math.max(0, m.goldLeft - c.idleGoldFree)
   const effects = {
@@ -251,6 +252,13 @@ const LESSON: Record<
     lesson:
       '골드와 레벨의 교환비 — 쓸 타이밍에 쓰지 않으면 골드는 그냥 사망 직전의 숫자다.',
     topic: '골드는 "언제 쓰느냐"가 전부다 — 레벨·리롤 타이밍 강의',
+    byDeck: {
+      reroll: {
+        lesson:
+          '리롤형의 골드는 레벨이 아니라 3성에 쓰는 돈이다. 이자를 지키며 모은 골드를 코어 3성이 나올 구간에 몰아 써야 한다.',
+        topic: '리롤형 골드 운용 강의 — 이자를 지키며 3성 구간에 몰아 쓰기',
+      },
+    },
   },
   itemization: {
     label: '아이템 설계',
@@ -314,12 +322,17 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
   const mean = (f: (m: PerMatchMetrics) => number) => round1(avg(metrics.map(f)))
   const gap = (m: PerMatchMetrics) => (m.stage ? m.level - expectedLevel(m.stage) : 0)
   switch (key) {
-    case 'economy':
+    case 'economy': {
+      // 레벨 부족은 표준형 경기만으로 센다 (리롤형은 공식에서도 감점하지 않는다)
+      const standard = metrics.filter((m) => m.deckType !== 'reroll')
       return [
         { key: 'goldLeft', label: '잔여 골드', value: mean((m) => m.goldLeft), unit: 'G' },
-        { key: 'levelShort', label: '표준 레벨보다 부족', value: mean((m) => Math.max(0, -gap(m))), unit: '레벨' },
+        ...(standard.length
+          ? [{ key: 'levelShort', label: '표준 레벨보다 부족', value: round1(avg(standard.map((m) => Math.max(0, -gap(m))))), unit: '레벨' }]
+          : []),
         { key: 'stage', label: '탈락 스테이지', value: mean((m) => m.stage) },
       ]
+    }
     case 'itemization':
       return [
         { key: 'carryItems', label: '캐리 아이템', value: mean((m) => m.carryItems), unit: '개' },

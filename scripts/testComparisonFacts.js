@@ -105,6 +105,16 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     JSON.stringify(tempo)
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
+  const economy = plan.axes.find((a) => a.key === 'economy')
+  check(
+    '리롤형 경제 = 레벨 격차 감점 없음 · 레벨 부족 지표 없음 · 리롤 골드 강의',
+    !economy.effects.some((e) => e.key === 'levelGap' && e.points !== 0) &&
+      !economy.metrics.some((x) => x.key === 'levelShort') &&
+      economy.lesson.includes('리롤형의 골드'),
+    JSON.stringify(economy)
+  )
+  const stdEconomy = buildCoachingPlan([standard]).axes.find((a) => a.key === 'economy')
+  check('표준형 경제는 레벨 부족 지표 유지', stdEconomy.metrics.some((x) => x.key === 'levelShort'), JSON.stringify(stdEconomy.metrics))
   // 3성 2개(베이가·오른)뿐인 리롤형 → 템포 100 − 20 − 20 = 60 → 가장 약한 축
   const thinReroll = { ...sample, units: sample.units.map((u) => ({ ...u, tier: ['베이가', '오른'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
   const rerollTopicPlan = buildCoachingPlan([thinReroll])
