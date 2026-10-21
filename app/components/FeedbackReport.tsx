@@ -115,12 +115,13 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
           </div>
 
           {lec.moments?.length ? (
-            // 핵심 장면 (프롬프트 2026-10-21.14~): 장면 사실(코드) → 왜 문제였나 → 다음 판 행동
+            // 핵심 장면 (프롬프트 2026-10-21.14~): 장면 사실(코드) → 왜 문제였나 → 다음 판 행동.
+            // 종합 분석(2026-10-21.15~)은 여러 판에 반복된 습관이라 '습관'으로 표시한다.
             <ol className="space-y-3">
               {lec.moments.map((mo, i) => (
                 <li key={i} className="rounded-card border border-line bg-sunken p-3.5">
                   <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
-                    <Gauge className="h-3.5 w-3.5" /> 장면 {i + 1} · {mo.title}
+                    <Gauge className="h-3.5 w-3.5" /> {feedback.mode === 'multi' ? '습관' : '장면'} {i + 1} · {mo.title}
                   </p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink">{mo.fact}</p>
                   {mo.why ? <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{mo.why}</p> : null}
