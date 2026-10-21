@@ -4,6 +4,7 @@
  * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
  *  - 로비 1등·로비 평균 비교 = 손계산
  *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - 아이템 재료 매칭 · 로비 메타 덱 · 빈집 메타 덱 후보 (점령·코어 점령·약한·소표본·변형·재료 부족 제외)
  *  - 메타 덱 운영도: ±1등 경계 · 없는 기물(선택 기물 제외, 코스트순, 최대 3) · 종합 집계(표본 충분 판만 평균)
  *  - BIS 일치율 분자/분모 (표본 20판 미만 조합 제외, BIS 통계 없는 기물은 분모에서 제외)
  *  - 실제 픽스처 6경기에서 NaN/Infinity 없음
@@ -195,6 +196,76 @@ ${mixedFacts}`
   )
   const multiNone = buildComparisonFacts({ matches: [sample, sample], mode: 'multi', combos: [], decks: [near] })
   check('종합: 메타 덱 판이 없으면 운영도 줄 생략', !multiNone.includes('메타 덱 운영도'), multiNone)
+
+  console.log('아이템 재료 매칭')
+  const { componentsOf, bestBuildable } = require('../lib/itemRecipes')
+  check('완성템 → 재료 2개 (모렐로노미콘 = 허리띠 + 지팡이)', JSON.stringify(componentsOf('모렐로노미콘')) === JSON.stringify(['거인의 허리띠', '쓸데없이 큰 지팡이']))
+  check('재료는 자기 자신', JSON.stringify(componentsOf('여신의 눈물')) === JSON.stringify(['여신의 눈물']))
+  check('조합법 없는 아이템(상징)은 null', componentsOf('기원자 상징') === null)
+  check(
+    '재료 공유: 대검 1개로 무한의 대검·쇼진의 창 동시 불가',
+    bestBuildable(['무한의 대검', '쇼진의 창'], ['B.F. 대검', '연습용 장갑', '여신의 눈물']).length === 1
+  )
+  // 앞에서부터 욕심내면 쇼진의 창 1개, 최적은 무한의 대검 + 푸른 파수꾼 2개
+  const opt = bestBuildable(['쇼진의 창', '무한의 대검', '푸른 파수꾼'], ['B.F. 대검', '연습용 장갑', '여신의 눈물', '여신의 눈물'])
+  check('최대 묶음 탐색 (탐욕 아님): 무한의 대검 + 푸른 파수꾼', opt.join(',') === '무한의 대검,푸른 파수꾼', opt.join(','))
+
+  console.log('로비 메타 덱 · 빈집 후보')
+  const { openDeckCandidates } = require('../lib/comparisonFacts')
+  const u = (k, tier = 2, items = []) => ({ id: `TFT18_${k}`, name: k, tier, items })
+  const deck = (name, keys, carryKey, carryItems, avgPlacement = 3.5, sampleSize = 100) => ({
+    name,
+    avgPlacement,
+    sampleSize,
+    carryKey,
+    units: keys.map((key) => ({ key, name: key === carryKey ? `${key}캐리` : key, cost: 3, items: key === carryKey ? carryItems.map((n) => ({ name: n })) : [] })),
+  })
+  // 내 캐리 A: 보석 건틀릿(지팡이+장갑) · 쇼진의 창(대검+눈물) · 모렐로노미콘(허리띠+지팡이)
+  const me = {
+    ...sample,
+    placement: 5,
+    units: [u('A', 2, ['보석 건틀릿', '쇼진의 창', '모렐로노미콘']), u('B'), u('C'), u('D'), u('E')],
+    lobbyParticipants: [
+      { placement: 5, isUser: true, units: [], traits: [], level: 7 },
+      { placement: 1, isUser: false, units: ['V', 'W', 'X', 'Y', 'Z'].map((k) => u(k)), traits: [], level: 9 },
+      { placement: 3, isUser: false, units: [u('L', 2), u('M', 1), u('N', 1)], traits: [], level: 8 },
+    ],
+  }
+  const three = ['보석 건틀릿', '쇼진의 창', '모렐로노미콘']
+  const lobbyDecksList = [
+    deck('내 덱', ['A', 'B', 'C', 'D', 'F'], 'F', three, 4.2),
+    deck('빈집1', ['P', 'Q', 'R', 'S', 'T'], 'P', ['공허의 지팡이', '모렐로노미콘', '보석 건틀릿'], 3.5), // 2/3 (곡궁 없음)
+    deck('빈집2', ['K', 'Q2', 'R2', 'S2', 'T2'], 'K', ['쇼진의 창', '보석 건틀릿', '무한의 대검'], 3.0), // 2/3 (대검 공유)
+    deck('빈집3', ['J', 'Q3', 'R3', 'S3', 'T3'], 'J', ['쇼진의 창', '모렐로노미콘', '공허의 지팡이'], 4.0), // 2/3, 최대 2개 밖
+    deck('점령 덱', ['V', 'W', 'X', 'Y', 'Z'], 'V', three), // 1등이 탐
+    deck('코어 점령', ['L', 'Q4', 'R4', 'S4', 'T4'], 'L', three), // 3등이 L 2성 보유
+    deck('약한 덱', ['G', 'Q5', 'R5', 'S5', 'T5'], 'G', three, 4.8),
+    deck('소표본', ['H', 'Q6', 'R6', 'S6', 'T6'], 'H', three, 3.0, 12),
+    deck('내 덱 변형', ['A', 'Q7', 'R7', 'S7', 'T7'], 'A', three, 2.5), // 캐리 A가 내 보드에 있음
+    deck('재료 부족', ['O', 'Q8', 'R8', 'S8', 'T8'], 'O', ['무한의 대검', '공허의 지팡이', '피바라기'], 2.0), // 0/3
+  ]
+  const cands = openDeckCandidates(me, lobbyDecksList)
+  check(
+    '빈집 후보 = 빈집2(3.00) · 빈집1(3.50) — 점령·코어 점령·약한·소표본·변형·재료 부족 제외, 최대 2개',
+    cands.map((c) => c.deck.name).join(',') === '빈집2,빈집1',
+    cands.map((c) => `${c.deck.name} ${c.buildable.join('+')}`).join(' | ')
+  )
+  const openFacts = buildComparisonFacts({ matches: [me], mode: 'single', combos: [], decks: lobbyDecksList })
+  check(
+    '로비 메타 덱 줄',
+    openFacts.includes('- 로비 메타 덱(최종 보드 기준): 나(5등) 내 덱 · 1등 점령 덱 · 나머지 1명은 메타 덱과 유사도 0.6 미만'),
+    openFacts
+  )
+  check(
+    '빈집 후보 줄 = 손계산',
+    openFacts.includes(
+      '- 빈집 메타 덱 후보(사후 비교): 빈집2 · 로비 0명 · 메타 평균 3.00등(표본 100판) · 캐리 K캐리 핵심템 2/3을 내 캐리(A) 아이템 재료로 조합 가능(쇼진의 창, 보석 건틀릿)'
+    ),
+    openFacts
+  )
+  check('로비 정보 없으면 빈집 후보 없음', openDeckCandidates({ ...me, lobbyParticipants: [] }, lobbyDecksList).length === 0)
+  const multiOpen = buildComparisonFacts({ matches: [me, me], mode: 'multi', combos: [], decks: lobbyDecksList })
+  check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/빈집|로비 메타 덱/.test(multiOpen), multiOpen)
 
   console.log('BIS 일치율')
   const combos = [
