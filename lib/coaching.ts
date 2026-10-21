@@ -12,6 +12,7 @@ import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRoun
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { DECK_TYPE_LABEL, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
+import { slotsUsed } from './boardSlots'
 import breakpointData from './traitBreakpoints.json'
 
 /** 시너지 이름 → 브레이크포인트 (예: 나무정령 [3,5,7,9,11]) */
@@ -48,6 +49,8 @@ export interface PerMatchMetrics {
   carryItems: number
   totalItems: number
   units: number
+  /** 보드 칸 합 (장로 드래곤 2칸 — lib/boardSlots). 완성도의 충원율에 쓴다 */
+  slotsUsed: number
   /** 보드 가치(G) — 경제 축에서 탈락 스테이지 기준치와 비교 (lib/boardValue) */
   boardValue: number
   twoPlus: number
@@ -88,6 +91,7 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     carryItems: carry ? carry.items.length : 0,
     totalItems: units.reduce((s, u) => s + (u.items?.length || 0), 0),
     units: units.length,
+    slotsUsed: slotsUsed(units),
     boardValue: boardValue(units),
     twoPlus: units.filter((u) => (u.tier || 1) >= 2).length,
     three: units.filter((u) => u.tier === 3).length,
@@ -190,11 +194,14 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
 }
 
 /** 보드 완성도: 레벨만큼 채웠는가(충원율) × 2성 비율 + 3성 보너스. metaScore 의 덱 완성도와 공용. */
-export function completionAxis(m: Pick<PerMatchMetrics, 'units' | 'level' | 'stage' | 'twoPlus' | 'three'>): AxisResult {
+export function completionAxis(
+  m: Pick<PerMatchMetrics, 'units' | 'level' | 'stage' | 'twoPlus' | 'three'> & { slotsUsed?: number }
+): AxisResult {
   const c = AXIS_CONFIG.axes.completion
   if (!m.units) return { score: 0, effects: { boardFill: 0 } }
   const slots = Math.max(m.level, expectedLevel(m.stage), 1)
-  const fill = Math.min(m.units / slots, 1)
+  // 충원율은 기물 수가 아니라 칸 수로 (장로 드래곤 2칸 — 기물 8개로 9칸을 다 채운 보드가 8/9 로 깎이던 문제)
+  const fill = Math.min((m.slotsUsed ?? m.units) / slots, 1)
   const twoPlusRate = m.twoPlus / m.units
   const effects = {
     boardFill: fill * c.fillBase,

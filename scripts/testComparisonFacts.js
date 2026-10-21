@@ -295,6 +295,17 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     check('덱 성적표: 메타 표본 적은 덱은 판정 없음', B && B.games === 2 && B.verdict === null, JSON.stringify(B))
     check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 5판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 5, JSON.stringify(r.unmatched))
   }
+  // ── 보드 칸 (lib/boardSlots): 장로 드래곤 2칸 — Lv.9 에 기물 8개면 빈칸 아님 ──
+  {
+    const { keyMoments } = require('../lib/keyMoments')
+    const { slotsUsed } = require('../lib/boardSlots')
+    const U = (id, name, rarity, tier) => ({ id, name, rarity, tier, items: [] })
+    const units = ['Sentry', 'Krug18', 'Brambleback18', 'Sentinel18', 'Murkwolf18', 'Sett', 'Taric18'].map((k, i) => U(k.endsWith('18') ? `DA_${k}` : `DA_18_${k}`, k, 2, 2))
+    const withElder = { ...standard, level: 9, lastRound: '6-5', placement: 1, lobbyParticipants: [], units: [...units, U('DA_18_ElderDragon', '장로 드래곤', 5, 1)] }
+    check('보드 칸: 장로 드래곤 2칸 → 기물 8개 = 9칸 · 빈칸 장면 없음', slotsUsed(withElder.units) === 9 && !keyMoments(withElder).some((x) => x.kind === 'emptySlots'), JSON.stringify(keyMoments(withElder)))
+    const without = { ...withElder, units: [...units, U('DA_18_Kennen', '케넨', 5, 1)] }
+    check('보드 칸: 1칸 기물이면 8칸 → 빈칸 1', keyMoments(without).some((x) => x.kind === 'emptySlots' && /9칸 중 8칸/.test(x.fact)), JSON.stringify(keyMoments(without)))
+  }
   const early = { ...sample, lastRound: '2-2' }
   const mixedFacts = buildComparisonFacts({ matches: [sample, standard, early], mode: 'multi', combos: [], decks: [] })
   const earlyPlan = buildCoachingPlan([sample, standard, early])
