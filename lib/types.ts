@@ -364,6 +364,8 @@ export interface CoachingPlan {
 /** LLM이 작성하는 강의 본문 */
 /** 핵심 장면 해설 — title·fact 는 코드(lib/keyMoments)가 정하고, why·fix 는 LLM 이 쓴다 */
 export interface LectureMoment {
+  /** 장면 종류 (lib/keyMoments KeyMoment.kind) — 연습 목표(lib/goals)로 바꿀 때 쓴다. 2026-10-22 이전 리포트엔 없다 */
+  kind?: string
   title: string
   /** 코드가 뽑은 사실 줄 (기물·성급·수치) */
   fact: string

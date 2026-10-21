@@ -731,7 +731,12 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <span>저장된 분석 결과(캐시)입니다.</span>
             </div>
           )}
-          <FeedbackReport feedback={feedback} title="이 경기 정밀 코칭 (단일 매치)" compact />
+          <FeedbackReport
+            feedback={feedback}
+            title="이 경기 정밀 코칭 (단일 매치)"
+            compact
+            goalSource={isDemo ? undefined : { gameName, tagLine, matches: [match] }}
+          />
         </div>
       )}
 

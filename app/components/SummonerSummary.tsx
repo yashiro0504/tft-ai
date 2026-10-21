@@ -6,6 +6,7 @@ import { formatRankLabel, formatRankLp, formatRankRecord, rankWinRate } from '@/
 import { PlacementTrend } from './PlacementTrend'
 import { AxisOverview } from './AxisOverview'
 import { HabitOverview } from './HabitOverview'
+import { GoalTracker } from './GoalTracker'
 import { FavoriteButton } from './FavoriteButton'
 
 /**
@@ -193,6 +194,8 @@ export function SummonerSummary({
 
       {/* 오른쪽: 최근 경기 분석 */}
       <div className="flex min-w-0 flex-col gap-5 rounded-card border border-line bg-panel p-5 shadow-card">
+        {/* 연습 목표 진행 (이 브라우저에 목표가 있을 때만) */}
+        <GoalTracker gameName={profile.gameName} tagLine={profile.tagLine} matches={matches} />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-ink">
