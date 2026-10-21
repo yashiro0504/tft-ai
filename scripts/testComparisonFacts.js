@@ -351,6 +351,66 @@ ${mixedFacts}`
   const noGuide = buildComparisonFacts({ matches: [gBoard], mode: 'single', combos: [], decks: [{ ...guideDeck, guide: undefined }] })
   check('가이드 없는 덱(DB 구버전 등)은 가이드 줄 생략', !noGuide.includes('덱 가이드'), noGuide)
 
+  console.log('패치 노트')
+  const { parseBody } = require('./fetchPatchNotes')
+  const { patchAt, normalizeEntity, boardPatchChanges, getPatchNotes } = require('../lib/patchNotes')
+  const { patchLine } = require('../lib/comparisonFacts')
+  const html =
+    '<h2>대규모 변경 사항</h2><h4 class="change-detail-title">유닛: 1단계</h4><blockquote class="blockquote context"><p>해설 산문 — 저장 안 함</p></blockquote>' +
+    '<ul><li>베이가<ul><li>스킬 피해량: 주문력 200 <span class="change-indicator">⇒</span> 220</li></ul></li><li>소라카:<ul><li>마나: 0/60 ⇒ 0/50</li></ul></li></ul>' +
+    '<h4>증강</h4><ul><li>어떤 증강<ul><li>골드: 2 ⇒ 3</li></ul></li></ul>'
+  const parsed = parseBody(html)
+  check(
+    '패치 본문 파싱: 섹션·대상·변경 줄, 해설(blockquote)·증강 섹션 제외, 콜론 제거',
+    parsed.length === 1 && parsed[0].kind === 'unit' && parsed[0].changes.map((c) => `${c.entity}|${c.lines.join(';')}`).join(' / ') === '베이가|스킬 피해량: 주문력 200 ⇒ 220 / 소라카|마나: 0/60 ⇒ 0/50' && !JSON.stringify(parsed).includes('해설'),
+    JSON.stringify(parsed)
+  )
+  const nested = parseBody('<h4>유닛: 4단계</h4><ul><li>니달리<ul><li>주문력 형태<ul><li>투창 피해량: 170 ⇒ 185</li></ul></li><li>공통: 1 ⇒ 2</li></ul></li></ul>')
+  check('3단 중첩 = "소제목 — 변경 줄"', JSON.stringify(nested[0].changes[0].lines) === JSON.stringify(['주문력 형태 — 투창 피해량: 170 ⇒ 185', '공통: 1 ⇒ 2']), JSON.stringify(nested))
+  check('대상 이름 정규화: "(9) 나무정령" · "요정 (2/4)" · "소라카:"', ['(9) 나무정령', '요정 (2/4)', '소라카:'].map(normalizeEntity).join(',') === '나무정령,요정,소라카')
+  const P = (patch, day, sections) => ({ patch, url: '', publishedAt: `2026-10-${day}T18:00:00.000Z`, sections })
+  const fakePatches = [
+    P('18.4', '06', [{ title: '유닛', kind: 'unit', changes: [{ entity: '베이가', lines: ['A ⇒ B'] }] }]),
+    P('18.5', '20', [
+      { title: '특성', kind: 'trait', changes: [{ entity: '검은 가시', lines: ['(6) 구간 강화: 60% ⇒ 50%', '기본: 12% ⇒ 10%'] }, { entity: '(9) 나무정령', lines: ['체력: 140% ⇒ 125%'] }] },
+      { title: '유닛: 5단계', kind: 'unit', changes: [{ entity: '알룬', lines: ['1 ⇒ 2', '3 ⇒ 4', '5 ⇒ 6'] }] },
+      { title: '찬란한 아이템', kind: 'radiantItem', changes: [{ entity: '푸른 파수꾼', lines: ['30% ⇒ 25%'] }] },
+    ]),
+  ]
+  const at = (iso) => Date.parse(iso)
+  check(
+    '경기 시각 → 패치 (게시 시각 기준)',
+    patchAt(at('2026-10-20T17:59:00Z'), fakePatches).patch === '18.4' && patchAt(at('2026-10-20T18:00:00Z'), fakePatches).patch === '18.5' && patchAt(at('2026-10-01T00:00:00Z'), fakePatches) === undefined
+  )
+  const pMatch = {
+    ...sample,
+    gameDatetime: at('2026-10-10T00:00:00Z'),
+    units: [{ id: 'TFT18_Alune', name: '알룬', tier: 1, items: ['찬란한 푸른 파수꾼'] }, { id: 'TFT18_X', name: '엑스', tier: 2, items: ['푸른 파수꾼'] }],
+    traits: [{ name: '검은 가시', count: 2, tier: 1 }, { name: '나무정령', count: 3, tier: 1 }],
+  }
+  const pr = boardPatchChanges(pMatch, fakePatches)
+  check(
+    '보드 관련 변경: 경기(18.4) 이후 18.5 · 기물→아이템→시너지 순 · 닿지 않은 구간((6)·(9)) 제외 · 찬란한 아이템은 찬란한 버전만',
+    pr.matchPatch === '18.4' && pr.later && pr.hits.map((h) => `${h.entity}:${h.lines.length}`).join(',') === '알룬:3,찬란한 푸른 파수꾼:1,검은 가시:1',
+    JSON.stringify(pr)
+  )
+  check(
+    '패치 변경점 줄: 대상당 2줄 + "외 N건"',
+    patchLine(pMatch, fakePatches) === '- 경기 이후 패치 변경점(공식 패치 노트 18.5 · 이 경기는 18.4 추정, 내 보드 관련): 알룬 — 1 ⇒ 2; 3 ⇒ 4 외 1건 · 찬란한 푸른 파수꾼 — 30% ⇒ 25% · 검은 가시 — 기본: 12% ⇒ 10%',
+    patchLine(pMatch, fakePatches)
+  )
+  check(
+    '최신 패치에서 한 경기 = "이 경기 패치 변경점" · 관련 없으면 "변경 없음"',
+    patchLine({ ...pMatch, gameDatetime: at('2026-10-21T00:00:00Z'), units: [], traits: [] }, fakePatches) === '- 이 경기 패치 변경점(공식 패치 노트 18.5, 내 보드 관련): 내 보드 기물·시너지·아이템 관련 변경 없음'
+  )
+  check('경기 시각이 수집 패치보다 이르면 줄 생략', patchLine({ ...pMatch, gameDatetime: at('2026-09-01T00:00:00Z') }, fakePatches) === null)
+  const real = getPatchNotes()
+  check(
+    '실제 수집본: 패치 오름차순 · 섹션·변경 줄 존재 · 증강 섹션 없음',
+    real.length > 0 && real.every((p, i) => i === 0 || p.publishedAt >= real[i - 1].publishedAt) && real.every((p) => p.sections.length && p.sections.every((s) => s.kind !== 'augment' && s.changes.every((c) => c.lines.length))),
+    real.map((p) => p.patch).join(',')
+  )
+
   console.log('BIS 일치율')
   const combos = [
     { champKey: 'Ahri', itemName: 'X', avgPlacement: 3.1, sampleSize: 50 },

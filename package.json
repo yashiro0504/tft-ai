@@ -30,6 +30,7 @@
     "extract:traits": "node scripts/extractChampionTraits.js",
     "build:traits": "node scripts/buildTraitBreakpoints.js",
     "build:items": "node scripts/buildItemRecipes.js",
+    "collect:patches": "node scripts/fetchPatchNotes.js",
     "icons": "node scripts/generateIcons.js",
     "decks:check": "node scripts/checkDecks.js",
     "test:augment": "node scripts/testAugmentAggregation.js",

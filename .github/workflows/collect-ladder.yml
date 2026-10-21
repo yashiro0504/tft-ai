@@ -91,15 +91,20 @@ jobs:
       - name: Show rank delta summary
         run: npm run meta:summary
 
+      # 공식 패치 노트(키 불필요). 페이지 구조가 바뀌어 실패해도 래더 수집은 계속 커밋한다
+      - name: Collect patch notes
+        continue-on-error: true
+        run: npm run collect:patches
+
       - name: Commit updated data
         if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- lib/metaStats.json lib/decksData.json; then
+          if git diff --quiet -- lib/metaStats.json lib/decksData.json lib/patchNotes.json; then
             echo "변경 사항이 없어 커밋하지 않습니다."
             exit 0
           fi
-          git add lib/metaStats.json lib/decksData.json
+          git add lib/metaStats.json lib/decksData.json lib/patchNotes.json
           git commit -m "chore(meta): 래더 표본·덱 자동 갱신 ($(date -u +%Y-%m-%d))"
           git push

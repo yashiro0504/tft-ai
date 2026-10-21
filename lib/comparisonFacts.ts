@@ -4,6 +4,7 @@ import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
 import { boardValue } from './boardValue'
+import { boardPatchChanges, type PatchNote } from './patchNotes'
 import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
@@ -24,6 +25,9 @@ import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMa
  *
  * 덱 가이드 (single 만): 내 덱(유사 메타 덱)의 래더 실측 가이드와 내 보드 비교 — 핵심 기물 보유, 내 유동 기물,
  * 캐리 아이템(최종 보드 채용률 순 — 조합 순서 아님), 레벨 분포, 개방성.
+ *
+ * 패치 변경점 (single 만): 공식 패치 노트에서 내 보드 기물·켠 시너지·아이템 관련 변경 줄 (lib/patchNotes).
+ * 경기 이후 패치가 있으면 그 변경(다음 판 기준), 없으면 경기 당시 패치 변경. 상향/하향은 판단하지 않는다.
  */
 
 /** unit_item 통계 행 (lib/statsShared MetaComboRanking 의 필요한 필드) */
@@ -348,6 +352,26 @@ function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   return out
 }
 
+/** 패치 변경점 줄에 넣을 대상 수 · 대상당 변경 줄 수 상한 */
+const PATCH_MAX_ENTITIES = 6
+const PATCH_MAX_LINES = 2
+
+export function patchLine(m: SlimMatchData, patches?: PatchNote[]): string | null {
+  const r = boardPatchChanges(m, patches)
+  if (!r.matchPatch || !r.patches.length) return null
+  const multi = r.patches.length > 1
+  const head = r.later
+    ? `- 경기 이후 패치 변경점(공식 패치 노트 ${r.patches.join('·')} · 이 경기는 ${r.matchPatch} 추정, 내 보드 관련)`
+    : `- 이 경기 패치 변경점(공식 패치 노트 ${r.matchPatch}, 내 보드 관련)`
+  if (!r.hits.length) return `${head}: 내 보드 기물·시너지·아이템 관련 변경 없음`
+  const shown = r.hits.slice(0, PATCH_MAX_ENTITIES).map((h) => {
+    const more = h.lines.length > PATCH_MAX_LINES ? ` 외 ${h.lines.length - PATCH_MAX_LINES}건` : ''
+    return `${multi ? `${h.patch} ` : ''}${h.entity} — ${h.lines.slice(0, PATCH_MAX_LINES).join('; ')}${more}`
+  })
+  const rest = r.hits.length - shown.length
+  return `${head}: ${shown.join(' · ')}${rest > 0 ? ` · 외 ${rest}개 대상` : ''}`
+}
+
 /** 종합: 메타 덱을 탄 판 수 + 표본 충분한 판의 평균 등수 차이와 판정 분포 */
 function metaExecutionLine(matches: SlimMatchData[], decks: DeckFact[]): string | null {
   const hits = matches.map((m) => metaExecution(m, decks)).filter((x): x is MetaExecution => x !== null)
@@ -453,6 +477,8 @@ export function buildComparisonFacts({
     const ll = lobbyDeckLine(m, decks)
     if (ll) lines.push(ll)
     lines.push(...openDeckLines(m, decks))
+    const pl = patchLine(m)
+    if (pl) lines.push(pl)
     const bl = bisLine(m.units, bis, '보드 전체', true)
     if (bl) lines.push(bl)
   } else {
