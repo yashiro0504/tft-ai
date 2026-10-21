@@ -59,6 +59,9 @@ jobs:
       - name: Bot gate cookie tests
         run: npm run test:gate
 
+      - name: AI report semantic grounding tests
+        run: npm run test:ai
+
       - name: Build
         run: npm run build
         env:

@@ -1,14 +1,14 @@
 {
-  "scoringVersion": "v3",
-  "generatedAt": "2026-10-19T13:59:45.729Z",
+  "scoringVersion": "v6",
+  "generatedAt": "2026-10-21T06:59:43.734Z",
   "cases": {
     "백승민#agent 3경기": {
-      "focus": "tempo",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 97,
         "itemization": 100,
-        "tempo": 73,
+        "tempo": 91,
         "completion": 80,
         "synergy": 87,
         "contest": 80
@@ -26,9 +26,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 92,
+        "economy": 99,
         "itemization": 89,
-        "tempo": 82,
+        "tempo": 93,
         "completion": 81,
         "synergy": 90,
         "contest": 83
@@ -43,12 +43,12 @@
       }
     },
     "Seed02 최근 5경기": {
-      "focus": "economy",
+      "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 92,
         "itemization": 89,
-        "tempo": 93,
+        "tempo": 96,
         "completion": 90,
         "synergy": 95,
         "contest": 95
@@ -63,12 +63,12 @@
       }
     },
     "Seed03 최근 5경기": {
-      "focus": "tempo",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 95,
+        "economy": 100,
         "itemization": 93,
-        "tempo": 86,
+        "tempo": 93,
         "completion": 90,
         "synergy": 90,
         "contest": 91
@@ -106,9 +106,9 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 100,
         "itemization": 82,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 85,
         "synergy": 100,
         "contest": 95
@@ -186,9 +186,9 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 97,
         "itemization": 63,
-        "tempo": 82,
+        "tempo": 80,
         "completion": 92,
         "synergy": 48,
         "contest": 65
@@ -283,12 +283,12 @@
       }
     },
     "Seed01 contested-bot4 5등 6-1": {
-      "focus": "tempo",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 70,
+        "economy": 94,
         "itemization": 100,
-        "tempo": 64,
+        "tempo": 100,
         "completion": 79,
         "synergy": 75,
         "contest": 65

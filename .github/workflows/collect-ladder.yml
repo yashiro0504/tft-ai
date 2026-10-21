@@ -83,6 +83,11 @@ jobs:
           MAX_MATCHES: ${{ github.event.inputs.max_matches || '400' }}
         run: npm run collect:boards
 
+      # 공식 패치 노트(키 불필요). 덱 빌드의 패치 분리가 이 파일을 쓰므로 덱 빌드 전에 받는다. 실패해도 계속
+      - name: Collect patch notes
+        continue-on-error: true
+        run: npm run collect:patches
+
       - name: Rebuild decks from stats
         run: |
           npm run build:decks
@@ -96,10 +101,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- lib/metaStats.json lib/decksData.json; then
+          if git diff --quiet -- lib/metaStats.json lib/decksData.json lib/patchNotes.json; then
             echo "변경 사항이 없어 커밋하지 않습니다."
             exit 0
           fi
-          git add lib/metaStats.json lib/decksData.json
+          git add lib/metaStats.json lib/decksData.json lib/patchNotes.json
           git commit -m "chore(meta): 래더 표본·덱 자동 갱신 ($(date -u +%Y-%m-%d))"
           git push

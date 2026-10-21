@@ -174,13 +174,21 @@ function LectureBlock({ feedback }: { feedback: MetaCoachFeedback }) {
  * 기존 app/page.tsx 의 리포트 마크업을 재사용 가능하도록 분리.
  */
 export function FeedbackReport({ feedback, title, matchCount, compact = false }: FeedbackReportProps) {
-  const flexScore = feedback.flexibilityScore
+  // 스키마 v2: 유연성은 6축 contest 점수(코드 산출). v1 캐시 리포트는 AI 피봇 성향(flexibilityScore)을 그대로 보여 준다.
+  const contestAxis = feedback.plan?.axes.find((a) => a.key === 'contest')
+  const flex = contestAxis
+    ? { label: '유연성 (6축)', value: `${contestAxis.score}`, unit: '/100', score: contestAxis.score, title: '6축 진단의 유연성(로비 수렴도 대응) 점수 — 코드 산출' }
+    : typeof feedback.flexibilityScore === 'number'
+      ? { label: '피봇 성향', value: `${feedback.flexibilityScore}`, unit: '%', score: feedback.flexibilityScore, title: 'AI 가 판단한 피봇(덱 전환) 성향 — 6축의 유연성 점수와는 별개' }
+      : null
   const flexBadge =
-    flexScore >= 65
+    (flex?.score ?? 0) >= 65
       ? 'bg-good/10 border-good/80 text-good'
-      : flexScore >= 45
+      : (flex?.score ?? 0) >= 45
       ? 'bg-gold/10 border-gold/80 text-gold'
       : 'bg-bad/10 border-bad/80 text-bad'
+  // 스키마 v2 actions (v1 캐시 리포트는 improvements)
+  const actions = feedback.actions?.length ? feedback.actions : feedback.improvements ?? []
 
   const pad = compact ? 'p-5 md:p-6' : 'p-6 md:p-8'
   const [showAll, setShowAll] = useState(false)
@@ -223,13 +231,20 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
               등급 {feedback.metaTier}
             </span>
           </div>
-          <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
-            <p className="text-xs text-subtle" title="AI 가 판단한 피봇(덱 전환) 성향 — 6축의 유연성 점수와는 별개">피봇 성향</p>
-            <p className="text-2xl font-bold text-ink">{flexScore}%</p>
-            <span className={`mt-1 inline-block rounded-chip border px-1.5 py-0.5 text-xs font-semibold ${flexBadge}`}>
-              {feedback.playstyle}
-            </span>
-          </div>
+          {flex ? (
+            <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
+              <p className="text-xs text-subtle" title={flex.title}>{flex.label}</p>
+              <p className="text-2xl font-bold text-ink">
+                {flex.value}
+                {flex.unit === '%' ? '%' : <span className="ml-1 text-sm font-medium text-subtle">{flex.unit}</span>}
+              </p>
+              {feedback.playstyle ? (
+                <span className={`mt-1 inline-block rounded-chip border px-1.5 py-0.5 text-xs font-semibold ${flexBadge}`}>
+                  {feedback.playstyle}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {feedback.grounding ? (
             <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
               <p className="text-xs text-subtle">근거 검증</p>
@@ -241,9 +256,9 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
           ) : null}
         </div>
 
-        {feedback.improvements.length ? (
+        {actions.length ? (
           <ol className="grid list-none grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 p-0">
-            {feedback.improvements.slice(0, 3).map((item, i) => (
+            {actions.slice(0, 3).map((item, i) => (
               <li key={i} className="flex gap-2.5 rounded-control bg-sunken px-3.5 py-3">
                 <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-chip bg-accent-bg text-xs font-bold text-accent">
                   {i + 1}
@@ -402,86 +417,94 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false }:
       {/* 강의형 코칭 (개념 → 근거 → 대안 → 연습) */}
       <LectureBlock feedback={feedback} />
 
-      {/* 유연성 (6축 중 1개 — 로비 수렴도에 어떻게 대응했는가, 보조 지표) */}
-      <div className="rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
-        <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-accent">
-          <Users className="h-4 w-4 text-accent" />
-          <span>유연성 (보조 지표)</span>
-        </div>
-        <div className="rounded-card border border-line bg-sunken p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
-          {feedback.contestAnalysis}
-        </div>
-      </div>
-
-      {/* 3대 핵심 영역 */}
-      <div>
-        <h3 className="text-[15px] font-bold text-muted mb-3">3대 핵심 세부 영역 평가</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-panel border border-line rounded-card p-5">
-            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
-              <Swords className="w-4 h-4 text-accent" />
-              <span>아이템 최적화 (BIS)</span>
-            </div>
-            <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.itemAnalysis}</p>
+      {/* 유연성 해설 — 스키마 v1 캐시 리포트에만 있다 (v2 는 위 6축 진단의 contest 한 줄) */}
+      {feedback.contestAnalysis ? (
+        <div className="rounded-card border border-line bg-panel p-5 shadow-card md:p-6">
+          <div className="mb-3 flex items-center gap-2 text-[14px] font-extrabold uppercase tracking-wider text-accent">
+            <Users className="h-4 w-4 text-accent" />
+            <span>유연성 (보조 지표)</span>
           </div>
-
-          <div className="bg-panel border border-line rounded-card p-5">
-            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
-              <Shield className="w-4 h-4 text-accent" />
-              <span>앞/뒷라인 밸런스</span>
-            </div>
-            <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.synergyAnalysis}</p>
-          </div>
-
-          <div className="bg-panel border border-line rounded-card p-5">
-            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
-              <TrendingUp className="w-4 h-4 text-accent" />
-              <span>레벨업 & 골드 운영</span>
-            </div>
-            <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.economyAnalysis}</p>
+          <div className="rounded-card border border-line bg-sunken p-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
+            {feedback.contestAnalysis}
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* 개선 포인트 */}
-      <div className="bg-panel border border-line rounded-card p-6 shadow-card">
-        <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
-          <Lightbulb className="w-5 h-5 text-accent" />
-          <span>결정적 개선 포인트 (Key Improvements)</span>
-        </div>
-        <div className="space-y-3">
-          {feedback.improvements.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
-            >
-              <span className="font-bold text-accent bg-accent-bg border border-accent/60 rounded-chip w-6 h-6 flex items-center justify-center shrink-0 text-xs mt-0.5">
-                {i + 1}
-              </span>
-              <span className="flex-1 whitespace-pre-line">{item}</span>
+      {/* 3대 핵심 영역 — 스키마 v1 캐시 리포트에만 있다 (v2 는 6축 진단 verdict) */}
+      {feedback.itemAnalysis || feedback.synergyAnalysis || feedback.economyAnalysis ? (
+        <div>
+          <h3 className="text-[15px] font-bold text-muted mb-3">3대 핵심 세부 영역 평가</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-panel border border-line rounded-card p-5">
+              <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+                <Swords className="w-4 h-4 text-accent" />
+                <span>아이템 최적화 (BIS)</span>
+              </div>
+              <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.itemAnalysis}</p>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* 액션 플랜 */}
-      <div className="bg-panel border border-line rounded-card p-6 shadow-card">
-        <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
-          <CheckCircle2 className="w-5 h-5 text-accent" />
-          <span>다음 경기 즉시 적용 지침 (Practical Action Plan)</span>
-        </div>
-        <div className="space-y-3">
-          {feedback.actionPlan.map((action, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
-            >
-              <Zap className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-              <span className="flex-1 whitespace-pre-line">{action}</span>
+            <div className="bg-panel border border-line rounded-card p-5">
+              <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+                <Shield className="w-4 h-4 text-accent" />
+                <span>앞/뒷라인 밸런스</span>
+              </div>
+              <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.synergyAnalysis}</p>
             </div>
-          ))}
+
+            <div className="bg-panel border border-line rounded-card p-5">
+              <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase mb-2">
+                <TrendingUp className="w-4 h-4 text-accent" />
+                <span>레벨업 & 골드 운영</span>
+              </div>
+              <p className="text-[14px] md:text-[15px] text-muted leading-relaxed">{feedback.economyAnalysis}</p>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
+
+      {/* 개선 포인트 (v2 actions · v1 improvements) */}
+      {actions.length ? (
+        <div className="bg-panel border border-line rounded-card p-6 shadow-card">
+          <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
+            <Lightbulb className="w-5 h-5 text-accent" />
+            <span>결정적 개선 포인트 (Key Improvements)</span>
+          </div>
+          <div className="space-y-3">
+            {actions.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
+              >
+                <span className="font-bold text-accent bg-accent-bg border border-accent/60 rounded-chip w-6 h-6 flex items-center justify-center shrink-0 text-xs mt-0.5">
+                  {i + 1}
+                </span>
+                <span className="flex-1 whitespace-pre-line">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 액션 플랜 — 스키마 v1 캐시 리포트에만 있다 (v2 는 actions · 강의 체크리스트) */}
+      {feedback.actionPlan?.length ? (
+        <div className="bg-panel border border-line rounded-card p-6 shadow-card">
+          <div className="flex items-center gap-2 text-accent font-extrabold text-[15px] uppercase tracking-wider mb-4">
+            <CheckCircle2 className="w-5 h-5 text-accent" />
+            <span>다음 경기 즉시 적용 지침 (Practical Action Plan)</span>
+          </div>
+          <div className="space-y-3">
+            {feedback.actionPlan.map((action, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 p-4 rounded-card bg-sunken border border-line text-[15px] leading-relaxed text-ink-soft"
+              >
+                <Zap className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                <span className="flex-1 whitespace-pre-line">{action}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
         </>
       ) : null}
     </div>

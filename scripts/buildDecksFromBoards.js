@@ -10,6 +10,11 @@
  *  3. MIN_GAMES 이상 나온 덱만 남기고, 그 보드들의 실제 등수로 평균/TOP4/1등/분포/픽률을 계산한다
  *  4. 대표 구성 = 그 덱 보드의 절반 이상에서 쓰인 기물 (부족하면 빈도순으로 채움), 캐리 아이템 = 가장 많이 쓴 3개
  *  5. 시너지 최대 단계(breakpoint max)를 넘는 기물은 flex 로 표시하고 시너지 count 에서 제외한다
+ *  6. 덱 가이드(guide): 핵심·유동 기물(채용률), 캐리 아이템 채용률과 들었을 때 평균 등수, 레벨 분포, 개방성
+ *     — 최종 보드 통계라 '조합 순서'가 아니라 '최종 보드 채용률'이다
+ *  7. 패치 분리(JSON 경로): 보드에 패치를 붙이고(공식 패치 노트 게시 시각 기준, lib/patchNotes),
+ *     현재 패치 보드만으로 MIN_GAMES 를 넘는 덱은 현재 패치만, 못 넘는 덱은 직전 패치를 합쳐 만든다.
+ *     guide.patch = { counts: 패치별 판 수, mixed } 로 기준을 남긴다. (DB 경로는 이미 패치별로 묶여 들어온다)
  *
  * 사용법:
  *  node scripts/buildDecksFromBoards.js            # 미리보기 + 표 출력
@@ -28,6 +33,12 @@ const MIN_GAMES = Number(process.env.MIN_GAMES || 30)
 const MAX_DECKS = Number(process.env.MAX_DECKS || 100)
 const MAX_UNITS = Number(process.env.MAX_UNITS || 9)
 const MERGE_OVERLAP = Number(process.env.MERGE_OVERLAP || 0.75)
+/** 덱 가이드: 핵심 기물 채용률 하한 · 유동 기물 채용률 범위 · 표본 하한 · 개수 상한 */
+const GUIDE_CORE_USAGE = 0.8
+const GUIDE_FLEX_USAGE = 0.2
+const GUIDE_MIN_N = 10
+const GUIDE_MAX_FLEX = 6
+const GUIDE_MAX_ITEMS = 5
 
 const BOARDS_PATH = path.join(__dirname, '..', 'data', 'ladderBoards.json')
 const r2 = (x) => Math.round(x * 100) / 100
@@ -251,11 +262,17 @@ function newCluster(label) {
     traitCount: new Map(), // 시너지 → 활성 보드 수
     traitUnits: new Map(), // 시너지 → 유닛 수 합
     traitIds: new Map(),
+    unitPlace: new Map(), // 기물 → 등수 합 (기물을 쓴 보드)
+    carryItemPlace: new Map(), // 캐리 아이템 → 등수 합 (그 아이템을 든 보드)
+    carryItemBoards: new Map(), // 캐리 아이템 → 든 보드 수 (같은 아이템 2개도 1번)
+    carryThree: 0, // 캐리 3성 보드 수
+    patchCounts: new Map(), // 패치 → 보드 수 (board.patch 가 있을 때만)
   }
 }
 
 function addBoard(c, board, label) {
   c.boards++
+  if (board.patch) c.patchCounts.set(board.patch, (c.patchCounts.get(board.patch) || 0) + 1)
   c.placements[board.placement - 1]++
   c.levels.push(board.level || 0)
   const seen = new Set()
@@ -272,11 +289,18 @@ function addBoard(c, board, label) {
       c.unitItems.set(k, m)
     }
     c.unitCount.set(k, (c.unitCount.get(k) || 0) + 1)
+    c.unitPlace.set(k, (c.unitPlace.get(k) || 0) + board.placement)
     c.unitStars.set(k, (c.unitStars.get(k) || 0) + (u.star || 1))
     if (!c.unitIds.has(k)) c.unitIds.set(k, u.id)
     if (k === label.carry) {
       c.carryStars.push(u.star || 1)
+      if ((u.star || 1) >= 3) c.carryThree++
       for (const it of u.items || []) c.carryItems.set(it, (c.carryItems.get(it) || 0) + 1)
+      // 같은 아이템 2개는 한 번만 센다 (그 아이템을 든 보드의 등수)
+      for (const it of new Set((u.items || []).filter(isCompletedItem))) {
+        c.carryItemPlace.set(it, (c.carryItemPlace.get(it) || 0) + board.placement)
+        c.carryItemBoards.set(it, (c.carryItemBoards.get(it) || 0) + 1)
+      }
     }
   }
   for (const t of board.traits) {
@@ -333,7 +357,7 @@ function flexKeys(c) {
 function mergeInto(a, b) {
   a.boards += b.boards
   for (let i = 0; i < 8; i++) a.placements[i] += b.placements[i]
-  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits', 'unitHolders']) {
+  for (const field of ['unitCount', 'unitStars', 'carryItems', 'traitCount', 'traitUnits', 'unitHolders', 'unitPlace', 'carryItemPlace', 'carryItemBoards', 'patchCounts']) {
     for (const [k, v] of b[field]) a[field].set(k, (a[field].get(k) || 0) + v)
   }
   for (const field of ['unitIds', 'traitIds']) for (const [k, v] of b[field]) if (!a[field].has(k)) a[field].set(k, v)
@@ -343,6 +367,7 @@ function mergeInto(a, b) {
     a.unitItems.set(k, target)
   }
   a.carryStars.push(...b.carryStars)
+  a.carryThree += b.carryThree
   a.sizes.push(...b.sizes)
   a.levels.push(...b.levels)
 }
@@ -353,6 +378,55 @@ function overlap(a, b) {
   let shared = 0
   for (const k of A) if (B.has(k)) shared++
   return shared / Math.min(A.size, B.size)
+}
+
+/**
+ * 덱 가이드 (래더 최종 보드 통계). key 는 덱 units 와 같은 statKey (런타임 entitySlug 매칭용).
+ * - core: 채용률 80%+ 기물 / flex: 20~80% 기물 (대표 구성 밖 포함) + 썼을 때 평균 등수
+ * - carryItems: 캐리가 든 완성 아이템의 채용률(보드 비율)과 그 아이템을 들었을 때 평균 등수 (표본 10판+)
+ * - levels: 레벨 → 보드 비율 / carryThreeStarRate: 캐리 3성 보드 비율
+ * - openness.flexSlots = 대표 구성 칸 수 − 핵심 기물 수 (sharedCarryDecks 는 buildDecks 에서 채운다)
+ */
+function deckGuide(c) {
+  const usage = (k) => c.unitCount.get(k) / c.boards
+  const unitEntry = (k) => ({
+    key: statKey(c.unitIds.get(k)),
+    name: champInfo(c.unitIds.get(k)).name,
+    usage: r3(usage(k)),
+    avgPlacement: r2(c.unitPlace.get(k) / c.unitCount.get(k)),
+  })
+  const ranked = [...c.unitCount.keys()].sort((a, b) => usage(b) - usage(a))
+  const core = ranked.filter((k) => usage(k) >= GUIDE_CORE_USAGE)
+  const flex = ranked
+    .filter((k) => usage(k) >= GUIDE_FLEX_USAGE && usage(k) < GUIDE_CORE_USAGE && c.unitCount.get(k) >= GUIDE_MIN_N)
+    .slice(0, GUIDE_MAX_FLEX)
+  const carryItems = [...c.carryItemPlace.keys()]
+    .map((id) => ({ id, n: c.carryItemBoards.get(id), place: c.carryItemPlace.get(id) }))
+    .filter((x) => x.n >= GUIDE_MIN_N && itemInfo(x.id).iconUrl)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, GUIDE_MAX_ITEMS)
+    .map((x) => ({ key: x.id, name: itemInfo(x.id).name, rate: r3(x.n / c.boards), avgPlacement: r2(x.place / x.n) }))
+  const levels = {}
+  for (const lv of c.levels) if (lv) levels[lv] = (levels[lv] || 0) + 1
+  for (const lv of Object.keys(levels)) levels[lv] = r3(levels[lv] / c.boards)
+  return {
+    boards: c.boards,
+    core: core.map(unitEntry),
+    flex: flex.map(unitEntry),
+    carryItems,
+    levels,
+    carryThreeStarRate: r3(c.carryThree / c.boards),
+    openness: { coreCount: core.length, flexSlots: Math.max(coreSize(c) - core.length, 0), sharedCarryDecks: 0 },
+    // 이 덱 통계가 어느 패치 보드로 만들어졌는가 (패치 정보가 없는 입력이면 생략)
+    ...(c.patchCounts.size
+      ? {
+          patch: {
+            counts: Object.fromEntries([...c.patchCounts.entries()].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))),
+            mixed: c.patchCounts.size > 1,
+          },
+        }
+      : {}),
+  }
 }
 
 function tierFromAvgPlacement(avg) {
@@ -434,6 +508,7 @@ function toDeck(c, totalBoards) {
     sampleSize: c.boards,
     tier: tierFromAvgPlacement(avg),
     carryKey: statKey(c.unitIds.get(carryKey)),
+    guide: deckGuide(c),
   }
 }
 
@@ -490,8 +565,31 @@ function buildDecks(boards, { minGames = MIN_GAMES, maxDecks = MAX_DECKS } = {})
     .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements }))
     .sort((a, b) => a.deck.avgPlacement - b.deck.avgPlacement)
     .slice(0, maxDecks)
+  setSharedCarry(decks.map((d) => d.deck))
 
   return { decks, labeled, clusterCount: clusters.size, mergedCount: merged.length }
+}
+
+/** 개방성: 같은 캐리를 쓰는 다른 메타 덱 수 (경합·전환 여지) */
+function setSharedCarry(decks) {
+  for (const d of decks) d.guide.openness.sharedCarryDecks = decks.filter((o) => o !== d && o.carryKey === d.carryKey).length
+}
+
+/**
+ * 패치 분리: 현재 패치만으로 만든 덱(current)이 minGames 이상이면 그것을, 아니면 현재+직전 패치로 만든 덱(mixed)을 쓴다.
+ * 현재 패치에만 있는 새 덱도 minGames 이상이면 넣는다. 결과는 평균 등수 순, 개방성(같은 캐리 덱 수)은 다시 센다.
+ */
+function choosePatchDecks(currentDecks, mixedDecks, minGames = MIN_GAMES) {
+  const byId = new Map(currentDecks.map((d) => [d.id, d]))
+  const chosen = mixedDecks.map((m) => {
+    const cur = byId.get(m.id)
+    return cur && cur.games >= minGames ? cur : m
+  })
+  const ids = new Set(chosen.map((d) => d.id))
+  for (const d of currentDecks) if (!ids.has(d.id) && d.games >= minGames) chosen.push(d)
+  chosen.sort((a, b) => a.avgPlacement - b.avgPlacement)
+  setSharedCarry(chosen)
+  return chosen
 }
 
 function main() {
@@ -501,20 +599,53 @@ function main() {
     return
   }
   const data = JSON.parse(fs.readFileSync(BOARDS_PATH, 'utf-8'))
-  const boards = data.matches.flatMap((m) => m.boards)
-  const built = buildDecks(boards)
-  const decks = built.decks.map((d) => d.deck)
-  const labeled = built.labeled
+  // 패치 태깅: 공식 패치 노트 게시 시각 기준 (lib/patchNotes.ts — TS 라 여기서만 로드, DB 경로는 영향 없음)
+  require('./_ts')
+  const { getPatchNotes, patchAt } = require('../lib/patchNotes')
+  const notes = getPatchNotes()
+  const current = notes[notes.length - 1]?.patch
+  const previous = notes[notes.length - 2]?.patch
+  const allBoards = data.matches.flatMap((m) => {
+    const patch = patchAt(m.datetime)?.patch
+    return m.boards.map((b) => ({ ...b, patch }))
+  })
+  let decks
+  let boards
+  let labeled
+  let clusterCount
+  let mergedCount
+  if (current) {
+    const currentBoards = allBoards.filter((b) => b.patch === current)
+    boards = allBoards.filter((b) => b.patch === current || b.patch === previous)
+    const builtCurrent = buildDecks(currentBoards)
+    const builtMixed = buildDecks(boards)
+    decks = choosePatchDecks(builtCurrent.decks.map((d) => d.deck), builtMixed.decks.map((d) => d.deck)).slice(0, MAX_DECKS)
+    ;({ labeled, clusterCount, mergedCount } = builtMixed)
+    console.log(`패치: 현재 ${current} ${currentBoards.length}보드 · 직전 ${previous ?? '-'} ${boards.length - currentBoards.length}보드 · 제외(더 이전) ${allBoards.length - boards.length}보드`)
+  } else {
+    // 패치 노트가 없으면 예전처럼 전체 보드
+    boards = allBoards
+    const built = buildDecks(boards)
+    decks = built.decks.map((d) => d.deck)
+    ;({ labeled, clusterCount, mergedCount } = built)
+  }
+  const built = { clusterCount, mergedCount }
 
   const out = {
     version: 2,
+    /** 이 파일을 빌드한 시각 (데이터 수집일이 아니다) */
     generatedAt: new Date().toISOString(),
+    /** 원본 래더 보드의 수집 시각 (data/ladderBoards.json updatedAt) — 화면·sitemap 의 '갱신'은 이 값을 쓴다 */
+    sourceUpdatedAt: data.updatedAt || null,
     source: 'riot-ladder-boards',
     sourceUrl: null,
     patch: `set${data.set}`,
     region: data.region,
     matchCount: data.matches.length,
     boardCount: boards.length,
+    /** 패치 분리 기준 (공식 패치 노트 기준 현재·직전 패치) */
+    currentPatch: current || null,
+    previousPatch: previous || null,
     labeledBoards: labeled,
     minGames: MIN_GAMES,
     deckCount: decks.length,
@@ -540,4 +671,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { labelBoard, damageScore, itemRole, buildDecks }
+module.exports = { labelBoard, damageScore, itemRole, buildDecks, choosePatchDecks }

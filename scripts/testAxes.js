@@ -15,6 +15,8 @@ const fs = require('fs')
 const path = require('path')
 const { buildCoachingPlan } = require('../lib/coaching')
 const { computeScoreBreakdown, SCORING_VERSION } = require('../lib/scoring')
+const { boardValue } = require('../lib/boardValue')
+const { stageOfRound } = require('../lib/quality')
 
 const FIXTURES = path.join(__dirname, '..', 'data', 'evalMatches.json')
 const SNAPSHOT = path.join(__dirname, '..', 'data', 'axesSnapshot.json')
@@ -108,6 +110,29 @@ console.log(failures ? `  불변식 실패 ${failures}건` : '  ✅ 통과')
     console.log(`타당도 (정상 경기 ${singles.length}판, 등수 상관 ρ)`)
     console.log(`  ${parts.join(' · ')}`)
     console.log(`  강의 주제 분포 ${JSON.stringify(focus)}`)
+  }
+
+  // 보드 가치(점수 미반영 지표): 로비 전체 보드로 원시 ρ와 스테이지 보정 ρ(같은 탈락 스테이지끼리 비교) — 점수 반영 판단용
+  const boards = new Map()
+  for (const c of cases)
+    for (const m of c.matches)
+      for (const p of m.lobbyParticipants || []) boards.set(`${m.matchId}:${p.placement}`, { value: boardValue(p.units), place: -p.placement, stage: stageOfRound(p.lastRound) })
+  const all = [...boards.values()].filter((b) => b.stage > 0)
+  if (all.length >= 20) {
+    const byStage = new Map()
+    for (const b of all) byStage.set(b.stage, [...(byStage.get(b.stage) || []), b])
+    let weighted = 0
+    let n = 0
+    const perStage = []
+    for (const [stage, list] of [...byStage].sort((a, b) => a[0] - b[0])) {
+      if (list.length < 5) continue
+      const rho = spearman(list.map((b) => b.value), list.map((b) => b.place))
+      weighted += rho * list.length
+      n += list.length
+      perStage.push(`${stage}스테이지 ${rho.toFixed(2)}(${list.length})`)
+    }
+    console.log(`보드 가치 (로비 보드 ${all.length}개, 점수 미반영)`)
+    console.log(`  원시 ρ=${spearman(all.map((b) => b.value), all.map((b) => b.place)).toFixed(2)} · 스테이지 보정 ρ=${n ? (weighted / n).toFixed(2) : '-'} (${n}개, 스테이지별: ${perStage.join(' · ')})`)
   }
 }
 

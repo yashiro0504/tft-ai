@@ -7,8 +7,9 @@ import { ENTITY_PATH, type EntityKind } from '@/lib/entitySlug'
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const deckMeta = getDeckMetaInfo()
-  const deckUpdated = deckMeta.generatedAt && !Number.isNaN(Date.parse(deckMeta.generatedAt))
-    ? new Date(deckMeta.generatedAt)
+  // 덱 lastmod = 원본 래더 보드 수집 시각 (decksData.json 빌드 시각이 아니다)
+  const deckUpdated = deckMeta.sourceUpdatedAt && !Number.isNaN(Date.parse(deckMeta.sourceUpdatedAt))
+    ? new Date(deckMeta.sourceUpdatedAt)
     : now
 
   const deckEntries: MetadataRoute.Sitemap = getDeckViews().map((deck) => ({

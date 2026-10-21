@@ -20,7 +20,11 @@ import type {
 } from './types'
 
 /** 덱 뷰 → 응답 모양 (JSON 덱 · DB 덱 공용) */
-export function toMetaDeck(d: DeckView): MetaDeckRanking {
+/**
+ * @param opts.withGuide 래더 덱 가이드(guide)를 포함할지. AI 프롬프트 전용이라 공개 응답(/meta·/api/tft/decks)에는 넣지 않는다
+ *   (덱 59개 기준 약 64KB — 모바일 초기 로딩에 그대로 붙는다).
+ */
+export function toMetaDeck(d: DeckView, opts: { withGuide?: boolean } = {}): MetaDeckRanking {
   return {
     id: d.id,
     name: d.name,
@@ -49,6 +53,7 @@ export function toMetaDeck(d: DeckView): MetaDeckRanking {
     playRate: d.playRate,
     winRate: d.winRate,
     placementDist: d.placementDist,
+    ...(opts.withGuide && d.guide ? { guide: d.guide } : {}),
   }
 }
 
@@ -170,7 +175,7 @@ export function buildMetaPayload(): TftMetaResponse {
     : []
 
   // 메타 덱(보드 조합): 롤체지지 추천 덱 + 실측 통계 결합
-  const decks: MetaDeckRanking[] = getDeckViews().map(toMetaDeck)
+  const decks: MetaDeckRanking[] = getDeckViews().map((d) => toMetaDeck(d))
 
   return {
     success: true,
