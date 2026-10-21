@@ -1,0 +1,1167 @@
+{
+  "_comment": "챌린저 LP 상위 랭커의 최근 랭크 보드를 메타 덱별로 집계 (선수 식별자 없음). scripts/buildTopPlayerGuide.js 로 생성.",
+  "generatedAt": "2026-10-21T08:16:06.243Z",
+  "sourceUpdatedAt": "2026-10-21T08:15:57.598Z",
+  "region": "kr",
+  "players": 28,
+  "boards": 243,
+  "matchedBoards": 172,
+  "decks": {
+    "소환사 자이라": {
+      "boards": 13,
+      "players": 11,
+      "avgPlacement": 2.92,
+      "top4Rate": 0.769,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.538
+        },
+        {
+          "name": "처형자 상징",
+          "rate": 0.385
+        },
+        {
+          "name": "쇼진의 창",
+          "rate": 0.308
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.154
+        },
+        {
+          "name": "내셔의 이빨",
+          "rate": 0.154
+        }
+      ],
+      "levels": {
+        "8": 0.462,
+        "9": 0.462,
+        "10": 0.077
+      },
+      "extraUnits": [
+        {
+          "name": "요릭",
+          "usage": 1.077
+        },
+        {
+          "name": "아무무",
+          "usage": 1
+        },
+        {
+          "name": "말파이트",
+          "usage": 1
+        },
+        {
+          "name": "자이라",
+          "usage": 0.923
+        }
+      ]
+    },
+    "처형자 아지르": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 2,
+      "top4Rate": 1,
+      "carryThreeStarRate": 0.75,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 1
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.75
+        },
+        {
+          "name": "마법공학 총검",
+          "rate": 0.75
+        },
+        {
+          "name": "찬란한 마법공학 총검",
+          "rate": 0.25
+        },
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "8": 0.5,
+        "9": 0.5
+      },
+      "extraUnits": [
+        {
+          "name": "티모",
+          "usage": 0.5
+        }
+      ]
+    },
+    "엄호대 케일": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 6,
+      "top4Rate": 0,
+      "carryThreeStarRate": 1,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 1
+        },
+        {
+          "name": "고속 연사포",
+          "rate": 0.333
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.333
+        },
+        {
+          "name": "역병의 보석",
+          "rate": 0.333
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "6": 0.667,
+        "7": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "헤카림",
+          "usage": 0.333
+        }
+      ]
+    },
+    "개화 렝가": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3,
+      "top4Rate": 0.667,
+      "carryThreeStarRate": 1,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 1
+        },
+        {
+          "name": "거인의 결의",
+          "rate": 0.667
+        },
+        {
+          "name": "밤의 끝자락",
+          "rate": 0.667
+        },
+        {
+          "name": "존야의 역설",
+          "rate": 0.333
+        },
+        {
+          "name": "수은",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "7": 0.333,
+        "8": 0.333,
+        "9": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "니달리",
+          "usage": 1
+        },
+        {
+          "name": "돌거북",
+          "usage": 0.667
+        },
+        {
+          "name": "아이번",
+          "usage": 0.333
+        },
+        {
+          "name": "감시자",
+          "usage": 0.333
+        }
+      ]
+    },
+    "주문술사 베이가": {
+      "boards": 5,
+      "players": 3,
+      "avgPlacement": 4.6,
+      "top4Rate": 0.4,
+      "carryThreeStarRate": 1,
+      "carryItems": [
+        {
+          "name": "보석 건틀릿",
+          "rate": 1
+        },
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.6
+        },
+        {
+          "name": "루덴의 폭풍",
+          "rate": 0.4
+        },
+        {
+          "name": "마법공학 총검",
+          "rate": 0.4
+        },
+        {
+          "name": "새벽심장",
+          "rate": 0.2
+        }
+      ],
+      "levels": {
+        "7": 0.8,
+        "8": 0.2
+      },
+      "extraUnits": [
+        {
+          "name": "카시오페아",
+          "usage": 0.8
+        }
+      ]
+    },
+    "기원자 알룬": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 3.25,
+      "top4Rate": 1,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.25
+        },
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.25
+        },
+        {
+          "name": "내셔의 이빨",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "9": 0.75,
+        "10": 0.25
+      },
+      "extraUnits": [
+        {
+          "name": "애쉬",
+          "usage": 1
+        },
+        {
+          "name": "타릭",
+          "usage": 1
+        }
+      ]
+    },
+    "처형자 카직스": {
+      "boards": 17,
+      "players": 12,
+      "avgPlacement": 2.65,
+      "top4Rate": 0.882,
+      "carryThreeStarRate": 0.882,
+      "carryItems": [
+        {
+          "name": "정의의 손길",
+          "rate": 0.941
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.765
+        },
+        {
+          "name": "내셔의 이빨",
+          "rate": 0.529
+        },
+        {
+          "name": "밤의 끝자락",
+          "rate": 0.118
+        },
+        {
+          "name": "수호자의 맹세",
+          "rate": 0.059
+        }
+      ],
+      "levels": {
+        "7": 0.294,
+        "8": 0.471,
+        "9": 0.235
+      },
+      "extraUnits": [
+        {
+          "name": "오른",
+          "usage": 0.941
+        },
+        {
+          "name": "소라카",
+          "usage": 0.882
+        },
+        {
+          "name": "아펠리오스",
+          "usage": 0.471
+        }
+      ]
+    },
+    "협곡야수 드레이븐": {
+      "boards": 9,
+      "players": 8,
+      "avgPlacement": 2.89,
+      "top4Rate": 0.778,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 0.889
+        },
+        {
+          "name": "크라켄의 분노",
+          "rate": 0.556
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.222
+        },
+        {
+          "name": "죽음의 검",
+          "rate": 0.222
+        },
+        {
+          "name": "무한의 대검",
+          "rate": 0.222
+        }
+      ],
+      "levels": {
+        "9": 0.444,
+        "10": 0.556
+      },
+      "extraUnits": [
+        {
+          "name": "장로 드래곤",
+          "usage": 1
+        },
+        {
+          "name": "감시자",
+          "usage": 0.889
+        },
+        {
+          "name": "아이번",
+          "usage": 0.889
+        },
+        {
+          "name": "알룬",
+          "usage": 0.444
+        }
+      ]
+    },
+    "엄호대 아칼리": {
+      "boards": 10,
+      "players": 7,
+      "avgPlacement": 3,
+      "top4Rate": 0.8,
+      "carryThreeStarRate": 1,
+      "carryItems": [
+        {
+          "name": "무한의 대검",
+          "rate": 0.5
+        },
+        {
+          "name": "정의의 손길",
+          "rate": 0.4
+        },
+        {
+          "name": "밤의 끝자락",
+          "rate": 0.4
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.3
+        },
+        {
+          "name": "스테락의 도전",
+          "rate": 0.2
+        }
+      ],
+      "levels": {
+        "7": 0.3,
+        "8": 0.5,
+        "9": 0.2
+      },
+      "extraUnits": [
+        {
+          "name": "코그모",
+          "usage": 0.4
+        }
+      ]
+    },
+    "주문술사 알룬": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 2.33,
+      "top4Rate": 1,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.667
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.333
+        },
+        {
+          "name": "검은 가시 상징",
+          "rate": 0.333
+        },
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.333
+        },
+        {
+          "name": "대천사의 지팡이",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "7": 0.333,
+        "9": 0.667
+      },
+      "extraUnits": [
+        {
+          "name": "베이가",
+          "usage": 1
+        },
+        {
+          "name": "오른",
+          "usage": 1
+        },
+        {
+          "name": "렉사이",
+          "usage": 1
+        },
+        {
+          "name": "르블랑",
+          "usage": 1
+        }
+      ]
+    },
+    "처형자 아리": {
+      "boards": 8,
+      "players": 5,
+      "avgPlacement": 3.38,
+      "top4Rate": 0.75,
+      "carryThreeStarRate": 0.125,
+      "carryItems": [
+        {
+          "name": "쇼진의 창",
+          "rate": 0.5
+        },
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.5
+        },
+        {
+          "name": "적응형 투구",
+          "rate": 0.375
+        },
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.375
+        },
+        {
+          "name": "대천사의 지팡이",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "8": 0.5,
+        "9": 0.5
+      },
+      "extraUnits": [
+        {
+          "name": "오른",
+          "usage": 1
+        }
+      ]
+    },
+    "전쟁기계 아이번": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 3.25,
+      "top4Rate": 0.75,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.5
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.25
+        },
+        {
+          "name": "전쟁기계 상징",
+          "rate": 0.25
+        },
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.25
+        },
+        {
+          "name": "쇼진의 창",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "8": 0.25,
+        "9": 0.75
+      },
+      "extraUnits": [
+        {
+          "name": "자이라",
+          "usage": 1
+        },
+        {
+          "name": "라칸",
+          "usage": 0.75
+        },
+        {
+          "name": "마오카이",
+          "usage": 0.75
+        },
+        {
+          "name": "니달리",
+          "usage": 0.5
+        }
+      ]
+    },
+    "기원자 모르가나": {
+      "boards": 10,
+      "players": 8,
+      "avgPlacement": 4.2,
+      "top4Rate": 0.5,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.9
+        },
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.8
+        },
+        {
+          "name": "주문술사 상징",
+          "rate": 0.2
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.2
+        },
+        {
+          "name": "마법공학 총검",
+          "rate": 0.2
+        }
+      ],
+      "levels": {
+        "8": 0.7,
+        "9": 0.3
+      },
+      "extraUnits": [
+        {
+          "name": "카르마",
+          "usage": 1
+        },
+        {
+          "name": "타릭",
+          "usage": 0.5
+        },
+        {
+          "name": "알룬",
+          "usage": 0.4
+        }
+      ]
+    },
+    "협곡야수 장로 드래곤": {
+      "boards": 3,
+      "players": 2,
+      "avgPlacement": 2.67,
+      "top4Rate": 0.667,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "무한의 대검",
+          "rate": 1
+        },
+        {
+          "name": "최후의 속삭임",
+          "rate": 0.667
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.333
+        },
+        {
+          "name": "쇼진의 창",
+          "rate": 0.333
+        },
+        {
+          "name": "죽음의 검",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "8": 0.333,
+        "9": 0.667
+      },
+      "extraUnits": [
+        {
+          "name": "조약돌",
+          "usage": 1
+        },
+        {
+          "name": "돌거북",
+          "usage": 1
+        },
+        {
+          "name": "바위 게",
+          "usage": 0.667
+        },
+        {
+          "name": "타릭",
+          "usage": 0.667
+        }
+      ]
+    },
+    "엄호대 카시오페아": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 3.25,
+      "top4Rate": 0.75,
+      "carryThreeStarRate": 0.75,
+      "carryItems": [
+        {
+          "name": "대천사의 지팡이",
+          "rate": 0.5
+        },
+        {
+          "name": "마법공학 총검",
+          "rate": 0.5
+        },
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.25
+        },
+        {
+          "name": "승천의 부적",
+          "rate": 0.25
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "7": 0.5,
+        "8": 0.25,
+        "9": 0.25
+      },
+      "extraUnits": [
+        {
+          "name": "렝가",
+          "usage": 1
+        },
+        {
+          "name": "레오나",
+          "usage": 0.75
+        },
+        {
+          "name": "오른",
+          "usage": 0.75
+        }
+      ]
+    },
+    "협곡야수 조약돌": {
+      "boards": 10,
+      "players": 8,
+      "avgPlacement": 4,
+      "top4Rate": 0.7,
+      "carryThreeStarRate": 0.5,
+      "carryItems": [
+        {
+          "name": "대천사의 지팡이",
+          "rate": 0.3
+        },
+        {
+          "name": "마법공학 총검",
+          "rate": 0.3
+        },
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.2
+        },
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.2
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.2
+        }
+      ],
+      "levels": {
+        "7": 0.1,
+        "8": 0.5,
+        "9": 0.4
+      },
+      "extraUnits": [
+        {
+          "name": "어스름늑대",
+          "usage": 1
+        },
+        {
+          "name": "불타는 묘목",
+          "usage": 0.8
+        },
+        {
+          "name": "덩굴정령",
+          "usage": 0.8
+        },
+        {
+          "name": "라칸",
+          "usage": 0.4
+        }
+      ]
+    },
+    "싸움꾼 니달리": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 2.33,
+      "top4Rate": 0.667,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.333
+        },
+        {
+          "name": "정의의 손길",
+          "rate": 0.333
+        },
+        {
+          "name": "피바라기",
+          "rate": 0.333
+        },
+        {
+          "name": "밤의 끝자락",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "7": 0.333,
+        "8": 0.333,
+        "9": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "렝가",
+          "usage": 1
+        },
+        {
+          "name": "코그모",
+          "usage": 1
+        },
+        {
+          "name": "요릭",
+          "usage": 0.667
+        },
+        {
+          "name": "세주아니",
+          "usage": 0.333
+        }
+      ]
+    },
+    "기원자 티모": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3,
+      "top4Rate": 1,
+      "carryThreeStarRate": 1,
+      "carryItems": [
+        {
+          "name": "보석 건틀릿",
+          "rate": 1
+        },
+        {
+          "name": "타격대의 철퇴",
+          "rate": 0.333
+        },
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.333
+        },
+        {
+          "name": "쇼진의 창",
+          "rate": 0.333
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "8": 0.667,
+        "9": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "헤카림",
+          "usage": 1
+        },
+        {
+          "name": "감시자",
+          "usage": 0.667
+        },
+        {
+          "name": "모르가나",
+          "usage": 0.667
+        },
+        {
+          "name": "코그모",
+          "usage": 0.333
+        }
+      ]
+    },
+    "협곡야수 심술두꺼비": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 2.25,
+      "top4Rate": 0.75,
+      "carryThreeStarRate": 0.25,
+      "carryItems": [
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.25
+        },
+        {
+          "name": "내셔의 이빨",
+          "rate": 0.25
+        },
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.25
+        },
+        {
+          "name": "푸른 파수꾼",
+          "rate": 0.25
+        },
+        {
+          "name": "기원자 상징",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "8": 0.25,
+        "9": 0.75
+      },
+      "extraUnits": [
+        {
+          "name": "덩굴정령",
+          "usage": 1
+        },
+        {
+          "name": "타릭",
+          "usage": 0.5
+        },
+        {
+          "name": "코그모",
+          "usage": 0.5
+        }
+      ]
+    },
+    "선봉대 모르가나": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3.67,
+      "top4Rate": 0.667,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.667
+        },
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.667
+        },
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.333
+        },
+        {
+          "name": "정의의 손길",
+          "rate": 0.333
+        },
+        {
+          "name": "내셔의 이빨",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "7": 0.333,
+        "8": 0.333,
+        "9": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "카시오페아",
+          "usage": 1
+        },
+        {
+          "name": "헤카림",
+          "usage": 1
+        },
+        {
+          "name": "알룬",
+          "usage": 0.667
+        },
+        {
+          "name": "아이번",
+          "usage": 0.333
+        }
+      ]
+    },
+    "개화 유나라": {
+      "boards": 11,
+      "players": 7,
+      "avgPlacement": 2.36,
+      "top4Rate": 0.909,
+      "carryThreeStarRate": 0.909,
+      "carryItems": [
+        {
+          "name": "쇼진의 창",
+          "rate": 0.818
+        },
+        {
+          "name": "타격대의 철퇴",
+          "rate": 0.545
+        },
+        {
+          "name": "죽음의 검",
+          "rate": 0.364
+        },
+        {
+          "name": "최후의 속삭임",
+          "rate": 0.364
+        },
+        {
+          "name": "무한의 대검",
+          "rate": 0.273
+        }
+      ],
+      "levels": {
+        "7": 0.182,
+        "8": 0.727,
+        "9": 0.091
+      },
+      "extraUnits": [
+        {
+          "name": "아지르",
+          "usage": 0.636
+        }
+      ]
+    },
+    "선봉대 알룬": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3.67,
+      "top4Rate": 0.333,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "공허의 지팡이",
+          "rate": 1
+        },
+        {
+          "name": "모렐로노미콘",
+          "rate": 0.667
+        },
+        {
+          "name": "기원자 상징",
+          "rate": 0.333
+        },
+        {
+          "name": "찬란한 적응형 투구",
+          "rate": 0.333
+        },
+        {
+          "name": "보석 건틀릿",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "9": 0.667,
+        "10": 0.333
+      },
+      "extraUnits": [
+        {
+          "name": "릴리아",
+          "usage": 1
+        },
+        {
+          "name": "아이번",
+          "usage": 1
+        },
+        {
+          "name": "피들스틱",
+          "usage": 1
+        },
+        {
+          "name": "라칸",
+          "usage": 0.667
+        }
+      ]
+    },
+    "선봉대 아펠리오스": {
+      "boards": 4,
+      "players": 4,
+      "avgPlacement": 5.25,
+      "top4Rate": 0.25,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "죽음의 검",
+          "rate": 0.75
+        },
+        {
+          "name": "크라켄의 분노",
+          "rate": 0.5
+        },
+        {
+          "name": "구인수의 격노검",
+          "rate": 0.5
+        },
+        {
+          "name": "최후의 속삭임",
+          "rate": 0.5
+        },
+        {
+          "name": "찬란한 죽음의 검",
+          "rate": 0.25
+        }
+      ],
+      "levels": {
+        "8": 1
+      },
+      "extraUnits": [
+        {
+          "name": "헤카림",
+          "usage": 1
+        },
+        {
+          "name": "덩굴정령",
+          "usage": 1
+        },
+        {
+          "name": "어미 부리",
+          "usage": 1
+        },
+        {
+          "name": "라칸",
+          "usage": 0.5
+        }
+      ]
+    },
+    "적응가 아펠리오스": {
+      "boards": 5,
+      "players": 5,
+      "avgPlacement": 3.6,
+      "top4Rate": 0.4,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "구인수의 격노검",
+          "rate": 1
+        },
+        {
+          "name": "크라켄의 분노",
+          "rate": 0.6
+        },
+        {
+          "name": "무한의 대검",
+          "rate": 0.6
+        },
+        {
+          "name": "거인 학살자",
+          "rate": 0.4
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.2
+        }
+      ],
+      "levels": {
+        "8": 0.4,
+        "9": 0.4,
+        "10": 0.2
+      },
+      "extraUnits": [
+        {
+          "name": "아이번",
+          "usage": 0.4
+        }
+      ]
+    },
+    "처형자 자이라": {
+      "boards": 3,
+      "players": 3,
+      "avgPlacement": 3,
+      "top4Rate": 0.667,
+      "carryThreeStarRate": 0,
+      "carryItems": [
+        {
+          "name": "공허의 지팡이",
+          "rate": 0.667
+        },
+        {
+          "name": "처형자 상징",
+          "rate": 0.333
+        },
+        {
+          "name": "라바돈의 죽음모자",
+          "rate": 0.333
+        },
+        {
+          "name": "쇼진의 창",
+          "rate": 0.333
+        },
+        {
+          "name": "붉은 덩굴정령",
+          "rate": 0.333
+        }
+      ],
+      "levels": {
+        "7": 0.333,
+        "8": 0.667
+      },
+      "extraUnits": [
+        {
+          "name": "케넨",
+          "usage": 1
+        },
+        {
+          "name": "티모",
+          "usage": 0.667
+        }
+      ]
+    }
+  }
+}

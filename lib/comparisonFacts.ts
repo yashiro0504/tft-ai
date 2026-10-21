@@ -5,6 +5,7 @@ import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
 import { boardValue } from './boardValue'
 import { boardPatchChanges, type PatchNote } from './patchNotes'
+import { topPlayerMeta, topPlayerStats, type TopPlayerDeckStats } from './topPlayers'
 import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
@@ -25,6 +26,8 @@ import type { DeckGuide, LobbyParticipant, SlimMatchData, SlimMatchTrait, SlimMa
  *
  * 덱 가이드 (single 만): 내 덱(유사 메타 덱)의 래더 실측 가이드와 내 보드 비교 — 핵심 기물 보유, 내 유동 기물,
  * 캐리 아이템(최종 보드 채용률 순 — 조합 순서 아님), 레벨 분포, 개방성.
+ *
+ * 상위 랭커 운영 (single 만): 챌린저 LP 상위 랭커가 내 덱을 탄 판의 집계(lib/topPlayers) — 래더 전체 가이드와 비교용.
  *
  * 패치 변경점 (single 만): 공식 패치 노트에서 내 보드 기물·켠 시너지·아이템 관련 변경 줄 (lib/patchNotes).
  * 경기 이후 패치가 있으면 그 변경(다음 판 기준), 없으면 경기 당시 패치 변경. 상향/하향은 판단하지 않는다.
@@ -297,6 +300,20 @@ export function opennessLabel(flexSlots: number): '낮음' | '보통' | '높음'
 
 const pct = (x: number) => Math.round(x * 100)
 
+/** 내 덱의 상위 랭커 운영 줄 (표본 부족이면 null). top 은 테스트용 주입 */
+export function topPlayerLine(m: SlimMatchData, deck: DeckFact, top?: TopPlayerDeckStats, totalPlayers = topPlayerMeta().players): string | null {
+  const s = top ?? topPlayerStats(deck.name)
+  if (!s) return null
+  const items = s.carryItems.slice(0, 3).map((i) => `${i.name} ${pct(i.rate)}%`)
+  const level = Object.entries(s.levels).sort((a, b) => b[1] - a[1])[0]
+  const extra = s.extraUnits.slice(0, 3).map((u) => `${u.name} ${pct(u.usage)}%`)
+  return `- 상위 랭커 운영(챌린저 LP 상위 ${totalPlayers}명 최근 판 중 ${deck.name} ${s.boards}판 · ${s.players}명): 평균 ${s.avgPlacement.toFixed(2)}등 · TOP4 ${pct(
+    s.top4Rate
+  )}%${items.length ? ` · 캐리 아이템 ${items.join(' · ')}` : ''}${level ? ` · 최빈 레벨 ${level[0]}(${pct(level[1])}%, 나 Lv.${m.level})` : ''} · 캐리 3성 ${pct(s.carryThreeStarRate)}%${
+    extra.length ? ` · 핵심 외 자주 쓴 기물 ${extra.join(' · ')}` : ''
+  }`
+}
+
 /** 내 덱(유사 메타 덱)의 래더 가이드와 내 보드 비교 — 가이드가 있는 래더 덱만 */
 function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   const hit = mostSimilarDeck(m, decks)
@@ -349,6 +366,8 @@ function guideLines(m: SlimMatchData, decks: DeckFact[]): string[] {
       o.flexSlots
     )} (유동 칸 ${o.flexSlots}, 같은 캐리 메타 덱 ${o.sharedCarryDecks}개)`
   )
+  const top = topPlayerLine(m, d)
+  if (top) out.push(top)
   return out
 }
 

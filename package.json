@@ -31,6 +31,8 @@
     "build:traits": "node scripts/buildTraitBreakpoints.js",
     "build:items": "node scripts/buildItemRecipes.js",
     "collect:patches": "node scripts/fetchPatchNotes.js",
+    "collect:top": "node scripts/collectTopPlayers.js",
+    "build:top": "node scripts/buildTopPlayerGuide.js",
     "icons": "node scripts/generateIcons.js",
     "decks:check": "node scripts/checkDecks.js",
     "test:augment": "node scripts/testAugmentAggregation.js",

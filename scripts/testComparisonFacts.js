@@ -4,6 +4,7 @@
  * 실행: node scripts/testComparisonFacts.js   (npm run test:ai 에 포함)
  *  - 로비 1등·로비 평균 비교 = 손계산
  *  - 메타 덱 유사도 임계(0.6) 미만이면 줄 생략
+ *  - 상위 랭커 운영: 줄 형식 · 표본 하한 · 집계본 형식
  *  - 덱 가이드(래더 실측): 핵심·유동 기물 · 캐리 아이템 채용률 · 레벨 분포 · 개방성 등급
  *  - 아이템 재료 매칭 · 로비 메타 덱 · 빈집 메타 덱 후보 (점령·코어 점령·약한·소표본·변형·재료 부족 제외)
  *  - 메타 덱 운영도: ±1등 경계 · 없는 기물(선택 기물 제외, 코스트순, 최대 3) · 종합 집계(표본 충분 판만 평균)
@@ -350,6 +351,36 @@ ${mixedFacts}`
   check('개방성 등급 경계: 1 낮음 · 2 보통 · 4 보통 · 5 높음', [1, 2, 4, 5].map(opennessLabel).join(',') === '낮음,보통,보통,높음')
   const noGuide = buildComparisonFacts({ matches: [gBoard], mode: 'single', combos: [], decks: [{ ...guideDeck, guide: undefined }] })
   check('가이드 없는 덱(DB 구버전 등)은 가이드 줄 생략', !noGuide.includes('덱 가이드'), noGuide)
+
+  console.log('상위 랭커 운영')
+  const { topPlayerLine } = require('../lib/comparisonFacts')
+  const { topPlayerStats, TOP_MIN_BOARDS } = require('../lib/topPlayers')
+  const topStats = {
+    boards: 12,
+    players: 7,
+    avgPlacement: 3.1,
+    top4Rate: 0.667,
+    carryThreeStarRate: 0.25,
+    carryItems: [{ name: '공허의 지팡이', rate: 0.75 }, { name: '쇼진의 창', rate: 0.5 }, { name: '모렐로노미콘', rate: 0.42 }, { name: '보석 건틀릿', rate: 0.1 }],
+    levels: { 8: 0.33, 9: 0.58, 10: 0.09 },
+    extraUnits: [{ name: '아리', usage: 0.667 }],
+  }
+  check(
+    '상위 랭커 줄 = 손계산 (캐리 아이템 상위 3 · 최빈 레벨 · 핵심 외 기물)',
+    topPlayerLine({ ...sample, level: 8 }, { name: '가이드 덱' }, topStats, 30) ===
+      '- 상위 랭커 운영(챌린저 LP 상위 30명 최근 판 중 가이드 덱 12판 · 7명): 평균 3.10등 · TOP4 67% · 캐리 아이템 공허의 지팡이 75% · 쇼진의 창 50% · 모렐로노미콘 42% · 최빈 레벨 9(58%, 나 Lv.8) · 캐리 3성 25% · 핵심 외 자주 쓴 기물 아리 67%',
+    topPlayerLine({ ...sample, level: 8 }, { name: '가이드 덱' }, topStats, 30)
+  )
+  check(
+    `상위 랭커 표본 ${TOP_MIN_BOARDS}판 미만이면 생략`,
+    topPlayerStats('A', { decks: { A: { ...topStats, boards: TOP_MIN_BOARDS - 1 } } }) === undefined && topPlayerStats('A', { decks: { A: topStats } }) === topStats
+  )
+  const topReal = require('../lib/topPlayerGuide.json')
+  check(
+    '실제 집계본 형식: 덱별 판 수·평균 등수·채용률 범위',
+    Object.values(topReal.decks || {}).every((d) => d.boards >= 1 && d.players >= 1 && d.players <= d.boards && d.avgPlacement >= 1 && d.avgPlacement <= 8 && d.carryItems.every((i) => i.rate > 0 && i.rate <= 1)),
+    JSON.stringify(Object.keys(topReal.decks || {}))
+  )
 
   console.log('패치 노트')
   const { parseBody } = require('./fetchPatchNotes')
