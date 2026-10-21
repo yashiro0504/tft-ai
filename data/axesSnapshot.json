@@ -1,6 +1,6 @@
 {
-  "scoringVersion": "v8",
-  "generatedAt": "2026-10-21T11:32:03.091Z",
+  "scoringVersion": "v9",
+  "generatedAt": "2026-10-21T13:39:05.438Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -8,9 +8,9 @@
       "axes": {
         "economy": 88,
         "itemization": 100,
-        "tempo": 91,
+        "tempo": 100,
         "completion": 80,
-        "synergy": 87,
+        "synergy": 85,
         "contest": 80
       },
       "metaScore": 72,
@@ -28,9 +28,9 @@
       "axes": {
         "economy": 89,
         "itemization": 89,
-        "tempo": 93,
+        "tempo": 100,
         "completion": 81,
-        "synergy": 90,
+        "synergy": 88,
         "contest": 83
       },
       "metaScore": 78,
@@ -48,9 +48,9 @@
       "axes": {
         "economy": 97,
         "itemization": 89,
-        "tempo": 96,
+        "tempo": 100,
         "completion": 90,
-        "synergy": 95,
+        "synergy": 94,
         "contest": 95
       },
       "metaScore": 84,
@@ -63,14 +63,14 @@
       }
     },
     "Seed03 최근 5경기": {
-      "focus": "completion",
+      "focus": "synergy",
       "lowSample": false,
       "axes": {
         "economy": 91,
         "itemization": 93,
-        "tempo": 93,
+        "tempo": 100,
         "completion": 90,
-        "synergy": 90,
+        "synergy": 87,
         "contest": 91
       },
       "metaScore": 88,
@@ -88,9 +88,9 @@
       "axes": {
         "economy": 84,
         "itemization": 100,
-        "tempo": 96,
+        "tempo": 100,
         "completion": 87,
-        "synergy": 91,
+        "synergy": 88,
         "contest": 75
       },
       "metaScore": 82,
@@ -130,7 +130,7 @@
         "itemization": 100,
         "tempo": 100,
         "completion": 84,
-        "synergy": 100,
+        "synergy": 96,
         "contest": 95
       },
       "metaScore": 95,
@@ -208,7 +208,7 @@
       "axes": {
         "economy": 93,
         "itemization": 45,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 78,
         "synergy": 94,
         "contest": 65
@@ -228,9 +228,9 @@
       "axes": {
         "economy": 100,
         "itemization": 100,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 80,
-        "synergy": 100,
+        "synergy": 96,
         "contest": 95
       },
       "metaScore": 77,
@@ -243,7 +243,7 @@
       }
     },
     "Seed02 contested-top4 3등 6-3": {
-      "focus": "synergy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
         "economy": 98,
@@ -268,7 +268,7 @@
       "axes": {
         "economy": 100,
         "itemization": 63,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 94,
         "synergy": 81,
         "contest": 95
@@ -303,14 +303,14 @@
       }
     },
     "Seed04 contested-bot4 5등 5-5": {
-      "focus": "contest",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
         "economy": 100,
         "itemization": 100,
-        "tempo": 82,
+        "tempo": 100,
         "completion": 85,
-        "synergy": 100,
+        "synergy": 89,
         "contest": 50
       },
       "metaScore": 66,
