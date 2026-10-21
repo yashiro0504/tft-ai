@@ -1,0 +1,72 @@
+name: Rules Check
+
+# 쌓인 랭크 보드(Supabase tft_boards)로 장면 규칙을 검증하고 게임 사실(2칸 기물·시너지 인원·사전 누락)을 탐지한다.
+# Riot 호출 없음 — DB 읽기만 한다. 결과는 실행 요약(Summary)·경고 주석·rules-report 아티팩트로 남는다.
+# 필요한 Repository secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (collect-db 와 같음)
+
+on:
+  schedule:
+    # 매일 11:45 KST (02:45 UTC) — collect-db 매시 17분 실행과 겹치지 않게
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+    inputs:
+      patch:
+        description: '패치 (비우면 가장 최근 패치)'
+        default: ''
+        required: false
+      max_matches:
+        description: '최대 판 수'
+        default: '3000'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rules-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Scene rules · game facts (DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PATCH: ${{ github.event.inputs.patch }}
+          MAX_MATCHES: ${{ github.event.inputs.max_matches || '3000' }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning title=Supabase secrets missing::DB 시크릿이 없어 골든셋 픽스처로만 돌립니다."
+            SRC="--source=fixtures"
+          else
+            SRC="--source=db --max-matches=$MAX_MATCHES ${PATCH:+--patch=$PATCH}"
+          fi
+          node scripts/checkSceneRules.js $SRC --out=reports/scene-rules.md
+          node scripts/detectGameFacts.js $SRC --out=reports/game-facts.md
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rules-report
+          path: reports/
+          retention-days: 30
