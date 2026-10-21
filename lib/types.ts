@@ -219,6 +219,18 @@ export interface GroundingReport {
   unsupported: string[]
   /** 수치가 아닌 환각 경고 (제공되지 않은 시너지명, 존재하지 않는 코스트 등) */
   warnings?: string[]
+  /** 의미(엔티티 사실) 오류 — 기물 성급·3성 개수·아이템 소유·시너지 단계가 최종 보드와 다름 (lib/semanticGrounding) */
+  entityErrors?: EntityFactError[]
+}
+
+export interface EntityFactError {
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier'
+  /** 오류가 있는 문장 */
+  text: string
+  /** 데이터 값 */
+  expected: string
+  /** 리포트가 쓴 값 */
+  actual: string
 }
 
 /** 리포트가 참조한 데이터 출처/패치/표본 정보 */

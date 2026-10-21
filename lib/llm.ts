@@ -5,6 +5,7 @@ import { getMetaSectionInfo } from './meta'
 import { getStats } from './tftStats'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
+import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
@@ -14,7 +15,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-20.2'
+export const COACH_PROMPT_VERSION = '2026-10-21.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -188,6 +189,12 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 기물 코스트는 1~5만 존재한다. "6코스트" 같은 표현을 쓰지 마라.
 - 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
 - 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
+- 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
+
+★★★ 라운드 타이밍 단정 금지 ★★★
+- 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·잔여 골드·탈락 라운드만 있다).
+- "언제 레벨업/리롤했다", "레벨에 쓰지 않아서 졌다"처럼 시점이나 원인을 단정하지 마라.
+  최종 레벨·잔여 골드·탈락 라운드로 추정한 경우 "최종 상태 기준으로 보면"이라고 밝혀라.
 
 [문체]
 - 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
@@ -757,6 +764,7 @@ ${qualityFacts}
       axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
     }
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
+    const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb)
     return {
       ...fb,
       mode,
@@ -766,8 +774,12 @@ ${qualityFacts}
       provenance,
       scoreBreakdown: scoring ?? undefined,
       plan: planWithVerdicts,
-      lecture: normalizeLecture(fb.lecture, planWithVerdicts, fb),
-      grounding: validateFeedbackGrounding(fb, prompt),
+      lecture,
+      grounding: {
+        ...validateFeedbackGrounding(fb, prompt),
+        // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조
+        entityErrors: validateEntityFacts(feedbackTexts({ ...fb, lecture }, axisVerdicts), matches),
+      },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),
         reason: earlyReasons.length ? earlyReasons.join(' · ') : undefined,

@@ -11,6 +11,7 @@
  *   node scripts/evalAiVariants.js --variant baseline --runs 3 --provider deepseek \
  *     --model deepseek-flash --max-tokens 3400 --thinking disabled --schema v1 --out tmp/eval
  *   node scripts/evalAiVariants.js --summary-only --out tmp/eval      # 실행 없이 요약만 다시 계산
+ *   node scripts/evalAiVariants.js --rescore baseline --out tmp/eval  # 저장된 원시 응답을 현재 의미 검증기로 다시 채점 (API 호출 없음)
  * 옵션: --cases all|1,2,..  --fixture data/evalMatches.json
  */
 const fs = require('fs')
@@ -110,6 +111,17 @@ function uniqueDataCitations(obj) {
   if (!text.length) return 0
   const nums = new Set(text.match(/\d+(?:\.\d+)?/g) || [])
   return Math.round((nums.size / (text.length / 1000)) * 100) / 100
+}
+
+/**
+ * 라운드 타이밍 단정 (A1 규칙: 데이터에 라운드별 레벨업·리롤 기록이 없다) / "최종 상태 기준" 유보 표현 수.
+ * 사전식 휴리스틱 — 추세 비교용 지표다.
+ */
+const TIMING_CLAIM_RE = /레벨업(?:을|이)?\s*(?:늦|미루|미뤘|지연|놓)|늦게\s*레벨|레벨(?:업)?에\s*(?:골드를\s*)?쓰지\s*않|리롤(?:에|로)\s*골드를\s*(?:과하게|너무|많이)?\s*(?:쓴|썼|소모했|낭비)|\d-\d(?:에|에서)\s*(?:레벨업|리롤)(?:을|를)?\s*(?:했|하지\s*않았|안\s*했)|타이밍을\s*놓/g
+const TIMING_HEDGE_RE = /최종\s*상태\s*기준|최종\s*(?:보드|레벨)\s*기준|추정/g
+function timingCounts(obj) {
+  const text = narrativeStrings(obj).join('\n')
+  return { timingClaims: (text.match(TIMING_CLAIM_RE) || []).length, timingHedges: (text.match(TIMING_HEDGE_RE) || []).length }
 }
 
 function bigrams(s) {
@@ -287,8 +299,10 @@ async function runWorker(cfg) {
         groundingUnsupported: g ? g.unsupported.length : null,
         groundingWarnings: g && g.warnings ? g.warnings.length : 0,
         entityErrors: g && Array.isArray(g.entityErrors) ? g.entityErrors.length : null,
+        entityErrorList: g && Array.isArray(g.entityErrors) ? g.entityErrors : [],
         uniqueDataCitations: parsed ? uniqueDataCitations(parsed) : null,
         repetition: parsed ? repetition(parsed) : null,
+        ...(parsed ? timingCounts(parsed) : { timingClaims: null, timingHedges: null }),
         error,
       }
 
@@ -351,7 +365,7 @@ const pct = (xs, p) => {
 }
 const r = (x, d = 3) => (x == null || Number.isNaN(x) ? '' : Math.round(x * 10 ** d) / 10 ** d)
 
-const NUMERIC = ['outputTokens', 'inputTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition']
+const NUMERIC = ['outputTokens', 'inputTokens', 'latencyMs', 'costUsd', 'groundingScore', 'groundingUnsupported', 'entityErrors', 'uniqueDataCitations', 'repetition', 'timingClaims', 'timingHedges']
 
 function summarize(rows) {
   const nums = (k) => rows.map((x) => x[k]).filter((v) => typeof v === 'number')
@@ -419,12 +433,55 @@ function writeSummary(outDir) {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * 저장된 raw.txt 의 모델 JSON 을 현재 의미 검증기(lib/semanticGrounding)로 다시 채점한다.
+ * 코드가 채운 강의(normalizeLecture)는 포함하지 않는 "모델 원문" 기준이다 → entityErrorsSource='raw'.
+ */
+function rescore(outDir, variant, fixturePath) {
+  require('./_ts')
+  const { validateEntityFacts, feedbackTexts } = require('../lib/semanticGrounding')
+  const fixture = require(path.resolve(ROOT, fixturePath))
+  const vdir = path.join(outDir, variant)
+  let n = 0
+  for (const cs of fs.readdirSync(vdir)) {
+    for (const run of fs.readdirSync(path.join(vdir, cs))) {
+      const dir = path.join(vdir, cs, run)
+      const metaFile = path.join(dir, 'meta.json')
+      const rawFile = path.join(dir, 'raw.txt')
+      if (!fs.existsSync(metaFile) || !fs.existsSync(rawFile)) continue
+      const meta = JSON.parse(fs.readFileSync(metaFile, 'utf-8'))
+      const body = fs.readFileSync(rawFile, 'utf-8').replace(/^status=\d+\s*/, '')
+      let content = ''
+      try {
+        const data = JSON.parse(body)
+        content = data.choices ? data.choices[0].message.content : data.candidates[0].content.parts.map((p) => p.text).join('')
+      } catch {
+        continue
+      }
+      const obj = extractJson(content)
+      if (!obj) continue
+      const matches = fixture.cases.find((c) => c.name === meta.caseName).matches
+      const verdicts = Object.fromEntries((Array.isArray(obj.axes) ? obj.axes : []).map((a) => [a && a.key, a && a.verdict]))
+      const list = validateEntityFacts(feedbackTexts(obj, verdicts), matches)
+      meta.entityErrors = list.length
+      meta.entityErrorList = list
+      meta.entityErrorsSource = 'raw'
+      Object.assign(meta, timingCounts(obj))
+      fs.writeFileSync(metaFile, JSON.stringify(meta, null, 2))
+      n++
+    }
+  }
+  return n
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.worker) return runWorker(JSON.parse(Buffer.from(String(args.worker), 'base64').toString('utf-8')))
 
   const out = path.resolve(ROOT, String(args.out || 'tmp/eval'))
-  if (!args['summary-only']) {
+  if (args.rescore) {
+    console.log(`다시 채점: ${args.rescore} ${rescore(out, String(args.rescore), String(args.fixture || 'data/evalMatches.json'))}회`)
+  } else if (!args['summary-only']) {
     const variant = String(args.variant || 'baseline')
     if (!/^[\w.-]+$/.test(variant)) throw new Error('--variant 는 영문·숫자·-_. 만')
     const cfg = {
@@ -463,7 +520,8 @@ async function main() {
     console.log(
       `  ${v.variant}: runs=${v.runs} 성공=${v.successRate} 스키마=${v.schemaValidRate} 잘림=${v.truncatedRate} 폴백=${v.fallbackRate} ` +
         `out=${v.outputTokensMean}±${v.outputTokensStd} p95=${v.latencyP95Ms}ms 비용합=$${v.costTotalUsd} ` +
-        `grounding=${v.groundingScoreMean} entity=${v.entityErrorsMean === '' ? '-' : v.entityErrorsMean} cite=${v.uniqueDataCitationsMean} rep=${v.repetitionMean}`
+        `grounding=${v.groundingScoreMean} entity=${v.entityErrorsMean === '' ? '-' : v.entityErrorsMean} cite=${v.uniqueDataCitationsMean} rep=${v.repetitionMean} ` +
+        `timing=${v.timingClaimsMean} hedge=${v.timingHedgesMean}`
     )
   }
 }
