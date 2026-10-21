@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
 import type {
   MetaChampRanking,
@@ -30,6 +30,7 @@ import {
 import { DetailModal } from './MetaDetailModal'
 import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import { ShareButton } from './ShareButton'
+import { MetaUrlSync } from './MetaUrlSync'
 import { track } from '@/lib/analytics'
 import {
   ITEM_CLASSES,
@@ -45,6 +46,8 @@ import '../rank/rank.css'
 import '../rank/tabs.css'
 
 type TabId = 'decks' | 'comps' | 'champions' | 'traits' | 'items'
+
+const TAB_IDS: readonly TabId[] = ['decks', 'comps', 'champions', 'traits', 'items']
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'decks', label: '덱' },
@@ -142,6 +145,7 @@ export function MetaDashboard({
   deferSections = false,
   filters,
   initialDecksSource,
+  syncUrl = false,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
@@ -151,6 +155,8 @@ export function MetaDashboard({
   filters?: MetaFiltersResponse
   /** initialData.decks 가 DB 덱(기본 필터)인가 */
   initialDecksSource?: 'db' | 'json'
+  /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
+  syncUrl?: boolean
 }) {
   const [data, setData] = useState<TftMetaResponse | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
@@ -223,6 +229,22 @@ export function MetaDashboard({
     } finally {
       if (seq === loadSeq.current) setLoading(false)
     }
+  }
+
+  /** 탭 전환 공통 처리 (탭 클릭 · URL 진입) */
+  const switchTab = (next: TabId) => {
+    setTab(next)
+    setSelectedId(null)
+    setDetailOpen(false)
+    setModal(null)
+    // /meta 는 덱 데이터만 SSR 되므로, 다른 탭 첫 진입 시 전체 데이터를 지연 로딩한다.
+    if (!dbMode && deferSections && !loadedAll && !loading && next !== 'decks') void load()
+  }
+
+  /** URL(공유 링크 · 새로고침) 에서 읽은 필터·탭 적용 — 데이터 로딩은 아래 effect 가 loadedRef 로 1회만 */
+  const applyUrlState = (next: { filter: StatFilter; tab: TabId }) => {
+    setFilter(next.filter)
+    if (next.tab !== tab) switchTab(next.tab)
   }
 
   useEffect(() => {
@@ -387,6 +409,21 @@ export function MetaDashboard({
 
   return (
     <>
+      {syncUrl ? (
+        // useSearchParams 는 이 경계 안에서만 — /meta 정적 HTML 에 SSR 덱 표가 그대로 남는다
+        <Suspense fallback={null}>
+          <MetaUrlSync
+            filter={filter}
+            tab={tab}
+            tabs={TAB_IDS}
+            defaultTab="decks"
+            latestPatch={filters?.defaults.patch ?? null}
+            patches={filters?.patches.map((p) => p.patch) ?? []}
+            syncFilter={dbMode}
+            onApply={applyUrlState}
+          />
+        </Suspense>
+      ) : null}
       <div className={`rk-shell ${tab === 'decks' ? '' : 'no-detail'}`}>
         <main className="rk-main">
           <header className="rk-head">
@@ -481,12 +518,7 @@ export function MetaDashboard({
                   className={`rk-tab ${tab === t.id ? 'on' : ''}`}
                   onClick={() => {
                     if (tab !== t.id) track('tab_view', { tab: t.id, surface: 'meta' })
-                    setTab(t.id)
-                    setSelectedId(null)
-                    setDetailOpen(false)
-                    setModal(null)
-                    // /meta 는 덱 데이터만 SSR 되므로, 다른 탭 첫 진입 시 전체 데이터를 지연 로딩한다.
-                    if (!dbMode && deferSections && !loadedAll && !loading && t.id !== 'decks') void load()
+                    switchTab(t.id)
                   }}
                 >
                   {t.label}
@@ -705,6 +737,7 @@ export function MetaDashboard({
                   deck={selected}
                   tier={selectedTier ?? selected.tier}
                   patch={dbMode && !fellBack ? appliedPatch ?? undefined : data?.patch}
+                  deckQuery={dbMode && !fellBack && appliedPatch ? `?patch=${appliedPatch}&tier=${filter.tier}` : ''}
                 />
               ) : (
                 <p className="rk-empty">덱을 선택하세요.</p>
@@ -719,7 +752,18 @@ export function MetaDashboard({
   )
 }
 
-function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string; patch?: string }) {
+function DeckDetail({
+  deck,
+  tier,
+  patch,
+  deckQuery = '',
+}: {
+  deck: MetaDeckRanking
+  tier: string
+  patch?: string
+  /** DB 덱이면 ?patch=&tier= — 덱 페이지가 같은 집계 덱(stat_comp)을 연다 */
+  deckQuery?: string
+}) {
   const carry = deck.units.find((u) => u.key === deck.carryKey) || deck.units[0]
   // 아이템을 드는 기물 (메인 딜러를 맨 앞으로)
   const holders = deck.units
@@ -766,13 +810,13 @@ function DeckDetail({ deck, tier, patch }: { deck: MetaDeckRanking; tier: string
 
       <div className="rk-dactions">
         <Link
-          href={`/deck/${deck.id}`}
+          href={`/deck/${deck.id}${deckQuery}`}
           className="rk-dlink"
           onClick={() => track('deck_open', { surface: 'meta_deck_row' })}
         >
           덱 페이지
         </Link>
-        <ShareButton path={`/deck/${deck.id}`} label="공유" surface="meta_deck_row" />
+        <ShareButton path={`/deck/${deck.id}${deckQuery}`} label="공유" surface="meta_deck_row" />
       </div>
 
       <div className="rk-kpis">

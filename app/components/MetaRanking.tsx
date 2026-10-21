@@ -15,6 +15,7 @@ export function MetaRanking({
   deferSections,
   filters,
   initialDecksSource,
+  syncUrl,
 }: {
   onOpenCoach?: () => void
   initialData?: TftMetaResponse
@@ -22,6 +23,8 @@ export function MetaRanking({
   deferSections?: boolean
   filters?: MetaFiltersResponse
   initialDecksSource?: 'db' | 'json'
+  /** 필터·탭 URL 동기화 (/meta) */
+  syncUrl?: boolean
 }) {
   return (
     <MetaDashboard
@@ -31,6 +34,7 @@ export function MetaRanking({
       deferSections={deferSections}
       filters={filters}
       initialDecksSource={initialDecksSource}
+      syncUrl={syncUrl}
     />
   )
 }

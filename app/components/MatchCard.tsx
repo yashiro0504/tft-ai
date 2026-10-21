@@ -12,10 +12,16 @@ import { TurnstileWidget } from './TurnstileWidget'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
 import { TraitHex, traitMaxLevel } from './LabUI'
+import Link from 'next/link'
+import { entityHref, entitySlug } from '@/lib/entitySlug'
+import { champions as SET_CHAMPIONS } from '@/lib/championTraits.json'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+
+/** 현재 세트 기물 슬러그 — 이전 세트 판(데모 데이터 등)의 기물은 상세 페이지가 없어 링크하지 않는다 */
+const CHAMPION_PAGE_SLUGS = new Set(Object.keys(SET_CHAMPIONS))
 
 interface MatchCardProps {
   match: SlimMatchData
@@ -259,38 +265,54 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               const cost = unit.rarity || 3
               const info = costStyle[cost] || costStyle[3]
 
+              const icon = (
+                <div
+                  className={`relative h-12 w-12 rounded-control border-2 overflow-hidden bg-sunken flex items-center justify-center ${info.border}`}
+                >
+                  {unit.imgUrl ? (
+                    <img
+                      src={unit.imgUrl}
+                      alt={unit.name}
+                      className="w-full h-full object-cover z-10"
+                      onError={(e) => {
+                        ;(e.target as HTMLElement).style.display = 'none'
+                      }}
+                    />
+                  ) : null}
+
+                  {/* 이미지 실패 시 백업 텍스트 */}
+                  <span className="text-xs font-black text-muted pointer-events-none absolute text-center px-0.5 truncate max-w-[44px]">
+                    {unit.name.slice(0, 2)}
+                  </span>
+
+                  {/* 성급: 아이콘 아래쪽에 겹쳐서 작게 */}
+                  {unit.tier >= 2 ? (
+                    <span
+                      className={`absolute bottom-0 inset-x-0 z-20 text-center text-[10px] leading-3 tracking-[-0.1em] bg-black/60 ${
+                        unit.tier === 3 ? 'text-[color:var(--gold)]' : 'text-white'
+                      }`}
+                    >
+                      {unit.tier === 3 ? '★★★' : '★★'}
+                    </span>
+                  ) : null}
+                </div>
+              )
+
               return (
                 <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-12 flex-col items-center group/unit relative">
-                  <div
-                    className={`relative h-12 w-12 rounded-control border-2 overflow-hidden bg-sunken flex items-center justify-center ${info.border}`}
-                  >
-                    {unit.imgUrl ? (
-                      <img
-                        src={unit.imgUrl}
-                        alt={unit.name}
-                        className="w-full h-full object-cover z-10"
-                        onError={(e) => {
-                          ;(e.target as HTMLElement).style.display = 'none'
-                        }}
-                      />
-                    ) : null}
-
-                    {/* 이미지 실패 시 백업 텍스트 */}
-                    <span className="text-xs font-black text-muted pointer-events-none absolute text-center px-0.5 truncate max-w-[44px]">
-                      {unit.name.slice(0, 2)}
-                    </span>
-
-                    {/* 성급: 아이콘 아래쪽에 겹쳐서 작게 */}
-                    {unit.tier >= 2 ? (
-                      <span
-                        className={`absolute bottom-0 inset-x-0 z-20 text-center text-[10px] leading-3 tracking-[-0.1em] bg-black/60 ${
-                          unit.tier === 3 ? 'text-[color:var(--gold)]' : 'text-white'
-                        }`}
-                      >
-                        {unit.tier === 3 ? '★★★' : '★★'}
-                      </span>
-                    ) : null}
-                  </div>
+                  {/* 기물 아이콘 → 챔피언 상세 (아이콘 단위 링크 · id 가 없거나 현재 세트 기물이 아니면 링크 없음) */}
+                  {unit.id && CHAMPION_PAGE_SLUGS.has(entitySlug('champion', unit.id)) ? (
+                    <Link
+                      href={entityHref('champion', unit.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`${unit.name} 챔피언 통계 보기`}
+                      className="block rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
+                    >
+                      {icon}
+                    </Link>
+                  ) : (
+                    icon
+                  )}
 
                   {/* 장착 아이템 3슬롯 */}
                   <div className="flex items-center gap-0.5 mt-1 h-3.5">

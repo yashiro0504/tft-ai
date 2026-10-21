@@ -3,7 +3,7 @@ import championTraits from './championTraits.json'
 import { buildMetaPayload } from './metaPayload'
 import { getDeckViews } from './decks'
 import { getDecks, getStats } from './tftStats'
-import { DEFAULT_FILTER, MIN_SAMPLE, filterLabel, placementMargin, type StatSource } from './statsShared'
+import { DEFAULT_FILTER, MIN_SAMPLE, filterLabel, placementMargin, type StatSource, type TierFilter } from './statsShared'
 import { entitySlug, type EntityKind } from './entitySlug'
 import type {
   MetaChampRanking,
@@ -69,10 +69,15 @@ export interface EntityDeck {
   avgPlacement: number | null
   top4Rate: number | null
   sampleSize: number
-  /** /deck/[id] 정적 페이지가 있는 덱만 링크 (DB 집계 덱은 id 가 겹쳐도 다른 패치·수치라 링크하지 않는다) */
+  /** /deck/[id] 로 열 수 있는 덱 (JSON 정적 덱 · DB 덱은 patch/tier 쿼리로 해석) */
   linkable: boolean
   /** Supabase stat_comp 집계 덱 */
   fromDb: boolean
+  /** DB 덱의 패치·티어 필터 (덱 페이지가 같은 집계 덱을 열도록 링크에 싣는다) */
+  patch?: string
+  tierMin?: TierFilter
+  /** 덱 페이지 경로 (DB 덱은 ?patch=&tier= 포함) */
+  href: string
 }
 
 export interface EntityPageData {
@@ -147,6 +152,7 @@ const loadAll = cache(async () => {
     combos: combos.rows as (MetaComboRanking & Row)[],
     decks: decks.decks as (MetaDeckRanking & { lowSample?: boolean })[],
     deckSource: decks.source,
+    deckFilter: decks.filter,
     minSample: { unit: units.minSample, item: items.minSample, trait: traits.minSample, combo: combos.minSample },
   }
 })
@@ -154,11 +160,16 @@ const loadAll = cache(async () => {
 const linkableDeckIds = cache(() => new Set(getDeckViews().map((d) => d.id)))
 
 function deckLinks(
-  { decks, deckSource }: { decks: (MetaDeckRanking & { lowSample?: boolean })[]; deckSource: StatSource },
+  {
+    decks,
+    deckSource,
+    deckFilter,
+  }: { decks: (MetaDeckRanking & { lowSample?: boolean })[]; deckSource: StatSource; deckFilter: { patch: string; tier: TierFilter } | null },
   match: (d: MetaDeckRanking) => boolean
 ): EntityDeck[] {
   const ids = linkableDeckIds()
-  const fromDb = deckSource === 'db'
+  const fromDb = deckSource === 'db' && Boolean(deckFilter)
+  const query = fromDb && deckFilter ? `?patch=${deckFilter.patch}&tier=${deckFilter.tier}` : ''
   return decks
     .filter(match)
     .sort(byAvg)
@@ -170,8 +181,12 @@ function deckLinks(
       avgPlacement: d.avgPlacement,
       top4Rate: d.top4Rate,
       sampleSize: d.sampleSize,
-      linkable: !fromDb && ids.has(d.id),
+      // DB 덱은 /deck/[id]?patch=&tier= 가 stat_comp 에서 같은 덱을 연다 (UI 스프린트 S1)
+      linkable: fromDb || ids.has(d.id),
       fromDb,
+      patch: fromDb ? deckFilter?.patch : undefined,
+      tierMin: fromDb ? deckFilter?.tier : undefined,
+      href: `/deck/${d.id}${query}`,
     }))
 }
 
