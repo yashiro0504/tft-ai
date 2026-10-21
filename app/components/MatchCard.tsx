@@ -455,7 +455,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
-            <span className="text-xs text-subtle whitespace-nowrap">오늘 {quota.remaining}/{quota.limit}회 남음</span>
+            <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
             <button
               type="button"
               onClick={() => void handleAnalyze()}

@@ -291,7 +291,7 @@ export default function TFTCoachPage() {
 
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2 text-sm">
               <span className="text-xs text-subtle">
-                오늘 무료 AI 분석 {quota.remaining}/{quota.limit}회
+                {quota.unlimited ? '오늘 AI 분석 무제한' : `오늘 무료 AI 분석 ${quota.remaining}/${quota.limit}회`}
               </span>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function TFTCoachPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                <span className="text-xs text-subtle whitespace-nowrap">오늘 {quota.remaining}/{quota.limit}회 남음</span>
+                <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
                 <button
                   type="button"
                   onClick={handleOverview}

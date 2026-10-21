@@ -11,6 +11,7 @@ import { kstDayWindow } from './dayWindow'
  * - 한국 시간 자정에 초기화 (lib/dayWindow 와 같은 기준)
  * - 경기별/종합 분석이 같은 횟수를 나눠 쓴다.
  * - localStorage 가 막힌 환경에서는 탭 메모리로만 센다.
+ * - 운영자 키 쿠키(/owner)가 있는 브라우저는 무제한 (쿠키는 httpOnly 라 /api/owner 로 한 번 확인한다).
  */
 export const FREE_ANALYSIS_LIMIT = 3
 
@@ -57,13 +58,37 @@ function subscribe(fn: () => void) {
   }
 }
 
+let ownerExempt = false
+let ownerChecked = false
+
+/** 페이지당 한 번 /api/owner 로 운영자 면제 여부를 확인한다 (실패하면 일반 사용자로 둔다) */
+function checkOwner() {
+  if (ownerChecked) return
+  ownerChecked = true
+  fetch('/api/owner', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (d?.exempt === true) {
+        ownerExempt = true
+        listeners.forEach((fn) => fn())
+      }
+    })
+    .catch(() => {})
+}
+
+function subscribeWithOwner(fn: () => void) {
+  checkOwner()
+  return subscribe(fn)
+}
+
 export function useQuota() {
   const used = useSyncExternalStore(subscribe, read, () => 0)
+  const unlimited = useSyncExternalStore(subscribeWithOwner, () => ownerExempt, () => false)
   const limit = FREE_ANALYSIS_LIMIT
   const remaining = Math.max(0, limit - used)
 
   /** 분석 1회 사용 기록 (분석이 성공했을 때 호출) */
   const consume = useCallback(() => write(read() + 1), [])
 
-  return { limit, used, remaining, exhausted: remaining === 0, consume }
+  return { limit, used, remaining, unlimited, exhausted: !unlimited && remaining === 0, consume }
 }
