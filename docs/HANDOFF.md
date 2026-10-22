@@ -127,8 +127,8 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 | `lib/metaPayload.ts` | `/api/tft/meta` + `/meta` 공용 빌더 |
 | `lib/metaSlim.ts` | `/meta` 초기 payload 슬림화 |
 | `lib/decks.ts` | 덱 데이터 정규화/통계 계산 |
-| `lib/traitBreakpoints.json` | 세트 18 시너지 발동 단위(breakpoint) — 덱 생성·검증 공용 |
-| `scripts/buildTraitBreakpoints.js` | breakpoint 생성기 (Community Dragon) |
+| `lib/gameData.json` · `lib/gameData.ts` | 게임 기준 DB (기물·시너지·단계·아이템·조합법) — `docs/GAME-DATA.md` |
+| `scripts/buildGameData.js` | 게임 기준 DB 생성기 (Community Dragon, 패치별) |
 | `lib/rank.ts` | 티어 표시 포맷/색상 헬퍼 (순수 함수) |
 | `app/components/RankBadge.tsx` | 티어·LP·승패·승률 배지 (홈 카드 + 프로필 공용) |
 | `lib/favorites.ts` | 즐겨찾기 검증/CRUD (Supabase RLS 기반, 최대 20개) |
@@ -450,9 +450,10 @@ Supabase 설정 절차: `docs/supabase-auth.md`
 3. **덱 ID는 `auto-<carry>` 형식**
    - 예: `/deck/auto-soraka`. 기존 hex ID는 404가 된다.
    - CI 스모크는 `grep -oE '/deck/[A-Za-z0-9_-]+'` 를 사용한다. hex로 되돌리지 말 것.
-4. **`championTraits.json` 은 “사실 관계”만 추출한 파일**
-   - 세트 18 기물→시너지 매핑은 DDragon/CDragon에 없어서 기존 데이터에서 1회 추출했다.
-   - `npm run extract:traits` 로 재생성 가능. 큐레이션 덱은 포함하지 않는다.
+4. **기물·시너지·아이템 사실은 게임 기준 DB(`lib/gameData.json`) 하나에서만 읽는다** (2026-10-22)
+   - Community Dragon 세트 데이터에 기물→시너지·코스트·단계·조합법이 모두 있다. 예전 `championTraits.json`(덱에서 역추출)·
+     `traitBreakpoints.json`·`itemRecipes.json`·`tftData.json`·`lib/constants` 수기표를 대체했다.
+   - 코드에 코스트표·기물표를 다시 만들지 말 것. CDragon 에 없는 사실은 `lib/gameData.overrides.json` 에 근거와 함께 적는다.
 5. **`/meta` 는 덱만 SSR**
    - `lib/metaSlim.ts` + `deferSections`. 다른 탭은 첫 전환 시 `/api/tft/meta` 로 전체 로드.
    - 초기 payload에 다시 전체 데이터를 넣으면 733KB로 회귀한다.
@@ -503,8 +504,8 @@ Supabase 설정 절차: `docs/supabase-auth.md`
     - 15초 하트비트(`: ping`)를 제거하면 유휴 타임아웃으로 스트림이 끊길 수 있다.
     - 리포트는 구조화 JSON 이라 토큰 단위 렌더를 하지 않는다. 단계(stage) 이벤트만 보낸다.
 16. **덱 재생성은 breakpoint 를 거쳐야 한다**
-    - `lib/traitBreakpoints.json` 이 없거나 낡으면 “발동도 안 되는 시너지”가 덱에 들어간다.
-      세트가 바뀌면 `npm run build:traits` 로 재생성하고, `npm run build:decks` → `npm run decks:check` → `npm run build`.
+    - 게임 기준 DB(`lib/gameData.json`)가 낡으면 “발동도 안 되는 시너지”가 덱에 들어간다.
+      세트가 바뀌면 `npm run build:gamedata` 로 재생성하고, `npm run build:decks` → `npm run decks:check` → `npm run build`.
     - `decks:check` 는 이제 **미발동(count < 첫 breakpoint)** 과 **최대 단계 초과**를 실패로 처리한다.
     - 재생성하면 덱 ID(`auto-<carry>`)가 일부 바뀔 수 있다. 구 URL 은 404 가 되므로
       sitemap·외부 공유 링크를 함께 확인한다. (2026-10-18 재생성 시 20개 유지 · 4개 교체)

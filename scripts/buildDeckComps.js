@@ -19,21 +19,10 @@ loadEnv()
 const SOURCE_URL = process.env.LOLCHESS_URL || 'https://lolchess.gg/meta?hl=ko'
 const META_API = process.env.META_API || 'http://localhost:3000/api/tft/meta'
 const OUT = path.join(__dirname, '..', 'lib', 'decksData.json')
-const TFT_DATA = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'lib', 'tftData.json'), 'utf-8'))
-const DDRAGON_VERSION = TFT_DATA.version
+require('./_ts')
+const { findItem } = require('../lib/gameData')
 
-/** tftData.itemMap 마지막 세그먼트 인덱스 → 우리 아이템 아이콘(데이터드래곤) 재사용 */
-const itemSegment = (() => {
-  const index = {}
-  for (const [key, value] of Object.entries(TFT_DATA.itemMap)) {
-    const seg = key.split('/').pop() || key
-    if (!index[seg]) index[seg] = value
-    if (!index[seg.toLowerCase()]) index[seg.toLowerCase()] = value
-  }
-  return index
-})()
-
-/** lolchess 아이템 키/인게임 키 → 우리 ddragon 아이콘 (실패 시 lolchess 아이콘) */
+/** lolchess 아이템 키/인게임 키 → 게임 기준 DB 아이콘 (실패 시 lolchess 아이콘) */
 function resolveItemIcon(lolchessItem) {
   if (!lolchessItem) return ''
   const candidates = [lolchessItem.key, lolchessItem.ingameKey]
@@ -48,11 +37,8 @@ function resolveItemIcon(lolchessItem) {
       return [raw, cleaned]
     })
   for (const cand of candidates) {
-    const hit = itemSegment[cand] || itemSegment[cand.toLowerCase()]
-    if (hit?.iconUrl) {
-      const file = hit.iconUrl.split('/').pop()
-      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/tft-item/${file}`
-    }
+    const hit = findItem(cand)
+    if (hit?.icon) return hit.icon
   }
   return lolchessItem.imageUrl || ''
 }

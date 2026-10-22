@@ -13,14 +13,10 @@ import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { DECK_TYPE_LABEL, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
 import { slotsUsed } from './boardSlots'
-import breakpointData from './traitBreakpoints.json'
+import { traitBreakpointMap } from './gameFacts'
 
 /** 시너지 이름 → 브레이크포인트 (예: 나무정령 [3,5,7,9,11]) */
-const BREAKPOINTS: Record<string, number[]> = Object.fromEntries(
-  Object.values((breakpointData as { traits: Record<string, { name: string; breakpoints: number[] }> }).traits).map(
-    (t) => [t.name, t.breakpoints]
-  )
-)
+const BREAKPOINTS: Record<string, number[]> = traitBreakpointMap()
 
 /**
  * 강의형 코칭 진단 (결정론적)

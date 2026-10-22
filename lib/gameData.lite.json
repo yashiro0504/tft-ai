@@ -1,0 +1,979 @@
+{
+ "_comment": "lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.",
+ "gameVersion": "16.21",
+ "champions": [
+  {
+   "apiName": "DA_Gromp18_AP",
+   "slug": "gromp18ap",
+   "name": "심술두꺼비",
+   "nameEn": "Gromp",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Murkwolf18",
+   "slug": "murkwolf",
+   "name": "어스름늑대",
+   "nameEn": "Murkwolf",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Sentry",
+   "slug": "sentry",
+   "name": "조약돌",
+   "nameEn": "Pebbles",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Cinderling18",
+   "slug": "cinderling",
+   "name": "불타는 묘목",
+   "nameEn": "Cinderling",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Scuttlecrab18",
+   "slug": "scuttlecrab",
+   "name": "바위 게",
+   "nameEn": "Scuttlecrab",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Krug18",
+   "slug": "krug",
+   "name": "돌거북",
+   "nameEn": "Krug",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Sentinel18",
+   "slug": "sentinel",
+   "name": "파수꾼",
+   "nameEn": "Sentinel",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Brambleback18",
+   "slug": "brambleback",
+   "name": "덩굴정령",
+   "nameEn": "Brambleback",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Xayah",
+   "slug": "xayah",
+   "name": "자야",
+   "nameEn": "Xayah",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Ornn",
+   "slug": "ornn",
+   "name": "오른",
+   "nameEn": "Ornn",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Nidalee18_AP",
+   "slug": "nidalee18ap",
+   "name": "니달리",
+   "nameEn": "Nidalee",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Hecarim",
+   "slug": "hecarim",
+   "name": "헤카림",
+   "nameEn": "Hecarim",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Ezreal",
+   "slug": "ezreal",
+   "name": "이즈리얼",
+   "nameEn": "Ezreal",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Azir",
+   "slug": "azir",
+   "name": "아지르",
+   "nameEn": "Azir",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_RekSai",
+   "slug": "reksai",
+   "name": "렉사이",
+   "nameEn": "Rek'Sai",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Veigar",
+   "slug": "veigar",
+   "name": "베이가",
+   "nameEn": "Veigar",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Maokai",
+   "slug": "maokai",
+   "name": "마오카이",
+   "nameEn": "Maokai",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Malphite",
+   "slug": "malphite",
+   "name": "말파이트",
+   "nameEn": "Malphite",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Yorick",
+   "slug": "yorick",
+   "name": "요릭",
+   "nameEn": "Yorick",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Yunara",
+   "slug": "yunara",
+   "name": "유나라",
+   "nameEn": "Yunara",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Sett",
+   "slug": "sett",
+   "name": "세트",
+   "nameEn": "Sett",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Ahri",
+   "slug": "ahri",
+   "name": "아리",
+   "nameEn": "Ahri",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Ashe",
+   "slug": "ashe",
+   "name": "애쉬",
+   "nameEn": "Ashe",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Elise",
+   "slug": "elise",
+   "name": "엘리스",
+   "nameEn": "Elise",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Caitlyn",
+   "slug": "caitlyn",
+   "name": "케이틀린",
+   "nameEn": "Caitlyn",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Cassiopeia",
+   "slug": "cassiopeia",
+   "name": "카시오페아",
+   "nameEn": "Cassiopeia",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Morgana",
+   "slug": "morgana",
+   "name": "모르가나",
+   "nameEn": "Morgana",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Rakan",
+   "slug": "rakan",
+   "name": "라칸",
+   "nameEn": "Rakan",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lillia",
+   "slug": "lillia",
+   "name": "릴리아",
+   "nameEn": "Lillia",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Kobuko",
+   "slug": "kobuko",
+   "name": "코부코",
+   "nameEn": "Kobuko",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Teemo",
+   "slug": "teemo",
+   "name": "티모",
+   "nameEn": "Teemo",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Rammus",
+   "slug": "rammus",
+   "name": "람머스",
+   "nameEn": "Rammus",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_GnarSmall",
+   "slug": "gnar",
+   "name": "나르",
+   "nameEn": "Gnar",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Tristana",
+   "slug": "tristana",
+   "name": "트리스타나",
+   "nameEn": "Tristana",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Sivir",
+   "slug": "sivir",
+   "name": "시비르",
+   "nameEn": "Sivir",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Vi18",
+   "slug": "vi",
+   "name": "바이",
+   "nameEn": "Vi",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Akali_AD",
+   "slug": "akaliad",
+   "name": "아칼리",
+   "nameEn": "Akali",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Varus",
+   "slug": "varus",
+   "name": "바루스",
+   "nameEn": "Varus",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Amumu18",
+   "slug": "amumu",
+   "name": "아무무",
+   "nameEn": "Amumu",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Kennen",
+   "slug": "kennen",
+   "name": "케넨",
+   "nameEn": "Kennen",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Aphelios",
+   "slug": "aphelios",
+   "name": "아펠리오스",
+   "nameEn": "Aphelios",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Diana",
+   "slug": "diana",
+   "name": "다이애나",
+   "nameEn": "Diana",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Alune",
+   "slug": "alune",
+   "name": "알룬",
+   "nameEn": "Alune",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Leona",
+   "slug": "leona",
+   "name": "레오나",
+   "nameEn": "Leona",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Kayle",
+   "slug": "kayle",
+   "name": "케일",
+   "nameEn": "Kayle",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Sejuani",
+   "slug": "sejuani",
+   "name": "세주아니",
+   "nameEn": "Sejuani",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_KhaZix",
+   "slug": "khazix",
+   "name": "카직스",
+   "nameEn": "Kha'Zix",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Rengar",
+   "slug": "rengar",
+   "name": "렝가",
+   "nameEn": "Rengar",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_KogMaw18_AD",
+   "slug": "kogmaw18ad",
+   "name": "코그모",
+   "nameEn": "Kog'Maw",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Zyra",
+   "slug": "zyra",
+   "name": "자이라",
+   "nameEn": "Zyra",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Fiddlesticks18",
+   "slug": "fiddlesticks",
+   "name": "피들스틱",
+   "nameEn": "Fiddlesticks",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Soraka",
+   "slug": "soraka",
+   "name": "소라카",
+   "nameEn": "Soraka",
+   "cost": 4,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Taric18",
+   "slug": "taric",
+   "name": "타릭",
+   "nameEn": "Taric",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Ivern",
+   "slug": "ivern",
+   "name": "아이번",
+   "nameEn": "Ivern",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Lux18_Base",
+   "slug": "lux",
+   "name": "럭스",
+   "nameEn": "Lux",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Alistar",
+   "slug": "alistar",
+   "name": "알리스타",
+   "nameEn": "Alistar",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Draven18",
+   "slug": "draven",
+   "name": "드레이븐",
+   "nameEn": "Draven",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_ElderDragon",
+   "slug": "elderdragon",
+   "name": "장로 드래곤",
+   "nameEn": "Elder Dragon",
+   "cost": 5,
+   "slots": 2
+  },
+  {
+   "apiName": "DA_Karma18",
+   "slug": "karma",
+   "name": "카르마",
+   "nameEn": "Karma",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_LeBlanc",
+   "slug": "leblanc",
+   "name": "르블랑",
+   "nameEn": "LeBlanc",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_MasterYi_AD",
+   "slug": "masteryiad",
+   "name": "마스터 이",
+   "nameEn": "Master Yi",
+   "cost": 3,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Shen",
+   "slug": "shen",
+   "name": "쉔",
+   "nameEn": "Shen",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Warwick",
+   "slug": "warwick",
+   "name": "워윅",
+   "nameEn": "Warwick",
+   "cost": 2,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Camille",
+   "slug": "camille",
+   "name": "카밀",
+   "nameEn": "Camille",
+   "cost": 1,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Lux18_Blackthorn",
+   "slug": "lux18blackthorn",
+   "name": "럭스 (검은 가시)",
+   "nameEn": "Lux (Blackthorn)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_Lux18_Blossom",
+   "slug": "lux18blossom",
+   "name": "럭스 (개화)",
+   "nameEn": "Lux (Blossom)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Coven",
+   "slug": "luxcoven",
+   "name": "럭스 (악의 여단)",
+   "nameEn": "Lux (Coven)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Elderwood",
+   "slug": "luxelderwood",
+   "name": "럭스 (나무정령)",
+   "nameEn": "Lux (Elderwood)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Fae",
+   "slug": "luxfae",
+   "name": "럭스 (요정)",
+   "nameEn": "Lux (Fae)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Inferno",
+   "slug": "luxinferno",
+   "name": "럭스 (지옥불)",
+   "nameEn": "Lux (Inferno)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Moonbeam",
+   "slug": "luxmoonbeam",
+   "name": "럭스 (달빛)",
+   "nameEn": "Lux (Lunar)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Primal",
+   "slug": "luxprimal",
+   "name": "럭스 (원시)",
+   "nameEn": "Lux (Primal)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_18_Lux_Sunbeam",
+   "slug": "luxsunbeam",
+   "name": "럭스 (햇빛)",
+   "nameEn": "Lux (Solar)",
+   "cost": 5,
+   "slots": 1
+  },
+  {
+   "apiName": "DA_CrimsonRaptor18",
+   "slug": "crimsonraptor",
+   "name": "어미 부리",
+   "nameEn": "Mama Beak",
+   "cost": 3,
+   "slots": 1
+  }
+ ],
+ "traits": [
+  {
+   "apiName": "DA_18_Elderwood",
+   "slug": "elderwood",
+   "name": "나무정령",
+   "nameEn": "Elderwood",
+   "breakpoints": [
+    3,
+    5,
+    7,
+    9,
+    11
+   ]
+  },
+  {
+   "apiName": "DA_18_LuxUniqueTrait",
+   "slug": "luxuniquetrait",
+   "name": "화신",
+   "nameEn": "Avatar",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Slayer",
+   "slug": "slayer",
+   "name": "약탈자",
+   "nameEn": "Ravager",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_DravenUniqueTrait18",
+   "slug": "dravenuniquetrait",
+   "name": "현상금 추적자",
+   "nameEn": "Bounty Seeker",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Solar",
+   "slug": "solar",
+   "name": "햇빛",
+   "nameEn": "Solar",
+   "breakpoints": [
+    3
+   ]
+  },
+  {
+   "apiName": "DA_18_Sprykin",
+   "slug": "sprykin",
+   "name": "날렵이",
+   "nameEn": "Sprykin",
+   "breakpoints": [
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "apiName": "DA_18_Adaptor",
+   "slug": "adaptor",
+   "name": "적응가",
+   "nameEn": "Adaptor",
+   "breakpoints": [
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "apiName": "DA_18_Coven",
+   "slug": "coven",
+   "name": "악의 여단",
+   "nameEn": "Coven",
+   "breakpoints": [
+    3,
+    4,
+    5,
+    7
+   ]
+  },
+  {
+   "apiName": "DA_18_Eclipse",
+   "slug": "eclipse",
+   "name": "일월식",
+   "nameEn": "Eclipse",
+   "breakpoints": []
+  },
+  {
+   "apiName": "DA_18_Hunter",
+   "slug": "hunter",
+   "name": "사냥꾼",
+   "nameEn": "Hunter",
+   "breakpoints": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "apiName": "DA_18_Maokai_UniqueTrait",
+   "slug": "maokaiuniquetrait",
+   "name": "고목",
+   "nameEn": "Old Growth",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Battlemage",
+   "slug": "battlemage",
+   "name": "거석",
+   "nameEn": "Monolith",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_Primal18",
+   "slug": "primal",
+   "name": "원시",
+   "nameEn": "Primal",
+   "breakpoints": [
+    2,
+    4
+   ]
+  },
+  {
+   "apiName": "DA_18_Greenfather",
+   "slug": "greenfather",
+   "name": "자연의 아버지",
+   "nameEn": "Greenfather",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Invoker",
+   "slug": "invoker",
+   "name": "기원자",
+   "nameEn": "Invoker",
+   "breakpoints": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "apiName": "DA_18_Rapidfire",
+   "slug": "rapidfire",
+   "name": "속사포",
+   "nameEn": "Rapidfire",
+   "breakpoints": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "apiName": "DA_Juggernaut18",
+   "slug": "juggernaut",
+   "name": "전쟁기계",
+   "nameEn": "Juggernaut",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_18_Inferno",
+   "slug": "inferno",
+   "name": "지옥불",
+   "nameEn": "Inferno",
+   "breakpoints": [
+    2,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "apiName": "DA_AluneUniqueTrait18",
+   "slug": "aluneuniquetrait",
+   "name": "조율",
+   "nameEn": "Attuned",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Rival",
+   "slug": "rival",
+   "name": "경쟁자",
+   "nameEn": "Rival",
+   "breakpoints": [
+    1,
+    2
+   ]
+  },
+  {
+   "apiName": "DA_18_Vanguard",
+   "slug": "vanguard",
+   "name": "선봉대",
+   "nameEn": "Vanguard",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_18_Brawler",
+   "slug": "brawler",
+   "name": "싸움꾼",
+   "nameEn": "Brawler",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_18_Blackthorn",
+   "slug": "blackthorn",
+   "name": "검은 가시",
+   "nameEn": "Blackthorn",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ],
+   "aliases": [
+    "Eldritch"
+   ]
+  },
+  {
+   "apiName": "DA_18_Executioner",
+   "slug": "executioner",
+   "name": "처형자",
+   "nameEn": "Executioner",
+   "breakpoints": [
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "apiName": "DA_18_ApexPredator",
+   "slug": "apexpredator",
+   "name": "최상위 포식자",
+   "nameEn": "Apex Predator",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_Riftbeast18",
+   "slug": "riftbeast",
+   "name": "협곡야수",
+   "nameEn": "Riftbeast",
+   "breakpoints": [
+    3,
+    5,
+    7,
+    10
+   ]
+  },
+  {
+   "apiName": "DA_18_Caustic",
+   "slug": "caustic",
+   "name": "부식",
+   "nameEn": "Caustic",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_18_Fae",
+   "slug": "fae",
+   "name": "요정",
+   "nameEn": "Fae",
+   "breakpoints": [
+    2,
+    4
+   ]
+  },
+  {
+   "apiName": "DA_18_Lunar",
+   "slug": "lunar",
+   "name": "달빛",
+   "nameEn": "Lunar",
+   "breakpoints": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "apiName": "DA_18_Defender",
+   "slug": "defender",
+   "name": "엄호대",
+   "nameEn": "Defender",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_18_Spellweaver",
+   "slug": "spellweaver",
+   "name": "주문술사",
+   "nameEn": "Spellweaver",
+   "breakpoints": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "apiName": "DA_18_ZyraUniqueTrait",
+   "slug": "zyrauniquetrait",
+   "name": "가시의 여인",
+   "nameEn": "Thornmaiden",
+   "breakpoints": [
+    1
+   ]
+  },
+  {
+   "apiName": "DA_FloraFatalis18",
+   "slug": "florafatalis",
+   "name": "치명적인 꽃",
+   "nameEn": "Flora Fatalis",
+   "breakpoints": [
+    1,
+    2
+   ]
+  },
+  {
+   "apiName": "DA_18_Summoner",
+   "slug": "summoner",
+   "name": "소환사",
+   "nameEn": "Summoner",
+   "breakpoints": [
+    2,
+    3
+   ]
+  },
+  {
+   "apiName": "DA_18_Blossom",
+   "slug": "blossom",
+   "name": "개화",
+   "nameEn": "Blossom",
+   "breakpoints": [
+    3,
+    5,
+    7,
+    9,
+    11
+   ]
+  },
+  {
+   "apiName": "DA_Emerald18",
+   "slug": "emerald",
+   "name": "에메랄드 성위",
+   "nameEn": "Emerald Aspect",
+   "breakpoints": [
+    1
+   ]
+  }
+ ]
+}

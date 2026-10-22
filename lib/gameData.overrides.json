@@ -1,0 +1,15 @@
+{
+  "_comment": "게임 기준 DB(lib/gameData.json)에 사람이 확인해 붙이는 사실. Community Dragon 에 없는 것만 적고, 근거를 note 에 남긴다. scripts/buildGameData.js 가 재생성할 때 합친다.",
+  "champions": {
+    "DA_18_ElderDragon": {
+      "slots": 2,
+      "note": "보드 2칸. 장로 드래곤 보드 46개 중 38개가 '기물 수 = 레벨 - 1' (docs/RULE-CHECK.md, 10-22 확인)"
+    }
+  },
+  "traits": {
+    "DA_18_Blackthorn": {
+      "aliases": ["Eldritch"],
+      "note": "덱 데이터(롤체지지)의 옛 키 eldritch"
+    }
+  }
+}

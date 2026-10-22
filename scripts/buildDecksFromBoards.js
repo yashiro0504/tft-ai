@@ -24,9 +24,8 @@
 const fs = require('fs')
 const path = require('path')
 
-const tftData = require('../lib/tftData.json')
-const reference = require('../lib/championTraits.json')
-const breakpointData = require('../lib/traitBreakpoints.json')
+require('./_ts')
+const { findChampion, findItem, findTrait, normalizeTftId } = require('../lib/gameData')
 
 const WRITE_LIVE = process.argv.includes('--write')
 const MIN_GAMES = Number(process.env.MIN_GAMES || 30)
@@ -59,23 +58,6 @@ function norm(id) {
     .toLowerCase()
 }
 
-/** championTraits.json 에 없는 세트18 기물 한글명 (lib/constants.ts SET18_CHAMPS 와 같은 표기) */
-const SET18_NAMES = {
-  murkwolf: '어스름늑대',
-  krug: '돌거북',
-  scuttlecrab: '바위 게',
-  brambleback: '덩굴정령',
-  sentinel: '감시자',
-  sentry: '조약돌',
-  pebbles: '조약돌',
-  elderdragon: '장로 드래곤',
-  cinderling: '불타는 묘목',
-  alune: '알룬',
-  gromp: '심술두꺼비',
-  crimsonraptor: '어미 부리',
-  mamabeak: '어미 부리',
-}
-
 /** metaStats.json 의 기물 키와 같은 규칙 (scripts/buildMetaStats.js normalizeChampId) */
 function statKey(id) {
   return String(id || '')
@@ -88,58 +70,37 @@ function statKey(id) {
     .trim()
 }
 
-function buildLookup(map) {
-  const lookup = new Map()
-  for (const [key, value] of Object.entries(map || {})) {
-    const k = norm(key)
-    if (k && !lookup.has(k)) lookup.set(k, value)
-  }
-  return lookup
-}
-const champLookup = buildLookup(tftData.champMap)
-const traitLookup = buildLookup(tftData.traitMap)
-
-/** 아이템은 경로 마지막 조각으로 찾는다 (TFTSet18/Set18_Items/DA_EdgeOfNight → DA_EdgeOfNight) */
-const itemSegment = (() => {
-  const index = new Map()
-  for (const [key, value] of Object.entries(tftData.itemMap || {})) {
-    const seg = key.split('/').pop() || key
-    if (!index.has(seg)) index.set(seg, value)
-    if (!index.has(seg.toLowerCase())) index.set(seg.toLowerCase(), value)
-  }
-  return index
-})()
-
+/** 기물 정보 (게임 기준 DB). 시너지 키는 Riot apiName 의 세트 접두사·꼬리를 뗀 이름 (DA_18_Blackthorn → Blackthorn) */
 function champInfo(id) {
   const k = norm(id)
-  const ref = reference.champions?.[k]
-  const meta = champLookup.get(k)
+  const c = findChampion(id)
   return {
     key: k,
-    name: ref?.name || SET18_NAMES[k] || meta?.name || k,
-    cost: ref?.cost ?? null,
-    imgUrl:
-      ref?.imgUrl ||
-      meta?.iconUrl ||
-      (SET18_NAMES[k] ? `https://raw.communitydragon.org/latest/game/assets/characters/tft18_${k}/tft18_${k}_square.png` : ''),
-    traits: ref?.traits || [],
+    name: c?.name || k,
+    cost: c?.cost ?? null,
+    imgUrl: c?.icon || '',
+    traits: c ? c.traits.map(normalizeTftId) : [],
   }
 }
 
 function traitInfo(id) {
-  const k = norm(id)
-  const ref = reference.traits?.[k]
-  const meta = traitLookup.get(k)
+  const t = findTrait(id)
   return {
     key: String(id).replace(/^TFT\d*_/i, '').replace(/^DA_\d*_/i, '').replace(/^DA_/i, ''),
-    name: ref?.name || meta?.name || k,
-    iconUrl: meta?.iconUrl || ref?.iconUrl || '',
+    name: t?.name || norm(id),
+    iconUrl: t?.icon || '',
   }
 }
 
 function itemInfo(id) {
-  const meta = itemSegment.get(id) || itemSegment.get(String(id).toLowerCase())
-  return { key: id, name: meta?.name || norm(id), iconUrl: meta?.iconUrl || '' }
+  const it = findItem(id)
+  return { key: id, name: it?.name || norm(id), iconUrl: it?.icon || '' }
+}
+
+/** 시너지 단계 인원 (단계가 없는 특수 시너지·모르는 시너지는 null) */
+function traitBreakpoints(key) {
+  const bps = findTrait(key)?.breakpoints
+  return bps?.length ? bps : null
 }
 
 /** 대표 구성 기물들의 시너지로 활성 시너지를 다시 센다 (표시된 기물과 숫자가 항상 맞도록) */
@@ -148,9 +109,9 @@ function traitsFromUnits(units) {
   for (const u of units) for (const t of u.traits || []) counts.set(t, (counts.get(t) || 0) + 1)
   const out = []
   for (const [key, count] of counts) {
-    const bp = breakpointData.traits?.[norm(key)]
-    if (bp && count < bp.breakpoints[0]) continue
-    if (bp && bp.breakpoints.length === 1) continue // 고유 시너지는 덱 구성 요소로 세지 않는다
+    const bp = traitBreakpoints(key)
+    if (bp && count < bp[0]) continue
+    if (bp && bp.length === 1) continue // 고유 시너지는 덱 구성 요소로 세지 않는다
     if (!bp && count < 2) continue // 단계 데이터가 없는 1명짜리 시너지(고유 시너지)도 뺀다
     const info = traitInfo(key)
     out.push({ key, name: info.name, iconUrl: info.iconUrl, count })
@@ -161,8 +122,8 @@ function traitsFromUnits(units) {
 /** 조합형 시너지인가 (고유 시너지 = 단계가 1개뿐) */
 function isCompositional(trait) {
   if (trait.max != null) return trait.max > 1
-  const bp = breakpointData.traits?.[norm(trait.id)]
-  return !bp || bp.breakpoints.length > 1
+  const bp = traitBreakpoints(trait.id)
+  return !bp || bp.length > 1
 }
 
 /**
@@ -216,7 +177,7 @@ const median = (arr) => {
 
 /** 상점에서 사는 실제 기물인가 (소환물·토큰 제외) */
 function isRealUnit(k) {
-  return Boolean(reference.champions?.[k] || SET18_NAMES[k])
+  return Boolean(findChampion(k))
 }
 
 /** 보드 → 이름표 (캐리 + 핵심 시너지) */
@@ -342,8 +303,8 @@ function flexKeys(c) {
   for (const k of ordered) {
     const traits = (champInfo(c.unitIds.get(k)).traits || []).map(norm)
     const over = traits.some((t) => {
-      const bp = breakpointData.traits?.[t]
-      return bp?.max != null && (counts.get(t) || 0) + 1 > bp.max
+      const bp = traitBreakpoints(t)
+      return bp != null && (counts.get(t) || 0) + 1 > bp[bp.length - 1]
     })
     if (over) {
       flex.add(k)

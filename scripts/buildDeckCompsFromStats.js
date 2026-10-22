@@ -8,9 +8,7 @@
  *
  * 데이터 소스:
  *  - lib/metaStats.json        : Riot 래더 표본 집계(기물/아이템/조합)
- *  - lib/tftData.json          : 이름/아이콘(Data Dragon)
- *  - lib/championTraits.json   : 기물→시너지 "사실 관계" 매핑 (큐레이션 덱 미사용)
- *  - lib/traitBreakpoints.json : 시너지 발동 단위(breakpoint) — 실제로 켜지는 조합만 남긴다
+ *  - lib/gameData.json         : 게임 기준 DB — 이름/아이콘, 기물→시너지 "사실 관계", 시너지 발동 단위(breakpoint)
  *
  * 사용법:
  *  node scripts/buildDeckCompsFromStats.js            # lib/decksData.preview.json
@@ -21,9 +19,8 @@ const fs = require('fs')
 const path = require('path')
 
 const stats = require('../lib/metaStats.json')
-const tftData = require('../lib/tftData.json')
-const reference = require('../lib/championTraits.json')
-const breakpointData = require('../lib/traitBreakpoints.json')
+require('./_ts')
+const { GAME_CHAMPIONS, findChampion, findItem, findTrait, normalizeTftId } = require('../lib/gameData')
 
 const WRITE_LIVE = process.argv.includes('--write') || process.env.WRITE_LIVE === '1'
 
@@ -49,53 +46,16 @@ function norm(id) {
     .toLowerCase()
 }
 
-const champMap = tftData.champMap || {}
-const traitMap = tftData.traitMap || {}
-const itemMap = tftData.itemMap || {}
+/** 게임 기준 DB 조회 → { name, iconUrl } */
+const asMeta = (x) => (x ? { name: x.name, iconUrl: x.icon } : null)
+const champMeta = (key) => asMeta(findChampion(key))
+const traitMeta = (key) => asMeta(findTrait(key))
+const itemMeta = (key) => asMeta(findItem(key))
 
-/** 정규화 키 → 메타 엔트리 역인덱스 (DA_18_/TFT18_ 등 접두사 흡수) */
-function buildLookup(map) {
-  const lookup = new Map()
-  for (const [key, value] of Object.entries(map || {})) {
-    const normalized = norm(key)
-    if (normalized && !lookup.has(normalized)) lookup.set(normalized, value)
-  }
-  return lookup
-}
-
-/** championTraits 의 시너지 한글명/아이콘 (DDragon 에 없는 시너지 보완용) */
-function buildTraitRefMap() {
-  const map = new Map()
-  for (const [key, entry] of Object.entries(reference.traits || {})) {
-    if (key && !map.has(key)) map.set(key, { name: entry.name, iconUrl: entry.iconUrl })
-  }
-  return map
-}
-
-const champLookup = buildLookup(champMap)
-const traitLookup = buildLookup(traitMap)
-const itemLookup = buildLookup(itemMap)
-const traitRefMap = buildTraitRefMap()
-
-function champMeta(key) {
-  return champLookup.get(norm(key)) || champMap[key] || null
-}
-
-function traitMeta(key) {
-  return traitLookup.get(norm(key)) || traitMap[key] || traitRefMap.get(norm(key)) || null
-}
-
-function itemMeta(key) {
-  return itemLookup.get(norm(key)) || itemMap[key] || null
-}
-
-/** 시너지 breakpoint 조회 (영문 apiName/영문명 → 한글명 순으로 시도) */
+/** 시너지 breakpoint 조회 (키·영문명·한글명·옛 별칭). 단계가 없으면 null */
 function traitBreakpoints(trait) {
-  const direct = breakpointData.traits[norm(trait)]
-  if (direct) return direct
-  const korean = traitRefMap.get(norm(trait))?.name
-  if (korean && breakpointData.traits[korean]) return breakpointData.traits[korean]
-  return null
+  const breakpoints = findTrait(trait)?.breakpoints
+  return breakpoints?.length ? { breakpoints, max: breakpoints[breakpoints.length - 1] } : null
 }
 
 /**
@@ -106,18 +66,13 @@ function isCompositional(entry) {
   return Boolean(entry && entry.breakpoints[0] >= 2)
 }
 
-/** 기물 → 시너지/코스트 참조 맵 (championTraits 의 사실 관계만 사용) */
+/** 기물 → 시너지/코스트 참조 맵 (게임 기준 DB의 사실 관계만 사용) */
 function buildReferenceMap() {
   const map = new Map()
-  for (const [key, entry] of Object.entries(reference.champions || {})) {
-    if (!key) continue
-    map.set(key, {
-      key,
-      name: entry.name || champMeta(key)?.name || key,
-      cost: entry.cost ?? null,
-      imgUrl: champMeta(key)?.iconUrl || entry.imgUrl || '',
-      traits: new Set(entry.traits || []),
-    })
+  for (const c of GAME_CHAMPIONS) {
+    const key = normalizeTftId(c.apiName).toLowerCase()
+    if (map.has(key)) continue
+    map.set(key, { key, name: c.name, cost: c.cost, imgUrl: c.icon, traits: new Set(c.traits.map(normalizeTftId)) })
   }
   return map
 }
@@ -377,7 +332,7 @@ function main() {
     source: 'riot-meta-aggregate',
     sourceUrl: null,
     patch: stats.patch || 'unknown',
-    traitReference: reference.source,
+    traitReference: 'lib/gameData.json',
     deckCount: decks.length,
     unitMatchRate: pool.length ? r2(withTraits.length / pool.length) : 0,
     decks,

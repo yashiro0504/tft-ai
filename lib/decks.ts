@@ -1,7 +1,7 @@
 import decksData from './decksData.json'
 import metaStatsData from './metaStats.json'
 import { tierFromAvgPlacement } from './meta'
-import { set18PortraitUrl } from './constants'
+import { championPortraitUrl } from './constants'
 import type { DeckGuide } from './types'
 
 /**
@@ -149,7 +149,7 @@ function computeDeck(deck: RawDeck, jsonUnitStats = true): DeckView {
 
   const units: DeckUnitView[] = deck.units.map((raw) => {
     // 정적 덱 데이터의 초상화를 세트18 전용 아트로 교체
-    const u = { ...raw, imgUrl: set18PortraitUrl(raw.matchedKey ?? raw.lolchessKey) ?? raw.imgUrl }
+    const u = { ...raw, imgUrl: championPortraitUrl(raw.matchedKey ?? raw.lolchessKey) ?? raw.imgUrl }
     const stat = jsonUnitStats && u.matchedKey ? CHAMPS[u.matchedKey] : undefined
     if (stat && typeof stat.avgPlacement === 'number') {
       const w = Math.max(1, stat.sampleSize || 0)

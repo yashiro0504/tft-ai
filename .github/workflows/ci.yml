@@ -62,6 +62,9 @@ jobs:
       - name: AI report semantic grounding tests
         run: npm run test:ai
 
+      - name: Game data (Community Dragon) checks
+        run: npm run test:gamedata
+
       - name: Build
         run: npm run build
         env:

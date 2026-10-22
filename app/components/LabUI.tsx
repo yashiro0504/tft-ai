@@ -12,7 +12,7 @@
  */
 import { useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import breakpointData from '@/lib/traitBreakpoints.json'
+import { traitBreakpointsOf } from '@/lib/gameFacts'
 
 /* ───────────── 등수 분포 띠 ───────────── */
 
@@ -63,14 +63,8 @@ export function PlacementStrip({
 
 /* ───────────── 시너지 육각형 ───────────── */
 
-type BreakpointEntry = { breakpoints: number[] }
-const BREAKPOINTS = (breakpointData as { traits: Record<string, BreakpointEntry> }).traits
-
 /** 시너지 키(영문) 또는 한글 이름으로 단계 목록을 찾는다 */
-function breakpointsOf(keyOrName: string): number[] {
-  const hit = BREAKPOINTS[keyOrName.toLowerCase()] ?? BREAKPOINTS[keyOrName]
-  return hit?.breakpoints ?? []
-}
+const breakpointsOf = traitBreakpointsOf
 
 /** 유닛 수로 현재 단계(0 = 비활성)와 최대 단계를 계산한다 */
 export function traitLevelFromCount(keyOrName: string, count: number) {

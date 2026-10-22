@@ -1,4 +1,4 @@
-import breakpointData from './traitBreakpoints.json'
+import { traitBreakpointMap } from './gameFacts'
 import { entitySlug } from './entitySlug'
 import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
@@ -28,11 +28,7 @@ export const ITEMS_ON_WEAK_MIN = 3
 export const WEAK_MAX_COST = 3
 const isWeakOneStar = (u: SlimMatchUnit) => (u.tier || 1) === 1 && (u.rarity || 1) <= WEAK_MAX_COST
 
-const BREAKPOINTS: Record<string, number[]> = Object.fromEntries(
-  Object.values((breakpointData as { traits: Record<string, { name: string; breakpoints: number[] }> }).traits).map(
-    (t) => [t.name, t.breakpoints]
-  )
-)
+const BREAKPOINTS: Record<string, number[]> = traitBreakpointMap()
 
 const slug = (u: SlimMatchUnit) => entitySlug('champion', u.id) || u.name
 const isRadiant = (item: string) => item.startsWith('찬란한')

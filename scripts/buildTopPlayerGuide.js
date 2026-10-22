@@ -18,7 +18,7 @@ const { entitySlug } = require('../lib/entitySlug')
 const { getPatchNotes, patchAt } = require('../lib/patchNotes')
 const { TOP_MIN_BOARDS } = require('../lib/topPlayers')
 const decksData = require('../lib/decksData.json')
-const tftData = require('../lib/tftData.json')
+const { findItem } = require('../lib/gameData')
 
 const BOARDS = path.join(__dirname, '..', 'data', 'topPlayerBoards.json')
 const OUT = path.join(__dirname, '..', 'lib', 'topPlayerGuide.json')
@@ -28,14 +28,7 @@ const MIN_BOARDS = 3
 const r2 = (x) => Math.round(x * 100) / 100
 const r3 = (x) => Math.round(x * 1000) / 1000
 
-const itemName = (() => {
-  const index = new Map()
-  for (const [key, value] of Object.entries(tftData.itemMap || {})) {
-    const seg = (key.split('/').pop() || key).toLowerCase()
-    if (!index.has(seg)) index.set(seg, value.name)
-  }
-  return (id) => index.get(String(id).split('/').pop().toLowerCase()) || null
-})()
+const itemName = (id) => findItem(id)?.name || null
 const isComponent = (id) => /component/i.test(String(id))
 const slug = (k) => entitySlug('champion', k)
 
