@@ -65,6 +65,9 @@ jobs:
       - name: Game data (Community Dragon) checks
         run: npm run test:gamedata
 
+      - name: Golden-set scene labels (정답셋)
+        run: npm run test:labels
+
       - name: Build
         run: npm run build
         env:
