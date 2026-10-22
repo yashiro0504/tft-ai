@@ -11,7 +11,7 @@
  * - --strict: 실제 규칙 중 '반대' 판정이 있으면 종료 코드 1.
  */
 const { arg, loadLobbies, writeReport, annotate } = require('./_boards')
-const { allKeyMoments, ITEMS_ON_WEAK_MIN, WEAK_MAX_COST } = require('../lib/keyMoments')
+const { allKeyMoments, nearBreakpoints, ITEMS_ON_WEAK_MIN, WEAK_MAX_COST } = require('../lib/keyMoments')
 const { boardCarry } = require('../lib/deckType')
 
 /** 판정 기준: 같은 레벨 비교 등수 차이 (+ = 뜬 보드가 더 나쁨) · 최소 표본 */
@@ -26,7 +26,6 @@ const KIND_LABEL = {
   itemsOnWeak: '아이템이 1성 저코스트에',
   carryOneStar: '저코스트 캐리가 1성',
   emptySlots: '보드 빈칸',
-  nearBreakpoint: '1명 모자란 시너지',
 }
 /** 정의상 1등 보드에서는 뜰 수 없는 규칙 — 1등을 빼고 비교한다 (그래도 편향이 남아 참고만) */
 const EXCLUDE_FIRST = new Set(['sameComp'])
@@ -120,6 +119,7 @@ const PROBES = [
     fired: itemsOnOneStarUpTo(c),
   })),
   { label: '빈칸 (기물 수로 셈, 2칸 기물 무시)', note: '보정 전 규칙', fired: emptyByUnitCount },
+  { label: '1명 모자란 시너지', note: '장면에서 뺌 (10-22 정답셋 0/19)', fired: (b) => nearBreakpoints(b).length > 0 },
 ]
 
 /* ───────── 실행 ───────── */

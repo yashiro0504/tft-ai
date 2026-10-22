@@ -28,10 +28,15 @@ function main() {
   const stillWrong = []
   const changed = []
   for (const [id, l] of Object.entries(labels)) {
-    const k = byKind.get(l.kind) || { ok: 0, wrong: 0, unsure: 0 }
+    const k = byKind.get(l.kind) || { ok: 0, wrong: 0, unsure: 0, nowOk: 0, nowWrong: 0, now: 0 }
     k[l.verdict]++
     byKind.set(l.kind, k)
     const now = scenes.get(id)
+    if (now) {
+      k.now++
+      if (l.verdict === 'ok') k.nowOk++
+      if (l.verdict === 'wrong') k.nowWrong++
+    }
     if (!now) {
       if (l.verdict === 'ok') lost.push({ id, l })
       continue
@@ -42,11 +47,13 @@ function main() {
   const unlabeled = [...scenes.keys()].filter((id) => !labels[id])
 
   console.log(`정답셋 — 판정 ${Object.keys(labels).length}개 · 지금 장면 ${scenes.size}개 · 미판정 ${unlabeled.length}개\n`)
-  console.log('규칙별 정확도 (맞음 / 맞음+틀림, 애매 제외)')
+  // 판정 당시 = 판정한 장면 전부, 지금 코드 = 그중 지금도 나오는 장면 (규칙을 고친 효과)
+  const pct = (ok, wrong) => (ok + wrong ? `${Math.round((ok / (ok + wrong)) * 100)}%` : '–')
+  console.log('규칙별 정확도 (맞음 / 맞음+틀림, 애매 제외) — 판정 당시 → 지금 코드가 내는 장면')
   for (const [kind, k] of [...byKind].sort(([a], [b]) => a.localeCompare(b))) {
-    const judged = k.ok + k.wrong
-    const pct = judged ? `${Math.round((k.ok / judged) * 100)}%` : '–'
-    console.log(`  ${kind.padEnd(16)} ${pct.padStart(4)}  (맞음 ${k.ok} · 틀림 ${k.wrong} · 애매 ${k.unsure})`)
+    const then = `${pct(k.ok, k.wrong).padStart(4)} (맞음 ${k.ok} · 틀림 ${k.wrong} · 애매 ${k.unsure})`
+    const now = k.now ? `${pct(k.nowOk, k.nowWrong).padStart(4)} (맞음 ${k.nowOk} · 틀림 ${k.nowWrong}, ${k.now}개)` : '안 나옴'
+    console.log(`  ${kind.padEnd(16)} ${then}  →  ${now}`)
   }
 
   if (stillWrong.length) {
