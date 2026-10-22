@@ -167,6 +167,8 @@ export interface SlimMatchData {
   gameLengthStr?: string
   /** 게임 길이(초) — 초반 종료 표본 판정용 */
   gameLengthSec?: number
+  /** Riot queue_id (1100 = 랭크). 분석은 랭크 판만 — lib/queue */
+  queueId?: number
   queueType?: string
   placement: number
   level: number

@@ -137,7 +137,8 @@ export async function loadSummonerData(
   //    캐시 히트 시 Riot 호출이 0회가 되어, 웜 상태 검색은 사실상 account/summoner/matchIds 만 소모한다.
   const matchDetails = await Promise.all(
     matchIds.map(async (id) => {
-      const matchKey = `match:${REGION}:${id}:${acct.puuid}`
+      // match2: queueId 추가 (2026-10-23) — 예전 캐시는 이벤트 판도 '랭크 게임'으로 저장돼 있어 다시 받는다
+      const matchKey = `match2:${REGION}:${id}:${acct.puuid}`
       const cachedMatch = await cacheGet<SlimMatchData>(matchKey)
       if (cachedMatch) {
         incrMetric('riot.cache_hit.match_detail')
