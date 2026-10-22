@@ -171,12 +171,17 @@ function detectTraitCounts(boards) {
 
   // 가장 강한 후보부터 하나씩 확정하고, 그 기물이 있는 쌍은 설명된 것으로 빼고 다시 잰다
   // (장로 드래곤과 같은 협곡야수 덱에 늘 나오는 감시자가 덩달아 뜨지 않도록)
-  let pool = allPairs
-  const rows = []
+  // 이미 아는 규칙(장로 드래곤·카직스 진화·럭스 형태)이 설명하는 쌍은 먼저 뺀다. 그러지 않으면 카직스 덱에 늘 같이 나오는
+  // 다이애나·헤카림이 카직스가 진화로 얻은 처형자·약탈자·주문술사를 덮어쓴다 (16.21 DB 첫 실행)
+  const explainedByKnown = (p) => p.units.some((slug) => KNOWN_TRAIT_EXCESS.has(`${slug}|${p.trait}`))
+  const rows = liftRows(allPairs)
+    .filter((r) => KNOWN_TRAIT_EXCESS.has(r.key) && r.n >= MIN_BOARDS && r.rate >= MIN_RATE)
+    .map((r) => ({ ...r, known: KNOWN_TRAIT_EXCESS.get(r.key) }))
+  let pool = allPairs.filter((p) => !explainedByKnown(p))
   for (;;) {
     const top = liftRows(pool).find(isCandidate)
     if (!top) break
-    rows.push({ ...top, known: KNOWN_TRAIT_EXCESS.get(top.key) || null })
+    rows.push({ ...top, known: null })
     pool = pool.filter((p) => !(p.trait === top.trait && p.units.includes(top.slug)))
   }
   return { usable: usable.length, skipped: boards.length - usable.length, pairs: allPairs.length, excessPairs, rows }
