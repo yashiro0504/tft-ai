@@ -1,0 +1,233 @@
+<title>TFT LAB 정답셋</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 판정 작업대: 위에 진행 막대 고정, 아래로 경기 카드가 쌓인다. 카드 = 보드 요약 + 장면 행(맞음/틀림/애매) */
+:root {
+  --bg: #f3f4f7; --panel: #ffffff; --fg: #1b1f2a; --muted: #5e6577; --line: #dde0e8;
+  --accent: #3b4fd8; --ok: #1f8a4c; --bad: #c43d3d; --meh: #a8790c;
+  --c1: #7d8495; --c2: #2f9b57; --c3: #2c78c9; --c4: #9a45c9; --c5: #c99312;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11141b; --panel: #1a1e28; --fg: #e6e8ef; --muted: #9aa1b2; --line: #2c3240;
+  --accent: #8796ff; --ok: #4cc27f; --bad: #ef6b6b; --meh: #e0b24a;
+  --c1: #9ea5b5; --c2: #4cc27f; --c3: #5ea6ee; --c4: #c27ff0; --c5: #e8b740; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11141b; --panel: #1a1e28; --fg: #e6e8ef; --muted: #9aa1b2; --line: #2c3240;
+  --accent: #8796ff; --ok: #4cc27f; --bad: #ef6b6b; --meh: #e0b24a;
+  --c1: #9ea5b5; --c2: #4cc27f; --c3: #5ea6ee; --c4: #c27ff0; --c5: #e8b740; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 16px }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 16px 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line) }
+h1 { margin: 0; font-size: 1.25rem; text-wrap: balance }
+.sub { margin: 0; color: var(--muted); font-size: .9rem; max-width: 65ch }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line) }
+.bar span { display: block; height: 100% }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.stats b { color: var(--fg) }
+.filters { display: flex; gap: 6px; margin-left: auto }
+.chipbtn { font: inherit; font-size: .82rem; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 3px 10px; cursor: pointer }
+.chipbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 500 }
+.status { font-size: .82rem; color: var(--muted) }
+.status.err { color: var(--bad) }
+article { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 12px; min-width: 0 }
+.mhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px }
+.place { font-family: var(--mono); font-size: 1.15rem; font-weight: 500 }
+.place.top { color: var(--ok) }
+.place.bot { color: var(--bad) }
+.meta { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums }
+.units { display: flex; flex-wrap: wrap; gap: 6px }
+.unit { border: 1px solid var(--line); border-left: 3px solid var(--c1); border-radius: 6px; padding: 2px 8px; font-size: .82rem; min-width: 0 }
+.unit[data-cost="2"] { border-left-color: var(--c2) } .unit[data-cost="3"] { border-left-color: var(--c3) }
+.unit[data-cost="4"] { border-left-color: var(--c4) } .unit[data-cost="5"] { border-left-color: var(--c5) }
+.unit .star { color: var(--meh); font-family: var(--mono) }
+.unit .items { display: block; color: var(--muted); font-size: .75rem }
+.traits { font-size: .8rem; color: var(--muted) }
+.scene { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 6px; min-width: 0 }
+.scene .t { font-weight: 500; font-size: .9rem }
+.scene .t .kind { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-left: 6px; font-weight: 500 }
+.scene .f { font-size: .88rem; overflow-wrap: anywhere }
+.verdicts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.v { font: inherit; font-size: .85rem; border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 6px; padding: 4px 14px; cursor: pointer; min-height: 32px }
+.v[aria-pressed="true"][data-v="ok"] { background: var(--ok); border-color: var(--ok); color: var(--panel) }
+.v[aria-pressed="true"][data-v="wrong"] { background: var(--bad); border-color: var(--bad); color: var(--panel) }
+.v[aria-pressed="true"][data-v="unsure"] { background: var(--meh); border-color: var(--meh); color: var(--panel) }
+.note, .missed { font: inherit; font-size: .85rem; width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--bg); color: var(--fg) }
+.note { flex: 1 1 220px; width: auto; min-width: 0 }
+.missed { min-height: 52px; resize: vertical }
+label.ml { font-size: .8rem; color: var(--muted); display: grid; gap: 4px; border-top: 1px dashed var(--line); padding-top: 10px }
+.none { font-size: .85rem; color: var(--muted) }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>정답셋 — 골든셋 장면 판정</h1>
+    <p class="sub">코드가 경기마다 낸 장면이 맞는지 표시합니다. 틀리거나 애매하면 이유를 한 줄 남기고, 코드가 놓친 장면은 경기 아래 칸에 적어 주세요. 표시하는 즉시 저장됩니다.</p>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <div class="stats">
+      <span id="count">불러오는 중…</span>
+      <span class="status" id="status" role="status"></span>
+      <div class="filters">
+        <button class="chipbtn" id="f-all" aria-pressed="true" type="button">전체</button>
+        <button class="chipbtn" id="f-todo" aria-pressed="false" type="button">미판정만</button>
+      </div>
+    </div>
+  </header>
+  <main id="list" class="wrap"></main>
+</div>
+
+<script>
+const DATA = /*__DATA__*/;
+const VERDICTS = [['ok', '맞음'], ['wrong', '틀림'], ['unsure', '애매']];
+const labels = new Map(); // scene id → {verdict, note}
+const missed = new Map(); // matchId → note
+let db = null;
+let onlyTodo = false;
+const allScenes = DATA.matches.flatMap((m) => m.scenes);
+
+function setStatus(text, err) {
+  const el = document.getElementById('status');
+  el.textContent = text;
+  el.classList.toggle('err', Boolean(err));
+}
+
+function renderStats() {
+  const n = allScenes.length;
+  const c = { ok: 0, wrong: 0, unsure: 0 };
+  for (const s of allScenes) { const v = labels.get(s.id)?.verdict; if (c[v] !== undefined) c[v]++ }
+  const done = c.ok + c.wrong + c.unsure;
+  document.getElementById('count').innerHTML =
+    `<b>${done}</b> / ${n} 판정 · 맞음 ${c.ok} · 틀림 ${c.wrong} · 애매 ${c.unsure}`;
+  const bar = document.getElementById('bar');
+  bar.innerHTML = '';
+  for (const [k, color] of [['ok', 'var(--ok)'], ['wrong', 'var(--bad)'], ['unsure', 'var(--meh)']]) {
+    const s = document.createElement('span');
+    s.style.width = `${(c[k] / n) * 100}%`;
+    s.style.background = color;
+    bar.appendChild(s);
+  }
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+async function save(scene, patch) {
+  const cur = { ...(labels.get(scene.id) || {}), ...patch };
+  labels.set(scene.id, cur);
+  renderStats();
+  if (!db) { setStatus('저장 안 됨 — 이 화면에서는 저장소를 쓸 수 없습니다', true); return }
+  try {
+    await db.collection('labels').doc(scene.id).set({
+      verdict: cur.verdict || null, note: cur.note || '', kind: scene.kind, matchId: scene.id.split(':')[0],
+      fact: scene.fact, at: new Date().toISOString(),
+    });
+    setStatus('저장됨');
+  } catch (e) { setStatus(`저장 실패 (${e.code || 'error'}) — 다시 눌러 주세요`, true) }
+}
+
+async function saveMissed(matchId, note) {
+  if ((missed.get(matchId) || '') === note) return;
+  missed.set(matchId, note);
+  if (!db) return;
+  try { await db.collection('missed').doc(matchId).set({ note, at: new Date().toISOString() }); setStatus('저장됨') }
+  catch (e) { setStatus(`저장 실패 (${e.code || 'error'})`, true) }
+}
+
+function sceneRow(scene) {
+  const row = el('div', 'scene');
+  row.dataset.id = scene.id;
+  const t = el('div', 't', scene.title);
+  t.appendChild(el('span', 'kind', scene.kind));
+  row.append(t, el('div', 'f', scene.fact));
+  const vs = el('div', 'verdicts');
+  const cur = labels.get(scene.id) || {};
+  for (const [v, name] of VERDICTS) {
+    const b = el('button', 'v', name);
+    b.type = 'button';
+    b.dataset.v = v;
+    b.setAttribute('aria-pressed', String(cur.verdict === v));
+    b.addEventListener('click', () => {
+      const next = labels.get(scene.id)?.verdict === v ? null : v;
+      vs.querySelectorAll('.v').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === next)));
+      save(scene, { verdict: next });
+    });
+    vs.appendChild(b);
+  }
+  const note = el('input', 'note');
+  note.id = `note-${scene.id}`;
+  note.placeholder = '이유 (틀림·애매일 때)';
+  note.value = cur.note || '';
+  note.addEventListener('change', () => save(scene, { note: note.value.trim() }));
+  vs.appendChild(note);
+  row.appendChild(vs);
+  return row;
+}
+
+function render() {
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  for (const m of DATA.matches) {
+    const todo = m.scenes.filter((s) => !labels.get(s.id)?.verdict);
+    if (onlyTodo && !todo.length) continue;
+    const a = el('article');
+    const head = el('div', 'mhead');
+    head.appendChild(el('span', `place ${m.placement <= 4 ? 'top' : 'bot'}`, `${m.placement}등`));
+    head.appendChild(el('span', 'meta', `Lv.${m.level} · ${m.lastRound} 종료 · ${m.caseName} · ${m.matchId}`));
+    a.appendChild(head);
+    const units = el('div', 'units');
+    for (const u of m.units) {
+      const c = el('span', 'unit');
+      c.dataset.cost = String(u.cost || 1);
+      c.append(document.createTextNode(`${u.name} `), el('span', 'star', '★'.repeat(u.star)));
+      if (u.items.length) c.appendChild(el('span', 'items', u.items.join(' · ')));
+      units.appendChild(c);
+    }
+    a.appendChild(units);
+    if (m.traits.length) a.appendChild(el('div', 'traits', m.traits.map((t) => `${t.name} ${t.count}`).join(' · ')));
+    if (!m.scenes.length) a.appendChild(el('div', 'none', '코드가 낸 장면 없음'));
+    for (const s of onlyTodo ? todo : m.scenes) a.appendChild(sceneRow(s));
+    const ml = el('label', 'ml', '코드가 놓친 장면 (있으면)');
+    const ta = el('textarea', 'missed');
+    ta.id = `missed-${m.matchId}`;
+    ta.value = missed.get(m.matchId) || '';
+    ta.addEventListener('change', () => saveMissed(m.matchId, ta.value.trim()));
+    ml.appendChild(ta);
+    a.appendChild(ml);
+    list.appendChild(a);
+  }
+  renderStats();
+}
+
+for (const [id, todo] of [['f-all', false], ['f-todo', true]]) {
+  document.getElementById(id).addEventListener('click', () => {
+    onlyTodo = todo;
+    document.getElementById('f-all').setAttribute('aria-pressed', String(!todo));
+    document.getElementById('f-todo').setAttribute('aria-pressed', String(todo));
+    render();
+  });
+}
+
+render();
+(async () => {
+  db = await window.claude?.use?.('db');
+  if (!db) { setStatus('저장소에 연결하지 못했습니다 — 판정이 저장되지 않습니다', true); return }
+  try {
+    const [ls, ms] = await Promise.all([db.collection('labels').get(), db.collection('missed').get()]);
+    for (const d of ls.docs) { const x = d.data(); labels.set(d.id, { verdict: x.verdict, note: x.note }) }
+    for (const d of ms.docs) missed.set(d.id, d.data().note || '');
+    render();
+    setStatus(ls.size ? `이전 판정 ${ls.size}개 불러옴` : '');
+  } catch (e) { setStatus(`불러오기 실패 (${e.code || 'error'})`, true) }
+})();
+</script>
