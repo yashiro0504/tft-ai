@@ -35,6 +35,8 @@ eval.err.log
 # local env files
 .env*.local
 .env
+# env 백업 (예: .env.local.bak-20261022) — 실제 키가 들어 있다
+.env*.bak*
 
 # typescript
 *.tsbuildinfo
