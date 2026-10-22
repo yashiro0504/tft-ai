@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-22T12:34:49.960Z",
+  "updatedAt": "2026-10-22T12:58:56.468Z",
   "labels": {
     "KR_8411955217:win:contest": {
       "verdict": "wrong",
@@ -45,8 +45,8 @@
       "fact": "다음 단계까지 1명 남은 시너지: 처형자 3명 → 4명"
     },
     "KR_8412386799:win:contest": {
-      "verdict": "ok",
-      "note": "",
+      "verdict": "unsure",
+      "note": "4코 2성 캐리 — 경합 요인은 리롤 캐리만 본다는 기준(10-22)에 맞춰 맞음→애매로 변경",
       "kind": "win:contest",
       "fact": "로비 경합 경합 (강도 54/100)"
     },
