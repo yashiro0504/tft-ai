@@ -20,8 +20,8 @@ const FILE =
     ? path.resolve(args[fileIdx + 1])
     : path.join(__dirname, '..', 'lib', 'decksData.json')
 
-const breakpointData = require('../lib/traitBreakpoints.json')
-const reference = require('../lib/championTraits.json')
+require('./_ts')
+const { findTrait } = require('../lib/gameData')
 
 const failures = []
 const warnings = []
@@ -46,15 +46,10 @@ function norm(id) {
     .toLowerCase()
 }
 
-const traitRef = reference.traits || {}
-
-/** 시너지 breakpoint 조회 (영문 → 한글명 순) */
+/** 시너지 breakpoint 조회 (게임 기준 DB — 키·영문명·한글명·옛 별칭). 단계가 없으면 null */
 function traitBreakpoints(trait) {
-  const direct = breakpointData.traits[norm(trait)]
-  if (direct) return direct
-  const korean = traitRef[norm(trait)]?.name
-  if (korean && breakpointData.traits[korean]) return breakpointData.traits[korean]
-  return null
+  const breakpoints = findTrait(trait)?.breakpoints
+  return breakpoints?.length ? { breakpoints, max: breakpoints[breakpoints.length - 1] } : null
 }
 
 function main() {

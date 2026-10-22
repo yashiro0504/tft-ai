@@ -1,7 +1,6 @@
 import type { GroundingReport, MetaCoachFeedback } from './types'
-import tftData from './tftData.json'
-import championTraits from './championTraits.json'
-import traitBreakpoints from './traitBreakpoints.json'
+import { GAME_CHAMPIONS, GAME_TRAITS } from './gameData'
+import { ALL_SET_TRAIT_NAMES } from './gameNames'
 
 /**
  * AI 리포트 신뢰성 계층: LLM이 쓴 '수치 주장'이 프롬프트에 제공된 사실 데이터에
@@ -10,18 +9,11 @@ import traitBreakpoints from './traitBreakpoints.json'
  * 수치뿐 아니라 다른 세트의 시너지명·존재하지 않는 코스트도 경고로 남긴다.
  */
 
-const ALL_TRAIT_NAMES = new Set(
-  Object.values((tftData as unknown as { traitMap?: Record<string, { name?: string }> }).traitMap || {})
-    .map((v) => v?.name)
-    .filter((n): n is string => typeof n === 'string' && n.length >= 3)
-)
+/** 모든 세트 시너지명 (게임 기준 DB 이름표). 2글자 이름은 평범한 단어와 겹쳐 뺀다 */
+const ALL_TRAIT_NAMES = new Set(ALL_SET_TRAIT_NAMES.filter((n) => n.length >= 3))
 
-/** 현재 세트(traitBreakpoints.json) 시너지명 — 이 이름들은 등장만 해도 시너지 언급으로 본다. */
-const CURRENT_TRAIT_NAMES = new Set(
-  Object.values((traitBreakpoints as unknown as { traits?: Record<string, { name?: string }> }).traits || {})
-    .map((v) => v?.name)
-    .filter((n): n is string => typeof n === 'string')
-)
+/** 현재 세트 시너지명 — 이 이름들은 등장만 해도 시너지 언급으로 본다. */
+const CURRENT_TRAIT_NAMES = new Set(GAME_TRAITS.map((t) => t.name))
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -43,13 +35,7 @@ const TRAIT_CHECKS: Array<[string, RegExp | null]> = [...ALL_TRAIT_NAMES]
     return [name, new RegExp(`${withCount}(?<![가-힣A-Za-z0-9])${esc}\\s*(?:시너지|특성)`)]
   })
 
-const CURRENT_CHAMP_NAMES = new Set(
-  Object.values(
-    (championTraits as unknown as { champions?: Record<string, { name?: string }> }).champions || {}
-  )
-    .map((v) => v?.name)
-    .filter((n): n is string => typeof n === 'string' && n.length >= 3)
-)
+const CURRENT_CHAMP_NAMES = new Set(GAME_CHAMPIONS.map((c) => c.name).filter((n) => n.length >= 3))
 
 function collectEntityWarnings(text: string, facts: string): string[] {
   const warnings = new Set<string>()

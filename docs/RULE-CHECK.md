@@ -13,7 +13,7 @@
 - 자동 실행: `.github/workflows/rules-check.yml` 매일 11:45 KST. Riot 호출 없이 DB 만 읽으므로 **개발 키로도 충분**하다. 결과는 Actions 실행 요약 · 노란 경고 주석 · `rules-report` 아티팩트.
 - 판정: 같은 레벨 보드끼리의 평균 등수 차이(+ = 장면이 뜬 보드가 나쁨). |차이| ≥ 0.25 이고 95% 구간이 0을 넘으면 `✓ 근거 있음` / `✗ 반대`, 해당 보드 30개 미만은 `표본 부족`.
 - `sameComp` 는 정의상 1등 보드에서 뜰 수 없어 1등을 빼고 비교한다 — 그래도 편향이 남으니 참고만.
-- 탐지 결과는 **확인할 목록**이다. 코드는 자동으로 고치지 않는다. 확인 후 `lib/boardSlots` · `lib/constants` · `lib/championTraits.json` · `lib/traitBreakpoints.json` 에 반영하고, 이미 아는 시너지 2명 계산은 `scripts/detectGameFacts.js` `KNOWN_TRAIT_DOUBLE` 에 적는다.
+- 탐지 결과는 **확인할 목록**이다. 코드는 자동으로 고치지 않는다. 확인 후 게임 기준 DB 를 재생성하거나(`npm run build:gamedata`) Community Dragon 에 없는 사실이면 `lib/gameData.overrides.json` 에 근거와 함께 적고, 이미 아는 시너지 2명 계산은 `scripts/detectGameFacts.js` `KNOWN_TRAIT_DOUBLE` 에 적는다.
 
 ## 첫 실행 결과 (골든셋 192보드 — 표본 작음, DB 실행으로 다시 볼 것)
 

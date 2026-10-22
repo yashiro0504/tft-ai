@@ -17,9 +17,7 @@ const { arg, loadLobbies, writeReport, annotate } = require('./_boards')
 const { entitySlug } = require('../lib/entitySlug')
 const { unitSlots } = require('../lib/boardSlots')
 const { getChampionCost } = require('../lib/constants')
-const championTraits = require('../lib/championTraits.json')
-const breakpointData = require('../lib/traitBreakpoints.json')
-const tftData = require('../lib/tftData.json')
+const { GAME_TRAITS, championTraitNames, findChampion } = require('../lib/gameData')
 
 /** 후보 기준: 기물이 나온 보드 수 하한 · 해당 비율 하한 · 기준선 대비 배수 하한 */
 const MIN_BOARDS = 10
@@ -44,37 +42,16 @@ const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d
 const pct = (x) => `${round(x * 100, 0)}%`
 const isAsciiKey = (s) => /^[\x20-\x7e]+$/.test(String(s || ''))
 
-/** 시너지 한글명 → 단계표 (lib/traitBreakpoints) */
-const TRAIT_BY_NAME = new Map(Object.values(breakpointData.traits).map((t) => [t.name, t]))
-/** 현재 세트 시너지 공식 한글명 (tftData 세트18 키). 이 이름인데 단계표에 없으면 단계 없는 특수 시너지(예: 일월식)다 */
-const SET_TRAIT_NAMES = new Set(
-  Object.entries(tftData.traitMap)
-    .filter(([key]) => /^DA_/.test(key) && /18/.test(key))
-    .map(([, t]) => t.name)
-)
+/** 시너지 한글명 → 단계표 (게임 기준 DB, 단계가 있는 시너지만) */
+const TRAIT_BY_NAME = new Map(GAME_TRAITS.filter((t) => t.breakpoints.length).map((t) => [t.name, t]))
+/** 현재 세트 시너지 공식 한글명. 이 이름인데 단계표에 없으면 단계 없는 특수 시너지(예: 일월식)다 */
+const SET_TRAIT_NAMES = new Set(GAME_TRAITS.map((t) => t.name))
 
-/** lib/championTraits 키 규칙 (scripts/extractChampionTraits norm) — 'DA_Nidalee18_AP' → 'nidalee' */
-const traitKeyOf = (u) =>
-  String(u.id || '')
-    .replace(/^TFT\d*_/i, '')
-    .replace(/^DA_\d*_/i, '')
-    .replace(/^DA_/i, '')
-    .replace(/_Base$/i, '')
-    .replace(/Base$/i, '')
-    .replace(/_(AP|AD)$/i, '')
-    .replace(/\d+$/i, '')
-    .toLowerCase()
-/** 기물 슬러그 → 시너지 한글명 Set (lib/championTraits 의 영문 키를 단계표·시너지 사전 한글명으로) */
-const CHAMP_TRAITS = new Map(
-  Object.entries(championTraits.champions).map(([slug, c]) => [
-    slug,
-    new Set(
-      (c.traits || []).map((k) => breakpointData.traits[k.toLowerCase()]?.name || championTraits.traits[k.toLowerCase()]?.name || k)
-    ),
-  ])
-)
-/** 기물의 시너지 한글명 Set (사전에 없으면 undefined) */
-const champTraitsOf = (u) => CHAMP_TRAITS.get(traitKeyOf(u)) || CHAMP_TRAITS.get(slugOf(u))
+/** 기물의 시너지 한글명 Set (게임 기준 DB에 없으면 undefined) */
+const champTraitsOf = (u) => {
+  const c = findChampion(u.id)
+  return c ? new Set(championTraitNames(c)) : undefined
+}
 
 /**
  * 조건(cond)이 참인 보드 비율을, 기물 U 가 있는 보드 vs 없는 보드로 비교한다.
@@ -253,12 +230,12 @@ const liftRow = (r) => `| ${r.name} (\`${r.slug}\`) | ${r.n} | ${pct(r.rate)} | 
 const LIFT_HEAD = ['| 기물 | 나온 보드 | 해당 비율 | 다른 보드 | 배수 |', '|---|---:|---:|---:|---:|']
 
 const GAP_LABEL = {
-  cost: ['코스트 표에 없는 기물', 'lib/constants CHAMPION_COSTS — 없으면 3코스트로 취급돼 1성 저코스트 장면이 틀린다'],
-  champName: ['한글명이 없는 기물', 'lib/constants SET18_CHAMPS / tftData.champMap'],
-  traitMap: ['시너지 사전에 없는 기물', 'lib/championTraits.json (npm run extract:traits) — 2번 탐지기가 이 보드를 건너뛴다'],
-  itemName: ['한글명이 없는 아이템', 'lib/tftData.json itemMap (npm run collect:… fetchTftData)'],
-  traitName: ['한글명이 없는 시너지', 'lib/constants SET18_TRAITS / tftData.traitMap'],
-  breakpoints: ['단계표에 없는 시너지', 'lib/traitBreakpoints.json (npm run build:traits) — 1명 모자란 시너지 장면이 못 본다'],
+  cost: ['코스트를 모르는 기물', 'lib/gameData.json (npm run build:gamedata) — 패치 후 재생성했는지 확인'],
+  champName: ['한글명이 없는 기물', 'lib/gameData.json (npm run build:gamedata)'],
+  traitMap: ['게임 기준 DB에 없는 기물', 'lib/gameData.json (npm run build:gamedata) — 2번 탐지기가 이 보드를 건너뛴다'],
+  itemName: ['한글명이 없는 아이템', 'lib/gameData.json (npm run build:gamedata)'],
+  traitName: ['한글명이 없는 시너지', 'lib/gameData.json (npm run build:gamedata)'],
+  breakpoints: ['단계표에 없는 시너지', 'lib/gameData.json (npm run build:gamedata) — 1명 모자란 시너지 장면이 못 본다'],
 }
 
 function report(label, lobbies, boards, slots, traits, never, gaps) {
@@ -284,7 +261,7 @@ function report(label, lobbies, boards, slots, traits, never, gaps) {
     L.push('| 기물 | 시너지 | 나온 경우 | 초과 비율 | 다른 경우 | 배수 | 해석 |', '|---|---|---:|---:|---:|---:|---|')
     L.push(...traits.rows.map((r) => `| ${r.name} (\`${r.slug}\`) | ${r.trait} | ${r.n} | ${pct(r.rate)} | ${pct(r.base)} | ×${round(r.lift, 1)} | ${what(r)} |`), '')
     L.push(
-      '> 2명으로 세는 기물: Riot 인원 값이 맞다 — 코드에서 기물 수로 시너지를 다시 세는 곳이 있는지 확인. 사전 누락: lib/championTraits.json 의 그 기물 시너지 목록 확인.',
+      '> 2명으로 세는 기물: Riot 인원 값이 맞다 — 코드에서 기물 수로 시너지를 다시 세는 곳이 있는지 확인. 사전 누락: lib/gameData.json 의 그 기물 시너지 목록 확인 (Community Dragon 원본과 다르면 lib/gameData.overrides.json).',
       ''
     )
   } else L.push('이중 계산 후보 없음.', '')

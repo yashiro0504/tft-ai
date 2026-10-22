@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import championTraits from './championTraits.json'
+import { GAME_CHAMPIONS, findChampion, findTrait, type GameChampion } from './gameData'
 import { buildMetaPayload } from './metaPayload'
 import { getDeckViews } from './decks'
 import { getDecks, getStats } from './tftStats'
@@ -17,26 +17,12 @@ import type {
  * 기물·아이템·시너지 상세 페이지 데이터 (서버 전용).
  *
  * - 통계는 메타 대시보드와 같은 소스: DB 집계(최신 패치 · 마스터+ · 7일) → 없으면 빌드 타임 JSON.
- * - 기물 ↔ 시너지 연결은 lib/championTraits.json 의 **한글 이름**으로 맞춘다.
- *   (통계 키는 'DA_AluneUniqueTrait18', 기물 데이터는 'attuned' 처럼 내부 이름이 서로 달라 이름이 유일한 공통 키다)
+ * - 기물 ↔ 시너지 연결은 게임 기준 DB(lib/gameData)에서 읽는다. 통계 키·덱 데이터 키·한글명 어느 쪽으로도 찾는다.
  */
 
-interface CtChampion {
-  name: string
-  cost: number
-  imgUrl: string
-  traits: string[]
-}
-const CT = championTraits as unknown as {
-  champions: Record<string, CtChampion>
-  traits: Record<string, { name: string; iconUrl: string }>
-}
-const CT_CHAMPS = Object.values(CT.champions)
-/** 기물 데이터의 시너지 id 는 대소문자가 섞여 있다 ('Executioner' ↔ traits.executioner) */
-const ctTrait = (id: string) => CT.traits[id] ?? CT.traits[id.toLowerCase()]
-const traitNameOf = (id: string) => ctTrait(id)?.name ?? id
-/** 시너지 페이지: 이 기물이 해당 시너지에 속하는가 (이름이 소스마다 달라 슬러그도 함께 비교 — 예: 라이벌/경쟁자) */
-const champHasTrait = (c: CtChampion, name: string, slug: string) =>
+const traitNameOf = (id: string) => findTrait(id)?.name ?? id
+/** 시너지 페이지: 이 기물이 해당 시너지에 속하는가 */
+const champHasTrait = (c: GameChampion, name: string, slug: string) =>
   c.traits.some((id) => traitNameOf(id) === name || entitySlug('trait', id) === slug)
 
 export interface EntityStat {
@@ -190,14 +176,10 @@ function deckLinks(
     }))
 }
 
-function ctChampionByName(name: string): CtChampion | undefined {
-  return CT_CHAMPS.find((c) => c.name === name)
-}
-
 async function championPage(slug: string): Promise<EntityPageData | null> {
   const all = await loadAll()
   const row = all.units.find((r) => entitySlug('champion', r.key) === slug)
-  const ct = row ? ctChampionByName(row.name) : CT.champions[slug]
+  const ct = findChampion(row ? row.name : slug)
   if (!row && !ct) return null
   const name = row?.name ?? ct!.name
   const cost = row?.cost ?? ct?.cost
@@ -222,7 +204,7 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
       kind: 'trait',
       slug: t ? entitySlug('trait', t.key) : entitySlug('trait', id),
       name: tName,
-      img: t?.iconUrl ?? ctTrait(id)?.iconUrl ?? '',
+      img: t?.iconUrl ?? findTrait(id)?.icon ?? '',
     }
   })
 
@@ -231,7 +213,7 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
     slug,
     key: row?.key ?? slug,
     name,
-    img: row?.imgUrl ?? ct?.imgUrl ?? '',
+    img: row?.imgUrl ?? ct?.icon ?? '',
     badge: cost ? `${cost}코스트` : undefined,
     stat: row ? toStat(row, all.units) : null,
     source: all.source,
@@ -286,25 +268,26 @@ async function itemPage(slug: string): Promise<EntityPageData | null> {
 async function traitPage(slug: string): Promise<EntityPageData | null> {
   const all = await loadAll()
   // 덱 데이터는 롤체지지 이름('eldritch'), 통계는 Riot 이름('blackthorn')을 써서 같은 시너지가 두 슬러그를 가진다.
-  // 기물 데이터의 시너지 id 로 들어오면 한글 이름으로 통계 행을 찾고, 페이지 슬러그(canonical)는 통계 쪽으로 맞춘다.
-  const aliasId = Object.keys(CT.traits).find((id) => id === slug)
+  // 옛 키·영문명으로 들어오면 게임 기준 DB 별칭으로 통계 행을 찾고, 페이지 슬러그(canonical)는 통계 쪽으로 맞춘다.
+  const alias = findTrait(slug)
   const row =
     all.traits.find((r) => entitySlug('trait', r.key) === slug) ??
-    (aliasId ? all.traits.find((r) => r.name === CT.traits[aliasId].name) : undefined)
-  const ctId = row ? Object.keys(CT.traits).find((id) => CT.traits[id].name === row.name) : aliasId
-  if (!row && !ctId) return null
-  const name = row?.name ?? traitNameOf(ctId!)
+    (alias ? all.traits.find((r) => r.name === alias.name) : undefined)
+  const trait = row ? findTrait(row.name) : alias
+  if (!row && !trait) return null
+  const name = row?.name ?? trait!.name
   slug = row ? entitySlug('trait', row.key) : slug
 
   const unitByName = new Map(all.units.map((u) => [u.name, u]))
-  const members = CT_CHAMPS.filter((c) => champHasTrait(c, name, slug))
+  // 형태 변형(럭스 (검은 가시) 등)은 본체로 뽑는 기물이라 목록에서 뺀다
+  const members = GAME_CHAMPIONS.filter((c) => !c.variantOf && champHasTrait(c, name, slug))
     .map((c): EntityLink => {
       const u = unitByName.get(c.name)
       return {
         kind: 'champion',
         slug: u ? entitySlug('champion', u.key) : entitySlug('champion', c.name),
         name: c.name,
-        img: u?.imgUrl ?? c.imgUrl,
+        img: u?.imgUrl ?? c.icon,
         stat: u ? statOf(u) : undefined,
         note: `${c.cost}코`,
       }
@@ -316,7 +299,7 @@ async function traitPage(slug: string): Promise<EntityPageData | null> {
     slug,
     key: row?.key ?? slug,
     name,
-    img: row?.iconUrl ?? (ctId ? CT.traits[ctId].iconUrl : ''),
+    img: row?.iconUrl ?? trait?.icon ?? '',
     badge: members.length ? `기물 ${members.length}명` : undefined,
     stat: row ? toStat(row, all.traits) : null,
     source: all.source,

@@ -250,27 +250,23 @@ npm run test:augment                          # 집계 회귀 테스트 (외부 
 
 ### 시너지 breakpoint
 
-- `lib/traitBreakpoints.json` — 세트 18 시너지 35종의 발동 단위 (예: 나무정령 3/5/7/9/11)
-- 소스: Community Dragon (`cdragon/tft/{ko_kr,en_us}.json`). Data Dragon `tft-trait.json` 에는
-  `effects` 가 없어 breakpoint 를 얻을 수 없다.
-- 재생성: `npm run build:traits` (세트 변경 시 `SET=18 npm run build:traits`)
+- 게임 기준 DB(`lib/gameData.json`)의 `traits[].breakpoints` — 세트 18 시너지 36종의 발동 단위 (예: 나무정령 3/5/7/9/11)
+- 소스: Community Dragon (`cdragon/tft/{ko_kr,en_us}.json`). 자세한 내용은 `docs/GAME-DATA.md`
+- 재생성: `npm run build:gamedata` (세트 변경 시 `npm run build:gamedata -- --set=19`)
 
 ### 데이터 소스
 
 - `lib/metaStats.json` — Riot 실측 집계
-- `lib/tftData.json` — 이름/아이콘(Data Dragon)
-- `lib/championTraits.json` — 기물→시너지 **사실 관계** 매핑(67종, `extract:traits`로 재생성)
-- `lib/traitBreakpoints.json` — 시너지 발동 단위 (`build:traits`로 재생성)
+- `lib/gameData.json` — 게임 기준 DB: 이름/아이콘 · 기물→시너지 **사실 관계** · 시너지 발동 단위 · 조합법 (`build:gamedata`로 재생성)
 - 큐레이션된 덱 구성은 사용하지 않음
 
 ### 재생성 / 검증
 
 ```powershell
-npm run build:traits       # lib/traitBreakpoints.json (세트 변경 시)
+npm run build:gamedata    # lib/gameData.json (패치·세트 변경 시)
 npm run build:decks        # lib/decksData.json 라이브 교체
 npm run build:deck-preview # lib/decksData.preview.json (검토용)
 npm run decks:check        # 무결성 검사 (CI에서도 실행)
-npm run extract:traits     # championTraits.json 재추출
 ```
 
 ### 현재 결과

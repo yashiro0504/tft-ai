@@ -14,7 +14,7 @@ import { LimitModal } from './LimitModal'
 import { TraitHex, traitMaxLevel } from './LabUI'
 import Link from 'next/link'
 import { entityHref, entitySlug } from '@/lib/entitySlug'
-import { champions as SET_CHAMPIONS } from '@/lib/championTraits.json'
+import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 import { keyMoments } from '@/lib/keyMoments'
@@ -22,7 +22,7 @@ import { keyMoments } from '@/lib/keyMoments'
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 /** 현재 세트 기물 슬러그 — 이전 세트 판(데모 데이터 등)의 기물은 상세 페이지가 없어 링크하지 않는다 */
-const CHAMPION_PAGE_SLUGS = new Set(Object.keys(SET_CHAMPIONS))
+const CHAMPION_PAGE_SLUGS = CURRENT_CHAMPION_SLUGS
 
 interface MatchCardProps {
   match: SlimMatchData

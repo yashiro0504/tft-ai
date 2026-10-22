@@ -1,0 +1,45 @@
+import lite from './gameData.lite.json'
+import { buildIndex, exactKeys, looseKeys, lookup, normChamp, type Named } from './gameIds'
+
+/**
+ * 가벼운 게임 사실 (클라이언트 공용) — 기물 슬러그·칸 수, 시너지 단계표.
+ *
+ * lib/gameData.json 과 같은 빌드(scripts/buildGameData.js)가 만든 요약본(lib/gameData.lite.json, 16KB)을 읽는다.
+ * 클라이언트 컴포넌트가 닿는 모듈(LabUI · MatchCard · keyMoments · coaching · boardSlots)은 이쪽을 쓰고,
+ * 설명·아이템·아이콘이 필요한 서버 코드는 lib/gameData 를 쓴다. 조회 규칙은 둘 다 lib/gameIds 로 같다.
+ */
+
+interface LiteChampion extends Named {
+  cost: number
+  slots: number
+}
+
+interface LiteTrait extends Named {
+  breakpoints: number[]
+}
+
+const CHAMPIONS = (lite as unknown as { champions: LiteChampion[] }).champions
+const TRAITS = (lite as unknown as { traits: LiteTrait[] }).traits
+
+const CHAMP_INDEX = buildIndex(CHAMPIONS, exactKeys)
+const CHAMP_LOOSE = buildIndex(CHAMPIONS, looseKeys)
+const TRAIT_INDEX = buildIndex(TRAITS, exactKeys)
+const TRAIT_LOOSE = buildIndex(TRAITS, looseKeys)
+
+/** 현재 세트 기물 상세 페이지 슬러그 */
+export const CURRENT_CHAMPION_SLUGS = new Set(CHAMPIONS.map((c) => c.slug))
+
+/** 기물이 차지하는 보드 칸 (장로 드래곤 2, 모르면 1) */
+export function championSlots(id: string | null | undefined): number {
+  return lookup(CHAMP_INDEX, CHAMP_LOOSE, id, normChamp)?.slots ?? 1
+}
+
+/** 시너지 단계 인원 — 키·영문명·한글명·옛 별칭 어느 쪽으로도 (모르면 빈 배열) */
+export function traitBreakpointsOf(idOrName: string): number[] {
+  return lookup(TRAIT_INDEX, TRAIT_LOOSE, idOrName, normChamp)?.breakpoints ?? []
+}
+
+/** 시너지 한글명 → 단계 인원. 단계가 없는 특수 시너지(일월식)는 넣지 않는다 */
+export function traitBreakpointMap(): Record<string, number[]> {
+  return Object.fromEntries(TRAITS.filter((t) => t.breakpoints.length).map((t) => [t.name, t.breakpoints]))
+}

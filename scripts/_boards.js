@@ -101,18 +101,21 @@ const renameTrait = (name) => FIXTURE_TRAIT_RENAMES[name] || name
 
 /**
  * 옛 이름 '요정' 은 요정(Fae)일 수도, 오역된 날렵이(Sprykin)일 수도 있다.
- * 보드에서 그 시너지를 가진 기물 수(lib/championTraits)가 인원에 더 가까운 쪽으로 정한다. 둘 다 있으면 하나씩.
+ * 보드에서 그 시너지를 가진 기물 수(게임 기준 DB)가 인원에 더 가까운 쪽으로 정한다. 둘 다 있으면 하나씩.
  */
 function fixtureTraits(units, traits) {
-  const ct = require('../lib/championTraits.json').champions
-  const { entitySlug } = require('../lib/entitySlug')
-  const holders = (en) => units.filter((u) => (ct[entitySlug('champion', u.id)]?.traits || []).includes(en)).length
+  const { findChampion, championTraitNames } = require('../lib/gameData')
+  const holders = (name) =>
+    units.filter((u) => {
+      const c = findChampion(u.id)
+      return c ? championTraitNames(c).includes(name) : false
+    }).length
   const fae = traits.filter((t) => t.name === '요정')
   const pick =
     fae.length >= 2
       ? ['요정', '날렵이']
       : fae.length === 1
-        ? [Math.abs(holders('Sprykin') - fae[0].count) < Math.abs(holders('Fae') - fae[0].count) ? '날렵이' : '요정']
+        ? [Math.abs(holders('날렵이') - fae[0].count) < Math.abs(holders('요정') - fae[0].count) ? '날렵이' : '요정']
         : []
   return traits.map((t) => ({ ...t, name: t.name === '요정' ? pick.shift() : renameTrait(t.name) }))
 }
