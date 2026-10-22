@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { calculateProfileStats } from '@/lib/profile'
+import { rankedMatches } from '@/lib/queue'
 import { loadProfile } from '@/lib/profileData'
 import { formatRankLabel, formatRankLp } from '@/lib/rank'
 import { loadKoreanFont } from '@/lib/ogFont'
@@ -35,7 +36,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
       data.profileIconId,
       data.rank
     )
-    placements = data.matches.map((m) => m.placement)
+    placements = rankedMatches(data.matches).map((m) => m.placement)
   } catch {
     stats = null
   }

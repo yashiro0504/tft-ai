@@ -790,6 +790,26 @@ ${mixedFacts}`
   }
   check('NaN/Infinity/undefined 없음 · 케이스마다 1줄 이상', bad === 0 && lineCounts.every((x) => Number(x.split(':')[1]) >= 1), lineCounts.join(' '))
 
+  // ── 게임 모드 (lib/queue): 분석은 랭크 판만 · 모르는 큐는 '랭크 게임'으로 표시하지 않음 (2026-10-23 이벤트 판 회귀) ──
+  {
+    console.log('게임 모드 (랭크만 분석)')
+    const { queueLabel, isRankedMatch, rankedMatches } = require('../lib/queue')
+    const { calculateProfileStats } = require('../lib/profile')
+    const { extractSlimMatchData } = require('../lib/summarize')
+    const src = fixture.cases[0].matches[0]
+    check('큐 이름: 1100 랭크 · 1160 더블 업 · 모르는 큐(이벤트)는 랭크가 아님', queueLabel(1100) === '랭크 게임' && queueLabel(1160) === '더블 업' && queueLabel(6120) === '이벤트·기타 모드')
+    const p = { puuid: 'P', placement: 2, level: 8, last_round: 30, gold_left: 0, time_eliminated: 1800, total_damage_to_players: 0, augments: [], traits: [], units: [] }
+    const raw = (queueId) => ({ metadata: { match_id: `KR_${queueId}` }, info: { queue_id: queueId, tft_set_number: 18, game_datetime: 1, game_length: 1800, participants: [p] } })
+    const event = extractSlimMatchData(raw(6120), 'P')
+    const ranked = extractSlimMatchData(raw(1100), 'P')
+    check('extractSlimMatchData: queueId 저장 · 이벤트 판 표시 이름', event.queueId === 6120 && event.queueType === '이벤트·기타 모드' && !isRankedMatch(event) && isRankedMatch(ranked))
+    check('queueId 없는 예전 데이터·데모는 표시 이름으로 판단', isRankedMatch({ queueType: '랭크 게임' }) && isRankedMatch({}) && !isRankedMatch({ queueType: '더블 업' }))
+    const mixed = [{ ...src, placement: 8, queueId: 6120, queueType: '이벤트·기타 모드' }, { ...src, placement: 2, queueId: 1100 }]
+    check('rankedMatches 가 이벤트 판을 뺌', rankedMatches(mixed).length === 1)
+    const prof = calculateProfileStats(mixed, 'a', 'b')
+    check('프로필 평균 등수는 랭크 판만 (이벤트 8등 제외 → 2등)', prof.avgPlacement === 2 && prof.totalGames === 1, JSON.stringify(prof))
+  }
+
   console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 비교 사실 테스트 통과')
   if (failures) process.exitCode = 1
 })()

@@ -5,6 +5,7 @@ import { DEFAULT_FILTER } from './statsShared'
 import { logEvent, errorFields } from './observability'
 import type { SlimMatchData } from './types'
 import { DECK_REPORT_MIN_GAMES, type DeckReport, type DeckReportRow } from './deckReportShared'
+import { rankedMatches } from './queue'
 
 export { DECK_REPORT_MIN_GAMES, type DeckReport, type DeckReportRow } from './deckReportShared'
 
@@ -57,7 +58,7 @@ export function buildDeckReport(matches: SlimMatchData[], decks: DeckFact[]): De
 export async function loadDeckReport(matches: SlimMatchData[]): Promise<DeckReport | null> {
   try {
     const { decks } = await getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier })
-    return buildDeckReport(matches, decks)
+    return buildDeckReport(rankedMatches(matches), decks)
   } catch (err) {
     logEvent('warn', 'deck_report_failed', errorFields(err))
     return null
