@@ -44,6 +44,15 @@ const DB_TIMEOUT_MS = (() => {
 const MEMO_TTL_MS = 5 * 60_000
 /** 기물×아이템은 행이 많아(기물 × 아이템) 이보다 적은 조합은 응답에서 뺀다 */
 const UNIT_ITEM_MIN_ROWS = 5
+/**
+ * 최신 패치의 기본 티어(마스터+) 판 수가 이보다 적으면 DB 대신 빌드 타임 JSON 을 쓴다.
+ * 2026-10-22 수집 시작 직후 23판으로 메타·AI 비교 통계가 바뀌었다 (워윅 3판 평균 3.0등이 1위).
+ * JSON 은 래더 약 1천 판 — 수집기 시간당 최대 200판이면 몇 시간 뒤 자동으로 DB 로 넘어간다.
+ */
+const DB_MIN_MATCHES = (() => {
+  const n = Number(process.env.STATS_DB_MIN_MATCHES)
+  return Number.isFinite(n) && n >= 0 ? n : 500
+})()
 
 let client: SupabaseClient | null | undefined
 function db(): SupabaseClient | null {
@@ -177,6 +186,7 @@ export async function getMetaFilters(): Promise<MetaFiltersResponse> {
         }
         const patches = [...byPatch.values()].sort((a, b) => b.lastDate.localeCompare(a.lastDate) || b.patch.localeCompare(a.patch))
         if (!patches.length) return jsonFilters('empty')
+        if ((patches[0].matches[DEFAULT_TIER] || 0) < DB_MIN_MATCHES) return jsonFilters('small_sample')
         return {
           success: true,
           source: 'db',
