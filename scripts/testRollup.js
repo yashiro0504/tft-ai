@@ -14,6 +14,10 @@ const { createMemoryStore } = require('./collect/store')
 const { rollupBoards, queryRollups, rollupFilters, comboKey, tierBuckets, minusDays } = require('./collect/rollup')
 const { toDeckBoards, compRows } = require('./collect/decks')
 
+// 테스트 데이터는 수십 판이라 lib/tftStats 의 최소 판 수(기본 500) 미만 → 항상 JSON 폴백이 된다.
+// 서빙 검사는 DB 경로를 보려는 것이므로 기준을 끈다 (lib 를 불러오기 전에 설정해야 한다).
+process.env.STATS_DB_MIN_MATCHES = '0'
+
 let failures = 0
 function check(label, condition, detail = '') {
   if (condition) console.log(`  ✅ ${label}`)

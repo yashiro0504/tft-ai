@@ -8,7 +8,7 @@ import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
+import { feedbackTexts, repairEntityErrors, validateEntityFacts } from './semanticGrounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
@@ -58,6 +58,27 @@ const LLM_TIMEOUT_MS = Math.floor(numEnv('LLM_TIMEOUT_MS', 45_000))
 /** 전체 리포트 출력 상한 (인트로 240 은 별도). 기본 3400 — 평가 하네스가 변형별로 바꾼다 */
 const DEEPSEEK_MAX_TOKENS = Math.floor(numEnv('DEEPSEEK_MAX_TOKENS', 3400))
 /**
+ * Pro 플랜 리포트: 같은 모델에 thinking 을 켠다. reasoning 토큰이 max_tokens 를 먼저 쓰므로 상한·타임아웃을 넉넉히 둔다.
+ * DEEPSEEK_PRO_THINKING=disabled 면 Pro 도 무료와 같은 설정으로 돈다.
+ */
+const DEEPSEEK_PRO_THINKING: 'enabled' | 'disabled' = process.env.DEEPSEEK_PRO_THINKING === 'disabled' ? 'disabled' : 'enabled'
+const DEEPSEEK_PRO_MAX_TOKENS = Math.floor(numEnv('DEEPSEEK_PRO_MAX_TOKENS', 8000))
+const LLM_PRO_TIMEOUT_MS = Math.floor(numEnv('LLM_PRO_TIMEOUT_MS', 55_000))
+
+/** 리포트 등급별 DeepSeek 호출 설정 */
+interface DeepSeekCallConfig {
+  thinking: 'enabled' | 'disabled'
+  maxTokens: number
+  timeoutMs: number
+}
+
+function reportCallConfig(tier: 'free' | 'pro'): DeepSeekCallConfig {
+  if (tier === 'pro' && DEEPSEEK_PRO_THINKING === 'enabled') {
+    return { thinking: 'enabled', maxTokens: DEEPSEEK_PRO_MAX_TOKENS, timeoutMs: LLM_PRO_TIMEOUT_MS }
+  }
+  return { thinking: DEEPSEEK_THINKING, maxTokens: DEEPSEEK_MAX_TOKENS, timeoutMs: LLM_TIMEOUT_MS }
+}
+/**
  * 리포트 제공자 강제: deepseek | gemini. 비우면 DeepSeek → Gemini → 결정론적 폴백.
  * 강제하면 다른 제공자로 넘어가지 않아 평가에서 제공자가 섞이지 않는다 (실패 시 결정론적 폴백).
  */
@@ -80,10 +101,16 @@ interface DeepSeekUsage {
 }
 
 /** DeepSeek 공통 요청 바디 (모델/thinking 설정을 한 곳에서 관리) */
-function deepSeekBody(system: string, prompt: string, maxTokens: number, extra: Record<string, unknown>) {
+function deepSeekBody(
+  system: string,
+  prompt: string,
+  maxTokens: number,
+  extra: Record<string, unknown>,
+  thinking: 'enabled' | 'disabled' = DEEPSEEK_THINKING
+) {
   return JSON.stringify({
     model: DEEPSEEK_MODEL,
-    thinking: { type: DEEPSEEK_THINKING },
+    thinking: { type: thinking },
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: prompt },
@@ -276,9 +303,9 @@ const INTRO_SYSTEM_INSTRUCTION = `너는 TFT 아카데미 코치다. 주어진 �
 /**
  * DeepSeek API 호출 (DEEPSEEK_MODEL, JSON 모드)
  */
-async function callDeepSeek(prompt: string): Promise<string> {
+async function callDeepSeek(prompt: string, config: DeepSeekCallConfig = reportCallConfig('free')): Promise<string> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), config.timeoutMs)
 
   try {
     const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -287,7 +314,13 @@ async function callDeepSeek(prompt: string): Promise<string> {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
-      body: deepSeekBody(SYSTEM_INSTRUCTION, prompt, DEEPSEEK_MAX_TOKENS, { response_format: { type: 'json_object' } }),
+      body: deepSeekBody(
+        SYSTEM_INSTRUCTION,
+        prompt,
+        config.maxTokens,
+        { response_format: { type: 'json_object' } },
+        config.thinking
+      ),
       signal: controller.signal,
     })
 
@@ -313,7 +346,7 @@ async function callDeepSeek(prompt: string): Promise<string> {
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       incrMetric('llm.timeout')
-      throw new Error(`DeepSeek 응답 시간 초과 (${LLM_TIMEOUT_MS}ms)`)
+      throw new Error(`DeepSeek 응답 시간 초과 (${config.timeoutMs}ms)`)
     }
     throw err
   } finally {
@@ -687,7 +720,8 @@ async function buildMetaFacts(): Promise<{ text: string; provenance: FeedbackPro
 export async function generateMetaCoachFeedback(
   gameName: string,
   matches: SlimMatchData[],
-  mode: 'single' | 'multi' = 'single'
+  mode: 'single' | 'multi' = 'single',
+  { tier = 'free' }: { tier?: 'free' | 'pro' } = {}
 ): Promise<MetaCoachFeedback> {
   const matchSerialized = serializeMatchesForLLM(matches, { includeLobby: mode === 'single' })
   const { text: metaFacts, provenance } = await buildMetaFacts()
@@ -838,18 +872,26 @@ ${qualityFacts}
 
   // LLM 응답에 코드 기반 '점수/근거 검증/출처/강의계획'을 붙인다.
   const finalize = (
-    fb: MetaCoachFeedback,
+    rawFb: MetaCoachFeedback,
     isFallback = false,
-    axisVerdicts?: Partial<Record<CoachingAxisKey, string>>
+    rawAxisVerdicts?: Partial<Record<CoachingAxisKey, string>>
   ): MetaCoachFeedback => {
-    const planWithVerdicts: CoachingPlan = {
+    const withVerdicts = (verdicts?: Partial<Record<CoachingAxisKey, string>>): CoachingPlan => ({
       ...plan,
-      axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
-    }
+      axes: plan.axes.map((a) => ({ ...a, verdict: verdicts?.[a.key] })),
+    })
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
-    const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb, moments)
+    const rawLecture = normalizeLecture(rawFb.lecture, withVerdicts(rawAxisVerdicts), rawFb, moments)
     // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
-    const actions = fb.actions?.length ? fb.actions.slice(0, 3) : lecture.checklist.slice(0, 3)
+    const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : rawLecture.checklist.slice(0, 3)
+    // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조하고,
+    // 잡힌 문장은 보내기 전에 고치거나 지운다 (entityErrors 는 검출 기록으로 남긴다)
+    const entityErrors = validateEntityFacts(feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts), matches)
+    if (entityErrors.length) incrMetric('llm.entity_repaired')
+    const { fb, lecture, actions, axisVerdicts } = repairEntityErrors(
+      { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
+      entityErrors
+    )
     return {
       ...fb,
       actions,
@@ -859,12 +901,11 @@ ${qualityFacts}
       isFallback,
       provenance,
       scoreBreakdown: scoring ?? undefined,
-      plan: planWithVerdicts,
+      plan: withVerdicts(axisVerdicts),
       lecture,
       grounding: {
         ...validateFeedbackGrounding(fb, prompt),
-        // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조
-        entityErrors: validateEntityFacts(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches),
+        entityErrors,
       },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),
@@ -890,12 +931,12 @@ ${qualityFacts}
   // 1. DeepSeek API 키가 있는 경우 우선 사용 (LLM_PROVIDER=gemini 면 건너뜀)
   if (DEEPSEEK_API_KEY && LLM_PROVIDER !== 'gemini') {
     try {
-      const text = await callDeepSeek(prompt)
+      const text = await callDeepSeek(prompt, reportCallConfig(tier))
       const parsed = parseJsonFeedback(text)
       if (parsed) return finalize(parsed.feedback, false, parsed.axisVerdicts)
     } catch (err) {
       incrMetric('llm.fallback.deepseek_error')
-      logEvent('warn', 'llm_provider_failed', { provider: 'deepseek', model: DEEPSEEK_MODEL, ...errorFields(err) })
+      logEvent('warn', 'llm_provider_failed', { provider: 'deepseek', model: DEEPSEEK_MODEL, tier, ...errorFields(err) })
     }
   }
 
