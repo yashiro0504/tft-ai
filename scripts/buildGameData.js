@@ -20,6 +20,7 @@
  *  node scripts/buildGameData.js --version=16.20  # 특정 패치
  *  node scripts/buildGameData.js --set=18         # 세트 지정 (기본 18)
  *  node scripts/buildGameData.js --check          # 생성 후 아이콘 URL 이 모두 열리는지 확인
+ *  node scripts/buildGameData.js --lite-only      # 네트워크 없이 lib/gameData.json 에서 lite 만 다시 만든다
  */
 require('./_ts')
 const fs = require('fs')
@@ -32,6 +33,7 @@ const CDRAGON = 'https://raw.communitydragon.org'
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
 const SET = Number(arg('set') || 18)
 const CHECK = process.argv.includes('--check')
+const LITE_ONLY = process.argv.includes('--lite-only')
 
 async function fetchJson(url, cacheName) {
   const cache = cacheName && path.join(os.tmpdir(), 'tft-cdragon', cacheName)
@@ -312,7 +314,16 @@ function liteOf(gameData) {
   return {
     _comment: 'lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.',
     gameVersion: gameData.gameVersion,
-    champions: Object.values(gameData.champions).map(({ apiName, slug, name, nameEn, cost, slots }) => ({ apiName, slug, name, nameEn, cost, slots })),
+    // traits: 시너지 한글명 — 시너지 인원 계산(lib/traitAnchors)이 클라이언트 장면(lib/keyMoments)에서도 돌도록
+    champions: Object.values(gameData.champions).map(({ apiName, slug, name, nameEn, cost, slots, traits }) => ({
+      apiName,
+      slug,
+      name,
+      nameEn,
+      cost,
+      slots,
+      traits: traits.map((id) => gameData.traits[id]?.name ?? id),
+    })),
     traits: Object.values(gameData.traits).map(({ apiName, slug, name, nameEn, breakpoints, aliases }) => ({
       apiName,
       slug,
@@ -347,7 +358,11 @@ async function checkIcons(gameData) {
   }
 }
 
-main().catch((err) => {
+if (LITE_ONLY) {
+  const out = path.join(ROOT, 'lib/gameData.lite.json')
+  fs.writeFileSync(out, JSON.stringify(liteOf(JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/gameData.json'), 'utf-8'))), null, 1) + '\n', 'utf-8')
+  console.log(`✅ lib/gameData.lite.json (${Math.round(fs.statSync(out).size / 1024)}KB)`)
+} else main().catch((err) => {
   console.error('❌', err.message)
   process.exit(1)
 })

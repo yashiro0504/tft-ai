@@ -3,6 +3,7 @@ import { entitySlug } from './entitySlug'
 import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
 import { slotsUsed } from './boardSlots'
+import { traitAnchors, unitTraitCounts } from './traitAnchors'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -86,6 +87,54 @@ export function nearBreakpoints(m: SlimMatchData): { trait: string; count: numbe
   })
 }
 
+const levelOf = (bps: number[], n: number) => bps.filter((b) => b <= n).length
+
+export interface FillSwap {
+  /** 바꿀 1성 기물 */
+  name: string
+  /** 빼면 내려가는 시너지 (예: "싸움꾼 꺼짐", "달빛 2→1단계"). 비면 공짜 자리 */
+  cost: string[]
+}
+
+/**
+ * 시너지에 1명을 더할 자리 — 빈칸 수와, 바꿀 수 있는 1성 기물(빼면 잃는 것 포함).
+ * 제외: 그 시너지에 이미 속한 기물(타릭을 다른 선봉대로 바꿔도 선봉대는 그대로다) · 핵심 시너지를 받치는 기물(lib/traitAnchors).
+ * 대부분의 자리는 공짜가 아니라 맞바꿈이다(세트를 빼면 싸움꾼 2가 꺼진다) — 잃는 것을 함께 적어 LLM 이 맞바꿈으로 말하게 한다.
+ * 2026-10-23 1등 판에서 "타릭 자리에 선봉대를", "벤치에 남겨둘 것"처럼 채울 수 없는 자리를 권한 오진단을 막는다.
+ */
+export function fillSpots(m: SlimMatchData, trait: string): { empty: number; swaps: FillSwap[] } {
+  const counts = new Map((m.traits || []).map((t) => [t.name, t.count || 0]))
+  const anchored = new Set(traitAnchors(m).flatMap((a) => a.units.map((u) => u.name)))
+  const seen = new Set<string>()
+  const swaps: FillSwap[] = []
+  for (const u of m.units || []) {
+    if ((u.tier || 1) !== 1 || anchored.has(u.name) || seen.has(u.name)) continue
+    const c = unitTraitCounts(u)
+    if (c.get(trait)) continue
+    seen.add(u.name)
+    const cost: string[] = []
+    for (const [name, n] of c) {
+      const total = counts.get(name)
+      const bps = BREAKPOINTS[name] || []
+      if (total === undefined) continue
+      const before = levelOf(bps, total)
+      const after = levelOf(bps, total - n)
+      if (after < before) cost.push(after === 0 ? `${name} 꺼짐` : `${name} ${before}→${after}단계`)
+    }
+    swaps.push({ name: u.name, cost })
+  }
+  // 공짜 자리부터
+  swaps.sort((a, b) => a.cost.length - b.cost.length)
+  return { empty: emptySlotCount(m), swaps }
+}
+
+/** 1명 모자란 시너지 중 채울 자리가 있는 것만 (자리가 없으면 다음 판 행동으로 바꿀 수 없다) */
+export function fillableNearBreakpoints(m: SlimMatchData) {
+  return nearBreakpoints(m)
+    .map((n) => ({ ...n, spot: fillSpots(m, n.trait) }))
+    .filter((n) => n.spot.empty > 0 || n.spot.swaps.length > 0)
+}
+
 /* ───────── 단일 경기 장면 ───────── */
 
 function sameComp(m: SlimMatchData): KeyMoment | null {
@@ -140,12 +189,19 @@ function emptySlots(m: SlimMatchData): KeyMoment | null {
 }
 
 function nearBreakpoint(m: SlimMatchData): KeyMoment | null {
-  const near = nearBreakpoints(m)
+  const near = fillableNearBreakpoints(m)
   if (!near.length) return null
+  const spot = (s: { empty: number; swaps: FillSwap[] }) =>
+    [
+      s.empty > 0 ? `빈칸 ${s.empty}칸` : '',
+      ...s.swaps.map((w) => `${w.name} 1성 자리${w.cost.length ? `(빼면 ${w.cost.join('·')})` : ''}`),
+    ]
+      .filter(Boolean)
+      .join(' · ')
   return {
     kind: 'nearBreakpoint',
     title: '1명 모자란 시너지',
-    fact: `다음 단계까지 1명 남은 시너지: ${near.map((n) => `${n.trait} ${n.count}명 → ${n.next}명`).join(', ')}`,
+    fact: `다음 단계까지 1명 남은 시너지: ${near.map((n) => `${n.trait} ${n.count}명 → ${n.next}명 (채울 자리: ${spot(n.spot)})`).join(', ')}`,
   }
 }
 

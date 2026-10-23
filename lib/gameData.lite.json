@@ -8,7 +8,11 @@
    "name": "심술두꺼비",
    "nameEn": "Gromp",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "적응가"
+   ]
   },
   {
    "apiName": "DA_Murkwolf18",
@@ -16,7 +20,11 @@
    "name": "어스름늑대",
    "nameEn": "Murkwolf",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "약탈자"
+   ]
   },
   {
    "apiName": "DA_18_Sentry",
@@ -24,7 +32,11 @@
    "name": "조약돌",
    "nameEn": "Pebbles",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "기원자"
+   ]
   },
   {
    "apiName": "DA_Cinderling18",
@@ -32,7 +44,11 @@
    "name": "불타는 묘목",
    "nameEn": "Cinderling",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "사냥꾼"
+   ]
   },
   {
    "apiName": "DA_Scuttlecrab18",
@@ -40,7 +56,11 @@
    "name": "바위 게",
    "nameEn": "Scuttlecrab",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "전쟁기계"
+   ]
   },
   {
    "apiName": "DA_Krug18",
@@ -48,7 +68,11 @@
    "name": "돌거북",
    "nameEn": "Krug",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_Sentinel18",
@@ -56,7 +80,12 @@
    "name": "파수꾼",
    "nameEn": "Sentinel",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "선봉대",
+    "기원자"
+   ]
   },
   {
    "apiName": "DA_Brambleback18",
@@ -64,7 +93,11 @@
    "name": "덩굴정령",
    "nameEn": "Brambleback",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "약탈자"
+   ]
   },
   {
    "apiName": "DA_18_Xayah",
@@ -72,7 +105,12 @@
    "name": "자야",
    "nameEn": "Xayah",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "요정",
+    "속사포"
+   ]
   },
   {
    "apiName": "DA_18_Ornn",
@@ -80,7 +118,11 @@
    "name": "오른",
    "nameEn": "Ornn",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "엄호대"
+   ]
   },
   {
    "apiName": "DA_Nidalee18_AP",
@@ -88,7 +130,11 @@
    "name": "니달리",
    "nameEn": "Nidalee",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "원시",
+    "적응가"
+   ]
   },
   {
    "apiName": "DA_18_Hecarim",
@@ -96,7 +142,11 @@
    "name": "헤카림",
    "nameEn": "Hecarim",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "선봉대"
+   ]
   },
   {
    "apiName": "DA_18_Ezreal",
@@ -104,7 +154,11 @@
    "name": "이즈리얼",
    "nameEn": "Ezreal",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "처형자"
+   ]
   },
   {
    "apiName": "DA_18_Azir",
@@ -112,7 +166,12 @@
    "name": "아지르",
    "nameEn": "Azir",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "처형자",
+    "소환사"
+   ]
   },
   {
    "apiName": "DA_18_RekSai",
@@ -120,7 +179,11 @@
    "name": "렉사이",
    "nameEn": "Rek'Sai",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_18_Veigar",
@@ -128,7 +191,12 @@
    "name": "베이가",
    "nameEn": "Veigar",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "날렵이",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_Maokai",
@@ -136,7 +204,11 @@
    "name": "마오카이",
    "nameEn": "Maokai",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "고목",
+    "전쟁기계"
+   ]
   },
   {
    "apiName": "DA_18_Malphite",
@@ -144,7 +216,11 @@
    "name": "말파이트",
    "nameEn": "Malphite",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "거석"
+   ]
   },
   {
    "apiName": "DA_18_Yorick",
@@ -152,7 +228,12 @@
    "name": "요릭",
    "nameEn": "Yorick",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "전쟁기계",
+    "소환사"
+   ]
   },
   {
    "apiName": "DA_18_Yunara",
@@ -160,7 +241,11 @@
    "name": "유나라",
    "nameEn": "Yunara",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "처형자"
+   ]
   },
   {
    "apiName": "DA_18_Sett",
@@ -168,7 +253,11 @@
    "name": "세트",
    "nameEn": "Sett",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_18_Ahri",
@@ -176,7 +265,11 @@
    "name": "아리",
    "nameEn": "Ahri",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_Ashe",
@@ -184,7 +277,11 @@
    "name": "애쉬",
    "nameEn": "Ashe",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "사냥꾼"
+   ]
   },
   {
    "apiName": "DA_18_Elise",
@@ -192,7 +289,11 @@
    "name": "엘리스",
    "nameEn": "Elise",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "선봉대"
+   ]
   },
   {
    "apiName": "DA_18_Caitlyn",
@@ -200,7 +301,11 @@
    "name": "케이틀린",
    "nameEn": "Caitlyn",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "사냥꾼"
+   ]
   },
   {
    "apiName": "DA_18_Cassiopeia",
@@ -208,7 +313,11 @@
    "name": "카시오페아",
    "nameEn": "Cassiopeia",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_Morgana",
@@ -216,7 +325,11 @@
    "name": "모르가나",
    "nameEn": "Morgana",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "기원자"
+   ]
   },
   {
    "apiName": "DA_18_Rakan",
@@ -224,7 +337,12 @@
    "name": "라칸",
    "nameEn": "Rakan",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "요정",
+    "전쟁기계",
+    "선봉대"
+   ]
   },
   {
    "apiName": "DA_18_Lillia",
@@ -232,7 +350,11 @@
    "name": "릴리아",
    "nameEn": "Lillia",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "요정",
+    "엄호대"
+   ]
   },
   {
    "apiName": "DA_18_Kobuko",
@@ -240,7 +362,11 @@
    "name": "코부코",
    "nameEn": "Kobuko",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "날렵이",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_18_Teemo",
@@ -248,7 +374,11 @@
    "name": "티모",
    "nameEn": "Teemo",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "날렵이",
+    "기원자"
+   ]
   },
   {
    "apiName": "DA_18_Rammus",
@@ -256,7 +386,11 @@
    "name": "람머스",
    "nameEn": "Rammus",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "날렵이",
+    "엄호대"
+   ]
   },
   {
    "apiName": "DA_18_GnarSmall",
@@ -264,7 +398,12 @@
    "name": "나르",
    "nameEn": "Gnar",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "날렵이",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_18_Tristana",
@@ -272,7 +411,12 @@
    "name": "트리스타나",
    "nameEn": "Tristana",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "요정",
+    "날렵이",
+    "사냥꾼"
+   ]
   },
   {
    "apiName": "DA_18_Sivir",
@@ -280,7 +424,11 @@
    "name": "시비르",
    "nameEn": "Sivir",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "원시",
+    "사냥꾼"
+   ]
   },
   {
    "apiName": "DA_Vi18",
@@ -288,7 +436,11 @@
    "name": "바이",
    "nameEn": "Vi",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "원시",
+    "전쟁기계"
+   ]
   },
   {
    "apiName": "DA_18_Akali_AD",
@@ -296,7 +448,12 @@
    "name": "아칼리",
    "nameEn": "Akali",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "적응가",
+    "약탈자"
+   ]
   },
   {
    "apiName": "DA_18_Varus",
@@ -304,7 +461,11 @@
    "name": "바루스",
    "nameEn": "Varus",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "속사포"
+   ]
   },
   {
    "apiName": "DA_Amumu18",
@@ -312,7 +473,11 @@
    "name": "아무무",
    "nameEn": "Amumu",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "전쟁기계"
+   ]
   },
   {
    "apiName": "DA_18_Kennen",
@@ -320,7 +485,11 @@
    "name": "케넨",
    "nameEn": "Kennen",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "처형자"
+   ]
   },
   {
    "apiName": "DA_18_Aphelios",
@@ -328,7 +497,11 @@
    "name": "아펠리오스",
    "nameEn": "Aphelios",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "달빛",
+    "속사포"
+   ]
   },
   {
    "apiName": "DA_18_Diana",
@@ -336,7 +509,12 @@
    "name": "다이애나",
    "nameEn": "Diana",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "달빛",
+    "약탈자",
+    "선봉대"
+   ]
   },
   {
    "apiName": "DA_18_Alune",
@@ -344,7 +522,12 @@
    "name": "알룬",
    "nameEn": "Alune",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "조율",
+    "달빛",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_Leona",
@@ -352,7 +535,11 @@
    "name": "레오나",
    "nameEn": "Leona",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "햇빛",
+    "엄호대"
+   ]
   },
   {
    "apiName": "DA_18_Kayle",
@@ -360,7 +547,11 @@
    "name": "케일",
    "nameEn": "Kayle",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "햇빛",
+    "속사포"
+   ]
   },
   {
    "apiName": "DA_18_Sejuani",
@@ -368,7 +559,11 @@
    "name": "세주아니",
    "nameEn": "Sejuani",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "햇빛",
+    "전쟁기계"
+   ]
   },
   {
    "apiName": "DA_18_KhaZix",
@@ -376,7 +571,10 @@
    "name": "카직스",
    "nameEn": "Kha'Zix",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "경쟁자"
+   ]
   },
   {
    "apiName": "DA_18_Rengar",
@@ -384,7 +582,10 @@
    "name": "렝가",
    "nameEn": "Rengar",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "경쟁자"
+   ]
   },
   {
    "apiName": "DA_KogMaw18_AD",
@@ -392,7 +593,12 @@
    "name": "코그모",
    "nameEn": "Kog'Maw",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "부식",
+    "적응가",
+    "기원자"
+   ]
   },
   {
    "apiName": "DA_18_Zyra",
@@ -400,7 +606,11 @@
    "name": "자이라",
    "nameEn": "Zyra",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "가시의 여인",
+    "소환사"
+   ]
   },
   {
    "apiName": "DA_Fiddlesticks18",
@@ -408,7 +618,12 @@
    "name": "피들스틱",
    "nameEn": "Fiddlesticks",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "치명적인 꽃",
+    "엄호대",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_Soraka",
@@ -416,7 +631,11 @@
    "name": "소라카",
    "nameEn": "Soraka",
    "cost": 4,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "치명적인 꽃",
+    "처형자"
+   ]
   },
   {
    "apiName": "DA_Taric18",
@@ -424,7 +643,11 @@
    "name": "타릭",
    "nameEn": "Taric",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "에메랄드 성위",
+    "선봉대"
+   ]
   },
   {
    "apiName": "DA_18_Ivern",
@@ -432,7 +655,10 @@
    "name": "아이번",
    "nameEn": "Ivern",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "자연의 아버지"
+   ]
   },
   {
    "apiName": "DA_Lux18_Base",
@@ -440,7 +666,10 @@
    "name": "럭스",
    "nameEn": "Lux",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Alistar",
@@ -448,7 +677,11 @@
    "name": "알리스타",
    "nameEn": "Alistar",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "싸움꾼"
+   ]
   },
   {
    "apiName": "DA_Draven18",
@@ -456,7 +689,10 @@
    "name": "드레이븐",
    "nameEn": "Draven",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "현상금 추적자"
+   ]
   },
   {
    "apiName": "DA_18_ElderDragon",
@@ -464,7 +700,11 @@
    "name": "장로 드래곤",
    "nameEn": "Elder Dragon",
    "cost": 5,
-   "slots": 2
+   "slots": 2,
+   "traits": [
+    "최상위 포식자",
+    "협곡야수"
+   ]
   },
   {
    "apiName": "DA_Karma18",
@@ -472,7 +712,11 @@
    "name": "카르마",
    "nameEn": "Karma",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_LeBlanc",
@@ -480,7 +724,11 @@
    "name": "르블랑",
    "nameEn": "LeBlanc",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "주문술사"
+   ]
   },
   {
    "apiName": "DA_18_MasterYi_AD",
@@ -488,7 +736,11 @@
    "name": "마스터 이",
    "nameEn": "Master Yi",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "적응가"
+   ]
   },
   {
    "apiName": "DA_18_Shen",
@@ -496,7 +748,11 @@
    "name": "쉔",
    "nameEn": "Shen",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "엄호대"
+   ]
   },
   {
    "apiName": "DA_18_Warwick",
@@ -504,7 +760,11 @@
    "name": "워윅",
    "nameEn": "Warwick",
    "cost": 2,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "약탈자"
+   ]
   },
   {
    "apiName": "DA_18_Camille",
@@ -512,7 +772,11 @@
    "name": "카밀",
    "nameEn": "Camille",
    "cost": 1,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "약탈자"
+   ]
   },
   {
    "apiName": "DA_Lux18_Blackthorn",
@@ -520,7 +784,11 @@
    "name": "럭스 (검은 가시)",
    "nameEn": "Lux (Blackthorn)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "검은 가시",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_Lux18_Blossom",
@@ -528,7 +796,11 @@
    "name": "럭스 (개화)",
    "nameEn": "Lux (Blossom)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "개화",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Coven",
@@ -536,7 +808,11 @@
    "name": "럭스 (악의 여단)",
    "nameEn": "Lux (Coven)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "악의 여단",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Elderwood",
@@ -544,7 +820,11 @@
    "name": "럭스 (나무정령)",
    "nameEn": "Lux (Elderwood)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "나무정령",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Fae",
@@ -552,7 +832,11 @@
    "name": "럭스 (요정)",
    "nameEn": "Lux (Fae)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "요정",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Inferno",
@@ -560,7 +844,11 @@
    "name": "럭스 (지옥불)",
    "nameEn": "Lux (Inferno)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "지옥불",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Moonbeam",
@@ -568,7 +856,11 @@
    "name": "럭스 (달빛)",
    "nameEn": "Lux (Lunar)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "달빛",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Primal",
@@ -576,7 +868,11 @@
    "name": "럭스 (원시)",
    "nameEn": "Lux (Primal)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "원시",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_18_Lux_Sunbeam",
@@ -584,7 +880,11 @@
    "name": "럭스 (햇빛)",
    "nameEn": "Lux (Solar)",
    "cost": 5,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "햇빛",
+    "화신"
+   ]
   },
   {
    "apiName": "DA_CrimsonRaptor18",
@@ -592,7 +892,12 @@
    "name": "어미 부리",
    "nameEn": "Mama Beak",
    "cost": 3,
-   "slots": 1
+   "slots": 1,
+   "traits": [
+    "협곡야수",
+    "소환사",
+    "속사포"
+   ]
   }
  ],
  "traits": [

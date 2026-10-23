@@ -1,4 +1,4 @@
-import { findChampion, findItem, findTrait } from './gameData'
+import { championSlots, championTraitsOf, traitBreakpointsOf, traitNameOf } from './gameFacts'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -29,18 +29,13 @@ const EMBLEM_SUFFIX = ' 상징'
 /** 기물 하나가 시너지별로 더하는 인원 */
 export function unitTraitCounts(u: SlimMatchUnit): Map<string, number> {
   const out = new Map<string, number>()
-  const champ = findChampion(u.id) || findChampion(u.name)
-  if (champ) {
-    for (const id of champ.traits) {
-      const t = findTrait(id)
-      if (t) out.set(t.name, (out.get(t.name) || 0) + Math.max(1, champ.slots || 1))
-    }
-  }
+  const traits = championTraitsOf(u.id).length ? championTraitsOf(u.id) : championTraitsOf(u.name)
+  const slots = Math.max(1, championSlots(u.id))
+  for (const t of traits) out.set(t, (out.get(t) || 0) + slots)
+  // 아이템은 한글명으로 온다 (lib/summarize) — "X 상징"
   for (const item of u.items || []) {
-    const it = findItem(item)
-    const name = it?.kind === 'emblem' ? it.name : item.endsWith(EMBLEM_SUFFIX) ? item : null
-    const trait = name && findTrait(name.slice(0, -EMBLEM_SUFFIX.length))
-    if (trait && !out.has(trait.name)) out.set(trait.name, 1)
+    const trait = item.endsWith(EMBLEM_SUFFIX) ? traitNameOf(item.slice(0, -EMBLEM_SUFFIX.length)) : null
+    if (trait && !out.has(trait)) out.set(trait, 1)
   }
   return out
 }
@@ -49,7 +44,7 @@ export function unitTraitCounts(u: SlimMatchUnit): Map<string, number> {
 export function traitAnchors(m: SlimMatchData): TraitAnchor[] {
   const perUnit = (m.units || []).map((u) => ({ u, c: unitTraitCounts(u) }))
   return (m.traits || []).flatMap((t) => {
-    const bps = findTrait(t.name)?.breakpoints || []
+    const bps = traitBreakpointsOf(t.name)
     const count = t.count || 0
     const active = [...bps].reverse().find((b) => b <= count) || 0
     // 1명짜리 고유 시너지 · 꺼진 시너지 · 첫 단계 스플래시(사냥꾼 2 등)는 대상이 아니다.

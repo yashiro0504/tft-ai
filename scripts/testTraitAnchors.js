@@ -8,12 +8,14 @@
  *  - 단계에 여유가 있는 시너지(4명 중 3명 단계)는 유지 기물이 없다
  *  - 첫 단계 시너지(협곡야수 3 · 사냥꾼 2 같은 스플래시)는 지키지 않는다 — 다 지키면 교체 후보가 사라진다
  *  - 인원이 Riot 집계와 다르면 그 시너지는 건너뛴다
+ *  - 1명 모자란 시너지의 채울 자리 (lib/keyMoments fillSpots): 그 시너지 소속·핵심 시너지 기물 제외, 빼면 잃는 시너지 표기
  *  - 실제 래더 보드: 켜진 다인원 시너지의 인원 계산이 Riot 집계와 대부분 일치
  */
 require('./_ts')
 const fs = require('fs')
 const path = require('path')
 const { traitAnchors, freeUnits, traitAnchorFacts, unitTraitCounts } = require('../lib/traitAnchors')
+const { allKeyMoments, fillSpots } = require('../lib/keyMoments')
 const { findChampion, findItem, findTrait } = require('../lib/gameData')
 
 let failures = 0
@@ -68,6 +70,28 @@ const firstTier = { ...rift7, units: rift7.units.slice(2, 5), traits: [{ name: R
 check('첫 단계(협곡야수 3)는 지키지 않음', traitAnchors(firstTier).length === 0, JSON.stringify(traitAnchors(firstTier)))
 const mismatch = { ...rift7, traits: [{ name: RIFT, tier: 3, count: 8 }] }
 check('Riot 인원과 다르면 건너뜀', traitAnchors(mismatch).length === 0)
+
+console.log('제보 경기 (골든셋 Rift01: 1등 Lv9 협곡야수 7, 장로 드래곤 1성)')
+const golden = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'evalMatches.json'), 'utf8'))
+const rift01 = golden.cases.find((c) => c.name.startsWith('Rift01'))?.matches[0]
+if (rift01) {
+  const anchors = traitAnchors(rift01).find((x) => x.trait === RIFT)
+  const held = (anchors?.units || []).map((u) => u.name)
+  check('장로 드래곤·어스름늑대가 협곡야수 7을 받침', held.includes('장로 드래곤') && held.includes('어스름늑대'), held.join(','))
+  check('교체 후보에 협곡야수 기물 없음', !freeUnits(rift01).some((u) => held.includes(u.name)), freeUnits(rift01).map((u) => u.name).join(','))
+
+  // 1명 모자란 시너지의 채울 자리 — "타릭 자리에 선봉대를"·"벤치에 남겨둘 것" 오진단 회귀
+  const vanguard = fillSpots(rift01, '선봉대')
+  const names = vanguard.swaps.map((w) => w.name)
+  check('선봉대 채울 자리에 타릭 없음 (이미 선봉대)', !names.includes('타릭'), names.join(','))
+  check('선봉대 채울 자리에 장로 드래곤 없음 (협곡야수 7을 받침)', !names.includes('장로 드래곤'), names.join(','))
+  check('세트 자리는 맞바꿈 (빼면 싸움꾼 꺼짐)', vanguard.swaps.find((w) => w.name === '세트')?.cost.join() === '싸움꾼 꺼짐', JSON.stringify(vanguard.swaps))
+  check('기원자 채울 자리에는 타릭 포함 (빼도 선봉대 1단계 유지)', fillSpots(rift01, '기원자').swaps.some((w) => w.name === '타릭' && !w.cost.some((c) => c.startsWith('선봉대'))), JSON.stringify(fillSpots(rift01, '기원자').swaps))
+  const scene = allKeyMoments(rift01).find((x) => x.kind === 'nearBreakpoint')
+  check('장면 사실 줄에 채울 자리·잃는 것 표기', Boolean(scene?.fact.includes('선봉대 3명 → 4명 (채울 자리: 세트 1성 자리(빼면 싸움꾼 꺼짐))')), scene?.fact)
+} else {
+  check('골든셋에 Rift01 케이스 있음', false)
+}
 
 console.log('실제 래더 보드 인원 일치율')
 const file = path.join(__dirname, '..', 'data', 'ladderBoards.json')
