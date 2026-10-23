@@ -7,6 +7,7 @@ import {
 } from '@/lib/matchAnalysis'
 import {
   quotaGuard,
+  refundQuota,
   rateLimitGuard,
   readJson,
   normalizeGameNameTagLine,
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest) {
     }
 
     const outcome = await runMatchAnalysis(params)
+    // AI 를 못 쓴 규칙 기반 폴백은 이용 횟수에서 빼 준다 (DeepSeek 잔액 소진·예산 초과 등)
+    if (outcome.response.feedback?.isFallback) await refundQuota(req, 'ai_fallback')
 
     logEvent('info', 'api_match', {
       ms: elapsedMs(startedAt),
