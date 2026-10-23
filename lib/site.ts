@@ -23,4 +23,4 @@ export const OPERATOR_NAME = process.env.NEXT_PUBLIC_OPERATOR_NAME || 'TFT LAB �
 export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@example.com'
 
 /** 약관/개인정보처리방침 시행일 */
-export const POLICY_EFFECTIVE_DATE = '2026-10-18'
+export const POLICY_EFFECTIVE_DATE = '2026-10-23'
