@@ -27,7 +27,7 @@ const BENEFITS = [
   {
     icon: Zap,
     title: 'AI 분석 10회/일',
-    description: '무료 플랜 하루 3회보다 훨씬 넉넉하게,, 연습량이 많은 날에도 끊기지 않게 합니다.',
+    description: '무료 플랜 3회에서 3배 이상 늘려, 연습량이 많은 날에도 끊기지 않게 합니다.',
   },
   {
     icon: Crown,
