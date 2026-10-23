@@ -8,7 +8,7 @@ import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, validateEntityFacts } from './semanticGrounding'
+import { feedbackTexts, repairEntityErrors, validateEntityFacts } from './semanticGrounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
@@ -872,18 +872,26 @@ ${qualityFacts}
 
   // LLM 응답에 코드 기반 '점수/근거 검증/출처/강의계획'을 붙인다.
   const finalize = (
-    fb: MetaCoachFeedback,
+    rawFb: MetaCoachFeedback,
     isFallback = false,
-    axisVerdicts?: Partial<Record<CoachingAxisKey, string>>
+    rawAxisVerdicts?: Partial<Record<CoachingAxisKey, string>>
   ): MetaCoachFeedback => {
-    const planWithVerdicts: CoachingPlan = {
+    const withVerdicts = (verdicts?: Partial<Record<CoachingAxisKey, string>>): CoachingPlan => ({
       ...plan,
-      axes: plan.axes.map((a) => ({ ...a, verdict: axisVerdicts?.[a.key] })),
-    }
+      axes: plan.axes.map((a) => ({ ...a, verdict: verdicts?.[a.key] })),
+    })
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
-    const lecture = normalizeLecture(fb.lecture, planWithVerdicts, fb, moments)
+    const rawLecture = normalizeLecture(rawFb.lecture, withVerdicts(rawAxisVerdicts), rawFb, moments)
     // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
-    const actions = fb.actions?.length ? fb.actions.slice(0, 3) : lecture.checklist.slice(0, 3)
+    const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : rawLecture.checklist.slice(0, 3)
+    // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조하고,
+    // 잡힌 문장은 보내기 전에 고치거나 지운다 (entityErrors 는 검출 기록으로 남긴다)
+    const entityErrors = validateEntityFacts(feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts), matches)
+    if (entityErrors.length) incrMetric('llm.entity_repaired')
+    const { fb, lecture, actions, axisVerdicts } = repairEntityErrors(
+      { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
+      entityErrors
+    )
     return {
       ...fb,
       actions,
@@ -893,12 +901,11 @@ ${qualityFacts}
       isFallback,
       provenance,
       scoreBreakdown: scoring ?? undefined,
-      plan: planWithVerdicts,
+      plan: withVerdicts(axisVerdicts),
       lecture,
       grounding: {
         ...validateFeedbackGrounding(fb, prompt),
-        // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조
-        entityErrors: validateEntityFacts(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches),
+        entityErrors,
       },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),
