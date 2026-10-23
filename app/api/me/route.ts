@@ -64,8 +64,8 @@ export async function GET() {
         }
       : {
           search: dailyQuotaLimit('QUOTA_SEARCH_PER_DAY', 50),
-          analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10),
-          overview: dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 10),
+          analysis: dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 3),
+          overview: dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 3),
         }
 
   return NextResponse.json(

@@ -26,8 +26,8 @@ export const metadata: Metadata = {
 const BENEFITS = [
   {
     icon: Zap,
-    title: 'AI 분석 50회/일',
-    description: '무료 플랜 10회에서 5배로 확대해, 연습량이 많은 날에도 끊기지 않게 합니다.',
+    title: 'AI 분석 10회/일',
+    description: '무료 플랜 3회에서 3배 이상 늘려, 연습량이 많은 날에도 끊기지 않게 합니다.',
   },
   {
     icon: Crown,
@@ -45,7 +45,7 @@ const FAQ = [
   {
     question: '무료 플랜은 계속 쓸 수 있나요?',
     answer:
-      '네. 전적 검색과 AI 분석 10회/일은 지금처럼 무료로 유지합니다. Pro는 더 많이 쓰고 싶은 분을 위한 선택지입니다.',
+      '네. 전적 검색과 AI 분석 3회/일은 무료로 유지합니다. Pro는 더 많이 쓰고 싶은 분을 위한 선택지입니다.',
   },
   {
     question: '지금 결제할 수 있나요?',
@@ -135,7 +135,7 @@ export default function ProPage() {
             <ul className="mt-5 space-y-2 border-t border-line pt-4 text-xs text-muted">
               <li className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-good" />
-                AI 분석 50회/일
+                AI 분석 10회/일
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-good" />

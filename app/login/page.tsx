@@ -41,8 +41,8 @@ export default async function LoginPage({
           </p>
 
           <ul className="mt-4 space-y-1.5 text-xs text-muted">
-            <li>· 무료 플랜: AI 분석 10회/일</li>
-            <li>· Pro 플랜: AI 분석 50회/일 (운영자가 수동 부여)</li>
+            <li>· 무료 플랜: AI 분석 3회/일</li>
+            <li>· Pro 플랜: AI 분석 10회/일 (운영자가 수동 부여)</li>
             <li>· 수집 항목: Discord ID, 이메일, 표시 이름, 프로필 이미지</li>
           </ul>
 
