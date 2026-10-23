@@ -5,6 +5,7 @@ import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
 import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
 import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
+import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
@@ -18,7 +19,7 @@ import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStat
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-22.2'
+export const COACH_PROMPT_VERSION = '2026-10-23.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -204,6 +205,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   하지 말고, 다음 판에 처음부터 어느 기물에 줄지로 말하라. 4·5코스트 1성 캐리에 아이템을 몰아주는 것은 후반 정상 운영이다 — 문제로 삼지 마라.
 - 증강 정보는 Riot API 가 제공하지 않는다. 증강 판단(프리즘 개수 등)을 추측하지 말되, "증강이 약했다/좋았다"처럼 단정하지도 마라.
 - 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
+- [시너지 유지 기물] 블록의 "받치는 기물"은 켜진 시너지 단계를 받친다(빼면 단계가 내려간다). 이 기물을 빼라/다른 기물로 바꿔라/그 자리에 다른 2성을
+  채워라고 하지 마라. 높은 시너지 단계를 위해 1성·저코스트 기물을 쓰는 것은 정상 운영이다 — 보드 가치·2성 수 부족을 그 기물 탓으로 돌리지 마라.
+  2성 수를 늘리는 조언은 (1) 받치는 기물 자체를 2성으로 올리거나 (2) "핵심 시너지와 무관한 1성 기물"만 바꾸는 방향으로 하라. 그런 기물이 없으면 교체를 권하지 마라.
 - 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
 
 - [비교 사실] 블록(로비 1등·로비 평균·같은 구성 상대·유사 메타 덱·BIS 일치율)은 코드가 계산한 서술 통계다. 수치는 그대로 인용하되
@@ -745,6 +749,11 @@ export async function generateMetaCoachFeedback(
     : mode === 'single'
       ? '[핵심 장면]\n※ 코드가 콕 집은 장면이 없다. [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
       : '[핵심 장면 = 반복 습관]\n※ 최근 경기에서 반복된 장면이 없다(한두 판에만 나왔다). 습관이라고 단정하지 말고, [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
+  // 시너지 단계를 받치는 기물: "2성 늘려라" 조언이 협곡야수 7 같은 핵심 단계를 깨는 교체를 권하지 않게 (lib/traitAnchors)
+  const anchorLines = mode === 'single' && matches[0] && !basePlan.lowSample ? traitAnchorFacts(matches[0]) : []
+  const anchorFacts = anchorLines.length
+    ? ['[시너지 유지 기물 — 코드 산출, 빼거나 교체하라고 하지 마라]', ...anchorLines].join('\n')
+    : ''
   const planFacts = [
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
@@ -824,7 +833,9 @@ ${comparisonFacts}
 ${winFacts ? `${winFacts}
 
 ` : ''}${momentFacts}
-
+${anchorFacts ? `
+${anchorFacts}
+` : ''}
 ${scoreFacts}
 
 ${planFacts}
