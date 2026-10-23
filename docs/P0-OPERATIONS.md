@@ -102,8 +102,8 @@ curl -X POST http://localhost:3000/api/tft/search -H "Content-Type: application/
 | 항목 | 기본값 | env |
 | --- | --- | --- |
 | 검색(IP당/일) | 50회 | `QUOTA_SEARCH_PER_DAY` |
-| 경기 AI 분석(IP당/일) | 10회 | `QUOTA_ANALYSIS_PER_DAY` |
-| 종합 AI 분석(IP당/일) | 10회 | `QUOTA_OVERVIEW_PER_DAY` |
+| 경기 AI 분석(IP당/일) | 3회 | `QUOTA_ANALYSIS_PER_DAY` |
+| 종합 AI 분석(IP당/일) | 3회 | `QUOTA_OVERVIEW_PER_DAY` |
 | LLM 일일 예산 | 3 USD | `LLM_DAILY_BUDGET_USD` |
 
 - 0 이하는 **무제한**(가드 비활성)입니다.

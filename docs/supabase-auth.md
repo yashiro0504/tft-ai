@@ -54,7 +54,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
      "user": { "id": "...", "displayName": "...", "avatarUrl": "..." },
      "plan": "free",
      "usage": { "search": 0, "analysis": 0, "overview": 0 },
-     "limits": { "search": 50, "analysis": 10, "overview": 10 }
+     "limits": { "search": 50, "analysis": 3, "overview": 3 }
    }
    ```
 3. `/api/health` → `integrations.supabase = true`
