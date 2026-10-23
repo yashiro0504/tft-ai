@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 const BENEFITS = [
   {
     icon: Zap,
-    title: 'AI 분석 50회/일',
+    title: 'AI 분석 10회/일',
     description: '무료 플랜 하루 3회보다 훨씬 넉넉하게,, 연습량이 많은 날에도 끊기지 않게 합니다.',
   },
   {
@@ -135,7 +135,7 @@ export default function ProPage() {
             <ul className="mt-5 space-y-2 border-t border-line pt-4 text-xs text-muted">
               <li className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-good" />
-                AI 분석 50회/일
+                AI 분석 10회/일
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-good" />
