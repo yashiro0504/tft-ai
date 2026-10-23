@@ -180,6 +180,50 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
   return errors
 }
 
+/**
+ * 검증기가 잡은 의미 오류를 사용자에게 보내기 전에 고친다.
+ * - 데이터 값이 하나로 정해지고 문장에 틀린 표현("주문술사 4단계")이 그대로 있으면 맞는 값으로 바꾼다.
+ * - 그 밖(여러 판이라 값이 여럿, "A·B 모두 3성" 처럼 표현이 흩어짐, 아이템 소유 오류)은 문장을 지운다.
+ * - 문장을 지워 문자열이 비면: 배열 항목은 빼고, 단일 필드는 원문을 둔다(빈 섹션보다 낫다 — 오류는 grounding 에 남는다).
+ * 문자열·배열·객체를 깊게 돌며 오류 문장이 들어 있는 문자열만 바꾼다. 원본은 바꾸지 않는다.
+ */
+export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
+  if (!errors.length) return value
+  // 문장별 교체문 ('' = 지움). 같은 문장에 오류가 여럿이면 하나라도 못 고칠 때 지운다
+  const bySentence = new Map<string, string>()
+  for (const e of errors) {
+    const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
+    const fixable = e.type !== 'item_owner' && !e.expected.includes('/') && current.includes(e.actual)
+    bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
+  }
+
+  const fixString = (str: string): string => {
+    let out = str
+    for (const [sentence, fixed] of bySentence) {
+      if (!out.includes(sentence)) continue
+      out = out.split(sentence).join(fixed)
+    }
+    return out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+  }
+
+  const walk = (v: unknown, inArray: boolean): unknown => {
+    if (typeof v === 'string') {
+      if (![...bySentence.keys()].some((x) => v.includes(x))) return v
+      const out = fixString(v)
+      if (out) return out
+      return inArray ? undefined : v
+    }
+    if (Array.isArray(v)) return v.map((x) => walk(x, true)).filter((x) => x !== undefined)
+    if (v && typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, x] of Object.entries(v)) o[k] = walk(x, false)
+      return o
+    }
+    return v
+  }
+  return walk(value, false) as T
+}
+
 /** 리포트에서 검사할 서술 문자열 (점수·등급 등 코드 값 제외) */
 export function feedbackTexts(fb: Partial<MetaCoachFeedback>, axisVerdicts?: Record<string, string | undefined>): string[] {
   const out: string[] = []

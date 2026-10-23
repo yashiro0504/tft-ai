@@ -7,6 +7,7 @@ import { SCORING_VERSION } from '@/lib/axisConfig'
 import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
+import { getUserPlan } from '@/lib/userPlan'
 import { MAX_MATCH_LIMIT } from '@/lib/tftService'
 import { rankedMatches } from '@/lib/queue'
 import { SlimMatchData, TftOverviewResponse } from '@/lib/types'
@@ -24,11 +25,12 @@ export async function POST(req: NextRequest) {
     const limited = rateLimitGuard(req, 'overview', 10, 60_000)
     if (limited) return limited
 
+    const userId = (await getAuthUser())?.id
     const daily = await quotaGuard(
       req,
       'overview',
-      dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 10),
-      (await getAuthUser())?.id,
+      dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 3),
+      userId,
       dailyQuotaLimit('QUOTA_OVERVIEW_PRO_PER_DAY', 10)
     )
     if (daily) return daily
@@ -63,8 +65,10 @@ export async function POST(req: NextRequest) {
     // 신뢰성 평가 하네스용 캐시 우회 (프로덕션에서는 무시)
     const nocache = raw.nocache === true && process.env.NODE_ENV !== 'production'
     const ids = matches.map((m) => m.matchId).join(',')
+    // Pro 는 추론(thinking) 리포트 — 무료와 캐시를 나눠 서로의 결과를 받지 않게 한다
+    const tier = await getUserPlan(userId)
 
-    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}:${ids}`
+    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${tier}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}:${ids}`
     if (!nocache) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
       if (cached) {
@@ -73,13 +77,14 @@ export async function POST(req: NextRequest) {
           ms: elapsedMs(startedAt),
           cacheSource: cached.source,
           mode,
+          tier,
           matchCount: matches.length,
         })
         return NextResponse.json(cached.value)
       }
     }
 
-    const feedback = await generateMetaCoachFeedback(gameName, matches, mode)
+    const feedback = await generateMetaCoachFeedback(gameName, matches, mode, { tier })
 
     const response: TftOverviewResponse = {
       success: true,
@@ -95,6 +100,7 @@ export async function POST(req: NextRequest) {
       ms: elapsedMs(startedAt),
       cacheSource: nocache ? 'bypass' : 'miss',
       mode,
+      tier,
       matchCount: matches.length,
     })
     return NextResponse.json(response)

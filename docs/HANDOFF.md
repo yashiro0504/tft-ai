@@ -383,7 +383,7 @@ lib/metaStats.json  ──►  scripts/buildDeckCompsFromStats.js  ──►  li
 ### P2-7. Pro 대기자 페이지 (0.5일) — ✅ 완료 (2026-10-18) — **결제 아님**
 
 - 구현
-  - `app/pro/page.tsx` — 예정 가격 **₩3,900/월**, 혜택 3종(AI 분석 50회/일·Pro 배지·우선 지원),
+  - `app/pro/page.tsx` — 예정 가격 **₩3,900/월**, 혜택 3종(AI 분석 10회/일·Pro 배지·우선 지원),
     FAQ, 무료 플랜 CTA. 모든 혜택에 “출시 예정안” 고지
   - `app/pro/ProWaitlistButton.tsx` — “Pro 출시 알림 받기” 버튼
     - `pro_waitlist_click` 전송: `{ surface: 'pro_page', priceKrw: 3900, billing: 'monthly' }`

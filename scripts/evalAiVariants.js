@@ -12,7 +12,7 @@
  *     --model deepseek-flash --max-tokens 3400 --thinking disabled --schema v1 --out tmp/eval
  *   node scripts/evalAiVariants.js --summary-only --out tmp/eval      # 실행 없이 요약만 다시 계산
  *   node scripts/evalAiVariants.js --rescore baseline --out tmp/eval  # 저장된 원시 응답을 현재 의미 검증기로 다시 채점 (API 호출 없음)
- * 옵션: --cases all|1,2,..  --fixture data/evalMatches.json
+ * 옵션: --cases all|1,2,..  --fixture data/evalMatches.json  --tier free|pro (pro = Pro 플랜 설정: DEEPSEEK_PRO_*)
  */
 const fs = require('fs')
 const path = require('path')
@@ -256,7 +256,7 @@ async function runWorker(cfg) {
       let result = null
       let error = null
       try {
-        result = await generateMetaCoachFeedback(`${fc.gameName}#${fc.tagLine}`, fc.matches, fc.mode)
+        result = await generateMetaCoachFeedback(`${fc.gameName}#${fc.tagLine}`, fc.matches, fc.mode, { tier: cfg.tier })
       } catch (e) {
         error = e instanceof Error ? e.message : String(e)
       }
@@ -529,6 +529,7 @@ async function main() {
       runs: Number(args.runs || 3),
       cases: String(args.cases || 'all'),
       schema: String(args.schema || 'v1'),
+      tier: args.tier === 'pro' ? 'pro' : 'free',
       fixture: String(args.fixture || 'data/evalMatches.json'),
       out,
     }
@@ -543,7 +544,7 @@ async function main() {
     // 같은 변형을 다시 돌리면 이전 산출물을 지운다 (다른 변형은 유지)
     fs.rmSync(path.join(out, variant), { recursive: true, force: true })
     const nCases = cfg.cases === 'all' ? EVAL_CASES.length : cfg.cases.split(',').length
-    console.log(`변형 ${variant}: ${nCases}경기 × ${cfg.runs}회 · provider=${env.LLM_PROVIDER || '(체인)'} · max_tokens=${env.DEEPSEEK_MAX_TOKENS || 3400} · thinking=${env.DEEPSEEK_THINKING || 'disabled'}`)
+    console.log(`변형 ${variant}: ${nCases}경기 × ${cfg.runs}회 · provider=${env.LLM_PROVIDER || '(체인)'} · max_tokens=${env.DEEPSEEK_MAX_TOKENS || 3400} · thinking=${env.DEEPSEEK_THINKING || 'disabled'} · tier=${cfg.tier}`)
     const res = spawnSync(process.execPath, [__filename, '--worker', Buffer.from(JSON.stringify(cfg)).toString('base64')], {
       env,
       stdio: ['ignore', 'inherit', 'inherit'],
