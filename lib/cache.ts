@@ -112,4 +112,6 @@ export const CACHE_TTL = {
   IMMUTABLE: 30 * 24 * 60 * 60_000,
   /** 종합 분석: 입력 매치 목록 기준 */
   OVERVIEW: 6 * 60 * 60_000,
+  /** AI 미사용 폴백 리포트: 제공자 복구(잔액 충전 등) 후 곧 AI 리포트로 바뀌도록 짧게 */
+  FALLBACK_REPORT: 5 * 60_000,
 } as const

@@ -19,8 +19,32 @@ export interface LlmHttpError {
 
 let lastHttpError: LlmHttpError | null = null
 
+/**
+ * DeepSeek 은 선불 충전이라 잔액이 바닥나면 모든 호출이 402(Insufficient Balance)로 실패한다.
+ * 그때마다 왕복하며 응답을 늦추지 않도록 이 인스턴스에서 잠시 DeepSeek 호출을 건너뛴다.
+ * 충전 후에는 길어야 이 시간 안에 자동으로 다시 시도한다.
+ */
+const BALANCE_COOLDOWN_MS = 5 * 60_000
+let balanceBlockedUntil = 0
+
+export function isInsufficientBalance(status: number): boolean {
+  return status === 402
+}
+
 export function recordLlmHttpError(e: Omit<LlmHttpError, 'at'>): void {
   lastHttpError = { ...e, at: new Date().toISOString() }
+  if (isInsufficientBalance(e.status)) balanceBlockedUntil = Date.now() + BALANCE_COOLDOWN_MS
+}
+
+/** 성공 응답을 받으면 지난 오류(충전 전 402 등)를 지워 헬스/ops-check 가 계속 경고하지 않게 한다 */
+export function recordLlmSuccess(): void {
+  lastHttpError = null
+  balanceBlockedUntil = 0
+}
+
+/** 최근 402 를 받아 DeepSeek 호출을 건너뛰는 중인지 */
+export function deepSeekBalanceBlocked(): boolean {
+  return Date.now() < balanceBlockedUntil
 }
 
 export function lastLlmHttpError(): LlmHttpError | null {

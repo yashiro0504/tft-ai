@@ -80,3 +80,18 @@ export async function consumeDailyQuota(
     retryAfterSec,
   }
 }
+
+/**
+ * consumeDailyQuota 로 소모한 1회를 되돌린다. (AI 제공자 장애로 규칙 기반 폴백만 준 경우 등)
+ * best-effort — 실패해도 호출부를 막지 않는다.
+ */
+export async function refundDailyQuota(bucket: string, identity: string): Promise<void> {
+  const { key: day } = kstDayWindow()
+  const key = `quota:${day}:${bucket}:${identity}`
+  if (redisConfigured()) {
+    const left = await redisIncrBy(key, -1)
+    if (left !== null) return
+  }
+  const entry = memory.get(key)
+  if (entry && entry.used > 0) entry.used -= 1
+}

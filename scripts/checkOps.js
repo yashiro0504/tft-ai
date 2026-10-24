@@ -15,6 +15,9 @@
  *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — stat_comp 는 anon 읽기 공개.
  *    없으면 건너뛴다(CI 등).
  *
+ *  - DeepSeek 잔액: 마지막 LLM 오류가 402(잔액 부족)면 미충족.
+ *    DEEPSEEK_API_KEY 가 있으면 /user/balance 로 잔액을 직접 보고 DEEPSEEK_MIN_BALANCE(USD 기준, 기본 3) 미만이면 미충족.
+ *
  * --strict: 하나라도 미충족이면 exit 1 (배포 전 게이트로 사용)
  */
 const rawUrl =
@@ -117,6 +120,12 @@ async function main() {
     fail(`sitemap 확인 실패: ${err.message}`)
   }
 
+  if (health.integrations?.lastLlmHttpError?.status === 402) {
+    fail(`DeepSeek 잔액 부족(402) — AI 코칭이 폴백으로 응답 중 (${health.integrations.lastLlmHttpError.at})`)
+    notes.push('DeepSeek 콘솔(platform.deepseek.com)에서 충전 → 5분 안에 자동으로 AI 코칭 재개')
+  }
+  await checkDeepSeekBalance()
+
   if (DB) await checkDeckFreshness()
 
   if (Array.isArray(health.warnings) && health.warnings.length > 0) {
@@ -134,6 +143,47 @@ async function main() {
     if (STRICT) process.exit(1)
   } else {
     console.log('\n✅ 운영 점검 통과')
+  }
+}
+
+/** CNY 잔액을 USD 기준 한도와 비교할 때 쓰는 대략적인 환율 */
+const CNY_PER_USD = 7.2
+
+/**
+ * DeepSeek 선불 잔액 (GET /user/balance). 키가 없으면 건너뛴다 (로컬·CI).
+ * 잔액이 바닥나면 분석이 규칙 기반 폴백으로만 나가므로, 떨어지기 전에 알린다.
+ */
+async function checkDeepSeekBalance() {
+  const key = process.env.DEEPSEEK_API_KEY
+  if (!key) {
+    console.log('deepseek: DEEPSEEK_API_KEY 가 없어 잔액 점검을 건너뜁니다')
+    return
+  }
+  const minUsd = Number(process.env.DEEPSEEK_MIN_BALANCE) || 3
+  try {
+    const res = await fetch('https://api.deepseek.com/user/balance', {
+      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!res.ok) throw new Error(`status ${res.status}`)
+    const data = await res.json()
+    const infos = Array.isArray(data.balance_infos) ? data.balance_infos : []
+    const usd = infos.reduce((sum, b) => {
+      const total = Number(b.total_balance) || 0
+      return sum + (b.currency === 'CNY' ? total / CNY_PER_USD : total)
+    }, 0)
+    console.log(`deepseek: 잔액 ${infos.map((b) => `${b.total_balance} ${b.currency}`).join(', ') || '없음'} (≈ $${usd.toFixed(2)}, 기준 $${minUsd})`)
+    if (data.is_available === false || usd <= 0) {
+      fail('DeepSeek 잔액 소진 — AI 코칭이 폴백으로만 응답')
+      notes.push('DeepSeek 콘솔(platform.deepseek.com)에서 충전')
+    } else if (usd < minUsd) {
+      fail(`DeepSeek 잔액 부족 임박 (≈ $${usd.toFixed(2)} < $${minUsd})`)
+      notes.push('DeepSeek 콘솔(platform.deepseek.com)에서 충전')
+    } else {
+      pass(`DeepSeek 잔액 충분 (≈ $${usd.toFixed(2)})`)
+    }
+  } catch (err) {
+    fail(`DeepSeek 잔액 확인 실패: ${err.message}`)
   }
 }
 

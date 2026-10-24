@@ -55,6 +55,9 @@ jobs:
       - name: Ops check (strict)
         env:
           OPS_URL: ${{ github.event.inputs.url || 'https://www.tftlab.kr' }}
+          # 있으면 DeepSeek 선불 잔액도 점검한다 (없으면 건너뜀). 기준은 DEEPSEEK_MIN_BALANCE(USD, 기본 3)
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MIN_BALANCE: ${{ vars.DEEPSEEK_MIN_BALANCE }}
         run: |
           set -o pipefail
           node scripts/checkOps.js "$OPS_URL" --strict 2>&1 | tee ops.log

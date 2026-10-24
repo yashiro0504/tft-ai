@@ -195,7 +195,8 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
-      quota.consume()
+      // AI 미사용 폴백은 서버가 쿼터를 되돌려 주므로 화면 카운터도 차감하지 않는다
+      if (!data.feedback.isFallback) quota.consume()
       track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
     } catch (err) {
       const message = err instanceof Error ? err.message : '종합 분석 중 오류가 발생했습니다.'
