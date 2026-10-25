@@ -736,6 +736,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             title="이 경기 정밀 코칭 (단일 매치)"
             compact
             goalSource={isDemo ? undefined : { gameName, tagLine, matches: [match] }}
+            rateable={isDemo ? undefined : { matchId: match.matchId }}
           />
         </div>
       )}

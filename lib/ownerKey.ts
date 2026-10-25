@@ -45,8 +45,12 @@ export function checkOwnerKey(input: string): boolean {
 
 /** 요청 쿠키가 유효한 운영자 쿠키인가 */
 export function hasOwnerCookie(req: Pick<NextRequest, 'cookies'>): boolean {
+  return isOwnerCookieValue(req.cookies.get(OWNER_COOKIE)?.value)
+}
+
+/** 쿠키 값이 유효한 운영자 토큰인가 (서버 컴포넌트에서 next/headers cookies() 로 읽은 값용) */
+export function isOwnerCookieValue(value: string | undefined): boolean {
   const key = ownerKey()
-  const value = req.cookies.get(OWNER_COOKIE)?.value
   return Boolean(key && value) && safeEqual(value as string, token(key))
 }
 

@@ -426,6 +426,7 @@ export default function TFTCoachPage() {
                         ? undefined
                         : { gameName: search.summonerProfile.gameName, tagLine: search.summonerProfile.tagLine, matches: search.matches }
                     }
+                    rateable={search.isDemo ? undefined : {}}
                   />
                 </div>
               )}

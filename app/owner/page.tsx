@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { OwnerKeyForm } from './OwnerKeyForm'
@@ -23,6 +24,9 @@ export default function OwnerPage() {
           <div className="mt-5">
             <OwnerKeyForm />
           </div>
+          <Link href="/owner/feedback" className="mt-5 inline-block text-xs text-muted underline hover:text-ink">
+            리포트 피드백 보기 →
+          </Link>
         </div>
       </main>
 

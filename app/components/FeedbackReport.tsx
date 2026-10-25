@@ -8,6 +8,7 @@ import { useState } from 'react'
 import type { CoachingAxis, MetaCoachFeedback, SlimMatchData } from '@/lib/types'
 import { goalFromMoment, goalStorageKey, goalText, type PracticeGoal } from '@/lib/goals'
 import { useGoal } from '@/lib/useGoal'
+import { ReportFeedback } from './ReportFeedback'
 
 interface FeedbackReportProps {
   feedback: MetaCoachFeedback
@@ -19,6 +20,8 @@ interface FeedbackReportProps {
   compact?: boolean
   /** 연습 목표 설정용 — 이 리포트의 소환사와 분석한 경기 (없으면 목표 버튼을 숨긴다) */
   goalSource?: GoalSource
+  /** 👍/👎 피드백을 받는다 (데모 리포트는 넘기지 않는다). 단일 경기는 matchId 로 리포트를 식별한다 */
+  rateable?: { matchId?: string }
 }
 
 interface GoalSource {
@@ -238,7 +241,7 @@ function LectureBlock({ feedback, goalSource }: { feedback: MetaCoachFeedback; g
  * AI 코칭 리포트 렌더러 (경기별/종합 공용).
  * 기존 app/page.tsx 의 리포트 마크업을 재사용 가능하도록 분리.
  */
-export function FeedbackReport({ feedback, title, matchCount, compact = false, goalSource }: FeedbackReportProps) {
+export function FeedbackReport({ feedback, title, matchCount, compact = false, goalSource, rateable }: FeedbackReportProps) {
   // 스키마 v2: 유연성은 6축 contest 점수(코드 산출). v1 캐시 리포트는 AI 피봇 성향(flexibilityScore)을 그대로 보여 준다.
   const contestAxis = feedback.plan?.axes.find((a) => a.key === 'contest')
   const flex = contestAxis
@@ -354,6 +357,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             </button>
           ) : null}
         </div>
+
+        {rateable ? <ReportFeedback feedback={feedback} matchId={rateable.matchId} /> : null}
       </div>
 
       {showEvidence ? (
