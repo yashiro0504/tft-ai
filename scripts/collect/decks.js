@@ -9,7 +9,8 @@ const { decodeUnits, decodeTraits } = require('./normalize')
 const { TIER_FILTERS } = require('./rollup')
 const { buildDecks } = require('../buildDecksFromBoards')
 
-/** 표본 하한은 화면에서 15판으로 표시하므로, 저장은 그보다 조금 낮게 남겨 둔다 (용량 · 표 길이 절충) */
+/** 표본 하한은 화면에서 15판으로 표시하므로, 저장은 그보다 조금 낮게 남겨 둔다 (용량 · 표 길이 절충).
+ *  덱 수 상한을 넘으면 판 수 많은 덱부터 남긴다 (buildDecks capByGames) */
 const COMP_MIN_GAMES = Number(process.env.COMP_MIN_GAMES || 8)
 const COMP_MAX_DECKS = Number(process.env.COMP_MAX_DECKS || 100)
 
