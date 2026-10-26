@@ -218,8 +218,10 @@ const sortRows = (rows) =>
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
   // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
   const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
-  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3)
-  const unitInputs = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase(), `DA_18_${someChamp}`, `DA_${someChamp}`, `${someChamp}18_Base`]
+  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3).
+  // 형식은 접두사·꼬리 없는 이름에 붙인다 — 데이터 첫 키가 이미 'Lux18_Base' 여도 'Lux18_Base18_Base' 같은 없는 id 를 만들지 않게.
+  const bareChamp = String(someChamp).replace(/^(TFT\d*_|DA_\d*_|DA_)/i, '').replace(/_?Base$/i, '').replace(/\d+$/, '')
+  const unitInputs = [slug, String(someChamp), `TFT18_${bareChamp}`, slug.toUpperCase(), `DA_18_${bareChamp}`, `DA_${bareChamp}`, `${bareChamp}18_Base`]
   const variants = unitInputs.map((u) => shared.filterStatsByUnit(fbCombos, u))
   check(
     `unit 필터: ${unitInputs.join(' · ')} 같은 결과 · 응답 unit = 슬러그`,
