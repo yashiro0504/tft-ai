@@ -1,6 +1,6 @@
 {
   "scoringVersion": "v11",
-  "generatedAt": "2026-10-26T04:15:34.281Z",
+  "generatedAt": "2026-10-26T09:11:24.075Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -400,6 +400,26 @@
         "completion": 0,
         "items": 0,
         "contest": 75
+      }
+    },
+    "Rift01 win 협곡야수7 장로1성": {
+      "focus": "economy",
+      "lowSample": false,
+      "axes": {
+        "economy": 86,
+        "itemization": 100,
+        "tempo": 100,
+        "completion": 87,
+        "synergy": 87,
+        "contest": 85
+      },
+      "metaScore": 95,
+      "metaTier": "S",
+      "components": {
+        "placement": 100,
+        "completion": 87,
+        "items": 100,
+        "contest": 85
       }
     }
   }

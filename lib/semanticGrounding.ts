@@ -57,13 +57,20 @@ const OPPONENT_RE = /상대|경쟁자|로비\s*[1-8]등|1등\s*(?:플레이어|�
 /** 처방·목표·가정 문장 (최종 보드에 대한 사실 주장이 아님) */
 const PRESCRIPTIVE_RE = /세요|십시오|하라|해야|했어야|줬어야|합시다|목표|금지|권장|노리세요|만들어야|다면|라면|이면\s|일\s*때|할\s*때|\d-\d\s*까지|(?:확보|달성|완성)\s*[.!]?$/
 
+/** 시너지 단계 뒤 같은 절에 오면 목표 단계다 (열린다·켜진다·올린다·까지·노린다) */
+const TIER_TARGET_RE = /열리|열립|열린|열려|켜지|켜집|켜진|켜져|올라가|올라갑|올릴|올리|올려|까지|노리|노려|노릴/
+
 /** 기물 목록 사이 구분자 / 목록과 "N성" 사이 허용 문구 */
 const LIST_SEP_RE = /^\s*(?:[·,、/]|와|과|및|그리고)\s*$/
 const STAR_GAP_RE = /^\s*(?:(?:은|는|이|가|을|를|도|의)\s*)?(?:(?:모두|전부|다|각각|이미|이)\s*)?$/
 
-/** "N성" 뒤가 일반 표현인지 (3성작 · 2성+ · 2성 이상 · 3성 5개 · 2성 굳히기 …) */
+/**
+ * "N성" 뒤가 일반 표현인지 (3성작 · 2성+ · 2성 이상 · 3성 5개 · 2성 굳히기 …)
+ * 또는 올릴 목표인지 ("1성 피들스틱을 2성으로 올리는" — 시너지를 받치는 기물은 빼지 말고 올리라는 조언이라 자주 나온다).
+ * "1성으로 마감했다" 같은 사실 주장은 그대로 검사한다.
+ */
 function isGenericStar(after: string): boolean {
-  return /^(?:작|\+|\s*이상|\s*이하|\s*\d|\s*개|\s*밀도|\s*비율|\s*굳히|\s*확정|\s*우선|\s*유닛|\s*기물)/.test(after)
+  return /^(?:작|\+|\s*이상|\s*이하|\s*\d|\s*개|\s*밀도|\s*비율|\s*굳히|\s*확정|\s*우선|\s*유닛|\s*기물|으로\s*(?:올리|올려|올릴|올린|만들|키우|키워|키울))/.test(after)
 }
 
 export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): EntityFactError[] {
@@ -169,6 +176,8 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
       for (const t of findNames(s, traitNames)) {
         const m = s.slice(t.end).match(/^\s*\(?\s*([1-9])\s*단계/)
         if (!m) continue
+        // "한 칸을 채워야 처형자 3단계 또는 지옥불 2단계가 열립니다" — 채운 뒤의 목표 단계지 지금 보드 주장이 아니다 (같은 절 안에서만 본다)
+        if (TIER_TARGET_RE.test(s.slice(t.end + m[0].length).split(/[,.]/)[0])) continue
         const tier = Number(m[1])
         const actual = traitTiers.get(t.name)!
         if (!actual.has(tier)) {

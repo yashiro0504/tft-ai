@@ -4,6 +4,7 @@ import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
 import { isCoreUnit } from './contest'
 import { slotsUsed } from './boardSlots'
+import { traitAnchors, unitTraitCounts } from './traitAnchors'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -87,6 +88,54 @@ export function nearBreakpoints(m: SlimMatchData): { trait: string; count: numbe
   })
 }
 
+const levelOf = (bps: number[], n: number) => bps.filter((b) => b <= n).length
+
+export interface FillSwap {
+  /** 바꿀 1성 기물 */
+  name: string
+  /** 빼면 내려가는 시너지 (예: "싸움꾼 꺼짐", "달빛 2→1단계"). 비면 공짜 자리 */
+  cost: string[]
+}
+
+/**
+ * 시너지에 1명을 더할 자리 — 빈칸 수와, 바꿀 수 있는 1성 기물(빼면 잃는 것 포함).
+ * 제외: 그 시너지에 이미 속한 기물(타릭을 다른 선봉대로 바꿔도 선봉대는 그대로다) · 핵심 시너지를 받치는 기물(lib/traitAnchors).
+ * 대부분의 자리는 공짜가 아니라 맞바꿈이다(세트를 빼면 싸움꾼 2가 꺼진다) — 잃는 것을 함께 적어 LLM 이 맞바꿈으로 말하게 한다.
+ * 2026-10-23 1등 판에서 "타릭 자리에 선봉대를", "벤치에 남겨둘 것"처럼 채울 수 없는 자리를 권한 오진단을 막는다.
+ */
+export function fillSpots(m: SlimMatchData, trait: string): { empty: number; swaps: FillSwap[] } {
+  const counts = new Map((m.traits || []).map((t) => [t.name, t.count || 0]))
+  const anchored = new Set(traitAnchors(m).flatMap((a) => a.units.map((u) => u.name)))
+  const seen = new Set<string>()
+  const swaps: FillSwap[] = []
+  for (const u of m.units || []) {
+    if ((u.tier || 1) !== 1 || anchored.has(u.name) || seen.has(u.name)) continue
+    const c = unitTraitCounts(u)
+    if (c.get(trait)) continue
+    seen.add(u.name)
+    const cost: string[] = []
+    for (const [name, n] of c) {
+      const total = counts.get(name)
+      const bps = BREAKPOINTS[name] || []
+      if (total === undefined) continue
+      const before = levelOf(bps, total)
+      const after = levelOf(bps, total - n)
+      if (after < before) cost.push(after === 0 ? `${name} 꺼짐` : `${name} ${before}→${after}단계`)
+    }
+    swaps.push({ name: u.name, cost })
+  }
+  // 공짜 자리부터
+  swaps.sort((a, b) => a.cost.length - b.cost.length)
+  return { empty: emptySlotCount(m), swaps }
+}
+
+/** 1명 모자란 시너지 중 채울 자리가 있는 것만 (자리가 없으면 다음 판 행동으로 바꿀 수 없다) */
+export function fillableNearBreakpoints(m: SlimMatchData) {
+  return nearBreakpoints(m)
+    .map((n) => ({ ...n, spot: fillSpots(m, n.trait) }))
+    .filter((n) => n.spot.empty > 0 || n.spot.swaps.length > 0)
+}
+
 /* ───────── 단일 경기 장면 ───────── */
 
 function sameComp(m: SlimMatchData): KeyMoment | null {
@@ -143,6 +192,7 @@ function emptySlots(m: SlimMatchData): KeyMoment | null {
 // '1명 모자란 시너지'는 단일 경기 장면에서 뺐다 (2026-10-22 정답셋 0/19 맞음 · 래더 보드 같은 레벨 비교 등수 차이 없음).
 // 8·9레벨 밸류 덱은 시너지 하나 더 켜는 것보다 5코스트 하나를 더 쓰는 게 낫다. 여러 판 습관(lib/habits)은
 // 등수 손해와 같이 나타날 때만(requireHarm) 보이므로 그대로 둔다.
+// 다시 장면으로 쓴다면 fillableNearBreakpoints(채울 수 있는 자리 · 빼면 잃는 시너지)로만 말할 것 — 2026-10-23 제보 오진단.
 
 /** 리롤 캐리 = 1~3코스트 3성 캐리. 로비 경합은 이 덱에서만 등수를 가른다 (정답셋: 4·5코 2성 캐리 판의 경합 요인은 모두 틀림) */
 export const REROLL_CARRY_MAX_COST = 3

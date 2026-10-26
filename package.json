@@ -43,7 +43,7 @@
     "test:rollup": "node scripts/testRollup.js",
     "test:ops": "node scripts/testOps.js",
     "test:gate": "node scripts/testBotGate.js",
-    "test:ai": "node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js",
+    "test:ai": "node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js",
     "test:gamedata": "node scripts/testGameData.js",
     "inspect:match": "node scripts/inspectMatch.js",
     "rules:check": "node scripts/checkSceneRules.js",
