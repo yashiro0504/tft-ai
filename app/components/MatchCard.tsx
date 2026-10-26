@@ -11,7 +11,7 @@ import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, an
 import { TurnstileWidget } from './TurnstileWidget'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
-import { TraitHex, traitMaxLevel } from './LabUI'
+import { TraitHex, approxTraitStyle, traitMaxLevel } from './LabUI'
 import Link from 'next/link'
 import { entityHref, entitySlug } from '@/lib/entitySlug'
 import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
@@ -268,11 +268,22 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             <div className="text-sm text-muted">
               {match.lastRound} 라운드 · {match.gameLengthStr || '31분 20초'} · Lv.{match.level} · 잔여 {match.goldLeft}G
             </div>
-            {/* 시너지: 육각형(단계 농도) + 이름 */}
+            {/* 시너지: 육각형(게임과 같은 브론즈·실버·골드·프리즘) + 이름 */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {match.traits.map((t, i) => (
-                <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
-              ))}
+              {match.traits.map((t, i) => {
+                const max = traitMaxLevel(t.name)
+                return (
+                  <TraitHex
+                    key={i}
+                    name={t.name}
+                    count={t.count}
+                    level={t.tier}
+                    max={max}
+                    iconUrl={t.iconUrl}
+                    style={t.style ?? approxTraitStyle(t.tier, max)}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -316,7 +327,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               )
 
               return (
-                <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-12 flex-col items-center group/unit relative">
+                <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-[52px] flex-col items-center group/unit relative">
                   {/* 기물 아이콘 → 챔피언 상세 (아이콘 단위 링크 · id 가 없거나 현재 세트 기물이 아니면 링크 없음) */}
                   {unit.id && CHAMPION_PAGE_SLUGS.has(entitySlug('champion', unit.id)) ? (
                     <Link
@@ -331,15 +342,15 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                     icon
                   )}
 
-                  {/* 장착 아이템 3슬롯 */}
-                  <div className="flex items-center gap-0.5 mt-1 h-3.5">
+                  {/* 장착 아이템 3슬롯 — 16px, 테두리 없이 그림만 (14px 상자에 1px 테두리라 실제 그림은 12px 였다) */}
+                  <div className="flex items-center gap-0.5 mt-1 h-4">
                     {unit.items.slice(0, 3).map((item, itemIdx) => {
                       const iconUrl = unit.itemIcons?.[itemIdx]
                       return (
                         <div
                           key={itemIdx}
                           title={item}
-                          className="h-3.5 w-3.5 rounded-[2px] bg-sunken border border-line overflow-hidden shrink-0 flex items-center justify-center"
+                          className="h-4 w-4 rounded-[3px] bg-sunken overflow-hidden shrink-0 flex items-center justify-center"
                         >
                           {iconUrl ? (
                             <img
@@ -351,7 +362,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                               }}
                             />
                           ) : (
-                            <span className="text-[7px] text-muted font-black">
+                            <span className="text-[8px] text-muted font-black">
                               {item.charAt(0)}
                             </span>
                           )}
@@ -361,7 +372,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                   </div>
 
                   {/* 기물 이름 */}
-                  <span className="text-xs text-muted truncate max-w-[48px] text-center mt-0.5 font-medium group-hover/unit:text-ink">
+                  <span className="text-xs text-muted truncate max-w-[52px] text-center mt-0.5 font-medium group-hover/unit:text-ink">
                     {unit.name}
                   </span>
                 </div>

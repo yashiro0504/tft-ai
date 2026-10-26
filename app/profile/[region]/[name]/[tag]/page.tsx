@@ -159,7 +159,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               체험 모드
             </span>
           ) : null}
-          <span className="text-xs text-subtle">이 페이지 주소를 공유하면 같은 전적을 바로 볼 수 있습니다.</span>
+          <span className="hidden text-xs text-subtle lg:inline">이 페이지 주소를 공유하면 같은 전적을 바로 볼 수 있습니다.</span>
         </SummonerSummary>
 
         <section>
