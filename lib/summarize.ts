@@ -72,6 +72,7 @@ function processParticipantTraits(traits: any[]): SlimMatchTrait[] {
         tier: t.tier_current,
         count: t.num_units,
         iconUrl: traitInfo.iconUrl,
+        style: typeof t.style === 'number' ? t.style : undefined,
       }
     })
 }

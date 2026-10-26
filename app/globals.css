@@ -33,6 +33,12 @@
     --gold-text: #8A5D00;
 
     /* 모서리 (카드 / 버튼·입력창 / 칩) */
+    /* 시너지 색 단계 (게임과 같은 브론즈·실버·골드·프리즘 — 데이터 뜻이라 두 모드 같은 값, 육각형 바탕에만) */
+    --trait-bronze: #B97F52;
+    --trait-silver: #9FAAB8;
+    --trait-gold: #E8B53A;
+    --trait-prismatic: linear-gradient(135deg, #9FE6F2 0%, #C9A6F5 50%, #F5C7A0 100%);
+
     --radius-card: 12px;
     --radius-control: 8px;
     --radius-chip: 6px;
@@ -98,6 +104,8 @@
 .trait-glyph-on-accent { filter: brightness(0) invert(1); }
 [data-theme='dark'] .trait-glyph { filter: none; opacity: 0.9; }
 [data-theme='dark'] .trait-glyph-on-accent { filter: brightness(0); opacity: 0.85; }
+/* 색 단계 육각형(밝은 바탕)의 글리프는 두 모드 모두 검정 */
+.trait-glyph-on-style { filter: brightness(0); opacity: 0.8; }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

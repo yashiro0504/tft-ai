@@ -11,6 +11,7 @@ import { HabitOverview } from './HabitOverview'
 import { GoalTracker } from './GoalTracker'
 import { DeckReportCard } from './DeckReportCard'
 import { FavoriteButton } from './FavoriteButton'
+import { MobileCollapse } from './MobileCollapse'
 
 /**
  * 소환사 개요 (코치 결과 / 공유용 프로필 페이지 공용).
@@ -86,6 +87,38 @@ function mostPlayed(matches: SlimMatchData[]) {
   }
 }
 
+/**
+ * 티어 엠블럼 (랭크 있음) 또는 프로필 아이콘 원 (배치 중).
+ * 휴대폰에서는 작게(이름 왼쪽), lg 사이드바에서는 크게(가운데).
+ */
+function ProfileEmblem({ rank, iconUrl }: { rank: SummonerProfile['rank']; iconUrl: string }) {
+  if (!rank) {
+    // 랭크가 없으면 빈 타원 대신 프로필 아이콘을 크게 — "배치 중"은 이름 아래 랭크 줄이 알려 준다
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        className="h-16 w-16 shrink-0 rounded-full border-2 border-line bg-sunken object-cover lg:h-24 lg:w-24"
+      />
+    )
+  }
+  return (
+    <div className="relative h-[72px] w-[90px] shrink-0 overflow-hidden lg:h-[120px] lg:w-[150px]">
+      {/* 원본은 1280×720 중앙에 엠블럼이 작게 있어, 크게 키워 가운데만 보이게 한다 */}
+      <img
+        src={`${EMBLEM_BASE}/emblem-${rank.tier.toLowerCase()}.png`}
+        alt={formatRankLabel(rank)}
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[276px] max-w-none -translate-x-1/2 -translate-y-1/2 lg:w-[460px]"
+      />
+      <img
+        src={iconUrl}
+        alt=""
+        className="absolute bottom-0 right-0 h-8 w-8 rounded-full border-2 border-panel bg-sunken object-cover lg:h-11 lg:w-11"
+      />
+    </div>
+  )
+}
+
 function StatTile({ label, value, tone = 'text-ink' }: { label: string; value: string; tone?: string }) {
   return (
     <div className="rounded-control bg-sunken px-3 py-2.5">
@@ -131,52 +164,39 @@ export function SummonerSummary({
     <section aria-label="소환사 개요" className="grid items-start gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
       {/* 왼쪽: 프로필 */}
       <div className="flex flex-col gap-3 rounded-card border border-line bg-panel p-5 shadow-card">
-        <div className="flex flex-col items-center text-center">
-          <div className="relative h-[120px] w-[150px] overflow-hidden">
+        {/* 휴대폰: 엠블럼 · 이름 가로 한 줄 (첫 화면에서 경기 목록이 가깝게) / lg 사이드바: 가운데 세로 */}
+        <div className="flex items-center gap-4 lg:flex-col lg:items-center lg:gap-0 lg:text-center">
+          <ProfileEmblem rank={rank} iconUrl={profile.profileIconUrl} />
+          <div className="flex min-w-0 flex-1 flex-col items-start lg:w-full lg:items-center">
+            <Heading className="max-w-full truncate text-xl font-bold tracking-tight text-ink lg:mt-3 lg:text-2xl">
+              {profile.gameName}
+              <span className="ml-1 text-sm font-medium text-subtle lg:text-base">#{profile.tagLine}</span>
+            </Heading>
+            <p className="mt-0.5 text-sm font-semibold text-ink">
+              {formatRankLabel(rank)}
+              {rank ? <span className="ml-1.5 font-medium text-muted">{formatRankLp(rank)}</span> : null}
+              <span className="ml-1.5 text-xs font-medium text-subtle lg:hidden">Lv.{profile.summonerLevel}</span>
+            </p>
             {rank ? (
-              // 원본은 1280×720 중앙에 엠블럼이 작게 있어, 크게 키워 가운데만 보이게 한다
-              <img
-                src={`${EMBLEM_BASE}/emblem-${rank.tier.toLowerCase()}.png`}
-                alt={formatRankLabel(rank)}
-                className="pointer-events-none absolute left-1/2 top-1/2 w-[460px] max-w-none -translate-x-1/2 -translate-y-1/2"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-full border border-line bg-sunken text-xs text-subtle">
-                배치 중
+              <div className="mt-2 w-full">
+                <div className="flex h-1.5 overflow-hidden rounded-full bg-sunken" aria-hidden="true">
+                  <div className="bg-accent" style={{ width: `${seasonWinRate ?? 0}%` }} />
+                </div>
+                <p className="mt-1 text-xs text-subtle">
+                  시즌 {formatRankRecord(rank)}
+                  {seasonWinRate != null ? ` · 승률 ${seasonWinRate}%` : ''}
+                </p>
               </div>
-            )}
-            <img
-              src={profile.profileIconUrl}
-              alt=""
-              className="absolute bottom-0 right-0 h-11 w-11 rounded-full border-2 border-panel bg-sunken object-cover"
-            />
-          </div>
-          <Heading className="mt-3 max-w-full truncate text-2xl font-bold tracking-tight text-ink">
-            {profile.gameName}
-            <span className="ml-1 text-base font-medium text-subtle">#{profile.tagLine}</span>
-          </Heading>
-          <p className="mt-0.5 text-sm font-semibold text-ink">
-            {formatRankLabel(rank)}
-            {rank ? <span className="ml-1.5 font-medium text-muted">{formatRankLp(rank)}</span> : null}
-          </p>
-          {rank ? (
-            <div className="mt-2 w-full">
-              <div className="flex h-1.5 overflow-hidden rounded-full bg-sunken" aria-hidden="true">
-                <div className="bg-accent" style={{ width: `${seasonWinRate ?? 0}%` }} />
-              </div>
-              <p className="mt-1 text-xs text-subtle">
-                시즌 {formatRankRecord(rank)}
-                {seasonWinRate != null ? ` · 승률 ${seasonWinRate}%` : ''}
-              </p>
+            ) : null}
+            <p className="mt-1 hidden text-xs text-subtle lg:block">Lv.{profile.summonerLevel}</p>
+            <div className="mt-2 lg:mt-3">
+              <FavoriteButton gameName={profile.gameName} tagLine={profile.tagLine} />
             </div>
-          ) : null}
-          <p className="mt-1 text-xs text-subtle">Lv.{profile.summonerLevel}</p>
-          <div className="mt-3">
-            <FavoriteButton gameName={profile.gameName} tagLine={profile.tagLine} />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* 휴대폰에서는 오른쪽 카드의 요약 타일(평균·TOP4·1등)과 겹쳐 숨긴다 */}
+        <div className="hidden grid-cols-2 gap-2 lg:grid">
           <StatTile label="최근 경기" value={`${n}`} />
           <StatTile label="평균 등수" value={avg.toFixed(2)} />
           <StatTile label="TOP4" value={`${n ? Math.round((top4 / n) * 100) : 0}%`} />
@@ -237,6 +257,8 @@ export function SummonerSummary({
           <PlacementTrend matches={matches} />
         </div>
 
+        {/* 휴대폰에서는 접어 둔다 — 6축·습관·분포·덱 성적표가 길어 경기 목록이 2천 px 아래로 밀렸다 */}
+        <MobileCollapse label="6축 진단 · 등수 분포 · 내 덱 성적표">
         <div className="grid gap-6 border-t border-sunken pt-5 xl:grid-cols-2">
           <div>
             <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
@@ -296,6 +318,7 @@ export function SummonerSummary({
             {deckReport ? <DeckReportCard report={deckReport} /> : null}
           </div>
         </div>
+        </MobileCollapse>
       </div>
     </section>
   )

@@ -72,6 +72,8 @@ export interface SlimMatchTrait {
   tier: number
   count: number
   iconUrl?: string
+  /** Riot 시너지 색 단계: 1 브론즈 · 2 실버 · 3 골드 · 4 프리즘 (이 필드 전에 캐시된 경기에는 없다) */
+  style?: number
 }
 
 // 로비 8명 전체 순위 정보 (롤체지지/OP.GG 아코디언)
