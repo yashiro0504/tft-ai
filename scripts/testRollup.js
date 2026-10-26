@@ -253,7 +253,7 @@ const sortRows = (rows) =>
     hangCalls++
     return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
   }
-  const slow = loadStatsLib({ rpc: () => ({ abortSignal: hanging }) })
+  const slow = loadStatsLib({ rpc: () => rpcBuilder(hanging) })
   let t = Date.now()
   const firstFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
   const firstMs = Date.now() - t
@@ -274,13 +274,12 @@ const sortRows = (rows) =>
   let queryCalls = 0
   const filterRows = [{ patch: '16.20', tier_bucket: 'MASTER', matches: 10, first_date: '2026-10-19', last_date: '2026-10-20' }]
   const partial = loadStatsLib({
-    rpc: (fn) => ({
-      abortSignal: (signal) => {
+    rpc: (fn) =>
+      rpcBuilder((signal) => {
         if (fn === 'tft_stat_filters') return Promise.resolve({ data: filterRows, error: null })
         queryCalls++
         return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
-      },
-    }),
+      }),
   })
   t = Date.now()
   const qFirst = await partial.getStats('unit', shared.DEFAULT_FILTER)
@@ -334,11 +333,17 @@ function loadStatsLib(fakeClient) {
   return require('../lib/tftStats')
 }
 
+/** rpc() 빌더 흉내 — order · range 는 무시하고 abortSignal 에서 run 을 부른다 */
+function rpcBuilder(run) {
+  const b = { order: () => b, range: () => b, abortSignal: run }
+  return b
+}
+
 /**
- * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자) · from(t).select().eq().abortSignal().
- * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려준다.
+ * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자).order().range() · from(t).select().eq().abortSignal().
+ * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려주고, maxRows 를 주면 한 응답을 그 행 수에서 자른다.
  */
-function fakeSupabase(db, { failRpc = false } = {}) {
+function fakeSupabase(db, { failRpc = false, maxRows = Infinity } = {}) {
   const parsers = { 1082: (v) => v, 20: (v) => Number(v), 1700: (v) => Number(v) }
   const run = (sql, params) =>
     failRpc
@@ -350,8 +355,30 @@ function fakeSupabase(db, { failRpc = false } = {}) {
   return {
     rpc(fn, args) {
       const keys = Object.keys(args)
-      const sql = `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})`
-      return { abortSignal: () => run(sql, keys.map((k) => args[k])) }
+      const order = []
+      let from = 0
+      let to = Infinity
+      const b = {
+        order(c) {
+          order.push(c)
+          return b
+        },
+        range(f, t) {
+          from = f
+          to = t
+          return b
+        },
+        abortSignal: () => {
+          const limit = Math.min(to - from + 1, maxRows)
+          const sql =
+            `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})` +
+            (order.length ? ` order by ${order.join(', ')}` : '') +
+            (Number.isFinite(limit) ? ` limit ${limit}` : '') +
+            (from ? ` offset ${from}` : '')
+          return run(sql, keys.map((k) => args[k]))
+        },
+      }
+      return b
     },
     from(table) {
       const conds = []
@@ -409,6 +436,21 @@ async function apiChecks(db, mem) {
   check('기물: 평균등수 오름차순', units.rows.every((r, i, a) => i === 0 || a[i - 1].avgPlacement <= r.avgPlacement))
   const combos = await stats.getStats('unit_item', f)
   check('기물×아이템: 5판 미만 행 제외 · 키 = 기물|아이템', combos.rows.every((r) => r.sampleSize >= 5 && r.key === `${r.champKey}|${r.itemKey}`) && combos.rows.length > 0)
+  // PostgREST max-rows 로 한 응답이 잘려도 페이지로 끝까지 받는다 (운영에서 1천 행에서 임의로 잘렸다, 2026-10-26)
+  {
+    process.env.STATS_RPC_PAGE_SIZE = '10'
+    const paged = loadStatsLib(fakeSupabase(db, { maxRows: 10 }))
+    const all = await paged.getStats('unit_item', f)
+    const keys = (res) => res.rows.map((r) => r.key).sort().join(',')
+    check(
+      '기물×아이템: 응답이 10행에서 잘리는 DB 에서도 페이지로 모든 행 (중복 없음)',
+      combos.rows.length > 10 && all.source === 'db' && keys(all) === keys(combos) && new Set(all.rows.map((r) => r.key)).size === all.rows.length,
+      `${all.rows.length} / ${combos.rows.length}`
+    )
+    delete process.env.STATS_RPC_PAGE_SIZE
+    // 아래 엔티티 페이지 검사가 require 캐시의 lib/tftStats 를 쓰므로 잘림 없는 클라이언트로 되돌린다
+    loadStatsLib(fakeSupabase(db))
+  }
   const traits = await stats.getStats('trait', { ...f, tier: 'challenger', days: 3 })
   check('시너지: 다른 필터 조합도 db', traits.source === 'db' && traits.filter.tier === 'challenger' && traits.filter.days === 3)
   const unknownPatch = await stats.getStats('item', { ...f, patch: '9.99' })

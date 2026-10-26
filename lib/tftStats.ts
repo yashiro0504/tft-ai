@@ -117,6 +117,34 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
   return (await withTimeout<T[]>((signal) => c.rpc(fn, args).abortSignal(signal))) ?? []
 }
 
+/**
+ * PostgREST 는 한 응답을 max-rows(Supabase 기본 1000)에서 자른다. tft_stat_query 는 정렬이 없어서
+ * 기물×아이템(1천 행 이상)이 임의의 1천 행만 왔다 (2026-10-26). 키 순으로 정렬해 끝까지 페이지로 받는다.
+ * 페이지 크기는 max-rows 이하여야 "덜 왔다 = 마지막 페이지" 판정이 맞다.
+ */
+const RPC_PAGE_SIZE = (() => {
+  const n = Number(process.env.STATS_RPC_PAGE_SIZE)
+  return Number.isInteger(n) && n > 0 ? n : 1000
+})()
+const RPC_MAX_PAGES = 20
+
+async function rpcAll<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
+  const c = db()
+  if (!c) throw new NoDbError('supabase_not_configured')
+  const out: T[] = []
+  for (let page = 0; page < RPC_MAX_PAGES; page++) {
+    const from = page * RPC_PAGE_SIZE
+    const rows =
+      (await withTimeout<T[]>((signal) =>
+        c.rpc(fn, args).order('key1').order('key2').range(from, from + RPC_PAGE_SIZE - 1).abortSignal(signal)
+      )) ?? []
+    out.push(...rows)
+    if (rows.length < RPC_PAGE_SIZE) return out
+  }
+  logEvent('warn', 'stats_rpc_page_cap', { fn, rows: out.length })
+  return out
+}
+
 function fallbackReason(err: unknown): string {
   if (err instanceof NoDbError) return err.message
   return 'db_error'
@@ -369,7 +397,7 @@ export async function getStats(type: StatType, filter: StatFilter): Promise<Stat
           p_min_games: type === 'unit_item' ? UNIT_ITEM_MIN_ROWS : 1,
         }
         const [rows, total] = await Promise.all([
-          rpc<QueryRow>('tft_stat_query', { p_type: type, ...args }),
+          rpcAll<QueryRow>('tft_stat_query', { p_type: type, ...args }),
           rpc<QueryRow>('tft_stat_query', { p_type: 'total', ...args }),
         ])
         const totalBoards = Number(total[0]?.games) || 0
