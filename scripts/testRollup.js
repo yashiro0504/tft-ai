@@ -174,6 +174,25 @@ const sortRows = (rows) =>
     check('deck 은 decksData.json 덱 모양', d.deck.id === d.comp_id && Array.isArray(d.deck.units) && d.deck.carryKey && d.core_units.includes('khazix'))
   }
   check('표본 하한 미만 덱은 저장 안 함', compRows(deckBoards.slice(0, 10), { minGames: 15 }).length === 0)
+  // 덱 수 상한을 넘으면 판 수 많은 덱부터 남긴다 — 많이 하지만 성적 나쁜 덱이 티어표·내 덱 비교에서 빠지지 않게
+  {
+    const more = new Map([
+      ...names,
+      [61, 'DA_18_Veigar'], [62, 'DA_18_Ahri'], [63, 'DA_18_Cassiopeia'], [64, 'DA_Fiddlesticks18'], [65, 'DA_Karma18'], [66, 'DA_18_LeBlanc'],
+      [71, 'DA_18_Spellweaver'],
+    ])
+    // 카직스 덱 20판은 전부 7·8등, 주문술사 베이가 덱 8판은 전부 1등
+    const popularBad = deckRaw.map((b, i) => ({ ...b, placement: 7 + (i % 2) }))
+    const rareGood = Array.from({ length: 8 }, (_, i) => ({
+      ...board(`KR_V${i}`, 1, [[61, 2, 31, 32, 33], [62, 1], [63, 1], [64, 1], [65, 1], [66, 1]], [[71, 6, 3]]),
+      tier_bucket: 'MASTER',
+    }))
+    const capBoards = toDeckBoards([...popularBad, ...rareGood], (id) => more.get(id))
+    const one = compRows(capBoards, { minGames: 5, maxDecks: 1 })
+    check('덱 상한: 판 수 많은 덱을 남긴다 (20판 7·8등 > 8판 1등)', one.length === 1 && one[0].games === 20, JSON.stringify(one.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+    const two = compRows(capBoards, { minGames: 5, maxDecks: 2 })
+    check('덱 상한 안의 덱은 평균 등수 순', two.length === 2 && two[0].games === 8 && two[0].deck.avgPlacement <= two[1].deck.avgPlacement, JSON.stringify(two.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+  }
 
   console.log('서빙 (lib/tftStats — DB 미설정 → JSON 폴백)')
   delete process.env.NEXT_PUBLIC_SUPABASE_URL
