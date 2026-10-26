@@ -168,7 +168,7 @@ function LobbyUnit({ unit, shared }: { unit: SlimMatchUnit; shared: boolean }) {
         {unit.items.slice(0, 3).map((item, i) => {
           const iconUrl = unit.itemIcons?.[i]
           return (
-            <span key={i} className="flex h-3 w-3 items-center justify-center overflow-hidden rounded-[2px] border border-line bg-sunken">
+            <span key={i} className="flex h-3 w-3 items-center justify-center overflow-hidden rounded-[2px] bg-sunken">
               {iconUrl ? (
                 <img
                   src={iconUrl}
@@ -241,7 +241,15 @@ function LobbyBoard({ participants, myUnits }: { participants: LobbyParticipant[
                 {p.traits.length > 0 && (
                   <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                     {p.traits.map((t, i) => (
-                      <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
+                      <TraitHex
+                        key={i}
+                        name={t.name}
+                        count={t.count}
+                        level={t.tier}
+                        max={traitMaxLevel(t.name)}
+                        iconUrl={t.iconUrl}
+                        style={t.style ?? approxTraitStyle(t.tier, traitMaxLevel(t.name))}
+                      />
                     ))}
                   </div>
                 )}
