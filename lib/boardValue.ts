@@ -4,7 +4,7 @@
  *
  * 골든셋 로비 보드 194개에서 원시 ρ 0.58이지만, 늦게 탈락할수록 골드를 더 쓰므로 상당 부분이 역방향 효과다
  * (같은 탈락 스테이지끼리 비교한 스테이지 보정 ρ 0.26 — scripts/testAxes.js 타당도).
- * 그래서 경제 축은 원시값이 아니라 탈락 스테이지 기준치(axisConfig economy.expectedBoardValueByStage) 대비 비율로 쓴다.
+ * 그래서 경제 축은 원시값이 아니라 탈락 스테이지 기준치(lib/baselines — 마스터+ 실측, 없으면 axisConfig 표) 대비 비율로 쓴다.
  */
 export function boardValue(units: { rarity?: number | null; tier?: number | null }[]): number {
   return (units || []).reduce((s, u) => s + (u.rarity || 1) * 3 ** (Math.min(Math.max(u.tier || 1, 1), 3) - 1), 0)

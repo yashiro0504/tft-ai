@@ -44,6 +44,15 @@ const DB_TIMEOUT_MS = (() => {
 const MEMO_TTL_MS = 5 * 60_000
 /** 기물×아이템은 행이 많아(기물 × 아이템) 이보다 적은 조합은 응답에서 뺀다 */
 const UNIT_ITEM_MIN_ROWS = 5
+/**
+ * 최신 패치의 기본 티어(마스터+) 판 수가 이보다 적으면 DB 대신 빌드 타임 JSON 을 쓴다.
+ * 2026-10-22 수집 시작 직후 23판으로 메타·AI 비교 통계가 바뀌었다 (워윅 3판 평균 3.0등이 1위).
+ * JSON 은 래더 약 1천 판 — 수집기 시간당 최대 200판이면 몇 시간 뒤 자동으로 DB 로 넘어간다.
+ */
+const DB_MIN_MATCHES = (() => {
+  const n = Number(process.env.STATS_DB_MIN_MATCHES)
+  return Number.isFinite(n) && n >= 0 ? n : 500
+})()
 
 let client: SupabaseClient | null | undefined
 function db(): SupabaseClient | null {
@@ -106,6 +115,34 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
   const c = db()
   if (!c) throw new NoDbError('supabase_not_configured')
   return (await withTimeout<T[]>((signal) => c.rpc(fn, args).abortSignal(signal))) ?? []
+}
+
+/**
+ * PostgREST 는 한 응답을 max-rows(Supabase 기본 1000)에서 자른다. tft_stat_query 는 정렬이 없어서
+ * 기물×아이템(1천 행 이상)이 임의의 1천 행만 왔다 (2026-10-26). 키 순으로 정렬해 끝까지 페이지로 받는다.
+ * 페이지 크기는 max-rows 이하여야 "덜 왔다 = 마지막 페이지" 판정이 맞다.
+ */
+const RPC_PAGE_SIZE = (() => {
+  const n = Number(process.env.STATS_RPC_PAGE_SIZE)
+  return Number.isInteger(n) && n > 0 ? n : 1000
+})()
+const RPC_MAX_PAGES = 20
+
+async function rpcAll<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
+  const c = db()
+  if (!c) throw new NoDbError('supabase_not_configured')
+  const out: T[] = []
+  for (let page = 0; page < RPC_MAX_PAGES; page++) {
+    const from = page * RPC_PAGE_SIZE
+    const rows =
+      (await withTimeout<T[]>((signal) =>
+        c.rpc(fn, args).order('key1').order('key2').range(from, from + RPC_PAGE_SIZE - 1).abortSignal(signal)
+      )) ?? []
+    out.push(...rows)
+    if (rows.length < RPC_PAGE_SIZE) return out
+  }
+  logEvent('warn', 'stats_rpc_page_cap', { fn, rows: out.length })
+  return out
 }
 
 function fallbackReason(err: unknown): string {
@@ -177,6 +214,7 @@ export async function getMetaFilters(): Promise<MetaFiltersResponse> {
         }
         const patches = [...byPatch.values()].sort((a, b) => b.lastDate.localeCompare(a.lastDate) || b.patch.localeCompare(a.patch))
         if (!patches.length) return jsonFilters('empty')
+        if ((patches[0].matches[DEFAULT_TIER] || 0) < DB_MIN_MATCHES) return jsonFilters('small_sample')
         return {
           success: true,
           source: 'db',
@@ -359,7 +397,7 @@ export async function getStats(type: StatType, filter: StatFilter): Promise<Stat
           p_min_games: type === 'unit_item' ? UNIT_ITEM_MIN_ROWS : 1,
         }
         const [rows, total] = await Promise.all([
-          rpc<QueryRow>('tft_stat_query', { p_type: type, ...args }),
+          rpcAll<QueryRow>('tft_stat_query', { p_type: type, ...args }),
           rpc<QueryRow>('tft_stat_query', { p_type: 'total', ...args }),
         ])
         const totalBoards = Number(total[0]?.games) || 0

@@ -19,6 +19,7 @@ import { LimitModal } from './components/LimitModal'
 import { TopDecks } from './components/TopDecks'
 import { SummonerSummary } from './components/SummonerSummary'
 import { RefreshMatchesButton } from './components/RefreshMatchesButton'
+import { OverviewProgress } from './components/OverviewProgress'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -407,6 +408,8 @@ export default function TFTCoachPage() {
                   종합 분석은 Pro 기능이에요. 출시 전까지는 무료로 쓸 수 있어요.
                 </p>
               )}
+
+              {isOverviewLoading && <OverviewProgress />}
 
               {overviewError && (
                 <div className="mt-4 p-3 rounded-control bg-bad/10 border border-bad/60 text-bad text-sm flex items-center gap-2">

@@ -14,6 +14,10 @@ const { createMemoryStore } = require('./collect/store')
 const { rollupBoards, queryRollups, rollupFilters, comboKey, tierBuckets, minusDays } = require('./collect/rollup')
 const { toDeckBoards, compRows } = require('./collect/decks')
 
+// 테스트 데이터는 수십 판이라 lib/tftStats 의 최소 판 수(기본 500) 미만 → 항상 JSON 폴백이 된다.
+// 서빙 검사는 DB 경로를 보려는 것이므로 기준을 끈다 (lib 를 불러오기 전에 설정해야 한다).
+process.env.STATS_DB_MIN_MATCHES = '0'
+
 let failures = 0
 function check(label, condition, detail = '') {
   if (condition) console.log(`  ✅ ${label}`)
@@ -170,6 +174,25 @@ const sortRows = (rows) =>
     check('deck 은 decksData.json 덱 모양', d.deck.id === d.comp_id && Array.isArray(d.deck.units) && d.deck.carryKey && d.core_units.includes('khazix'))
   }
   check('표본 하한 미만 덱은 저장 안 함', compRows(deckBoards.slice(0, 10), { minGames: 15 }).length === 0)
+  // 덱 수 상한을 넘으면 판 수 많은 덱부터 남긴다 — 많이 하지만 성적 나쁜 덱이 티어표·내 덱 비교에서 빠지지 않게
+  {
+    const more = new Map([
+      ...names,
+      [61, 'DA_18_Veigar'], [62, 'DA_18_Ahri'], [63, 'DA_18_Cassiopeia'], [64, 'DA_Fiddlesticks18'], [65, 'DA_Karma18'], [66, 'DA_18_LeBlanc'],
+      [71, 'DA_18_Spellweaver'],
+    ])
+    // 카직스 덱 20판은 전부 7·8등, 주문술사 베이가 덱 8판은 전부 1등
+    const popularBad = deckRaw.map((b, i) => ({ ...b, placement: 7 + (i % 2) }))
+    const rareGood = Array.from({ length: 8 }, (_, i) => ({
+      ...board(`KR_V${i}`, 1, [[61, 2, 31, 32, 33], [62, 1], [63, 1], [64, 1], [65, 1], [66, 1]], [[71, 6, 3]]),
+      tier_bucket: 'MASTER',
+    }))
+    const capBoards = toDeckBoards([...popularBad, ...rareGood], (id) => more.get(id))
+    const one = compRows(capBoards, { minGames: 5, maxDecks: 1 })
+    check('덱 상한: 판 수 많은 덱을 남긴다 (20판 7·8등 > 8판 1등)', one.length === 1 && one[0].games === 20, JSON.stringify(one.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+    const two = compRows(capBoards, { minGames: 5, maxDecks: 2 })
+    check('덱 상한 안의 덱은 평균 등수 순', two.length === 2 && two[0].games === 8 && two[0].deck.avgPlacement <= two[1].deck.avgPlacement, JSON.stringify(two.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+  }
 
   console.log('서빙 (lib/tftStats — DB 미설정 → JSON 폴백)')
   delete process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -214,8 +237,10 @@ const sortRows = (rows) =>
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
   // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
   const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
-  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3)
-  const unitInputs = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase(), `DA_18_${someChamp}`, `DA_${someChamp}`, `${someChamp}18_Base`]
+  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3).
+  // 형식은 접두사·꼬리 없는 이름에 붙인다 — 데이터 첫 키가 이미 'Lux18_Base' 여도 'Lux18_Base18_Base' 같은 없는 id 를 만들지 않게.
+  const bareChamp = String(someChamp).replace(/^(TFT\d*_|DA_\d*_|DA_)/i, '').replace(/_?Base$/i, '').replace(/\d+$/, '')
+  const unitInputs = [slug, String(someChamp), `TFT18_${bareChamp}`, slug.toUpperCase(), `DA_18_${bareChamp}`, `DA_${bareChamp}`, `${bareChamp}18_Base`]
   const variants = unitInputs.map((u) => shared.filterStatsByUnit(fbCombos, u))
   check(
     `unit 필터: ${unitInputs.join(' · ')} 같은 결과 · 응답 unit = 슬러그`,
@@ -247,7 +272,7 @@ const sortRows = (rows) =>
     hangCalls++
     return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
   }
-  const slow = loadStatsLib({ rpc: () => ({ abortSignal: hanging }) })
+  const slow = loadStatsLib({ rpc: () => rpcBuilder(hanging) })
   let t = Date.now()
   const firstFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
   const firstMs = Date.now() - t
@@ -268,13 +293,12 @@ const sortRows = (rows) =>
   let queryCalls = 0
   const filterRows = [{ patch: '16.20', tier_bucket: 'MASTER', matches: 10, first_date: '2026-10-19', last_date: '2026-10-20' }]
   const partial = loadStatsLib({
-    rpc: (fn) => ({
-      abortSignal: (signal) => {
+    rpc: (fn) =>
+      rpcBuilder((signal) => {
         if (fn === 'tft_stat_filters') return Promise.resolve({ data: filterRows, error: null })
         queryCalls++
         return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
-      },
-    }),
+      }),
   })
   t = Date.now()
   const qFirst = await partial.getStats('unit', shared.DEFAULT_FILTER)
@@ -328,11 +352,17 @@ function loadStatsLib(fakeClient) {
   return require('../lib/tftStats')
 }
 
+/** rpc() 빌더 흉내 — order · range 는 무시하고 abortSignal 에서 run 을 부른다 */
+function rpcBuilder(run) {
+  const b = { order: () => b, range: () => b, abortSignal: run }
+  return b
+}
+
 /**
- * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자) · from(t).select().eq().abortSignal().
- * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려준다.
+ * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자).order().range() · from(t).select().eq().abortSignal().
+ * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려주고, maxRows 를 주면 한 응답을 그 행 수에서 자른다.
  */
-function fakeSupabase(db, { failRpc = false } = {}) {
+function fakeSupabase(db, { failRpc = false, maxRows = Infinity } = {}) {
   const parsers = { 1082: (v) => v, 20: (v) => Number(v), 1700: (v) => Number(v) }
   const run = (sql, params) =>
     failRpc
@@ -344,8 +374,30 @@ function fakeSupabase(db, { failRpc = false } = {}) {
   return {
     rpc(fn, args) {
       const keys = Object.keys(args)
-      const sql = `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})`
-      return { abortSignal: () => run(sql, keys.map((k) => args[k])) }
+      const order = []
+      let from = 0
+      let to = Infinity
+      const b = {
+        order(c) {
+          order.push(c)
+          return b
+        },
+        range(f, t) {
+          from = f
+          to = t
+          return b
+        },
+        abortSignal: () => {
+          const limit = Math.min(to - from + 1, maxRows)
+          const sql =
+            `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})` +
+            (order.length ? ` order by ${order.join(', ')}` : '') +
+            (Number.isFinite(limit) ? ` limit ${limit}` : '') +
+            (from ? ` offset ${from}` : '')
+          return run(sql, keys.map((k) => args[k]))
+        },
+      }
+      return b
     },
     from(table) {
       const conds = []
@@ -403,6 +455,21 @@ async function apiChecks(db, mem) {
   check('기물: 평균등수 오름차순', units.rows.every((r, i, a) => i === 0 || a[i - 1].avgPlacement <= r.avgPlacement))
   const combos = await stats.getStats('unit_item', f)
   check('기물×아이템: 5판 미만 행 제외 · 키 = 기물|아이템', combos.rows.every((r) => r.sampleSize >= 5 && r.key === `${r.champKey}|${r.itemKey}`) && combos.rows.length > 0)
+  // PostgREST max-rows 로 한 응답이 잘려도 페이지로 끝까지 받는다 (운영에서 1천 행에서 임의로 잘렸다, 2026-10-26)
+  {
+    process.env.STATS_RPC_PAGE_SIZE = '10'
+    const paged = loadStatsLib(fakeSupabase(db, { maxRows: 10 }))
+    const all = await paged.getStats('unit_item', f)
+    const keys = (res) => res.rows.map((r) => r.key).sort().join(',')
+    check(
+      '기물×아이템: 응답이 10행에서 잘리는 DB 에서도 페이지로 모든 행 (중복 없음)',
+      combos.rows.length > 10 && all.source === 'db' && keys(all) === keys(combos) && new Set(all.rows.map((r) => r.key)).size === all.rows.length,
+      `${all.rows.length} / ${combos.rows.length}`
+    )
+    delete process.env.STATS_RPC_PAGE_SIZE
+    // 아래 엔티티 페이지 검사가 require 캐시의 lib/tftStats 를 쓰므로 잘림 없는 클라이언트로 되돌린다
+    loadStatsLib(fakeSupabase(db))
+  }
   const traits = await stats.getStats('trait', { ...f, tier: 'challenger', days: 3 })
   check('시너지: 다른 필터 조합도 db', traits.source === 'db' && traits.filter.tier === 'challenger' && traits.filter.days === 3)
   const unknownPatch = await stats.getStats('item', { ...f, patch: '9.99' })

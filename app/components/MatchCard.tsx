@@ -18,6 +18,7 @@ import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 import { keyMoments } from '@/lib/keyMoments'
+import { isRankedMatch } from '@/lib/queue'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -58,8 +59,9 @@ function MatchQuickStats({
   const comp = (key: 'placement' | 'completion' | 'items' | 'contest') =>
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
-  // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다)
-  const moments = useMemo(() => (early ? [] : keyMoments(match)), [match, early])
+  const ranked = isRankedMatch(match)
+  // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다). 랭크 판만
+  const moments = useMemo(() => (early || !ranked ? [] : keyMoments(match)), [match, early, ranked])
 
   return (
     <div
@@ -89,6 +91,7 @@ function MatchQuickStats({
           완성도 {comp('completion') ?? '-'} · 아이템 {comp('items') ?? '-'} · 경합 {comp('contest') ?? '-'}
         </span>
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
+        {!ranked ? <span className="font-semibold text-subtle">{match.queueType || '이벤트·기타 모드'} — 분석은 랭크 게임만</span> : null}
       </div>
 
       {!live && moments.length ? (
@@ -469,6 +472,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
+            {!isRankedMatch(match) ? (
+              <span className="text-xs text-subtle">AI 분석은 랭크 게임만 합니다</span>
+            ) : (
+            <>
             <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
             <button
               type="button"
@@ -488,6 +495,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                 </>
               )}
             </button>
+            </>
+            )}
           </div>
         </div>
       </div>

@@ -87,6 +87,7 @@ export default function PrivacyPage() {
             'Google Gemini — DeepSeek 실패 시 대체 분석 (선택적, 동일 목적)',
             'Vercel — 웹 호스팅 및 접속 로그 처리',
             'Upstash — 캐시 저장 (설정된 경우에 한함)',
+            'Cloudflare Turnstile — 자동화 요청(봇) 차단을 위한 브라우저 검증 (IP 주소·브라우저 정보 처리, 검색 시)',
             'Supabase — 로그인 인증 및 계정/사용량/즐겨찾기 데이터 저장 (로그인 사용 시)',
             'Discord — OAuth 로그인 인증 (로그인 사용 시)',
           ]}
@@ -116,6 +117,10 @@ export default function PrivacyPage() {
           재방문 추이(리텐션)를 집계하기 위해 localStorage에 익명 방문자 식별자(임의 문자열)를 저장합니다.
           이 값은 개인정보를 포함하지 않으며, 사이트 간 추적이나 광고에 사용하지 않습니다. 브라우저
           데이터를 삭제하면 새 식별자가 발급됩니다.
+        </p>
+        <p>
+          검색 또는 봇 검증을 통과한 브라우저임을 확인하기 위해 서명된 쿠키(tftlg)를 2시간 동안 저장합니다.
+          이 쿠키에는 발급 시각과 서명만 들어 있고 개인정보는 포함되지 않으며, 만료되면 자동으로 삭제됩니다.
         </p>
       </LegalSection>
 

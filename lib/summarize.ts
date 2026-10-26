@@ -3,6 +3,7 @@ import { translateChampion, translateItem, translateTrait } from './constants'
 import { analyzeContest } from './contest'
 import { analyzeAugments } from './meta'
 import { isEarlyGame, lowSampleReason } from './quality'
+import { queueLabel } from './queue'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -111,13 +112,8 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
     lobbyParticipants.filter((p) => !p.isUser)
   )
 
-  const queueMap: Record<number, string> = {
-    1100: '랭크 게임',
-    1090: '일반 게임',
-    1130: '초고속 모드',
-    1160: '더블 업',
-  }
-  const queueType = queueMap[rawMatch.info.queue_id] || '랭크 게임'
+  const queueId = rawMatch.info.queue_id
+  const queueType = queueLabel(queueId)
 
   return {
     matchId: rawMatch.metadata.match_id,
@@ -126,6 +122,7 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
     timeAgo: formatTimeAgo(rawMatch.info.game_datetime),
     gameLengthStr: formatDuration(participant.time_eliminated || rawMatch.info.game_length),
     gameLengthSec: participant.time_eliminated || rawMatch.info.game_length || 0,
+    queueId,
     queueType,
     placement: participant.placement,
     level: participant.level,

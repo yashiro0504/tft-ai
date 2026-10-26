@@ -2,6 +2,7 @@ import { traitBreakpointMap } from './gameFacts'
 import { entitySlug } from './entitySlug'
 import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
+import { isCoreUnit } from './contest'
 import { slotsUsed } from './boardSlots'
 import { traitAnchors, unitTraitCounts } from './traitAnchors'
 import type { SlimMatchData, SlimMatchUnit } from './types'
@@ -188,21 +189,26 @@ function emptySlots(m: SlimMatchData): KeyMoment | null {
   return { kind: 'emptySlots', title: '보드 빈칸', fact: `Lv.${m.level} = 보드 ${m.level}칸 중 ${slotsUsed(m.units)}칸 사용 — ${empty}칸 비움` }
 }
 
-function nearBreakpoint(m: SlimMatchData): KeyMoment | null {
-  const near = fillableNearBreakpoints(m)
-  if (!near.length) return null
-  const spot = (s: { empty: number; swaps: FillSwap[] }) =>
-    [
-      s.empty > 0 ? `빈칸 ${s.empty}칸` : '',
-      ...s.swaps.map((w) => `${w.name} 1성 자리${w.cost.length ? `(빼면 ${w.cost.join('·')})` : ''}`),
-    ]
-      .filter(Boolean)
-      .join(' · ')
-  return {
-    kind: 'nearBreakpoint',
-    title: '1명 모자란 시너지',
-    fact: `다음 단계까지 1명 남은 시너지: ${near.map((n) => `${n.trait} ${n.count}명 → ${n.next}명 (채울 자리: ${spot(n.spot)})`).join(', ')}`,
-  }
+// '1명 모자란 시너지'는 단일 경기 장면에서 뺐다 (2026-10-22 정답셋 0/19 맞음 · 래더 보드 같은 레벨 비교 등수 차이 없음).
+// 8·9레벨 밸류 덱은 시너지 하나 더 켜는 것보다 5코스트 하나를 더 쓰는 게 낫다. 여러 판 습관(lib/habits)은
+// 등수 손해와 같이 나타날 때만(requireHarm) 보이므로 그대로 둔다.
+// 다시 장면으로 쓴다면 fillableNearBreakpoints(채울 수 있는 자리 · 빼면 잃는 시너지)로만 말할 것 — 2026-10-23 제보 오진단.
+
+/** 리롤 캐리 = 1~3코스트 3성 캐리. 로비 경합은 이 덱에서만 등수를 가른다 (정답셋: 4·5코 2성 캐리 판의 경합 요인은 모두 틀림) */
+export const REROLL_CARRY_MAX_COST = 3
+
+/**
+ * 리롤 캐리의 경합 — 같은 기물을 코어(2성+ 또는 아이템 보유)로 쓴 상대 수.
+ * 로비 전체 겹침(lib/contest 경합 강도)이 아니라 캐리 하나만 본다: 범용 기물·5코스트 겹침은 판을 가르지 않는다.
+ */
+export function rerollCarryContest(m: SlimMatchData): { carry: SlimMatchUnit; opponents: number } | null {
+  const carry = boardCarry(m.units)
+  if (!carry || (carry.tier || 1) < 3 || (carry.rarity || 1) > REROLL_CARRY_MAX_COST) return null
+  const key = slug(carry)
+  const opponents = (m.lobbyParticipants || []).filter(
+    (p) => !p.isUser && (p.units || []).some((u) => slug(u) === key && isCoreUnit(u))
+  ).length
+  return { carry, opponents }
 }
 
 /**
@@ -220,15 +226,19 @@ export function winFactors(m: SlimMatchData): string[] {
     const lobbyTwo = lobby.reduce((s, p) => s + twoPlus(p.units), 0) / lobby.length
     out.push(`2성 이상 ${twoPlus(m.units)}개 (로비 평균 ${Math.round(lobbyTwo * 10) / 10}개) · 최종 레벨 ${m.level}`)
   }
-  const contest = m.contestedInfo
-  if (contest?.level) out.push(`로비 경합 ${contest.level} (강도 ${contest.contestScore}/100)`)
+  const contest = rerollCarryContest(m)
+  if (contest) {
+    const { carry, opponents } = contest
+    const verdict = opponents === 0 ? '빈집' : opponents === 1 ? '경합 적음' : '경합'
+    out.push(`로비 경합 ${verdict}: 리롤 캐리 ${carry.name}(${carry.rarity}코 3성)를 코어로 쓴 상대 ${opponents}명`)
+  }
   return out
 }
 
 /** 해당하는 장면 전부 (우선순위 순, 개수 제한 없음) — 규칙 검증(scripts/checkSceneRules)용 */
 export function allKeyMoments(m: SlimMatchData): KeyMoment[] {
   if (!m?.units?.length) return []
-  return [sameComp, duplicateCopies, itemsOnWeak, carryOneStar, emptySlots, nearBreakpoint]
+  return [sameComp, duplicateCopies, itemsOnWeak, carryOneStar, emptySlots]
     .map((f) => f(m))
     .filter((x): x is KeyMoment => Boolean(x))
 }

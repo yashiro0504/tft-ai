@@ -167,6 +167,8 @@ export interface SlimMatchData {
   gameLengthStr?: string
   /** 게임 길이(초) — 초반 종료 표본 판정용 */
   gameLengthSec?: number
+  /** Riot queue_id (1100 = 랭크). 분석은 랭크 판만 — lib/queue */
+  queueId?: number
   queueType?: string
   placement: number
   level: number
@@ -219,7 +221,8 @@ export interface GroundingReport {
   unsupported: string[]
   /** 수치가 아닌 환각 경고 (제공되지 않은 시너지명, 존재하지 않는 코스트 등) */
   warnings?: string[]
-  /** 의미(엔티티 사실) 오류 — 기물 성급·3성 개수·아이템 소유·시너지 단계가 최종 보드와 다름 (lib/semanticGrounding) */
+  /** 의미(엔티티 사실) 오류 — 기물 성급·3성 개수·아이템 소유·시너지 단계가 최종 보드와 다름 (lib/semanticGrounding).
+   * 검출 기록이다: 해당 문장은 응답 전에 고치거나 지웠다 (repairEntityErrors) */
   entityErrors?: EntityFactError[]
 }
 

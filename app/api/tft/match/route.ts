@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const daily = await quotaGuard(
       req,
       'analysis',
-      dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 10),
+      dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 3),
       (await getAuthUser())?.id,
       dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10)
     )

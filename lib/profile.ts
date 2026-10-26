@@ -1,5 +1,6 @@
 import { SlimMatchData, SummonerProfile, TftRankInfo } from './types'
 import { DDRAGON_VERSION } from './constants'
+import { rankedMatches } from './queue'
 
 /**
  * 소환사 프로필 요약 통계 계산 (평균 등수 / 1등 승률 / 순방률).
@@ -14,6 +15,8 @@ export function calculateProfileStats(
   iconId = 7193,
   rank: TftRankInfo | null = null
 ): SummonerProfile {
+  // 평균·승률·TOP4 는 랭크 판만 (이벤트·일반 판은 목록에만 보인다 — lib/queue)
+  matches = rankedMatches(matches)
   const total = matches.length || 1
   const avgPlacement = Math.round((matches.reduce((acc, m) => acc + m.placement, 0) / total) * 10) / 10
   const winCount = matches.filter((m) => m.placement === 1).length

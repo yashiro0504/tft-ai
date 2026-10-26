@@ -2,7 +2,7 @@
   "_comment": "TFT 공식 패치 노트의 변경 목록(사실)만 저장. 해설 산문은 저장하지 않음. scripts/fetchPatchNotes.js 로 생성.",
   "source": "https://teamfighttactics.leagueoflegends.com/ko-kr/news/game-updates/",
   "set": 18,
-  "fetchedAt": "2026-10-21T07:58:34.498Z",
+  "fetchedAt": "2026-10-24T00:03:39.802Z",
   "patches": [
     {
       "patch": "18.1",
@@ -4976,6 +4976,126 @@
       "url": "https://teamfighttactics.leagueoflegends.com/ko-kr/news/game-updates/teamfight-tactics-patch-18-5",
       "publishedAt": "2026-10-20T18:00:00.000Z",
       "sections": [
+        {
+          "title": "챔피언",
+          "kind": "unit",
+          "changes": [
+            {
+              "entity": "",
+              "lines": [
+                "덩굴정령: 적중 시 체력 회복량: 5% ⇒ 4%"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "수호령",
+          "kind": "system",
+          "changes": [
+            {
+              "entity": "",
+              "lines": [
+                "주사위 굴리기"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "업그레이드 가격: 3골드 ⇒ 2골드"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "폭우"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "업그레이드 가격: 3골드 ⇒ 2골드"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "영웅출현"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "업그레이드 가격: 4골드 ⇒ 2골드"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "하수인"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "기본 가격: 2골드 ⇒ 5골드"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "잡동사니 가방"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "업그레이드 가격: 2골드 ⇒ 1골드"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "월광 의식"
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "기본 가격: 2골드 ⇒ 3골드"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "버그 수정",
+          "kind": "system",
+          "changes": [
+            {
+              "entity": "",
+              "lines": [
+                "일시적으로 되돌려졌던 18.4 패치의 나무 정령 상징 하향이 적용되어 상징의 능력치가 올바르게 수정되었습니다."
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "호화로운 정기 구독이 정상적으로 1단계 2성 챔피언을 제공합니다."
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "이제 U.R.F. 및 뻗어가는 뿌리가 정상적으로 제외됩니다."
+              ]
+            },
+            {
+              "entity": "",
+              "lines": [
+                "배를 버려라의 개화 업그레이드 가격이 정상적으로 2골드로 적용됩니다."
+              ]
+            }
+          ]
+        },
         {
           "title": "특성",
           "kind": "trait",

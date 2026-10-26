@@ -1,0 +1,490 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-22T12:58:56.468Z",
+  "labels": {
+    "KR_8411955217:win:contest": {
+      "verdict": "wrong",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 빈집 (강도 0/100)"
+    },
+    "KR_8411978154:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "밸류덱에서 시너지의 중요도는 낮다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 지옥불 2명 → 3명"
+    },
+    "KR_8411978154:win:contest": {
+      "verdict": "wrong",
+      "note": "왠만한 밸류덱은 위와 같은 보드 구성이므로 경합의 의미가 크지 않다. 경합은 1,2,3코 리롤덱에서 의미가 있다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 48/100)"
+    },
+    "KR_8411978154:win:twoStar": {
+      "verdict": "ok",
+      "note": "5코 2성작이 잘되었다. 우선 메인 딜러인 드레이븐과 장로드래곤이 잘 완성되었고, 마오카이 2성이 탱커로서의 역할을 잘해주었기 때문에 왠만하게 돈증강 먹고 9렙 에서 보드완성하면 우승이라고 보아야 한다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 6개 (로비 평균 6.1개) · 최종 레벨 10"
+    },
+    "KR_8412291185:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "의미 없다. 7 나무정령 덱이므로 처형자 시너지 하나만 켜도 된다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 처형자 2명 → 3명"
+    },
+    "KR_8412337309:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "9레벨에 5코 2성작이 잘되었는데, 왜졌는지 판단 불가하다. 아무무 감시자(파수꾼)의 서브 탱템이 부족했던것 같다. 너무 돈증강만 먹고 템증강을 안먹어서 딜러가 딜을 하기전에 탱템 부족으로 폐사했다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 지옥불 2명 → 3명, 처형자 2명 → 3명"
+    },
+    "KR_8412386799:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "나무정령 덱이므로 처형자 기용하려면 유나라나 아지르 기용해야 하는데 5코 1성이 더 낫다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 처형자 3명 → 4명"
+    },
+    "KR_8412386799:win:contest": {
+      "verdict": "unsure",
+      "note": "4코 2성 캐리 — 경합 요인은 리롤 캐리만 본다는 기준(10-22)에 맞춰 맞음→애매로 변경",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 54/100)"
+    },
+    "KR_8412386799:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 나무정령 7명(3단계), 처형자 3명(2단계)"
+    },
+    "KR_8412386799:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 5개 (로비 평균 6.6개) · 최종 레벨 9"
+    },
+    "KR_8412454253:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "고밸류덱에서 시너지의 의미가 크지 않다. 지옥불올리려면 2코 쉔을 기용해야 하는데 2코쉔을 기용하는것보다 5코 2성 하나를 더 활용하는게 낫다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 지옥불 2명 → 3명"
+    },
+    "KR_8412454253:win:contest": {
+      "verdict": "wrong",
+      "note": "2성작이 잘되어 이정도 보드면 무조건 우승이다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 42/100)"
+    },
+    "KR_8412454253:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 6개) · 최종 레벨 9"
+    },
+    "KR_8414886440:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "시너지에 너무 집착하지마, 시너지 하나로 등수가 갈리는건 사소한 부분이야.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 처형자 3명 → 4명, 주문술사 3명 → 4명, 달빛 2명 → 3명"
+    },
+    "KR_8414886440:win:contest": {
+      "verdict": "wrong",
+      "note": "오른 피들스틱은 범용적인 캐릭이고, 선봉대 덱에서는 다이애나와 헤카림 기용률이 높아. 경합을 볼것 같으며 메인 캐릭인 카직스의 경합을 봐야지.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 58/100)"
+    },
+    "KR_8414886440:win:deepTraits": {
+      "verdict": "ok",
+      "note": "아마 카직스 경합이 덜했을 것이다. 처형자 카직스 덱은 아무래도 한사람이 가게 되면 잘 비켜주니까.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 처형자 3명(2단계), 경쟁자 1명(2단계)"
+    },
+    "KR_8414886440:win:threeStar": {
+      "verdict": "ok",
+      "note": "카직스 메인 캐리에 초반부터 잘컸고, 배치가 주효했으며, 카직스가 응징 같은 증강 먹고 두개의 정의의손길이 덱 파워를 업그레이드 시켜준게 아닌가 싶네.",
+      "kind": "win:threeStar",
+      "fact": "3성 3개: 카직스(3코), 다이애나(3코), 헤카림(3코)"
+    },
+    "KR_8414886440:win:twoStar": {
+      "verdict": "wrong",
+      "note": "3코 3성이 중요하다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 6개 (로비 평균 6.3개) · 최종 레벨 8"
+    },
+    "KR_8414938511:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "5기원자 보다 4기원자에 타릭 1성이 훨씬 낫다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 기원자 4명 → 5명"
+    },
+    "KR_8414938511:win:contest": {
+      "verdict": "wrong",
+      "note": "파수꾼이 감시자지? 인기 기물들을 안쓸수 없는 덱이야. 감시자 같은 경우는 선봉대와 기원자가 같이 있는 탱커 기물이라 너무 많이 기용돼.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 54/100)"
+    },
+    "KR_8414938511:win:deepTraits": {
+      "verdict": "wrong",
+      "note": "앞라인이 세트 하나여서 아무래도 아리와 알룬이 스킬을 써서 딜을 넣기까지 세트의 원탱은 좀 부족했다. 애쉬 2성보다 서브 탱 2성 탱커 아이템이 더 갖쳐졌으면 좋았다.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 기원자 4명(3단계)"
+    },
+    "KR_8414938511:win:twoStar": {
+      "verdict": "wrong",
+      "note": "아리와 알룬의 밸류가 지금 높아서 밸류가 좋아서 이겼다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 5개 (로비 평균 5.3개) · 최종 레벨 9"
+    },
+    "KR_8415042887:emptySlots": {
+      "verdict": "ok",
+      "note": "나혼자 레벨업이란 증강이 있어. 2라운드에만 나오는데 기물 하나의 성능이 대폭 올라가고 상대 기물을 잡을때마다 경험치를 획득해",
+      "kind": "emptySlots",
+      "fact": "Lv.4 = 보드 4칸 중 1칸 사용 — 3칸 비움"
+    },
+    "KR_8415042887:win:contest": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 빈집 (강도 0/100)"
+    },
+    "KR_8415042887:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 1개: 카밀(1코)"
+    },
+    "KR_8423361374:emptySlots": {
+      "verdict": "wrong",
+      "note": "1등과의 격차를 줄이려면 덩굴정령 3성을 찍는 수밖에 없으므로 내 보드를 팔아가며 리롤을 돌렸을때 나오는 현상이다.",
+      "kind": "emptySlots",
+      "fact": "Lv.8 = 보드 8칸 중 3칸 사용 — 5칸 비움"
+    },
+    "KR_8423361374:win:contest": {
+      "verdict": "wrong",
+      "note": "판정할수 없다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 보통 (강도 31/100)"
+    },
+    "KR_8423361374:win:twoStar": {
+      "verdict": "wrong",
+      "note": "협곡 야수이거나, 덩굴정령 덱으로 잘갔고, 좋았으나, 1등의 보드 완성도가 너무 높아. 덩굴정령 3성을 보려다가 그대로 진판이다. 이정도여도 우승이라고 보아야한다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 2개 (로비 평균 5.9개) · 최종 레벨 8"
+    },
+    "KR_8423949634:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "덱을 못 비틀어서 메타덱과 동떨어진 덱이며 bis도 안맞다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 처형자 3명 → 4명, 지옥불 2명 → 3명"
+    },
+    "KR_8424389889:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "위에 서술한 내용과 같다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 기원자 4명 → 5명"
+    },
+    "KR_8424389889:win:contest": {
+      "verdict": "wrong",
+      "note": "위에 서술한 내용과 같다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 50/100)"
+    },
+    "KR_8424389889:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 기원자 4명(3단계)"
+    },
+    "KR_8424389889:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 9개 (로비 평균 7.1개) · 최종 레벨 9"
+    },
+    "KR_8424494217:win:contest": {
+      "verdict": "wrong",
+      "note": "1,2,3코 3성 덱이 아닌 이상 로비 경합도는 의미 없다.  카직스의 경합도만 비교하면 될듯 하다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 51/100)"
+    },
+    "KR_8424494217:win:deepTraits": {
+      "verdict": "wrong",
+      "note": "카직스가 초반부터 잘 성장하고 덱이 갖춰지면 왠만해선 순방한다. 하지만 여기서 카직스에게 더 잘맞는 증강을 고르면 우승까지 가는거고 아니면 순방만 가능하다. 덱 파워가 3코에서 그치기 때문에 우승까지는 힘들다.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 처형자 4명(3단계), 치명적인 꽃 2명(2단계)"
+    },
+    "KR_8424494217:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 3개: 카직스(3코), 헤카림(3코), 다이애나(3코)"
+    },
+    "KR_8424494217:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 5.6개) · 최종 레벨 8"
+    },
+    "KR_8424635432:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "8렙 9렙 보드에 시너지 하나 더 켜는것보다 5코 하나 더 기용하는게 좋아 범용적으로",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 사냥꾼 2명 → 3명, 지옥불 2명 → 3명, 소환사 2명 → 3명"
+    },
+    "KR_8424984721:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "상술한 내용과 같다.  햇빛 유나라 덱이므로 햇빛 시너지 활용에 의미가 있다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 요정 3명 → 4명, 속사포 2명 → 3명, 처형자 2명 → 3명"
+    },
+    "KR_8424984721:win:contest": {
+      "verdict": "ok",
+      "note": "이 정도면 빈집이었다고 보아야 한다. 덱을 잘 틀었다. 강도가 낮다고 보아야 한다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 보통 (강도 23/100)"
+    },
+    "KR_8424984721:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 6개: 유나라(2코), 세주아니(2코), 르블랑(2코), 카르마(1코), 요릭(1코), 레오나(1코)"
+    },
+    "KR_8424984721:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 5.4개) · 최종 레벨 7"
+    },
+    "KR_8425103230:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 처형자 3명 → 4명, 나무정령 4명 → 5명, 기원자 2명 → 3명, 소환사 2명 → 3명"
+    },
+    "KR_8425103230:win:contest": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 보통 (강도 39/100)"
+    },
+    "KR_8425103230:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 처형자 3명(2단계), 치명적인 꽃 2명(2단계)"
+    },
+    "KR_8425103230:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 2개: 아지르(3코), 람머스(3코)"
+    },
+    "KR_8425103230:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 5.6개) · 최종 레벨 10"
+    },
+    "KR_8425283934:duplicateCopies": {
+      "verdict": "wrong",
+      "note": "알룬을 각각 두장 활용하는건 이 경기에 이긴것과 아무 의미 없다.",
+      "kind": "duplicateCopies",
+      "fact": "알룬 1성 2장을 최종 보드에 동시에 올림 (각각 1장 더 모이면 2성)"
+    },
+    "KR_8425283934:win:contest": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 보통 (강도 38/100)"
+    },
+    "KR_8425283934:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 검은 가시 4명(2단계), 주문술사 4명(2단계)"
+    },
+    "KR_8425283934:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 5개: 베이가(1코), 알리스타(2코), 렉사이(1코), 오른(1코), 르블랑(2코)"
+    },
+    "KR_8425283934:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 6개 (로비 평균 6.4개) · 최종 레벨 9"
+    },
+    "KR_8425374892:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "악의 여단으로 빌드업이 잘되어 엘리스 캐리가 가능했다. 약탈자 엘리스는 히트다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 달빛 3명 → 4명, 기원자 2명 → 3명"
+    },
+    "KR_8425374892:win:contest": {
+      "verdict": "wrong",
+      "note": "위에서 서술했듯이, 파수꾼과 카시오페아, 그외 5코 들은 경합도를 체크 안해도 된다. 엘리스 캐리 덱이므로 엘리스의 경합 여부만 확인 하면 된다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 46/100)"
+    },
+    "KR_8425374892:win:deepTraits": {
+      "verdict": "wrong",
+      "note": "악의 여단으로 스택을 잘 쌓아서 높은 주문력의 보상을 받고, 약탈자 상징으로 엘리스의 효과가 극대화 되었다.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 악의 여단 5명(3단계), 선봉대 4명(2단계), 달빛 3명(2단계)"
+    },
+    "KR_8425374892:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 2개: 엘리스(2코), 다이애나(3코)"
+    },
+    "KR_8425374892:win:twoStar": {
+      "verdict": "wrong",
+      "note": "스택으로 주문을 먹는 증강의 경우, 간혹 포텐이 터져 이기는 경우가 있다. 악의 여단 보상을 염두에 두고 이긴요인을 찾아야 하며, 아무래도 덱을 잘굴렸기 때문에 우승했지, 2성의 갯수만으로 여부를 판단하긴 힘들다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 5개 (로비 평균 6개) · 최종 레벨 9"
+    },
+    "KR_8425383894:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 싸움꾼 3명 → 4명"
+    },
+    "KR_8425383894:win:contest": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 60/100)"
+    },
+    "KR_8425383894:win:deepTraits": {
+      "verdict": "ok",
+      "note": "검은 가시 럭스가 나와 베이가의 주문력이 더 펌핑 되었을 가능성이 높다.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 검은 가시 4명(2단계), 주문술사 4명(2단계)"
+    },
+    "KR_8425383894:win:threeStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:threeStar",
+      "fact": "3성 5개: 알리스타(2코), 베이가(1코), 오른(1코), 렉사이(1코), 카시오페아(3코)"
+    },
+    "KR_8425383894:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 6개 (로비 평균 5.3개) · 최종 레벨 9"
+    },
+    "KR_8425425844:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "날렵이 시너지 의미 없음. 주문술사 덱이므로 공속과 체력을 더해주는 날렵이 시너지가 의미 없음.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 날렵이 2명 → 3명"
+    },
+    "KR_8425425844:win:contest": {
+      "verdict": "wrong",
+      "note": "1,2,3코 3성 덱이 아닌 이상 로비 경합도는 의미 없다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 64/100)"
+    },
+    "KR_8425425844:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 주문술사 6명(3단계)"
+    },
+    "KR_8425425844:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 6개 (로비 평균 6.3개) · 최종 레벨 9"
+    },
+    "KR_8425456147:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "시너지의 중요도가 높지않다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 적응가 2명 → 3명, 지옥불 2명 → 3명, 기원자 2명 → 3명, 달빛 2명 → 3명, 속사포 2명 → 3명"
+    },
+    "KR_8425456147:win:contest": {
+      "verdict": "wrong",
+      "note": "1,2,3코 3성 덱이 아닌 이상 로비 경합도는 의미 없다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 49/100)"
+    },
+    "KR_8425456147:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 6.1개) · 최종 레벨 9"
+    },
+    "KR_8425484547:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "티모 캐리덱의 한계다. 우승은 힘들어도 탈락하지는 않는다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 나무정령 4명 → 5명, 기원자 2명 → 3명"
+    },
+    "KR_8425484547:win:contest": {
+      "verdict": "ok",
+      "note": "경합 강도의 책정이 잘못되었다. 2코 리롤로 티모 리롤은 잘 나오지 않는다.",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 56/100)"
+    },
+    "KR_8425484547:win:deepTraits": {
+      "verdict": "wrong",
+      "note": "검은 가시는 럭스의 2개 시너지 효과로 켜진거고 주효한 시너지는 아니다. 보조 시너지 느낌으로 마지막에 켠거지 이게 주효한 시너지는 아니다.",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 검은 가시 4명(2단계)"
+    },
+    "KR_8425484547:win:threeStar": {
+      "verdict": "ok",
+      "note": "경합률이 낮은 덱으로 순방을 해내었다. 잘했다.",
+      "kind": "win:threeStar",
+      "fact": "3성 3개: 티모(2코), 알리스타(2코), 르블랑(2코)"
+    },
+    "KR_8425484547:win:twoStar": {
+      "verdict": "ok",
+      "note": "2코 리롤로 덱을 잘 틀어서 순방 할수 있었다.",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 5.6개) · 최종 레벨 9"
+    },
+    "KR_8425504657:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "기원자 덱이 아니므로 의미가 없다.",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 기원자 2명 → 3명"
+    },
+    "KR_8425504657:win:contest": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:contest",
+      "fact": "로비 경합 경합 (강도 40/100)"
+    },
+    "KR_8425504657:win:deepTraits": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:deepTraits",
+      "fact": "높은 단계 시너지: 협곡야수 7명(3단계)"
+    },
+    "KR_8425504657:win:threeStar": {
+      "verdict": "ok",
+      "note": "심술두꺼비는 소외된 기물로 협곡야수를 최대한 활용한 덱이 돋보인다.",
+      "kind": "win:threeStar",
+      "fact": "3성 2개: 심술두꺼비(2코), 돌거북(3코)"
+    },
+    "KR_8425504657:win:twoStar": {
+      "verdict": "ok",
+      "note": "",
+      "kind": "win:twoStar",
+      "fact": "2성 이상 7개 (로비 평균 6.3개) · 최종 레벨 9"
+    },
+    "KR_8425511422:nearBreakpoint": {
+      "verdict": "wrong",
+      "note": "상술한 내용과 같음",
+      "kind": "nearBreakpoint",
+      "fact": "다음 단계까지 1명 남은 시너지: 기원자 2명 → 3명"
+    }
+  },
+  "missed": {
+    "KR_8414975456": "보드 구성만 보면 좋은데 5등은 아쉽네. 상대 덱이 내 덱의 카운터였을 가능성이 높다",
+    "KR_8424189415": "메인 딜러인 정굴정령에 딜템이 없고, 장로 드래곤이 안나오는 억까를 당해서 졌다고 판정된다."
+  }
+}

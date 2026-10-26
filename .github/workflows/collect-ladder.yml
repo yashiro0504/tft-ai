@@ -51,6 +51,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 경제·템포·완성도 축 기준선 (탈락 스테이지·캐리별 레벨/보드 가치 중앙값) — Supabase 원본 보드(마스터+)에서.
+      # 래더 수집과 무관해 먼저 돈다. 시크릿이 없거나 실패하면 이전 lib/gameBaselines.json 그대로 계속
+      - name: Build level/board-value baselines
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run build:baselines -- --write
+
       - name: Check Riot key
         env:
           RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
@@ -101,10 +110,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- lib/metaStats.json lib/decksData.json lib/patchNotes.json; then
+          if git diff --quiet -- lib/metaStats.json lib/decksData.json lib/patchNotes.json lib/gameBaselines.json; then
             echo "변경 사항이 없어 커밋하지 않습니다."
             exit 0
           fi
-          git add lib/metaStats.json lib/decksData.json lib/patchNotes.json
+          git add lib/metaStats.json lib/decksData.json lib/patchNotes.json lib/gameBaselines.json
           git commit -m "chore(meta): 래더 표본·덱 자동 갱신 ($(date -u +%Y-%m-%d))"
           git push

@@ -15,7 +15,7 @@ require('./_ts')
 const fs = require('fs')
 const path = require('path')
 const { traitAnchors, freeUnits, traitAnchorFacts, unitTraitCounts } = require('../lib/traitAnchors')
-const { allKeyMoments, fillSpots } = require('../lib/keyMoments')
+const { allKeyMoments, fillSpots, fillableNearBreakpoints } = require('../lib/keyMoments')
 const { findChampion, findItem, findTrait } = require('../lib/gameData')
 
 let failures = 0
@@ -87,8 +87,10 @@ if (rift01) {
   check('선봉대 채울 자리에 장로 드래곤 없음 (협곡야수 7을 받침)', !names.includes('장로 드래곤'), names.join(','))
   check('세트 자리는 맞바꿈 (빼면 싸움꾼 꺼짐)', vanguard.swaps.find((w) => w.name === '세트')?.cost.join() === '싸움꾼 꺼짐', JSON.stringify(vanguard.swaps))
   check('기원자 채울 자리에는 타릭 포함 (빼도 선봉대 1단계 유지)', fillSpots(rift01, '기원자').swaps.some((w) => w.name === '타릭' && !w.cost.some((c) => c.startsWith('선봉대'))), JSON.stringify(fillSpots(rift01, '기원자').swaps))
-  const scene = allKeyMoments(rift01).find((x) => x.kind === 'nearBreakpoint')
-  check('장면 사실 줄에 채울 자리·잃는 것 표기', Boolean(scene?.fact.includes('선봉대 3명 → 4명 (채울 자리: 세트 1성 자리(빼면 싸움꾼 꺼짐))')), scene?.fact)
+  // 단일 경기 장면에서는 빠졌다 (10-22 정답셋 0/19) — 채울 자리 계산만 남는다
+  const fillable = fillableNearBreakpoints(rift01).find((n) => n.trait === '선봉대')
+  check('채울 자리가 있는 시너지만: 선봉대 3→4 · 세트 1성 자리(빼면 싸움꾼 꺼짐)', fillable?.count === 3 && fillable.next === 4 && fillable.spot.swaps.some((w) => w.name === '세트' && w.cost.join() === '싸움꾼 꺼짐'), JSON.stringify(fillable))
+  check('1명 모자란 시너지는 단일 경기 장면에 없음', !allKeyMoments(rift01).some((x) => x.kind === 'nearBreakpoint'))
 } else {
   check('골든셋에 Rift01 케이스 있음', false)
 }

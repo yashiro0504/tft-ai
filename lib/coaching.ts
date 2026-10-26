@@ -10,8 +10,9 @@ import type {
 } from './types'
 import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
-import { DECK_TYPE_LABEL, detectDeckType, summarizeDeckInfos } from './deckType'
+import { DECK_TYPE_LABEL, boardCarryKey, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
+import { baselineBoardValue } from './baselines'
 import { slotsUsed } from './boardSlots'
 import { traitBreakpointMap } from './gameFacts'
 
@@ -57,6 +58,8 @@ export interface PerMatchMetrics {
   carryThreeStar: boolean
   /** 최종 보드 기준 덱 유형 (리롤형/표준형/판정 불가) */
   deckType: Exclude<DeckType, 'mixed'>
+  /** 캐리 슬러그 (lib/deckType boardCarryKey) — 같은 캐리 보드의 스테이지 기준선을 찾는 키 */
+  carryKey: string | null
   activeTraits: number
   bestTraitCount: number
   /** 켠 시너지 단계(tier_current)의 합 — 고유 시너지 포함 */
@@ -94,6 +97,7 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     threeStarCosts: deck.threeStarCosts,
     carryThreeStar: deck.carryThreeStar,
     deckType: deck.type,
+    carryKey: boardCarryKey(units),
     activeTraits: traits.length,
     bestTraitCount: traits.reduce((s, t) => Math.max(s, t.count || 0), 0),
     traitTierTotal: allTraits.reduce((s, t) => s + (t.tier || 0), 0),
@@ -133,10 +137,9 @@ const EFFECT_LABEL: Record<string, string> = {
   condition: '경합 조건 점수',
 }
 
-/** 탈락 스테이지의 보드 가치 기준치(G) */
-export function expectedBoardValue(stage: number): number {
-  const table = AXIS_CONFIG.axes.economy.expectedBoardValueByStage
-  return table[String(Math.max(stage, 2))] ?? table.default
+/** 탈락 스테이지의 보드 가치 기준치(G) — 마스터+ 실측 중앙값 (같은 캐리 × 스테이지 → 스테이지 → axisConfig 표, lib/baselines) */
+export function expectedBoardValue(stage: number, carryKey?: string | null): number {
+  return baselineBoardValue(stage, carryKey)
 }
 
 function economyAxis(m: PerMatchMetrics): AxisResult {
@@ -145,10 +148,10 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
   // 보드 가치) + 표준 레벨 대비 격차 + 초반 종료 페널티로 평가한다.
   // 리롤형은 골드를 레벨이 아니라 리롤(3성)에 쓰는 덱이라 레벨 격차를 감점하지 않는다 (템포 축과 같은 기준).
   const c = AXIS_CONFIG.axes.economy
-  const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage) - m.level)
+  const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level)
   const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
   // 탈락 라운드를 모르면 기준치가 없으므로 보드 가치 항목은 0 (중립)
-  const ratio = m.stage ? m.boardValue / expectedBoardValue(m.stage) : 1
+  const ratio = m.stage ? m.boardValue / expectedBoardValue(m.stage, m.carryKey) : 1
   const effects = {
     base: c.base,
     boardValue: (Math.min(Math.max(ratio, c.boardValueRatioMin), c.boardValueRatioMax) - 1) * c.boardValueWeight,
@@ -184,7 +187,7 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
   // (예전엔 절대값이라 5스테이지 Lv.10 이 −36 이었다). 레벨만 높고 보드가 약하면 완성도·경제 축이 잡는다.
   const effects = {
     base: 100,
-    levelGap: -Math.max(0, expectedLevel(m.stage) - m.level) * c.levelGapPenaltyPerLevel,
+    levelGap: -Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level) * c.levelGapPenaltyPerLevel,
   }
   return { score: clamp(sum(effects)), effects }
 }
@@ -195,6 +198,8 @@ export function completionAxis(
 ): AxisResult {
   const c = AXIS_CONFIG.axes.completion
   if (!m.units) return { score: 0, effects: { boardFill: 0 } }
+  // 채워야 할 칸은 캐리와 무관한 스테이지 전체 기준 레벨로 본다. 캐리별 기준(리롤 캐리는 낮다)을 쓰면
+  // 낮은 레벨 리롤 보드가 '다 채운 보드'가 돼 골든셋 로비 보드의 스테이지 내 등수 상관이 0.28→0.22 로 떨어졌다.
   const slots = Math.max(m.level, expectedLevel(m.stage), 1)
   // 충원율은 기물 수가 아니라 칸 수로 (장로 드래곤 2칸 — 기물 8개로 9칸을 다 채운 보드가 8/9 로 깎이던 문제)
   const fill = Math.min((m.slotsUsed ?? m.units) / slots, 1)
@@ -335,14 +340,14 @@ const AXIS_FN: Record<CoachingAxisKey, (m: PerMatchMetrics) => AxisResult> = {
 /** 축별 원시 지표 (공식의 입력값) */
 function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType: DeckType): AxisMetric[] {
   const mean = (f: (m: PerMatchMetrics) => number) => round1(avg(metrics.map(f)))
-  const gap = (m: PerMatchMetrics) => (m.stage ? m.level - expectedLevel(m.stage) : 0)
+  const gap = (m: PerMatchMetrics) => (m.stage ? m.level - expectedLevel(m.stage, m.carryKey) : 0)
   switch (key) {
     case 'economy': {
       // 레벨 부족은 표준형 경기만으로 센다 (리롤형은 공식에서도 감점하지 않는다)
       const standard = metrics.filter((m) => m.deckType !== 'reroll')
       return [
         { key: 'boardValue', label: '보드 가치', value: mean((m) => m.boardValue), unit: 'G' },
-        { key: 'expectedBoardValue', label: '스테이지 기준 보드 가치', value: mean((m) => expectedBoardValue(m.stage)), unit: 'G' },
+        { key: 'expectedBoardValue', label: '스테이지 기준 보드 가치', value: mean((m) => expectedBoardValue(m.stage, m.carryKey)), unit: 'G' },
         ...(standard.length
           ? [{ key: 'levelShort', label: '표준 레벨보다 부족', value: round1(avg(standard.map((m) => Math.max(0, -gap(m))))), unit: '레벨' }]
           : []),
@@ -363,7 +368,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
       if (deckType === 'reroll') return [...reroll, { key: 'level', label: '최종 레벨', value: mean((m) => m.level) }]
       const standard: AxisMetric[] = [
         { key: 'level', label: '최종 레벨', value: mean((m) => m.level) },
-        { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage) : m.level)) },
+        { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage, m.carryKey) : m.level)) },
         { key: 'levelShort', label: '표준 레벨보다 부족', value: mean((m) => Math.max(0, -gap(m))), unit: '레벨' },
       ]
       return deckType === 'mixed' ? [...standard, ...reroll] : standard
@@ -408,7 +413,7 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
 
   const detail: Record<CoachingAxisKey, string> = {
     economy: `${basis} 보드 가치 ${round1(avg(metrics.map((m) => m.boardValue)))}G (스테이지 기준 ${round1(
-      avg(metrics.map((m) => expectedBoardValue(m.stage)))
+      avg(metrics.map((m) => expectedBoardValue(m.stage, m.carryKey)))
     )}G) · ${basis} 탈락 ${round1(
       avg(metrics.map((m) => m.stage))
     )}스테이지`,

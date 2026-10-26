@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { SlimMatchData, SummonerProfile } from '@/lib/types'
 import type { DeckReport } from '@/lib/deckReportShared'
 import { formatRankLabel, formatRankLp, formatRankRecord, rankWinRate } from '@/lib/rank'
+import { rankedMatches } from '@/lib/queue'
 import { PlacementTrend } from './PlacementTrend'
 import { AxisOverview } from './AxisOverview'
 import { HabitOverview } from './HabitOverview'
@@ -96,7 +97,7 @@ function StatTile({ label, value, tone = 'text-ink' }: { label: string; value: s
 
 export function SummonerSummary({
   profile,
-  matches,
+  matches: allMatches,
   as: Heading = 'h2',
   deckReport,
   children,
@@ -112,6 +113,8 @@ export function SummonerSummary({
   children?: ReactNode
 }) {
   const rank = profile.rank
+  // 등수·6축·습관·목표는 랭크 판만 (이벤트·일반 판은 경기 목록에만 — lib/queue)
+  const matches = rankedMatches(allMatches)
   const placements = matches.map((m) => m.placement)
   const n = placements.length
   const avg = n ? placements.reduce((s, p) => s + p, 0) / n : 0

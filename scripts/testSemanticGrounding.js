@@ -5,13 +5,14 @@
  *  - 실제 리포트 오류 문장("피들스틱·르블랑·오른 모두 3성", 피들스틱은 1성) 검출
  *  - 정상 문장·일반 표현·상대 이야기·겹치는 이름은 오탐 0
  *  - 리포트 결과(grounding.entityErrors)에 포함 (폴백 경로)
+ *  - 오류 문장 수리(repairEntityErrors): 값이 하나면 고치고, 아니면 문장을 지운다
  *  - 강의 규칙 위반(validateCoachingRules): 리롤형 레벨 지적 · 평균 수준 운영도를 약점으로 · 덱 단정 · 빈집 지어내기 · 피봇 시점
  */
 process.env.DEEPSEEK_API_KEY = ''
 process.env.GEMINI_API_KEY = ''
 require('./_env').loadEnv()
 require('./_ts')
-const { validateEntityFacts, feedbackTexts, validateCoachingRules } = require('../lib/semanticGrounding')
+const { validateEntityFacts, feedbackTexts, validateCoachingRules, repairEntityErrors } = require('../lib/semanticGrounding')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -125,6 +126,20 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('오탐 수정: "빈집 덱 후보가 없었습니다" 통과', rules('빈집 덱 후보가 없었습니다.', {}).length === 0)
   check('오탐 수정: "피봇 시점이 3-2인지는 데이터로 알 수 없습니다" 통과', rules('피봇 시점이 3-2인지는 데이터로 알 수 없습니다.', {}).length === 0)
   check('오탐 수정: "채용률을 먼저 보라는 뜻은 아닙니다" 통과', rules('채용률을 먼저 보라는 뜻은 아닙니다.', { facts: guideFacts }).length === 0)
+
+  console.log('오류 문장 수리')
+  const traitSentence = '주문술사 4단계로 화력을 냈습니다.'
+  const fixedTrait = repairEntityErrors({ overview: `좋은 판이었습니다. ${traitSentence}` }, errs(traitSentence))
+  check('시너지 단계: 값이 하나면 맞는 값으로 교체', fixedTrait.overview === '좋은 판이었습니다. 주문술사 2단계로 화력을 냈습니다.', fixedTrait.overview)
+  const listSentence = '피들스틱·르블랑·오른 모두 3성 확보에 성공했습니다.'
+  const fixedList = repairEntityErrors({ overview: `중반이 안정적이었습니다. ${listSentence} 후반 운영은 무난했습니다.` }, errs(listSentence))
+  check('흩어진 표현은 문장 삭제', fixedList.overview === '중반이 안정적이었습니다. 후반 운영은 무난했습니다.', fixedList.overview)
+  const fixedArr = repairEntityErrors({ actions: [listSentence, '골드 50을 유지하세요.'] }, errs(listSentence))
+  check('배열 항목이 비면 항목을 뺌', fixedArr.actions.length === 1 && fixedArr.actions[0] === '골드 50을 유지하세요.', JSON.stringify(fixedArr.actions))
+  const onlyBad = repairEntityErrors({ overview: listSentence }, errs(listSentence))
+  check('단일 필드가 통째로 비면 원문 유지', onlyBad.overview === listSentence)
+  const untouched = { overview: '정상 문장입니다.', metaScore: 70 }
+  check('오류 없으면 그대로', repairEntityErrors(untouched, []) === untouched)
 
   console.log('리포트 통합 (폴백 경로)')
   const { generateMetaCoachFeedback } = require('../lib/llm')

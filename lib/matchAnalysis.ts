@@ -7,6 +7,7 @@
  */
 import { getTftMatchDetail, getAccountByRiotId } from './riot'
 import { extractSlimMatchData } from './summarize'
+import { isRankedMatch } from './queue'
 import { getDemoMatches } from './demo'
 import { generateMetaCoachFeedback, COACH_PROMPT_VERSION } from './llm'
 import { SCORING_VERSION } from './axisConfig'
@@ -124,6 +125,11 @@ export async function runMatchAnalysis(
       '해당 경기 데이터를 찾을 수 없습니다. (matchId 또는 소환사 정보를 확인해주세요)',
       404
     )
+  }
+
+  // 메타 통계·규칙이 랭크 기준이라 이벤트·일반 판은 분석하지 않는다 (경기 카드도 버튼을 숨긴다 — lib/queue)
+  if (!isRankedMatch(match)) {
+    throw new MatchAnalysisError(`랭크 게임만 분석합니다. 이 경기는 ${match.queueType || '이벤트·기타 모드'}입니다.`, 400)
   }
 
   onMatch?.(match, displayName)
