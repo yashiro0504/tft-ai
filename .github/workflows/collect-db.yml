@@ -19,6 +19,10 @@ on:
         description: 'true 이면 DB 에 쓰지 않고 Riot 호출만 검증합니다'
         default: 'false'
         required: false
+      rollup_only:
+        description: 'true 이면 Riot 수집 없이 집계 전체 재계산 + 덱 클러스터를 바로 다시 만듭니다 (DECK_REFRESH_HOURS 무시)'
+        default: 'false'
+        required: false
 
 permissions:
   contents: read
@@ -72,6 +76,11 @@ jobs:
           MAX_RAW_MB_HARD: ${{ vars.MAX_RAW_MB_HARD || '480' }}
           PRUNE_ON_LIMIT: ${{ vars.PRUNE_ON_LIMIT || '0' }}
         run: |
+          # 덱 목록 규칙을 바꾼 직후처럼 집계·덱을 바로 다시 만들 때 (Riot 키 불필요)
+          if [ "${{ github.event.inputs.rollup_only }}" = "true" ]; then
+            npm run collect:db:rollup
+            exit $?
+          fi
           if [ -z "$RIOT_API_KEY" ]; then
             echo "::error title=RIOT_API_KEY missing::Repository secret RIOT_API_KEY 를 설정하세요."
             exit 1
