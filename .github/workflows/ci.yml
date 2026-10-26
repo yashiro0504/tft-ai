@@ -44,6 +44,9 @@ jobs:
       - name: 6-axis scoring regression
         run: npm run test:axes
 
+      - name: Baselines
+        run: npm run test:baselines
+
       - name: DB collector tests
         run: npm run test:collect
 

@@ -2,6 +2,7 @@ import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
 import { isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { completionAxis, contestAxis } from './coaching'
+import { boardCarryKey } from './deckType'
 import { slotsUsed } from './boardSlots'
 
 /**
@@ -44,6 +45,8 @@ interface RawMetrics {
   top4: boolean
   level: number
   stage: number
+  /** 캐리 슬러그 — 완성도의 스테이지 기준 레벨을 6축과 같은 칸에서 찾는다 */
+  carryKey: string | null
 }
 
 function readMetrics(m: SlimMatchData): RawMetrics {
@@ -61,6 +64,7 @@ function readMetrics(m: SlimMatchData): RawMetrics {
     top4: (m.placement || 8) <= 4,
     level: m.level || 0,
     stage: stageOfRound(m.lastRound),
+    carryKey: boardCarryKey(units),
   }
 }
 

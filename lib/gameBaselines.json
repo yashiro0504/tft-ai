@@ -1,0 +1,15 @@
+{
+  "_comment": "경제·템포·완성도 축의 스테이지 기준 레벨·보드 가치 실측값. scripts/buildBaselines.js 가 Supabase 원본 보드(마스터+)에서 만든다 — 손으로 고치지 말 것. 비어 있으면 axisConfig.json 의 표로 판정한다.",
+  "source": "none",
+  "patch": null,
+  "tierMin": "MASTER",
+  "generatedAt": null,
+  "matches": 0,
+  "boards": 0,
+  "minSample": {
+    "stage": 100,
+    "carryStage": 40
+  },
+  "byStage": {},
+  "byCarry": {}
+}

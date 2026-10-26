@@ -236,4 +236,4 @@ function annotate(title, message) {
   if (process.env.GITHUB_ACTIONS) console.log(`::warning title=${title}::${String(message).replace(/\r?\n/g, ' ')}`)
 }
 
-module.exports = { arg, loadLobbies, writeReport, annotate, lobbyFromRaw, lobbyFromSlim, fixtureTraits }
+module.exports = { arg, loadLobbies, writeReport, annotate, lobbyFromRaw, lobbyFromSlim, fixtureTraits, toUnit }

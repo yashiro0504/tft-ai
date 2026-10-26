@@ -19,6 +19,7 @@ require('./_env').loadEnv()
 process.env.NEXT_PUBLIC_SUPABASE_URL = ''
 require('./_ts')
 const { buildComparisonFacts, bisBySlug, bisMatch, metaExecution, mostSimilarDeck, mostSimilarOpponent } = require('../lib/comparisonFacts')
+const { AXIS_CONFIG } = require('../lib/axisConfig')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -126,12 +127,17 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
   const economyAxis = plan.axes.find((a) => a.key === 'economy')
-  // 6스테이지 기준치 90G 대비 75G → (0.833 − 1) × 80 = −13.3
+  // 기준치는 실측 기준선(lib/gameBaselines.json)이라 매일 바뀐다 — 값 대신 공식을 확인한다: (75 / 기준치 − 1) × 80, 비율은 [0.5, 1.25]
+  const expectedValue = economyAxis.metrics.find((x) => x.key === 'expectedBoardValue')?.value
+  const eco = AXIS_CONFIG.axes.economy
+  const boardValuePoints = expectedValue
+    ? Math.round((Math.min(Math.max(75 / expectedValue, eco.boardValueRatioMin), eco.boardValueRatioMax) - 1) * eco.boardValueWeight * 10) / 10
+    : NaN
   check(
-    '경제 축 = 보드 가치 75G / 6스테이지 기준 90G → 항목 −13.3 (잔여 골드 항목 없음)',
+    `경제 축 = 보드 가치 75G / 6스테이지 기준 ${expectedValue}G → 항목 ${boardValuePoints} (잔여 골드 항목 없음)`,
     economyAxis.metrics.some((x) => x.key === 'boardValue' && x.value === 75) &&
-      economyAxis.metrics.some((x) => x.key === 'expectedBoardValue' && x.value === 90) &&
-      economyAxis.effects.some((e) => e.key === 'boardValue' && e.points === -13.3) &&
+      expectedValue > 0 &&
+      economyAxis.effects.some((e) => e.key === 'boardValue' && e.points === boardValuePoints) &&
       !economyAxis.effects.some((e) => e.key === 'idleGold') &&
       !economyAxis.metrics.some((x) => x.key === 'goldLeft'),
     JSON.stringify(economyAxis)
