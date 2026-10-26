@@ -20,6 +20,7 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = ''
 require('./_ts')
 const { buildComparisonFacts, bisBySlug, bisMatch, metaExecution, mostSimilarDeck, mostSimilarOpponent } = require('../lib/comparisonFacts')
 const { AXIS_CONFIG } = require('../lib/axisConfig')
+const { GAME_BASELINES } = require('../lib/baselines')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -153,9 +154,14 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   const stdEconomy = buildCoachingPlan([standard]).axes.find((a) => a.key === 'economy')
   check('표준형 경제는 레벨 부족 지표 유지', stdEconomy.metrics.some((x) => x.key === 'levelShort'), JSON.stringify(stdEconomy.metrics))
   // 3성 2개(오른·렉사이)뿐인 리롤형, 캐리는 카시오페아 2성(베이가 2성과 캐리템 동률 → 코스트) → 템포 100 − 20 − 20 = 60 → 가장 약한 축
-  // 보드 가치 45G 는 6스테이지 기준(90G)이면 경제가 더 약해지므로 5스테이지(기준 66G) 탈락으로 둔다
+  // 보드 가치 45G 는 6스테이지 기준(90G)이면 경제가 더 약해지므로 5스테이지(기준 66G) 탈락으로 둔다.
+  // 주제 선택 규칙만 보는 검사라 매일 바뀌는 실측 기준선(lib/gameBaselines.json) 대신 axisConfig 표로 고정한다
+  // (실측에선 카시오페아 5스테이지 기준이 76G 라 45G 보드는 경제가 더 약하다 — 그게 맞는 진단)
   const thinReroll = { ...sample, lastRound: '5-1', units: sample.units.map((u) => ({ ...u, tier: ['오른', '렉사이'].includes(u.name) ? 3 : Math.min(u.tier, 2) })) }
+  const measured = { byStage: GAME_BASELINES.byStage, byCarry: GAME_BASELINES.byCarry }
+  Object.assign(GAME_BASELINES, { byStage: {}, byCarry: {} })
   const rerollTopicPlan = buildCoachingPlan([thinReroll])
+  Object.assign(GAME_BASELINES, measured)
   check(
     '리롤형에서 템포가 초점이면 주제 = 리롤 성과',
     rerollTopicPlan.deckType === 'reroll' && rerollTopicPlan.focus === 'tempo' && rerollTopicPlan.topic.includes('리롤 성과'),

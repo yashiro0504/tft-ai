@@ -194,11 +194,13 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
 
 /** 보드 완성도: 레벨만큼 채웠는가(충원율) × 2성 비율 + 3성 보너스. metaScore 의 덱 완성도와 공용. */
 export function completionAxis(
-  m: Pick<PerMatchMetrics, 'units' | 'level' | 'stage' | 'twoPlus' | 'three'> & { slotsUsed?: number; carryKey?: string | null }
+  m: Pick<PerMatchMetrics, 'units' | 'level' | 'stage' | 'twoPlus' | 'three'> & { slotsUsed?: number }
 ): AxisResult {
   const c = AXIS_CONFIG.axes.completion
   if (!m.units) return { score: 0, effects: { boardFill: 0 } }
-  const slots = Math.max(m.level, expectedLevel(m.stage, m.carryKey), 1)
+  // 채워야 할 칸은 캐리와 무관한 스테이지 전체 기준 레벨로 본다. 캐리별 기준(리롤 캐리는 낮다)을 쓰면
+  // 낮은 레벨 리롤 보드가 '다 채운 보드'가 돼 골든셋 로비 보드의 스테이지 내 등수 상관이 0.28→0.22 로 떨어졌다.
+  const slots = Math.max(m.level, expectedLevel(m.stage), 1)
   // 충원율은 기물 수가 아니라 칸 수로 (장로 드래곤 2칸 — 기물 8개로 9칸을 다 채운 보드가 8/9 로 깎이던 문제)
   const fill = Math.min((m.slotsUsed ?? m.units) / slots, 1)
   const twoPlusRate = m.twoPlus / m.units
