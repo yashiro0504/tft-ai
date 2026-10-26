@@ -12,6 +12,7 @@ import type { CoachingAxisKey } from './types'
  */
 export interface AxisConfig {
   version: string
+  /** 폴백 — 실측 기준선(lib/baselines · lib/gameBaselines.json)에 그 스테이지 칸이 없을 때만 쓴다 */
   expectedLevelByStage: Record<string, number>
   earlyGame: { minStage: number; minUnits: number; minGameSec: number }
   /** 덱 유형(리롤형/표준형) 판정 임계값 — lib/deckType.ts */
@@ -33,7 +34,7 @@ export interface AxisConfig {
     economy: {
       /** 보드 가치가 스테이지 기준치와 같을 때의 점수 */
       base: number
-      /** 탈락 스테이지별 보드 가치 기준치(G) — 골든셋 로비 보드 194개의 스테이지별 중앙값 */
+      /** 탈락 스테이지별 보드 가치 기준치(G) — 폴백. 실측(lib/baselines)에 칸이 없을 때만 쓴다 (골든셋 로비 보드 194개의 스테이지별 중앙값) */
       expectedBoardValueByStage: Record<string, number>
       /** (보드 가치 / 기준치 − 1) × weight 를 가감한다. 비율은 [RatioMin, RatioMax] 로 자른다 */
       boardValueWeight: number

@@ -1,12 +1,12 @@
 {
-  "scoringVersion": "v10",
-  "generatedAt": "2026-10-21T18:01:41.264Z",
+  "scoringVersion": "v11",
+  "generatedAt": "2026-10-26T04:15:34.281Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 91,
         "itemization": 100,
         "tempo": 100,
         "completion": 80,
@@ -26,7 +26,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 88,
         "itemization": 89,
         "tempo": 100,
         "completion": 83,
@@ -46,7 +46,7 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 97,
+        "economy": 99,
         "itemization": 89,
         "tempo": 100,
         "completion": 90,
@@ -66,7 +66,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 91,
+        "economy": 96,
         "itemization": 93,
         "tempo": 100,
         "completion": 90,
@@ -83,10 +83,10 @@
       }
     },
     "Seed04 최근 5경기": {
-      "focus": "economy",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 84,
+        "economy": 85,
         "itemization": 100,
         "tempo": 100,
         "completion": 91,
@@ -106,7 +106,7 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 85,
         "itemization": 82,
         "tempo": 100,
         "completion": 85,
@@ -126,7 +126,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 84,
@@ -146,7 +146,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 91,
@@ -166,7 +166,7 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 89,
         "itemization": 63,
         "tempo": 100,
         "completion": 85,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 84,
+        "economy": 92,
         "itemization": 63,
         "tempo": 80,
         "completion": 92,
@@ -206,7 +206,7 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 100,
         "itemization": 45,
         "tempo": 100,
         "completion": 78,
@@ -226,7 +226,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 100,
+        "economy": 99,
         "itemization": 100,
         "tempo": 100,
         "completion": 80,
@@ -246,7 +246,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 98,
+        "economy": 99,
         "itemization": 100,
         "tempo": 100,
         "completion": 96,
@@ -286,7 +286,7 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 75,
+        "economy": 82,
         "itemization": 100,
         "tempo": 100,
         "completion": 79,
@@ -326,7 +326,7 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 65,
+        "economy": 67,
         "itemization": 100,
         "tempo": 100,
         "completion": 89,
