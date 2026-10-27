@@ -9,7 +9,7 @@ import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
 import { getUserPlan } from '@/lib/userPlan'
 import { MAX_MATCH_LIMIT } from '@/lib/tftService'
-import { rankedMatches } from '@/lib/queue'
+import { analyzableMatches } from '@/lib/queue'
 import { SlimMatchData, TftOverviewResponse } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -46,15 +46,15 @@ export async function POST(req: NextRequest) {
     const valid = inputMatches
       .filter((m): m is SlimMatchData => Boolean(m && typeof m.placement === 'number' && Array.isArray(m.units)))
       .slice(0, MAX_MATCH_LIMIT)
-    // 이벤트·일반 판은 분석에서 뺀다 (lib/queue)
-    const matches = rankedMatches(valid)
+    // 이벤트·일반·이전 시즌 판은 분석에서 뺀다 (lib/queue)
+    const matches = analyzableMatches(valid)
 
     if (matches.length === 0) {
       return NextResponse.json(
         {
           success: false,
           error: valid.length
-            ? '최근 경기에 랭크 게임이 없습니다. 종합 분석은 랭크 게임만 합니다.'
+            ? '최근 경기에 이번 시즌 랭크 게임이 없습니다. 종합 분석은 이번 시즌 랭크 게임만 합니다.'
             : '종합 분석할 경기 데이터가 없습니다. 먼저 전적 검색을 실행해주세요.',
         },
         { status: 400 }

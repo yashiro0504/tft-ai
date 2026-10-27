@@ -45,11 +45,25 @@ export const TIER_BUCKETS: Record<TierFilter, string[]> = {
 export type StatType = 'unit' | 'item' | 'trait' | 'unit_item'
 export const STAT_TYPES: StatType[] = ['unit', 'item', 'trait', 'unit_item']
 
-/** 표본 하한: 이보다 적으면 "표본 부족" (회색) */
-export const MIN_SAMPLE = { unit: 30, item: 30, trait: 30, unit_item: 20, deck: 15 } as const
-
 /** 등수 1~8 균등분포의 표준편차 √(63/12) ≈ 2.29 */
 export const PLACEMENT_SD = 2.29
+
+/** 평균등수 오차(±2.29/√n)가 이보다 크면 "표본 부족" — 30판이 ±0.42 */
+export const MAX_PLACEMENT_MARGIN = 0.42
+const STAT_MIN_GAMES = Math.ceil((PLACEMENT_SD / MAX_PLACEMENT_MARGIN) ** 2)
+
+/**
+ * 표본 하한: 이보다 적으면 "표본 부족" (회색 · 상대 티어 제외 · 정렬 맨 아래).
+ * 덱·기물·시너지·아이템은 같은 오차 기준(STAT_MIN_GAMES = 30판). 덱만 15판이던 것을 맞췄다 (15판은 ±0.59).
+ * unit_item 은 화면 표가 아니라 BIS 후보 아이템을 고르는 하한이다.
+ */
+export const MIN_SAMPLE = {
+  unit: STAT_MIN_GAMES,
+  item: STAT_MIN_GAMES,
+  trait: STAT_MIN_GAMES,
+  deck: STAT_MIN_GAMES,
+  unit_item: 20,
+} as const
 
 /** 평균등수 표준오차 ≈ 2.29 / √n (n 이 0 이면 null) */
 export function placementMargin(n: number): number | null {

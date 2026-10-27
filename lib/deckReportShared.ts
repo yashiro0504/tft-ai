@@ -24,5 +24,8 @@ export interface DeckReport {
   total: number
 }
 
-/** 판정을 내리는 최소 판 수 */
-export const DECK_REPORT_MIN_GAMES = 2
+/**
+ * 판정을 내리는 최소 판 수. 판 수가 적으면 내 평균 등수 오차(2.29/√판수)가 커서
+ * 2판이면 ±1.6등 — 메타와 1등 차이도 운으로 설명된다. 최근 10~20판 중 4판 이상이면 주력 덱으로 본다.
+ */
+export const DECK_REPORT_MIN_GAMES = 4

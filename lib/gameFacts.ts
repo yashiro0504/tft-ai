@@ -20,6 +20,9 @@ interface LiteTrait extends Named {
   breakpoints: number[]
 }
 
+/** 현재 세트 번호 (Riot tft_set_number) — 이전 시즌 판을 분석에서 뺀다 (lib/queue) */
+export const CURRENT_SET: number = (lite as unknown as { set: number }).set
+
 const CHAMPIONS = (lite as unknown as { champions: LiteChampion[] }).champions
 const TRAITS = (lite as unknown as { traits: LiteTrait[] }).traits
 

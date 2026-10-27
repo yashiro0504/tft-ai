@@ -12,6 +12,7 @@ import { ShareButton } from '@/app/components/ShareButton'
 import { SummonerSummary } from '@/app/components/SummonerSummary'
 import { loadDeckReport } from '@/lib/deckReport'
 import { SITE_URL } from '@/lib/site'
+import { excludedLabel, matchBreakdown } from '@/lib/queue'
 
 export const revalidate = 120
 
@@ -67,9 +68,14 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     data.profileIconId,
     data.rank
   )
-  const title = `${stats.gameName}#${stats.tagLine} 전적 — 평균 ${stats.avgPlacement}위 · TOP4 ${stats.top4Rate}%`
+  const hasGames = stats.totalGames > 0
+  const title = hasGames
+    ? `${stats.gameName}#${stats.tagLine} 전적 — 평균 ${stats.avgPlacement}위 · TOP4 ${stats.top4Rate}%`
+    : `${stats.gameName}#${stats.tagLine} 전적`
   const rankPart = stats.rank ? `${formatRankLabel(stats.rank)} ${formatRankLp(stats.rank)}` : '배치 중'
-  const description = `${rankPart} · 최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}위, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
+  const description = hasGames
+    ? `${rankPart} · 최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}위, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
+    : `${rankPart} · 최근 경기에 이번 시즌 랭크 게임이 없습니다.`
 
   return {
     title,
@@ -134,6 +140,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   )
   const sharePath = `/profile/kr/${encodeURIComponent(data.gameName)}/${encodeURIComponent(data.tagLine)}`
   const deckReport = await loadDeckReport(data.matches)
+  const breakdown = matchBreakdown(data.matches)
+  const excluded = excludedLabel(breakdown)
 
   return (
     <div className="min-h-screen bg-app text-ink">
@@ -164,7 +172,14 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-black">실전 매치 히스토리 ({data.matches.length}경기)</h2>
+            <h2 className="text-base font-black">
+              실전 매치 히스토리 ({data.matches.length}경기)
+              {excluded ? (
+                <span className="ml-2 text-xs font-medium text-subtle">
+                  분석 {breakdown.analyzed} · {excluded} 제외
+                </span>
+              ) : null}
+            </h2>
             <span className="text-xs text-muted">
               각 경기의 <strong className="text-accent">[이 경기 AI 분석]</strong> 버튼으로 정밀 코칭
             </span>

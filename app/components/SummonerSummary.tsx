@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import type { SlimMatchData, SummonerProfile } from '@/lib/types'
 import type { DeckReport } from '@/lib/deckReportShared'
 import { formatRankLabel, formatRankLp, formatRankRecord, rankWinRate } from '@/lib/rank'
-import { rankedMatches } from '@/lib/queue'
+import { analyzableMatches, excludedLabel, matchBreakdown } from '@/lib/queue'
+import { CURRENT_SET } from '@/lib/gameFacts'
 import { PlacementTrend } from './PlacementTrend'
 import { AxisOverview } from './AxisOverview'
 import { HabitOverview } from './HabitOverview'
@@ -146,8 +147,10 @@ export function SummonerSummary({
   children?: ReactNode
 }) {
   const rank = profile.rank
-  // 등수·6축·습관·목표는 랭크 판만 (이벤트·일반 판은 경기 목록에만 — lib/queue)
-  const matches = rankedMatches(allMatches)
+  // 등수·6축·습관·목표는 현재 세트 랭크 판만 (이벤트·일반·이전 시즌 판은 경기 목록에만 — lib/queue)
+  const matches = analyzableMatches(allMatches)
+  const breakdown = matchBreakdown(allMatches)
+  const excluded = excludedLabel(breakdown)
   const placements = matches.map((m) => m.placement)
   const n = placements.length
   const avg = n ? placements.reduce((s, p) => s + p, 0) / n : 0
@@ -196,8 +199,8 @@ export function SummonerSummary({
         </div>
 
         {/* 휴대폰에서는 오른쪽 카드의 요약 타일(평균·TOP4·1등)과 겹쳐 숨긴다 */}
-        <div className="hidden grid-cols-2 gap-2 lg:grid">
-          <StatTile label="최근 경기" value={`${n}`} />
+        <div className={`hidden grid-cols-2 gap-2 ${n ? 'lg:grid' : ''}`}>
+          <StatTile label="분석 경기" value={`${n}`} />
           <StatTile label="평균 등수" value={avg.toFixed(2)} />
           <StatTile label="TOP4" value={`${n ? Math.round((top4 / n) * 100) : 0}%`} />
           <StatTile label="1등" value={`${n ? Math.round((wins / n) * 100) : 0}%`} />
@@ -222,13 +225,24 @@ export function SummonerSummary({
 
       {/* 오른쪽: 최근 경기 분석 */}
       <div className="flex min-w-0 flex-col gap-5 rounded-card border border-line bg-panel p-5 shadow-card">
+        {n === 0 ? (
+          <div>
+            <h3 className="text-base font-bold text-ink">이번 시즌 랭크 경기가 없어 진단할 수 없습니다</h3>
+            <p className="mt-1 text-sm text-muted">
+              불러온 최근 {breakdown.total}판 중 분석할 판이 없습니다{excluded ? ` (${excluded})` : ''}. 등수·6축 진단·습관·덱
+              성적표는 시즌 {CURRENT_SET} 랭크 게임만 계산합니다.
+            </p>
+          </div>
+        ) : (
+        <>
         {/* 연습 목표 진행 (이 브라우저에 목표가 있을 때만) */}
         <GoalTracker gameName={profile.gameName} tagLine={profile.tagLine} matches={matches} />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-bold text-ink">
-              최근 {n}경기 <span className="text-sm font-medium text-subtle">(랭크)</span>
+              최근 {n}경기 <span className="text-sm font-medium text-subtle">(시즌 {CURRENT_SET} 랭크)</span>
             </h3>
+            {excluded ? <p className="mt-0.5 text-xs text-subtle">불러온 {breakdown.total}판 중 {excluded}은 분석에서 뺐습니다</p> : null}
             <ol className="mt-2 flex flex-wrap gap-1.5" aria-label="최근 경기 등수 (최근 경기부터)">
               {placements.map((p, i) => (
                 <li
@@ -319,6 +333,8 @@ export function SummonerSummary({
           </div>
         </div>
         </MobileCollapse>
+        </>
+        )}
       </div>
     </section>
   )

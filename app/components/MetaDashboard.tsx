@@ -39,8 +39,9 @@ import {
   type ItemClass,
   type ModalTarget,
   type Tier,
-  assignTiers,
+  assignSampleTiers,
   tierClass,
+  tierRank,
 } from './metaShared'
 import '../rank/rank.css'
 import '../rank/tabs.css'
@@ -58,6 +59,10 @@ const TABS: { id: TabId; label: string }[] = [
 ]
 
 const TIERS: ('전체' | Tier)[] = ['전체', 'S', 'A', 'B', 'C', 'D']
+const COSTS = [1, 2, 3, 4, 5] as const
+type CostFilter = 'all' | (typeof COSTS)[number]
+/** 기물 행이 있는 탭 — 코스트 필터를 보여 주고 티어를 같은 코스트끼리 매긴다 */
+const isUnitTab = (t: TabId) => t === 'champions' || t === 'comps'
 const SORT_LABEL: Record<'avg' | 'top4' | 'sample', string> = {
   avg: '평균등수',
   top4: 'TOP4',
@@ -117,15 +122,15 @@ const TAB_MIN_SAMPLE: Record<TabId, number> = {
   items: MIN_SAMPLE.item,
 }
 
-/** 표본 충분한 행끼리만 상대 티어를 매긴다 */
-function tiersFor(avgs: number[], samples: number[], min: number): (Tier | '-')[] {
-  const okIdx = avgs.map((_, i) => i).filter((i) => samples[i] >= min)
-  const tiers = assignTiers(okIdx.map((i) => avgs[i]))
-  const out: (Tier | '-')[] = avgs.map(() => '-')
-  okIdx.forEach((i, k) => {
-    out[i] = tiers[k]
-  })
-  return out
+/**
+ * 표본 충분한 행끼리만 상대 티어 (추정 평균등수 기준 — metaShared.assignSampleTiers).
+ * 기물은 코스트별로 나눠 매긴다: 5코는 오래 살아남은 보드에만 올라와 평균등수가 낮게 나와서, 한 줄로 매기면 S티어가 5코로만 찬다.
+ */
+function tiersFor(rows: { avgPlacement: number; sampleSize: number; cost?: number }[], min: number, byCost = false): (Tier | '-')[] {
+  return assignSampleTiers(
+    rows.map((r) => ({ avg: r.avgPlacement, sample: r.sampleSize, group: byCost ? r.cost ?? 0 : undefined })),
+    min
+  )
 }
 
 /** 필터 응답 4종 → 대시보드 섹션 (덱 제외) */
@@ -169,6 +174,7 @@ export function MetaDashboard({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [itemClass, setItemClass] = useState<ItemClass>('all')
+  const [cost, setCost] = useState<CostFilter>('all')
   const [modal, setModal] = useState<ModalTarget | null>(null)
 
   // ---- 필터 (DB 집계가 있을 때만) ----
@@ -294,7 +300,7 @@ export function MetaDashboard({
     if (!data) return []
     const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      const tiers = tiersFor(data.decks.map((d) => d.avgPlacement ?? 9), data.decks.map((d) => d.sampleSize), min)
+      const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min)
       return data.decks.map((d, i) => ({
         key: d.id,
         name: d.name,
@@ -308,7 +314,7 @@ export function MetaDashboard({
     }
     if (tab === 'comps') {
       const src: MetaCompRanking[] = data.comps ?? []
-      const tiers = tiersFor(src.map((c) => c.avgPlacement), src.map((c) => c.sampleSize), min)
+      const tiers = tiersFor(src, min, true)
       return src.map((c, i) => ({
         key: c.key,
         name: c.name,
@@ -326,7 +332,7 @@ export function MetaDashboard({
     }
     if (tab === 'champions') {
       const src: MetaChampRanking[] = data.champions ?? []
-      const tiers = tiersFor(src.map((c) => c.avgPlacement), src.map((c) => c.sampleSize), min)
+      const tiers = tiersFor(src, min, true)
       return src.map((c, i) => ({
         key: c.key,
         name: c.name,
@@ -343,7 +349,7 @@ export function MetaDashboard({
     }
     if (tab === 'traits') {
       const src: MetaTraitRanking[] = data.traits ?? []
-      const tiers = tiersFor(src.map((t) => t.avgPlacement), src.map((t) => t.sampleSize), min)
+      const tiers = tiersFor(src, min)
       return src.map((t, i) => ({
         key: t.key,
         name: t.name,
@@ -357,7 +363,7 @@ export function MetaDashboard({
       }))
     }
     const src: MetaItemRanking[] = data.items ?? []
-    const tiers = tiersFor(src.map((it) => it.avgPlacement), src.map((it) => it.sampleSize), min)
+    const tiers = tiersFor(src, min)
     return src.map((it, i) => ({
       key: it.key,
       name: it.name,
@@ -377,16 +383,18 @@ export function MetaDashboard({
       const tierOk = tier === '전체' || r.tier === tier
       const qOk = !q || r.name.toLowerCase().includes(q)
       const classOk = tab !== 'items' || itemClass === 'all' || classifyItem(r.key) === itemClass
-      return tierOk && qOk && classOk
+      const costOk = !isUnitTab(tab) || cost === 'all' || r.cost === cost
+      return tierOk && qOk && classOk && costOk
     })
     return [...filtered].sort((a, b) => {
       // 표본 부족은 평균등수·TOP4 정렬에서 맨 아래로 (우연히 좋은 수치가 위로 오지 않게)
       if (sort !== 'sample' && a.low !== b.low) return Number(a.low) - Number(b.low)
       if (sort === 'top4') return b.top4 - a.top4
       if (sort === 'sample') return b.sample - a.sample
-      return a.avg - b.avg
+      // 평균등수: 티어(표본 수를 반영한 순위)로 묶고 같은 티어 안에서 평균등수 순
+      return tierRank(a.tier) - tierRank(b.tier) || a.avg - b.avg
     })
-  }, [rowsAll, tier, sort, query, tab, itemClass])
+  }, [rowsAll, tier, sort, query, tab, itemClass, cost])
 
   // 상세 카드의 티어는 표와 같은 상대 티어를 쓴다 (원본 덱 데이터의 tier 와 다를 수 있음)
   const selectedTier = useMemo(
@@ -452,8 +460,10 @@ export function MetaDashboard({
               <EvidenceChip>
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
-              <EvidenceChip title="절대 기준이 아니라 현재 표 안에서의 상대 순위 (표본 부족 제외)">티어 = 표 안 상대 순위</EvidenceChip>
-              <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만은 표본 부족으로 회색 표시`}>
+              <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다">
+                {isUnitTab(tab) ? '티어 = 같은 코스트 안 상대 순위' : '티어 = 표 안 상대 순위'} · 표본 수 반영
+              </EvidenceChip>
+              <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만(±${placementMargin(minSample)?.toFixed(2)} 초과)은 표본 부족으로 회색 표시`}>
                 ± 표준오차 · {minSample}판 미만 표본 부족
               </EvidenceChip>
             </div>
@@ -542,6 +552,21 @@ export function MetaDashboard({
                     </button>
                   )
                 })}
+              </div>
+            ) : null}
+            {isUnitTab(tab) ? (
+              <div className="rk-chips" role="group" aria-label="기물 코스트">
+                {(['all', ...COSTS] as CostFilter[]).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`rk-chip ${cost === c ? 'on' : ''}`}
+                    aria-pressed={cost === c}
+                    onClick={() => setCost(c)}
+                  >
+                    {c === 'all' ? '전체' : `${c}코`} <span>{c === 'all' ? rowsAll.length : rowsAll.filter((r) => r.cost === c).length}</span>
+                  </button>
+                ))}
               </div>
             ) : null}
             <div className="rk-chips" role="group" aria-label="상대 티어">

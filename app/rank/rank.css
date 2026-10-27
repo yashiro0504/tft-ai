@@ -412,17 +412,6 @@
 .rk-build-item { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--rk-ink2); }
 .rk-build-item img { width: 18px; height: 18px; border-radius: 4px; }
 
-.rk-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 16px 24px;
-  font-size: 12px;
-  color: var(--text-3);
-}
-
 /* 반응형 */
 @media (max-width: 1180px) {
   .rk-shell { grid-template-columns: minmax(0, 1fr); }
@@ -444,6 +433,7 @@
 /* 아이템 분류 칩 */
 .rk-chips {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
@@ -460,6 +450,7 @@
   font-weight: 500;
   padding: 4px 8px;
   cursor: pointer;
+  white-space: nowrap;
 }
 .rk-chip span {
   color: var(--rk-muted);

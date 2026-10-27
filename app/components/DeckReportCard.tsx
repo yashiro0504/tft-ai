@@ -2,7 +2,7 @@ import { DECK_REPORT_MIN_GAMES, type DeckReport, type DeckReportRow } from '@/li
 
 /**
  * 내 덱 성적표 (AI 미사용 — lib/deckReport 가 서버에서 메타 덱으로 묶어 계산).
- * 판정은 DECK_REPORT_MIN_GAMES 판 이상 + 메타 표본이 충분한 덱만. 나머지는 수치만 보여 준다.
+ * 판정은 DECK_REPORT_MIN_GAMES 판 이상 + 판수 오차보다 큰 차이 + 메타 표본이 충분한 덱만. 나머지는 수치만 보여 준다.
  */
 const VERDICT: Record<NonNullable<DeckReportRow['verdict']>, { label: string; tone: string }> = {
   good: { label: '잘 맞음', tone: 'border-good/50 bg-good/10 text-good' },
@@ -42,7 +42,7 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
       </ul>
       <p className="mt-1.5 text-[11px] leading-relaxed text-subtle">
         {report.unmatched.games ? `메타 덱과 다른 조합 ${report.unmatched.games}판 (평균 ${report.unmatched.avgPlacement}등) · ` : ''}
-        판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱만 — 판수가 적으면 운의 영향이 큽니다.
+        판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱에서 차이가 판수 오차보다 클 때만 — 판수가 적으면 운의 영향이 큽니다.
       </p>
     </div>
   )

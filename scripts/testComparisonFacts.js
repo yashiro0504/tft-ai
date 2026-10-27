@@ -288,9 +288,9 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     )
     check('채점: 설정 이후 경기가 없으면 진행 0', evaluateGoal(g, [board(50, 0)]).games.length === 0 && !evaluateGoal(g, []).done)
   }
-  // ── 내 덱 성적표 (lib/deckReport): 메타 덱으로 묶어 내 평균 vs 메타 평균 · 2판 이상만 판정 ──
+  // ── 내 덱 성적표 (lib/deckReport): 메타 덱으로 묶어 내 평균 vs 메타 평균 · 4판 이상 + 판수 오차보다 큰 차이만 판정 ──
   {
-    const { buildDeckReport } = require('../lib/deckReport')
+    const { buildDeckReport, deckVerdictMargin } = require('../lib/deckReport')
     const U = (id, name) => ({ id, name, rarity: 4, tier: 2, items: [] })
     const deckA = { name: '테스트 A', avgPlacement: 4, sampleSize: 200, units: ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
     const deckB = { name: '테스트 B', avgPlacement: 4.5, sampleSize: 10, units: ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
@@ -298,14 +298,24 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const aKeys = ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel']
     const bKeys = ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern']
     const r = buildDeckReport(
-      [game('a1', 7, aKeys), game('a2', 6, aKeys), game('b1', 1, bKeys), game('b2', 2, bKeys), game('x', 5, ['Veigar', 'Ornn', 'RekSai', 'Alistar']), { ...game('e', 8, aKeys), lastRound: '2-2' }],
+      [
+        ...[7, 6, 7, 6].map((p, i) => game(`a${i}`, p, aKeys)),
+        game('b1', 1, bKeys),
+        game('b2', 2, bKeys),
+        game('x', 5, ['Veigar', 'Ornn', 'RekSai', 'Alistar']),
+        { ...game('e', 8, aKeys), lastRound: '2-2' },
+      ],
       [deckA, deckB]
     )
     const A = r.rows.find((x) => x.name === '테스트 A')
     const B = r.rows.find((x) => x.name === '테스트 B')
-    check('덱 성적표: 2판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 2 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
+    check('덱 성적표: 4판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 4 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
     check('덱 성적표: 메타 표본 적은 덱은 판정 없음', B && B.games === 2 && B.verdict === null, JSON.stringify(B))
-    check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 5판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 5, JSON.stringify(r.unmatched))
+    check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 7판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 7, JSON.stringify(r.unmatched))
+    const twoGames = buildDeckReport([game('a1', 8, aKeys), game('a2', 8, aKeys)], [deckA]).rows[0]
+    check('덱 성적표: 2판은 4등 차이여도 판정 없음 (2판 평균 오차 ±1.6등)', twoGames.games === 2 && twoGames.delta === 4 && twoGames.verdict === null, JSON.stringify(twoGames))
+    const close = buildDeckReport([5, 5, 5, 5.4].map((p, i) => game(`c${i}`, p, aKeys)), [deckA]).rows[0]
+    check('덱 성적표: 4판 1.1등 차이는 오차(1.15등) 안 → 메타 수준', deckVerdictMargin(4) > 1.1 && close.delta === 1.1 && close.verdict === 'even', JSON.stringify(close))
   }
   // ── 보드 칸 (lib/boardSlots): 장로 드래곤 2칸 — Lv.9 에 기물 8개면 빈칸 아님 ──
   {
@@ -802,10 +812,11 @@ ${mixedFacts}`
   }
   check('NaN/Infinity/undefined 없음 · 케이스마다 1줄 이상', bad === 0 && lineCounts.every((x) => Number(x.split(':')[1]) >= 1), lineCounts.join(' '))
 
-  // ── 게임 모드 (lib/queue): 분석은 랭크 판만 · 모르는 큐는 '랭크 게임'으로 표시하지 않음 (2026-10-23 이벤트 판 회귀) ──
+  // ── 게임 모드·시즌 (lib/queue): 분석은 현재 세트 랭크 판만 · 모르는 큐는 '랭크 게임'으로 표시하지 않음 (2026-10-23 이벤트 판 회귀) ──
   {
-    console.log('게임 모드 (랭크만 분석)')
-    const { queueLabel, isRankedMatch, rankedMatches } = require('../lib/queue')
+    console.log('게임 모드·시즌 (현재 세트 랭크만 분석)')
+    const { queueLabel, isRankedMatch, analyzableMatches, matchBreakdown, excludedLabel } = require('../lib/queue')
+    const { CURRENT_SET } = require('../lib/gameFacts')
     const { calculateProfileStats } = require('../lib/profile')
     const { extractSlimMatchData } = require('../lib/summarize')
     const src = fixture.cases[0].matches[0]
@@ -817,9 +828,18 @@ ${mixedFacts}`
     check('extractSlimMatchData: queueId 저장 · 이벤트 판 표시 이름', event.queueId === 6120 && event.queueType === '이벤트·기타 모드' && !isRankedMatch(event) && isRankedMatch(ranked))
     check('queueId 없는 예전 데이터·데모는 표시 이름으로 판단', isRankedMatch({ queueType: '랭크 게임' }) && isRankedMatch({}) && !isRankedMatch({ queueType: '더블 업' }))
     const mixed = [{ ...src, placement: 8, queueId: 6120, queueType: '이벤트·기타 모드' }, { ...src, placement: 2, queueId: 1100 }]
-    check('rankedMatches 가 이벤트 판을 뺌', rankedMatches(mixed).length === 1)
+    check('analyzableMatches 가 이벤트 판을 뺌', analyzableMatches(mixed).length === 1)
     const prof = calculateProfileStats(mixed, 'a', 'b')
     check('프로필 평균 등수는 랭크 판만 (이벤트 8등 제외 → 2등)', prof.avgPlacement === 2 && prof.totalGames === 1, JSON.stringify(prof))
+    // 지난 시즌 판만 있는 계정 (2026-10-27 평가: 시즌 17 판으로 시즌 18 진단이 나옴)
+    const oldSet = extractSlimMatchData({ ...raw(1100), info: { ...raw(1100).info, tft_set_number: CURRENT_SET - 1 } }, 'P')
+    check('lite 게임 데이터에 현재 세트 번호', Number.isInteger(CURRENT_SET) && CURRENT_SET >= 18, String(CURRENT_SET))
+    check('지난 시즌 랭크 판은 분석에서 뺌 · 세트 번호 없는 예전 데이터는 현재 세트로', isRankedMatch(oldSet) && analyzableMatches([oldSet]).length === 0 && analyzableMatches([{ queueId: 1100 }]).length === 1)
+    const onlyOld = calculateProfileStats([oldSet, { ...oldSet, placement: 1 }], 'a', 'b')
+    check('지난 시즌 판만 있으면 프로필 통계 0판 (1판으로 나누지 않음)', onlyOld.totalGames === 0 && onlyOld.avgPlacement === 0, JSON.stringify(onlyOld))
+    const b = matchBreakdown([...mixed, oldSet, { ...oldSet, queueId: 1090 }])
+    check('경기 수: 전체 4 = 분석 1 + 다른 모드 1 + 이전 시즌 2', b.total === 4 && b.analyzed === 1 && b.otherQueue === 1 && b.previousSet === 2, JSON.stringify(b))
+    check('뺀 판 설명', excludedLabel(b) === '일반·이벤트 1판 · 이전 시즌 2판' && excludedLabel(matchBreakdown([ranked])) === '', excludedLabel(b))
   }
 
   console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 비교 사실 테스트 통과')
