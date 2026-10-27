@@ -14,7 +14,7 @@ import type { SlimMatchData, SlimMatchUnit } from './types'
  * 모두 최종 보드 기준 사실이다 — 라운드 타이밍(언제 레벨업/리롤)은 데이터에 없으니 만들지 않는다.
  */
 export interface KeyMoment {
-  kind: 'sameComp' | 'duplicateCopies' | 'itemsOnWeak' | 'carryOneStar' | 'emptySlots' | 'nearBreakpoint'
+  kind: 'carryContest' | 'sameComp' | 'duplicateCopies' | 'itemsOnWeak' | 'carryOneStar' | 'emptySlots' | 'nearBreakpoint'
   /** 짧은 제목 (예: "같은 구성 2등과의 성급 차이") */
   title: string
   /** 수치를 담은 사실 한 줄 — 프롬프트·화면에 그대로 쓴다 */
@@ -144,6 +144,30 @@ export function fillableNearBreakpoints(m: SlimMatchData) {
 
 /* ───────── 단일 경기 장면 ───────── */
 
+/** 경합 캐리: 내 리롤 캐리(1~3코)를 코어로 든 상대가 이 수 이상 */
+export const CONTESTED_CARRY_MIN = 2
+/** 이 등수 이내로 끝난 판은 경합 캐리 장면을 내지 않는다 (경합 속에서도 굴린 판에 "갈아타라"는 틀린 조언) */
+export const CONTESTED_CARRY_OK_PLACEMENT = 3
+
+/**
+ * 리롤 캐리(1~3코, 성급 무관)를 코어로 든 로비 상대 — 2명 이상이면 경합 캐리 장면 후보 (장면은 lib/comparisonFacts carryContestMoment).
+ * 4·5코 캐리는 보지 않는다 (정답셋: 4·5코 2성 캐리 판의 경합 요인은 모두 틀림 — rerollCarryContest 와 같은 이유).
+ */
+export function contestedCarry(m: SlimMatchData): { carry: SlimMatchUnit; holders: { placement: number; tier: number }[] } | null {
+  const carry = boardCarry(m.units)
+  if (!carry || (carry.rarity || 1) > REROLL_CARRY_MAX_COST || (carry.items?.length || 0) < 2) return null
+  const key = slug(carry)
+  const holders = (m.lobbyParticipants || [])
+    .filter((p) => !p.isUser)
+    .flatMap((p) => {
+      const u = (p.units || []).filter((u) => slug(u) === key && isCoreUnit(u)).sort((a, b) => (b.tier || 1) - (a.tier || 1))[0]
+      return u ? [{ placement: p.placement, tier: u.tier || 1 }] : []
+    })
+    .sort((a, b) => a.placement - b.placement)
+  return holders.length >= CONTESTED_CARRY_MIN ? { carry, holders } : null
+}
+
+
 function sameComp(m: SlimMatchData): KeyMoment | null {
   const g = sameCompGap(m)
   if (!g) return null
@@ -253,7 +277,11 @@ export function allKeyMoments(m: SlimMatchData): KeyMoment[] {
     .filter((x): x is KeyMoment => Boolean(x))
 }
 
-/** 단일 경기의 핵심 장면 (우선순위 순, 최대 KEY_MOMENTS_MAX 개). 해당 없으면 빈 배열. */
-export function keyMoments(m: SlimMatchData): KeyMoment[] {
-  return allKeyMoments(m).slice(0, KEY_MOMENTS_MAX)
+/**
+ * 단일 경기의 핵심 장면 (우선순위 순, 최대 KEY_MOMENTS_MAX 개). 해당 없으면 빈 배열.
+ * lead: 메타 덱 데이터가 필요한 장면(경합 캐리 — lib/comparisonFacts carryContestMoment)을 맨 앞에 둔다.
+ * 클라이언트(MatchCard)가 이 모듈을 쓰므로 덱 데이터 모듈은 여기서 import 하지 않는다.
+ */
+export function keyMoments(m: SlimMatchData, lead: KeyMoment[] = []): KeyMoment[] {
+  return [...lead, ...allKeyMoments(m)].slice(0, KEY_MOMENTS_MAX)
 }

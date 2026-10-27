@@ -3,7 +3,7 @@ import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, Coa
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
-import { buildComparisonFacts, type ComboFact } from './comparisonFacts'
+import { buildComparisonFacts, carryContestMoment, type ComboFact } from './comparisonFacts'
 import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
@@ -218,6 +218,13 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
    - why: 이 판에서 그게 왜 보드를 약하게 만들었는지 1~2문장. 제공된 수치·기물로만 말한다
      (예: 같은 아이템이 2성 기물에 있었다면 / 같은 구성 상대와의 성급 차이). 등수의 원인으로 단정하지는 마라.
    - fix: 다음 판 같은 상황에서 할 구체적 행동 1~2문장 (어떤 기물·아이템을 어떻게). 라운드·타이밍 숫자는 만들지 마라.
+     fix 에는 제공된 데이터의 기물·아이템·덱 이름을 최소 1개 넣어라. "2성을 먼저 만들어라", "아이템을 2성 기물에 분배하라",
+     "시너지를 맞춰라", "경합을 피하라"처럼 이름 없이 누구에게나 맞는 일반론은 fix 가 아니다 — 무엇을(기물·덱) 어디에(기물) 줄지까지 써라.
+   - '캐리 ○○ 경합 N명' 장면: 사실 줄의 "로비가 안 탄 전환 대안" 중 하나를 덱 이름 그대로 골라 fix 로 추천하라
+     (예: "다음 판에도 ○○를 2명 이상이 2성 이상으로 모으는 게 보이면 △△(사실 줄의 덱 이름)로 전환 — ○○를 팔면 돌아오는 □□는 △△ 캐리에게 그대로 준다").
+     전환 조건은 "같은 캐리를 모으는 상대가 보이면"처럼 정찰로 확인할 상황으로만 말하고 라운드 숫자는 쓰지 마라.
+     대안 덱의 수치(로비 N명·메타 평균·그대로 쓰는 아이템·겹치는 기물)는 사실 줄 그대로 인용하고, 줄에 없는 덱·아이템을 추천하지 마라.
+     why 는 같은 캐리를 나눠 든 상대 수·성급으로 말하되 "그래서 졌다"로 단정하지 마라.
    - [핵심 장면] 블록이 없거나 비어 있으면 [6축 진단]의 초점 축 지표로 장면 1개를 만든다 (title: 초점 축 이름).
    - 종합 분석이면 장면은 "여러 판에 반복된 습관"이다. why 는 반복 횟수·평균 수치로, fix 는 다음 판들에서 지킬 규칙으로 쓴다.
 3) drill: 다음 3판 동안 지킬 목표 1개 — 최종 보드로 확인할 수 있는 숫자 목표로 (예: 기물 성급·2성 수·아이템 위치).
@@ -229,6 +236,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 각 축에 verdict(한 줄 진단, 25자 내외)를 붙인다. 축끼리 문장이 겹치면 안 된다.
 - 덱 유형이 리롤형이면 템포 축을 "레벨이 낮다"가 아니라 "3성 완성·캐리 3성" 기준으로 해설하라. 표준형에만 레벨 격차를 적용하라.
 - actions 는 다음 판에서 할 행동 3개다(서로 다른 축, 측정 가능하게). lecture.checklist·axes verdict 와 문장을 복사하지 마라.
+  actions 도 fix 와 같이 제공된 기물·아이템·덱 이름을 넣어 쓴다(이름 없는 일반론 금지).
 
 ★★★ 데이터 접지(Grounding) ★★★
 - TFT 메타 '기억'은 현재 패치와 다를 수 있다. 오직 프롬프트에 '제공된 수치/사실'만 근거로 쓴다.
@@ -283,6 +291,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 로비가 안 탄 메타 덱 후보는 로비 최종 보드 기준의 사후 비교다. "~를 갔어야 했다"고 단정하지 말고 "같은 재료로 ~도 가능했다"는
   후보로만 언급하라. 피봇 시점·상점 기물 공급은 데이터에 없으니 언제 갈아탔어야 하는지 말하지 마라.
   후보 줄이 없으면 그런 덱을 추천하지 마라(코드가 조건을 만족하는 덱을 찾지 못한 것이다). 이 후보를 '빈집'이라 부르지 마라(경합 등급 이름이다).
+  예외: [핵심 장면]의 '캐리 ○○ 경합 N명' 장면은 다음 판 전환 덱을 추천하는 장면이다 — 그 장면의 전환 대안은 위 장면 규칙대로 추천하라.
 
 ★★★ 라운드 타이밍 단정 금지 ★★★
 - 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·탈락 라운드만 있다).
@@ -812,7 +821,7 @@ export async function generateMetaCoachFeedback(
   const basePlan = buildCoachingPlan(matches)
   // 핵심 장면: 코드가 콕 집은 사실. 단일 경기는 그 판의 장면(lib/keyMoments), 종합 분석은 여러 판에 반복된 습관(lib/habits).
   // 강의 본문(moments)은 이 장면들을 해설한다.
-  const moments: KeyMoment[] = basePlan.lowSample ? [] : mode === 'single' ? (matches[0] ? keyMoments(matches[0]) : []) : habitPatterns(matches)
+  const moments: KeyMoment[] = basePlan.lowSample ? [] : mode === 'single' ? (matches[0] ? keyMoments(matches[0], [carryContestMoment(matches[0], deckStats.decks)].filter((x): x is KeyMoment => Boolean(x))) : []) : habitPatterns(matches)
   // 장면이 있으면 강의 주제를 첫 장면에 맞춘다 — 가장 약한 축(예: 유연성)과 장면(예: 1성 기물 아이템)이 따로 놀지 않게
   // 1등 판은 '복기' — 이긴 요인을 먼저, 장면은 다듬을 점으로 (1등 판을 문제점 나열로 만들지 않는다)
   const win = mode === 'single' && matches[0]?.placement === 1 && !basePlan.lowSample
@@ -1063,6 +1072,7 @@ function defaultChecklist(plan: CoachingPlan): string[] {
 
 /** 장면 종류 → 강의 축 */
 const MOMENT_AXIS: Record<KeyMoment['kind'], CoachingAxisKey> = {
+  carryContest: 'contest',
   sameComp: 'completion',
   duplicateCopies: 'completion',
   itemsOnWeak: 'itemization',
