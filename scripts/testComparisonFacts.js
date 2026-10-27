@@ -236,6 +236,53 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
     check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
   }
+  // ── 경합 캐리 장면 + 전환 대안 덱 (lib/comparisonFacts carryContestMoment · pivotCandidates) ──
+  {
+    const { carryContestMoment, pivotCandidates } = require('../lib/comparisonFacts')
+    const { keyMoments } = require('../lib/keyMoments')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const opp = (placement, units) => ({ placement, gameName: 'o', tagLine: 'x', level: 8, lastRound: '5-3', damageToPlayers: 0, traits: [], units, isUser: false })
+    const D = (name, carry, cost, star, items, avgPlacement = 4.5, sampleSize = 60, extra = []) => ({
+      name, avgPlacement, sampleSize, carryKey: carry,
+      units: [{ key: carry, name: carry, cost, star, items: items.map((n) => ({ name: n })) }, ...extra.map((k) => ({ key: k, name: k, cost: 2, star: 2 }))],
+    })
+    const decks = [
+      D('처형자 아지르', 'Azir', 3, 2, ['마법공학 총검'], 5.06),
+      D('개화 렝가', 'Rengar', 3, 3, ['구인수의 격노검', '밤의 끝자락', '수은'], 4.59, 69, ['Lulu']),
+      D('처형자 카직스', 'KhaZix', 3, 3, ['정의의 손길', '라바돈의 죽음모자'], 4.85, 46),
+      D('주문술사 르블랑', 'LeBlanc', 2, 3, ['공허의 지팡이'], 4.81, 96),
+      D('적응가 니달리', 'Nidalee', 4, 2, ['쇼진의 창'], 3.68, 38),
+      D('장로 드래곤', 'ElderDragon', 5, 2, ['무한의 대검'], 3.69, 171),
+      D('약한 리롤', 'Karma', 1, 3, ['보석 건틀릿'], 5.73, 45),
+      D('표본 적은 리롤', 'Yunara', 2, 3, ['구인수의 격노검'], 4.0, 10),
+    ]
+    const me = {
+      ...standard, placement: 6, level: 8, lastRound: '5-3', traits: [],
+      units: [U('TFT18_Azir', '아지르', 3, 2, ['마법공학 총검', '구인수의 격노검', '라바돈의 죽음모자']), U('TFT18_Lulu', '룰루', 2, 2)],
+    }
+    me.lobbyParticipants = [
+      opp(2, [U('TFT18_Azir', '아지르', 3, 3, ['마법공학 총검'])]),
+      opp(5, [U('TFT18_Azir', '아지르', 3, 2)]),
+      opp(7, [U('TFT18_Azir', '아지르', 3, 1, ['수은'])]),
+      opp(8, [U('TFT18_Azir', '아지르', 3, 1)]), // 1성 무템 = 칸 채우기, 세지 않는다
+      opp(1, [U('TFT18_KhaZix', '카직스', 3, 3, ['정의의 손길']), U('TFT18_KhaZix', '카직스', 3, 3)]),
+    ]
+    const km = carryContestMoment(me, decks)
+    check('경합 캐리: 아지르 코어 상대 3명(1성 무템 제외) · 등수·성급', km?.title === '캐리 아지르 경합 3명' && /3명\(2등 3성·5등 2성·7등 1성\)/.test(km.fact), JSON.stringify(km))
+    const alts = pivotCandidates(me, decks, me.units[0])
+    check(
+      '전환 대안: 같은 3코 리롤 우선 · 로비가 든 카직스·약한/소표본 덱·5코 캐리 제외',
+      alts.map((c) => c.deck.name).join(',') === '개화 렝가,주문술사 르블랑',
+      JSON.stringify(alts.map((c) => c.deck.name))
+    )
+    check('전환 대안: 그대로 쓰는 아이템 · 겹치는 기물', alts[0].reuse.join() === '구인수의 격노검' && alts[0].shared.join() === 'Lulu', JSON.stringify(alts[0]))
+    check('경합 캐리 장면 문구: 덱 이름·로비 0명·메타 평균', /3코 리롤 개화 렝가\(로비 0명 · 메타 평균 4\.59등, 69판 · 캐리 Rengar 아이템 구인수의 격노검·밤의 끝자락·수은 중 내 아이템 구인수의 격노검 그대로/.test(km.fact), km.fact)
+    check('경합 캐리: 3등 이내로 끝난 판은 장면 없음', carryContestMoment({ ...me, placement: 3 }, decks) === null)
+    check('경합 캐리: 상대 1명이면 장면 없음', carryContestMoment({ ...me, lobbyParticipants: me.lobbyParticipants.slice(1, 2) }, decks) === null)
+    check('경합 캐리: 4코 캐리는 대상 아님', carryContestMoment({ ...me, units: [{ ...me.units[0], rarity: 4 }] }, decks) === null)
+    check('경합 캐리: 대안 덱이 없으면 장면 없음', carryContestMoment(me, decks.slice(0, 1)) === null)
+    check('핵심 장면: 경합 캐리 장면(lead)이 1순위', keyMoments(me, [km])[0]?.kind === 'carryContest')
+  }
   // ── 1성 캐리 장면 = 레벨별 상점 확률 (lib/shopOdds, Set 18 표 기준) · [상점 확률] 프롬프트 블록 ──
   {
     const { allKeyMoments, oneStarCarry } = require('../lib/keyMoments')

@@ -3,6 +3,7 @@ import { boardCarry, summarizeDeckTypes } from './deckType'
 import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
 import { isCoreUnit } from './contest'
+import { CONTESTED_CARRY_OK_PLACEMENT, contestedCarry, type KeyMoment } from './keyMoments'
 import { mostSimilarOpponent } from './similarOpponent'
 import { boardValue } from './boardValue'
 import { getChampionCost } from './constants'
@@ -335,6 +336,109 @@ function openDeckLines(m: SlimMatchData, decks: DeckFact[]): string[] {
         2
       )}등(표본 ${c.deck.sampleSize}판) · 캐리 ${c.carryName} 핵심템 ${c.buildable.length}/${c.coreItems.length}을 내 캐리(${c.myCarry}) 아이템 재료로 조합 가능(${c.buildable.join(', ')})`
   )
+}
+
+/** 전환 대안: 최대 개수 · 메타 평균등수 상한 · 대안 캐리를 코어로 든 상대 수 상한 */
+export const PIVOT_MAX = 2
+export const PIVOT_MAX_AVG = 4.9
+export const PIVOT_MAX_HOLDERS = 1
+
+export interface PivotCandidate {
+  deck: DeckFact
+  /** '3코 리롤' · '4코 캐리' */
+  style: string
+  carryName: string
+  /** 대안 캐리를 코어로 든 로비 상대 수 (0 또는 1) */
+  holders: number
+  /** 대안 덱 캐리 아이템(가이드 채용률 순, 없으면 덱 대표 아이템) */
+  carryItems: string[]
+  /** 그중 내 캐리가 이미 든 완성 아이템 — 캐리를 팔면 돌아와 그대로 쓴다 */
+  reuse: string[]
+  /** 대안 덱 핵심 기물 중 내 최종 보드에 이미 있는 기물 */
+  shared: string[]
+  /** 대안 캐리가 내 최종 보드에 있으면 그 성급 */
+  carryOnBoard: number | null
+}
+
+/**
+ * 경합 캐리 전환 대안 (single): 내 캐리를 로비가 나눠 들었을 때 "그 재료로 넘어갈 덱".
+ * 로비가 안 탄 메타 덱(덱 매칭 없음 · 그 캐리를 코어로 든 상대 PIVOT_MAX_HOLDERS 명 이하) 중
+ * 1~3코 3성 캐리(리롤) 또는 4코 캐리 덱만 본다 — 5코 캐리는 리롤 덱에서 넘어갈 덱이 아니다.
+ * 정렬: 내 캐리와 같은 코스트 리롤 → 다른 리롤 → 4코 캐리, 같으면 대안 캐리가 이미 내 보드에 있는 덱 → 그대로 쓰는 아이템 · 겹치는 기물 많은 순 → 메타 평균 좋은 순.
+ * 최종 보드 기준이라 피봇 시점은 모른다 — "같은 상황이 보이면 전환할 덱" 후보다.
+ */
+export function pivotCandidates(m: SlimMatchData, decks: DeckFact[], carry: SlimMatchUnit): PivotCandidate[] {
+  const opponents = (m.lobbyParticipants || []).filter((p) => !p.isUser)
+  if (!opponents.length || !decks.length) return []
+  const taken = new Set(lobbyDecks(m, decks).flatMap((x) => (x.deck ? [x.deck.name] : [])))
+  const mySlug = entitySlug('champion', carry.id)
+  const mine = slugSet(m.units.map((u) => u.id))
+  const myCost = carry.rarity || getChampionCost(carry.id) || 0
+  const myItems = carry.items || []
+  const out: { c: PivotCandidate; rank: number }[] = []
+  for (const d of decks) {
+    if (taken.has(d.name) || d.sampleSize < DECK_REFERENCE_SAMPLE) continue
+    if (d.avgPlacement == null || !fin(d.avgPlacement) || d.avgPlacement > PIVOT_MAX_AVG) continue
+    const c = deckCarry(d)
+    if (!c) continue
+    const slug = entitySlug('champion', c.key)
+    if (!slug || slug === mySlug) continue
+    const cost = c.cost ?? getChampionCost(c.key) ?? 0
+    const reroll = cost >= 1 && cost <= 3 && (c.star ?? 0) >= 3
+    if (!reroll && cost !== 4) continue
+    const holders = opponents.filter((p) => p.units.some((u) => isCoreUnit(u) && entitySlug('champion', u.id) === slug)).length
+    if (holders > PIVOT_MAX_HOLDERS) continue
+    const carryItems = d.guide?.carryItems.length ? d.guide.carryItems.map((i) => i.name) : (c.items || []).map((i) => i.name)
+    const reuse = [...new Set(myItems.filter((n) => carryItems.includes(n)))]
+    const core = d.guide?.core.length ? d.guide.core : d.units.filter((u) => !u.flex)
+    const shared = core.filter((u) => entitySlug('champion', u.key) !== slug && mine.has(entitySlug('champion', u.key))).map((u) => u.name || u.key)
+    const onBoard = m.units.filter((u) => entitySlug('champion', u.id) === slug).sort((a, b) => (b.tier || 1) - (a.tier || 1))[0]
+    const carryOnBoard = onBoard ? onBoard.tier || 1 : null
+    const rank = reroll ? (cost === myCost ? 0 : 1) : 2
+    out.push({ c: { deck: d, style: reroll ? `${cost}코 리롤` : '4코 캐리', carryName: c.name || c.key, holders, carryItems, reuse, shared, carryOnBoard }, rank })
+  }
+  return out
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        Number(b.c.carryOnBoard != null) - Number(a.c.carryOnBoard != null) ||
+        b.c.reuse.length - a.c.reuse.length ||
+        b.c.shared.length - a.c.shared.length ||
+        (a.c.deck.avgPlacement as number) - (b.c.deck.avgPlacement as number)
+    )
+    .slice(0, PIVOT_MAX)
+    .map((x) => x.c)
+}
+
+/** "3코 리롤 개화 렝가(로비 0명 · 메타 평균 4.59등, 69판 · 캐리 렝가 아이템 구인수의 격노검·밤의 끝자락·수은 중 내 아이템 구인수의 격노검 그대로 · 내 보드 기물 2개 겹침: A, B)" */
+export function pivotLabel(c: PivotCandidate): string {
+  const items = c.carryItems.slice(0, 3)
+  const reuse = c.reuse.length ? ` 중 내 아이템 ${c.reuse.join('·')} 그대로` : ''
+  const shared = c.shared.length ? ` · 내 보드 기물 ${c.shared.length}개 겹침: ${c.shared.slice(0, 4).join(', ')}` : ''
+  const onBoard = c.carryOnBoard ? ` · 캐리 ${c.carryName} 내 보드에 ${c.carryOnBoard}성` : ''
+  return `${c.style} ${c.deck.name}(로비 ${c.holders}명 · 메타 평균 ${(c.deck.avgPlacement as number).toFixed(2)}등, ${c.deck.sampleSize}판${
+    items.length ? ` · 캐리 ${c.carryName} 아이템 ${items.join('·')}${reuse}` : ''
+  }${onBoard}${shared})`
+}
+
+/**
+ * 핵심 장면 '캐리 ○○ 경합 N명' (single): 리롤 캐리를 로비 2명+가 코어로 나눠 들었고 4등 이하로 끝난 판 + 전환 대안 덱.
+ * 대안이 없으면 장면을 만들지 않는다 — "다른 덱을 가라"를 덱 이름 없이 말하게 되므로.
+ */
+export function carryContestMoment(m: SlimMatchData, decks: DeckFact[]): KeyMoment | null {
+  if (!m?.units?.length || m.placement <= CONTESTED_CARRY_OK_PLACEMENT) return null
+  const hit = contestedCarry(m)
+  if (!hit) return null
+  const alts = pivotCandidates(m, decks, hit.carry)
+  if (!alts.length) return null
+  const { carry, holders } = hit
+  return {
+    kind: 'carryContest',
+    title: `캐리 ${carry.name} 경합 ${holders.length}명`,
+    fact: `캐리 ${carry.name}(${carry.rarity}코 ${carry.tier || 1}성)를 코어로 든 상대 ${holders.length}명(${holders
+      .map((h) => `${h.placement}등 ${h.tier}성`)
+      .join('·')}) · 로비가 안 탄 전환 대안: ${alts.map(pivotLabel).join(' / ')}`,
+  }
 }
 
 export function opennessLabel(flexSlots: number): '낮음' | '보통' | '높음' {
