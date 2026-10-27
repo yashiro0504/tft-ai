@@ -28,7 +28,7 @@ const SCENE_TITLE = {
   sameComp: '같은 구성 상위 등수와 성급 차이',
   duplicateCopies: '같은 기물 1성 여러 장',
   itemsOnWeak: '아이템이 1성 저코스트에',
-  carryOneStar: '저코스트 캐리가 1성',
+  carryOneStar: '캐리가 1성',
   emptySlots: '보드 빈칸',
   nearBreakpoint: '1명 모자란 시너지',
 }

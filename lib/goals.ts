@@ -80,7 +80,7 @@ export function goalFromMoment(moment: Pick<KeyMoment, 'kind' | 'title'>, matche
     case 'duplicateCopies':
       return { ...base, kind: 'duplicateCopies', label: '같은 기물 1성을 여러 장 올린 묶음', dir: 'max', target: 0, unit: '개', baseline: baselineOf('duplicateCopies') }
     case 'carryOneStar':
-      return { ...base, kind: 'carryOneStar', label: '1성으로 끝난 저코스트 캐리', dir: 'max', target: 0, unit: '명', baseline: baselineOf('carryOneStar') }
+      return { ...base, kind: 'carryOneStar', label: '1성으로 끝난 캐리', dir: 'max', target: 0, unit: '명', baseline: baselineOf('carryOneStar') }
     case 'emptySlots':
       return { ...base, kind: 'emptySlots', label: '최종 보드 빈칸', dir: 'max', target: 0, unit: '칸', baseline: baselineOf('emptySlots') }
     case 'sameComp': {

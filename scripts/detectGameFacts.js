@@ -276,7 +276,7 @@ function report(label, lobbies, boards, slots, traits, never, gaps) {
   const neverRows = [...never.neverStar.map((p) => neverRow(p, '2성 없음')), ...never.neverItems.map((p) => neverRow(p, '아이템 없음'))]
   if (neverRows.length) {
     L.push('| 기물 | 나온 보드 | 사실 |', '|---|---:|---|', ...neverRows, '')
-    L.push("> 2성이 없는 기물은 '저코스트 캐리가 1성'·'같은 기물 1성 여러 장'·'같은 구성 성급 차이' 장면에서 실수로 보면 안 된다.", '')
+    L.push("> 2성이 없는 기물은 '캐리가 1성'·'같은 기물 1성 여러 장'·'같은 구성 성급 차이' 장면에서 실수로 보면 안 된다.", '')
   } else L.push('해당 없음.', '')
 
   L.push('### 4. 사전 누락', '')

@@ -17,9 +17,11 @@ import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStatus'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
+import { boardCarry } from './deckType'
+import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-23.2'
+export const COACH_PROMPT_VERSION = '2026-10-27.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -229,7 +231,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 레벨 9~10 표준형(밸류) 보드에서 5코스트 겹침은 그 레벨에 간 모두가 겪는 조건이다. "겹쳐서 졌다", "다른 덱으로 비틀었어야" 식으로
   원인 삼지 말고, 같은 5코스트를 쓴 상대와 2성 수·아이템 차이를 비교하라.
 - 완성 아이템은 기물에서 떼어 다른 기물로 옮길 수 없다(아이템 제거기·재조합기 같은 특수 아이템이 없으면). "아이템을 옮겨라/회수하라/나중에 몰아줘라"고
-  하지 말고, 다음 판에 처음부터 어느 기물에 줄지로 말하라. 4·5코스트 1성 캐리에 아이템을 몰아주는 것은 후반 정상 운영이다 — 문제로 삼지 마라.
+  하지 말고, 다음 판에 처음부터 어느 기물에 줄지로 말하라. 1성 캐리가 문제인지는 [상점 확률]로 판단한다: 최종 레벨까지 그 코스트가 상점에
+  ${CARRY_STAR_ODDS_MIN}% 이상 나온 적이 없으면(예: Lv.9 이하 5코스트) 1성 캐리에 아이템을 몰아주는 것은 정상 운영이다 — 문제로 삼지 마라.
+  2성으로 올릴 수 있었던 1성 캐리는 코드가 [핵심 장면]에 '캐리가 1성'으로 준다. 그 장면이 없으면 1성 캐리를 문제 삼지 마라.
 - 증강 정보는 Riot API 가 제공하지 않는다. 증강 판단(프리즘 개수 등)을 추측하지 말되, "증강이 약했다/좋았다"처럼 단정하지도 마라.
 - 초반 종료(2-2 등) 표본은 등급·강의 근거로 쓰지 말고 "표본 부족"을 명시하라. 단일 경기 분석이면 "평균"이 아니라 "이 경기"로 쓴다.
 - [시너지 유지 기물] 블록의 "받치는 기물"은 켜진 시너지 단계를 받친다(빼면 단계가 내려간다). 이 기물을 빼라/다른 기물로 바꿔라/그 자리에 다른 2성을
@@ -270,6 +274,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - "언제 레벨업/리롤했다", "레벨에 쓰지 않아서 졌다"처럼 시점이나 원인을 단정하지 마라.
   최종 레벨·탈락 라운드로 추정한 경우 "최종 상태 기준으로 보면"이라고 밝혀라.
 - 잔여 골드로 경제를 평가하지 마라. 탈락 직전엔 누구나 리롤로 골드를 다 쓰므로 "골드를 남겼다/안 썼다"는 근거가 되지 않는다.
+- 레벨별 상점 확률은 [상점 확률] 블록의 수치만 인용하라. 기억 속 확률표를 쓰지 마라(세트·패치마다 다르다). 블록이 없으면 확률 수치를 말하지 마라.
+  확률로 말할 수 있는 것은 "그 레벨에서 그 코스트가 얼마나 나오는가"까지다 — 이 플레이어가 그 레벨에서 리롤했다/안 했다고 단정하지 마라.
 
 [문체]
 - 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
@@ -368,6 +374,32 @@ async function callDeepSeek(prompt: string, config: DeepSeekCallConfig = reportC
 interface IntroFacts {
   facts: string
   fallback: string
+}
+
+/**
+ * [상점 확률] 블록 — "그 레벨에서 그 코스트가 얼마나 나오나"를 기억 속 확률표가 아니라 게임 데이터로 말하게 한다 (lib/shopOdds).
+ * 단일 경기: 최종 레벨 상점 + 캐리 코스트의 레벨별 확률. 종합 분석: 자주 끝난 최종 레벨(최대 4개)의 상점.
+ */
+export function shopOddsFacts(matches: SlimMatchData[], mode: 'single' | 'multi'): string {
+  const counts = new Map<number, number>()
+  for (const m of matches) if (m.level) counts.set(m.level, (counts.get(m.level) || 0) + 1)
+  const levels = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .slice(0, mode === 'single' ? 1 : 4)
+    .map(([lv]) => lv)
+    .sort((a, b) => a - b)
+  const lines = levels.map((lv) => shopOddsLine(lv)).filter(Boolean)
+  if (!lines.length) return ''
+  const carry = mode === 'single' && matches[0] ? boardCarry(matches[0].units || []) : undefined
+  const carryLine = carry ? costOddsLine(carry.rarity || 1) : ''
+  return [
+    `[상점 확률 — ${SHOP_ODDS_SOURCE}, 레벨별로 상점에 나오는 코스트 비율]`,
+    ...lines.map((l) => `- ${mode === 'single' ? '최종 ' : ''}${l}`),
+    carry && carryLine ? `- 캐리 ${carry.name}(${carry.rarity}코스트) — ${carryLine}` : '',
+    '※ 확률은 이 블록 수치만 인용하라. 이 플레이어가 어느 레벨에서 리롤했는지는 데이터에 없으니 단정하지 마라.',
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 /** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
@@ -793,6 +825,7 @@ export async function generateMetaCoachFeedback(
   const anchorFacts = anchorLines.length
     ? ['[시너지 유지 기물 — 코드 산출, 빼거나 교체하라고 하지 마라]', ...anchorLines].join('\n')
     : ''
+  const shopFacts = shopOddsFacts(matches, mode)
   const planFacts = [
     '[이번 강의 주제 — 코드가 결정, 변경 금지]',
     `- 주제: ${plan.topic}`,
@@ -874,6 +907,8 @@ ${winFacts ? `${winFacts}
 ` : ''}${momentFacts}
 ${anchorFacts ? `
 ${anchorFacts}
+` : ''}${shopFacts ? `
+${shopFacts}
 ` : ''}
 ${scoreFacts}
 
