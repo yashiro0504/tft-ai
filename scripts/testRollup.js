@@ -231,12 +231,13 @@ const sortRows = (rows) =>
     // 덱 클러스터와 같은 보드로 티어 필터마다 저장 · 0008 이 없어도 덱 클러스터는 그대로
     const saved = new Map()
     const warns = []
+    // failBuilds: true = 모든 티어 실패 · 'GRANDMASTER' 등 = 그 티어만 실패
     const fakeStore = (failBuilds) => ({
       loadBoardsForPatch: async () => deckRaw,
       dictName: (id) => names.get(id),
       replaceComps: async () => 1,
       replaceBuilds: async (patch, tierMin, r) => {
-        if (failBuilds) throw new Error('relation "stat_unit_build" does not exist')
+        if (failBuilds === true || failBuilds === tierMin) throw new Error('relation "stat_unit_build" does not exist')
         saved.set(tierMin, r)
         return r.length
       },
@@ -250,6 +251,14 @@ const sortRows = (rows) =>
     )
     const comps = await rebuildComps(fakeStore(true), '16.20', { log: quiet, minGames: 15 })
     check('빌드 저장 실패(0008 미적용)해도 덱 클러스터 결과 · 경고만', comps.MASTER === 1 && warns.some((w) => /0008/.test(w)), JSON.stringify({ comps, warns }))
+    saved.clear()
+    warns.length = 0
+    await rebuildComps(fakeStore('GRANDMASTER'), '16.20', { log: quiet, minGames: 15 })
+    check(
+      '한 티어(GRANDMASTER)만 실패해도 나머지 3티어는 저장 · 경고에 티어명',
+      saved.size === 3 && !saved.has('GRANDMASTER') && ['CHALLENGER', 'MASTER', 'DIAMOND'].every((t) => saved.has(t)) && warns.length === 1 && /\(1\/4 티어\)/.test(warns[0]) && /GRANDMASTER:/.test(warns[0]),
+      JSON.stringify({ saved: [...saved.keys()], warns })
+    )
   }
 
   console.log('서빙 (lib/tftStats — DB 미설정 → JSON 폴백)')

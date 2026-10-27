@@ -10,7 +10,7 @@
  * 사용법: node scripts/testBisSets.js   (npm run test:tiers 에 포함)
  */
 require('./_ts')
-const { MIN_SAMPLE, buildCompSets } = require('../lib/statsShared')
+const { MIN_SAMPLE, buildCompSets, buildsCompatible } = require('../lib/statsShared')
 const { buildMetaPayload } = require('../lib/metaPayload')
 const { bisBySlug } = require('../lib/comparisonFacts')
 const { entitySlug } = require('../lib/entitySlug')
@@ -113,6 +113,17 @@ console.log('3개 함께 (기물 빌드 — lib/unitBuilds)')
   check('빌드 집계가 비었으면 builds·bisSet 없음 (적음으로 잘못 보이지 않게)', noData.builds === undefined && noData.bisSet === undefined)
   const [twoItems] = buildCompSets([champ('Lux', 388, 3.4)], combos.slice(0, 2), builds)
   check('BIS 가 2개뿐이면 bisSet 없음 · builds 는 있음', twoItems.bisSet === undefined && twoItems.builds.length === 3)
+}
+
+console.log('빌드 사용 가드')
+{
+  const stats = (source, patch) => ({ source, filter: patch ? { patch, tier: 'master', days: 7 } : null })
+  const builds = (source, patch) => ({ success: true, source, filter: patch ? { patch, tier: 'master' } : null, rows: [] })
+  check('db/db + 같은 패치 → 사용', buildsCompatible(stats('db', '16.21'), builds('db', '16.21')) === true)
+  check('db/db + 다른 패치 → 버림 (패치 전환 직후 캐시 어긋남)', buildsCompatible(stats('db', '16.21'), builds('db', '16.20')) === false)
+  check('db 통계 + json 빌드 → 버림', buildsCompatible(stats('db', '16.21'), builds('json', null)) === false)
+  check('빌드 응답 없음 → 버림', buildsCompatible(stats('db', '16.21'), null) === false)
+  check('json/json → 사용 (패치 라벨 체계가 달라 비교하지 않음)', buildsCompatible(stats('json', null), builds('json', null)) === true)
 }
 
 console.log('빌드 타임 JSON (/api/tft/meta)')

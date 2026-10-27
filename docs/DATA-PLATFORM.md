@@ -424,6 +424,7 @@ Phase C 예정 (미구현):
     order by last_built desc;
    ```
    또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
+   `check:ops --db` 는 `stat_comp` 와 `stat_unit_build` 의 최신 패치 빌드 시각을 함께 본다(24h/72h) — 세트 저장(`tft_replace_builds`)만 실패해도 잡힌다.
    판정은 **최신 패치**(가장 높은 `숫자.숫자` 패치) 행의 `max(updated_at)` 기준 — 위 SQL 결과에서 최신 패치 줄들을 본다.
    이전 패치가 최근에 다시 빌드됐어도 최신 패치가 늦으면 미충족이다.
    - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행 (키가 없으면 Actions → `Collect Matches to DB` → `rollup_only: true` 로 실행 — 덱 규칙을 바꾼 직후 바로 다시 만들 때도 같다).

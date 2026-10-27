@@ -203,9 +203,10 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
   const name = row?.name ?? ct!.name
   const cost = row?.cost ?? ct?.cost
 
-  // 메타 BIS 탭과 같은 규칙 (statsShared byPickCount) — 채용 순, 30판 미만은 표본 부족
+  // 메타 BIS 탭과 같은 규칙 (statsShared buildCompSets) — 20판 미만은 후보에서 빼고 채용 순, 30판 미만은 표본 부족
   const bis = all.combos
     .filter((c) => entitySlug('champion', c.champKey) === slug)
+    .filter((c) => c.sampleSize >= MIN_SAMPLE.unit_item)
     .sort(byPickCount)
     .slice(0, 8)
     .map((c): EntityLink => ({
@@ -257,6 +258,7 @@ async function itemPage(slug: string): Promise<EntityPageData | null> {
 
   const unitGames = new Map(all.units.map((u) => [u.key, u.sampleSize]))
   const holders = combos
+    .filter((c) => c.sampleSize >= MIN_SAMPLE.unit_item)
     .sort(byPickCount)
     .slice(0, 8)
     .map((c): EntityLink => ({

@@ -21,6 +21,7 @@ import {
   MIN_SAMPLE,
   TIER_FILTER_OPTIONS,
   buildCompSets,
+  buildsCompatible,
   filterLabel,
   filterQuery,
   placementMargin,
@@ -220,7 +221,11 @@ export function MetaDashboard({
         loadedRef.current.decks = key
       } else {
         // 기물 빌드(3개 세트)는 없어도 표는 그린다 — 실패하면 '3개 함께' 줄만 빠진다
-        const buildsReq = fetchJson<BuildsResponse>(`/api/tft/builds?${q}`).catch(() => null)
+        // 빌드는 기간 필터가 없다 — days 를 넘기면 같은 데이터가 기간별로 CDN 캐시 3벌이 된다
+        const buildsQuery = new URLSearchParams()
+        if (f.patch) buildsQuery.set('patch', f.patch)
+        buildsQuery.set('tier', f.tier)
+        const buildsReq = fetchJson<BuildsResponse>(`/api/tft/builds?${buildsQuery}`).catch(() => null)
         const [unit, item, trait, unitItem] = await Promise.all(
           (['unit', 'item', 'trait', 'unit_item'] as const).map((t) => fetchJson<StatsResponse>(`/api/tft/stats?type=${t}&${q}`))
         )
@@ -233,8 +238,8 @@ export function MetaDashboard({
           items: item.rows as MetaItemRanking[],
           traits: trait.rows as MetaTraitRanking[],
           combos,
-          // 세트는 기물×아이템과 출처가 같을 때만 (DB 통계 옆에 래더 스냅샷 세트를 섞지 않는다 — 0008 적용 전)
-          comps: buildCompSets(champions, combos, builds?.source === unitItem.source ? builds.rows : undefined),
+          // 세트는 기물×아이템과 출처가 같고 패치가 같을 때만 (DB 통계 옆에 래더 스냅샷 세트나 다른 패치 세트를 섞지 않는다 — 패치 전환 직후 캐시 어긋남)
+          comps: buildCompSets(champions, combos, buildsCompatible(unitItem, builds) ? builds.rows : undefined),
         }
         setData((prev) => (prev ? { ...prev, ...sections } : prev))
         setServed((s) => ({ ...s, stats: unit.source, totalMatches: unit.totalMatches }))

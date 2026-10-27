@@ -68,13 +68,20 @@ async function rebuildComps(store, patch, { log = console, ...opts } = {}) {
       .map(([t, n]) => `${t} ${n}`)
       .join(' · ')}`
   )
-  // 기물 빌드(아이템 3개 세트)도 같은 보드로. 0008 이 아직 없거나 실패해도 덱 클러스터는 막지 않는다
-  try {
-    const built = []
-    for (const [tierMin, subset] of subsets) built.push(`${tierMin} ${await store.replaceBuilds(patch, tierMin, buildRows(subset))}`)
-    log.log(`  기물 빌드 ${patch}: ${built.join(' · ')}`)
-  } catch (e) {
-    log.warn(`⚠️  기물 빌드 저장 실패 — supabase/migrations/0008_tft_unit_builds.sql 적용 여부를 확인하세요: ${e.message}`)
+  // 기물 빌드(아이템 3개 세트)도 같은 보드로. 0008 이 아직 없거나 실패해도 덱 클러스터는 막지 않는다.
+  // 티어마다 따로 — 한 티어 저장이 실패해도 나머지 티어는 새 값으로 바꾼다
+  const built = []
+  const failed = []
+  for (const [tierMin, subset] of subsets) {
+    try {
+      built.push(`${tierMin} ${await store.replaceBuilds(patch, tierMin, buildRows(subset))}`)
+    } catch (e) {
+      failed.push(`${tierMin}: ${e.message}`)
+    }
+  }
+  if (built.length) log.log(`  기물 빌드 ${patch}: ${built.join(' · ')}`)
+  if (failed.length) {
+    log.warn(`⚠️  기물 빌드 저장 실패 (${failed.length}/${subsets.length} 티어) — supabase/migrations/0008_tft_unit_builds.sql 적용 여부를 확인하세요: ${failed.join(' / ')}`)
   }
   return result
 }

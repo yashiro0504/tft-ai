@@ -198,6 +198,22 @@ export interface BuildsResponse {
   error?: string
 }
 
+/**
+ * 빌드 세트를 통계 옆에 써도 되는지 — 출처가 같고, DB 경로면 패치까지 같아야 한다.
+ * JSON 경로는 metaStats.json(patch 라벨 set18)과 unitBuilds.json(패치 16.x)의 라벨 체계가 달라
+ * 직접 비교하지 않는다(둘 다 같은 collect-ladder 실행 산출물).
+ */
+export function buildsCompatible(
+  stats: Pick<StatsResponse, 'source' | 'filter'>,
+  builds: BuildsResponse | null
+): builds is BuildsResponse {
+  if (!builds || builds.source !== stats.source) return false
+  if (stats.source !== 'db') return true
+  const a = stats.filter?.patch ?? null
+  const b = builds.filter?.patch ?? null
+  return Boolean(a && b && a === b)
+}
+
 export interface MetaFilterPatch {
   patch: string
   firstDate: string
