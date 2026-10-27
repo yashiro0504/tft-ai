@@ -313,6 +313,8 @@ async function main() {
 function liteOf(gameData) {
   return {
     _comment: 'lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.',
+    // set: 전적의 이전 시즌 판을 분석에서 빼는 기준 (lib/queue)
+    set: gameData.set,
     gameVersion: gameData.gameVersion,
     // traits: 시너지 한글명 — 시너지 인원 계산(lib/traitAnchors)이 클라이언트 장면(lib/keyMoments)에서도 돌도록
     champions: Object.values(gameData.champions).map(({ apiName, slug, name, nameEn, cost, slots, traits }) => ({

@@ -68,6 +68,9 @@ jobs:
       - name: Game data (Community Dragon) checks
         run: npm run test:gamedata
 
+      - name: Meta table tiers (shrinkage · sample floor · cost groups)
+        run: npm run test:tiers
+
       - name: Golden-set scene labels (정답셋)
         run: npm run test:labels
 
