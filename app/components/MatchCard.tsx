@@ -18,7 +18,7 @@ import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 import { keyMoments } from '@/lib/keyMoments'
-import { isRankedMatch } from '@/lib/queue'
+import { isAnalyzableMatch, isCurrentSetMatch, isRankedMatch } from '@/lib/queue'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -69,8 +69,9 @@ function MatchQuickStats({
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
   const ranked = isRankedMatch(match)
+  const currentSet = isCurrentSetMatch(match)
   // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다). 랭크 판만
-  const moments = useMemo(() => (early || !ranked ? [] : keyMoments(match)), [match, early, ranked])
+  const moments = useMemo(() => (early || !ranked || !currentSet ? [] : keyMoments(match)), [match, early, ranked, currentSet])
 
   return (
     <div
@@ -97,10 +98,12 @@ function MatchQuickStats({
           유닛 {match.units.length} · 2성+ {twoStarPlus} · 시너지 {match.traits.length}
         </span>
         <span>
-          완성도 {comp('completion') ?? '-'} · 아이템 {comp('items') ?? '-'} · 경합 {comp('contest') ?? '-'}
+          {/* metaScore 구성 점수 (lib/scoring) — 6축의 '아이템 설계'·'유연성'과 다른 지표라 이름을 그대로 쓴다 */}
+          덱 완성도 {comp('completion') ?? '-'} · 아이템 활용 {comp('items') ?? '-'} · 경합 대응 {comp('contest') ?? '-'}
         </span>
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
         {!ranked ? <span className="font-semibold text-subtle">{match.queueType || '이벤트·기타 모드'} — 분석은 랭크 게임만</span> : null}
+        {ranked && !currentSet ? <span className="font-semibold text-subtle">이전 시즌 경기 — 분석은 이번 시즌만</span> : null}
       </div>
 
       {!live && moments.length ? (
@@ -313,6 +316,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   const isWin = match.placement === 1
   const isTop4 = match.placement <= 4 && !isWin
+  /** 지난 시즌 판: 목록에는 회색으로 남기고 진단·AI 분석에서는 뺀다 (lib/queue) */
+  const previousSeason = !isCurrentSetMatch(match)
 
   // 등수는 카드 왼쪽 띠 색으로만 표시한다 (1등 gold, 2~4등 good, 5~8등 bad)
   const containerTheme = isWin
@@ -396,7 +401,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   handleAnalyzeRef.current = handleAnalyze
 
   return (
-    <div data-index={index} className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme}`}>
+    <div
+      data-index={index}
+      className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme} ${previousSeason ? 'opacity-70' : ''}`}
+    >
       <div className="px-5 pb-4 pt-5 md:px-6">
         <div className="flex flex-wrap items-start gap-5">
           {/* 1. 왼쪽: 등수 + 경기 정보 + 시너지 */}
@@ -407,6 +415,14 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <span className="text-sm text-subtle">
                 {match.queueType || '랭크 게임'} · {match.timeAgo || '최근'}
               </span>
+              {previousSeason ? (
+                <span
+                  className="rounded-chip border border-line bg-sunken px-1.5 py-0.5 text-xs font-semibold text-muted"
+                  title="이번 시즌 경기가 아니라 진단·AI 분석에서 뺍니다"
+                >
+                  이전 시즌{match.setNumber ? ` (시즌 ${match.setNumber})` : ''}
+                </span>
+              ) : null}
             </div>
             <div className="text-sm text-muted">
               {match.lastRound} 라운드 · {match.gameLengthStr || '31분 20초'} · Lv.{match.level} · 잔여 {match.goldLeft}G
@@ -573,10 +589,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>
-                {match.contestedInfo.level && match.contestedInfo.level !== '경합'
-                  ? `경합 ${match.contestedInfo.level}`
-                  : '경합'}{' '}
-                · 로비 {match.contestedInfo.opponentCount}명 겹침
+                {/* 등급 이름(빈집·보통·경합·심각)은 AI 리포트·6축 유연성과 같은 기준 (lib/contestConfig) */}
+                경합 등급 {match.contestedInfo.level ?? '경합'} · 로비 {match.contestedInfo.opponentCount}명 겹침
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>
@@ -587,7 +601,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-good shrink-0" />
               <span>
-                빈집 선점
+                경합 등급 {match.contestedInfo.level ?? '빈집'} · 겹침 거의 없음
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>
@@ -626,8 +640,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
-            {!isRankedMatch(match) ? (
-              <span className="text-xs text-subtle">AI 분석은 랭크 게임만 합니다</span>
+            {!isAnalyzableMatch(match) ? (
+              <span className="text-xs text-subtle">
+                {isRankedMatch(match) ? 'AI 분석은 이번 시즌 경기만 합니다' : 'AI 분석은 랭크 게임만 합니다'}
+              </span>
             ) : (
             <>
             <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>

@@ -8,6 +8,7 @@
 const { decodeUnits, decodeTraits } = require('./normalize')
 const { TIER_FILTERS } = require('./rollup')
 const { buildDecks } = require('../buildDecksFromBoards')
+const { buildRows } = require('./builds')
 
 /** 표본 하한은 화면에서 15판으로 표시하므로, 저장은 그보다 조금 낮게 남겨 둔다 (용량 · 표 길이 절충).
  *  덱 수 상한을 넘으면 판 수 많은 덱부터 남긴다 (buildDecks capByGames) */
@@ -56,8 +57,8 @@ async function rebuildComps(store, patch, { log = console, ...opts } = {}) {
   const rows = await store.loadBoardsForPatch(patch)
   const boards = toDeckBoards(rows, (id) => store.dictName(id))
   const result = {}
-  for (const [tierMin, buckets] of Object.entries(TIER_FILTERS)) {
-    const subset = boards.filter((b) => buckets.includes(b.tier_bucket))
+  const subsets = Object.entries(TIER_FILTERS).map(([tierMin, buckets]) => [tierMin, boards.filter((b) => buckets.includes(b.tier_bucket))])
+  for (const [tierMin, subset] of subsets) {
     const out = subset.length ? compRows(subset, opts) : []
     await store.replaceComps(patch, tierMin, out)
     result[tierMin] = out.length
@@ -67,6 +68,21 @@ async function rebuildComps(store, patch, { log = console, ...opts } = {}) {
       .map(([t, n]) => `${t} ${n}`)
       .join(' · ')}`
   )
+  // 기물 빌드(아이템 3개 세트)도 같은 보드로. 0008 이 아직 없거나 실패해도 덱 클러스터는 막지 않는다.
+  // 티어마다 따로 — 한 티어 저장이 실패해도 나머지 티어는 새 값으로 바꾼다
+  const built = []
+  const failed = []
+  for (const [tierMin, subset] of subsets) {
+    try {
+      built.push(`${tierMin} ${await store.replaceBuilds(patch, tierMin, buildRows(subset))}`)
+    } catch (e) {
+      failed.push(`${tierMin}: ${e.message}`)
+    }
+  }
+  if (built.length) log.log(`  기물 빌드 ${patch}: ${built.join(' · ')}`)
+  if (failed.length) {
+    log.warn(`⚠️  기물 빌드 저장 실패 (${failed.length}/${subsets.length} 티어) — supabase/migrations/0008_tft_unit_builds.sql 적용 여부를 확인하세요: ${failed.join(' / ')}`)
+  }
   return result
 }
 

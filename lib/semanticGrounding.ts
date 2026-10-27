@@ -1,4 +1,6 @@
 import type { EntityFactError, MetaCoachFeedback, SlimMatchData } from './types'
+import { costOdds } from './shopOdds'
+import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -71,6 +73,71 @@ const STAR_GAP_RE = /^\s*(?:(?:은|는|이|가|을|를|도|의)\s*)?(?:(?:모두
  */
 function isGenericStar(after: string): boolean {
   return /^(?:작|\+|\s*이상|\s*이하|\s*\d|\s*개|\s*밀도|\s*비율|\s*굳히|\s*확정|\s*우선|\s*유닛|\s*기물|으로\s*(?:올리|올려|올릴|올린|만들|키우|키워|키울))/.test(after)
+}
+
+/**
+ * '오른(쪽)'·'세트(18)'·'나르(다)'는 평범한 낱말과 겹쳐 이름 검사에서 뺀다.
+ * 나머지 기물·완성 아이템 이름은 게임 데이터 전체에서 찾는다 (보드에 없는 이름을 잡아야 하므로 경기 데이터만으로는 안 된다).
+ */
+const AMBIGUOUS_NAMES = new Set(['오른', '세트', '나르'])
+const ALL_CHAMP_NAMES = new Set(GAME_CHAMPIONS.map((c) => c.name).filter((n) => n && !AMBIGUOUS_NAMES.has(n)))
+const COMPONENTS = new Set(BASIC_COMPONENT_NAMES)
+/** 기물이 드는 아이템만 (재료·소모품 제외 — "재조합기를 쓰세요"는 보드 사실이 아니다) */
+const ALL_ITEM_NAMES = new Set(
+  GAME_ITEMS.filter((i) => i.kind !== 'component' && i.kind !== 'consumable')
+    .map((i) => i.name)
+    .filter((n) => n && n.length >= 3 && !COMPONENTS.has(n))
+)
+const ALL_NAMES = [...ALL_CHAMP_NAMES, ...ALL_ITEM_NAMES]
+
+/**
+ * 내 보드가 아닌 대상(메타 덱·통계·로비 상대·빈집·가이드·BIS·계열)을 밝힌 문장, 또는 조합·교체·조건("~가 잡히면") 같은 가정·제안.
+ * "니달리 없이도 …"처럼 아무 맥락 없이 보드에 없는 기물을 쓴 문장은 여기에 걸리지 않는다.
+ * 저장된 모델 응답 284개(이름 2,206개)에 돌려 걸린 문장은 가정문 1개였다 → 조건(…면) 추가 후 0개.
+ */
+const REFERENCE_RE = /메타|통계|평균|덱|가이드|빈집|랭커|상위|추천|BIS|채용|대신|교체|조합|재료|만들|슬램|먼저|우선|넣|추가|가능|수\s*있|계열|[가-힣]면\s/
+
+/**
+ * 내 최종 보드(여러 판이면 어느 판이든)에 없는 기물·아이템을 쓴 문장 (2026-10-27: 렝가 보드 리포트의 "니달리 없이도…").
+ * - 사실 데이터(프롬프트)에도 없는 이름 → 지어낸 이름이라 오류
+ * - 사실에는 있는 이름(메타 통계·덱 가이드·로비 상대 …) → 그 맥락을 밝힌 문장·처방·상대 문장만 통과
+ * 반환: 오류 + 확인한 이름 수 (화면의 '이름 N개 확인')
+ */
+export function validateBoardNames(texts: string[], matches: SlimMatchData[], facts: string): { errors: EntityFactError[]; checked: number } {
+  const errors: EntityFactError[] = []
+  if (!matches.length) return { errors, checked: 0 }
+  const onBoard = new Set<string>()
+  const held = new Set<string>()
+  for (const m of matches) {
+    for (const u of m.units) {
+      onBoard.add(u.name)
+      for (const it of u.items) held.add(it)
+    }
+  }
+  const seen = new Set<string>()
+  let checked = 0
+  for (const text of texts) {
+    for (const s of sentences(text)) {
+      const contextual = OPPONENT_RE.test(s) || PRESCRIPTIVE_RE.test(s) || REFERENCE_RE.test(s)
+      for (const sp of findNames(s, ALL_NAMES)) {
+        const isUnit = ALL_CHAMP_NAMES.has(sp.name)
+        if ((isUnit ? onBoard.has(sp.name) : held.has(sp.name)) || (contextual && facts.includes(sp.name))) {
+          checked++
+          continue
+        }
+        const k = `${s}|${sp.name}`
+        if (seen.has(k)) continue
+        seen.add(k)
+        errors.push({
+          type: isUnit ? 'unit_absent' : 'item_absent',
+          text: s,
+          expected: facts.includes(sp.name) ? `${sp.name}: 내 보드에 없음 (메타·상대 맥락 없이 언급)` : `${sp.name}: 경기·메타 데이터에 없음`,
+          actual: sp.name,
+        })
+      }
+    }
+  }
+  return { errors, checked }
 }
 
 export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): EntityFactError[] {
@@ -202,7 +269,7 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
   const bySentence = new Map<string, string>()
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
-    const fixable = e.type !== 'item_owner' && !e.expected.includes('/') && current.includes(e.actual)
+    const fixable = !['item_owner', 'unit_absent', 'item_absent'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
 
@@ -274,6 +341,8 @@ export type CoachingRuleType =
   | 'pivotTiming'
   /** 덱 가이드 '채용률'을 조합(슬램) 순서의 근거로 사용 */
   | 'guideOrderClaim'
+  /** 레벨별 상점 확률을 게임 데이터 표와 다르게 인용 ("8레벨 4코 확률 22%") */
+  | 'shopOddsMismatch'
 
 export interface CoachingRuleViolation {
   type: CoachingRuleType
@@ -285,10 +354,27 @@ const REROLL_LEVEL_BLAME_RE = /레벨(?:이|은)?\s*(?:너무\s*)?(?:낮|부족|
 const REROLL_EXCUSE_RE = /리롤(?:형|덱)?(?:이라|이므로|이니|에서는|은|는)|문제(?:가|는)?\s*아니|괜찮|정상/
 const META_WEAK_RE = /메타\s*(?:덱\s*)?평균(?:보다|에\s*비해|에)?\s*(?:[^.!?\n]{0,12})?(?:못|낮|부진|뒤처|밑돌|아쉬)/
 const DECK_MUST_RE = /(?:갔어야|가야\s*했|탔어야|타야\s*했|선택했어야|골랐어야|잡았어야)/
-const OPEN_DECK_RE = /빈집\s*(?:메타\s*)?덱/
+/** '로비가 안 탄 메타 덱'(2026-10-27 이전 이름 '빈집 메타 덱' — 경합 등급 '빈집'과 겹쳐 바꿨다) */
+const OPEN_DECK_RE = /(?:빈집|로비가\s*안\s*탄)\s*(?:메타\s*)?덱/
 const GUIDE_ORDER_RE = /채용(?:률)?[^.!?\n]{0,40}(?:먼저|우선|선(?:슬램|조합))|(?:먼저|우선)[^.!?\n]{0,40}채용(?:률)?/
 const PIVOT_TIMING_RE =
   /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)|(?:비틀|피봇|갈아타)[^.!?\n]{0,15}(?:신호|시점|타이밍|순간)|(?:시점|타이밍|순간)[^.!?\n]{0,15}(?:비틀|피봇|갈아타)/
+/** "Lv.8 … 4코스트 … 30%" / "8레벨 4코 확률 30%" — 레벨·코스트·확률이 한 구절에 있는 상점 확률 인용 */
+const SHOP_ODDS_CLAIM_RE = /(?:Lv\.?\s*(\d{1,2})|(\d{1,2})\s*레벨)[^.!?\n]{0,15}?([1-5])\s*코(?:스트)?[^.!?\n%]{0,12}?(\d{1,3})\s*%/g
+
+/** 문장 속 상점 확률 인용 중 게임 데이터 표(lib/shopOdds)와 다른 것 */
+function shopOddsMismatches(s: string): string[] {
+  const out: string[] = []
+  for (const m of s.matchAll(SHOP_ODDS_CLAIM_RE)) {
+    const level = Number(m[1] ?? m[2])
+    const cost = Number(m[3])
+    const claimed = Number(m[4])
+    const actual = costOdds(level, cost)
+    if (level >= 1 && level <= 11 && claimed !== actual) out.push(`Lv.${level} ${cost}코 ${claimed}% (표: ${actual}%)`)
+  }
+  return out
+}
+
 /** 부정·불가 서술 ("후보가 없었습니다", "데이터로 알 수 없습니다", "~라는 뜻은 아닙니다") — 주장형 규칙에서 제외 */
 const NEGATED_RE = /없었|없습니다|없다|없음|없어|않|아닙니다|아니다|아닌|알\s*수\s*없|모릅|모른/
 
@@ -302,13 +388,14 @@ export function validateCoachingRules(
   ctx: { facts: string; deckType?: string; mode: 'single' | 'multi' }
 ): CoachingRuleViolation[] {
   const out: CoachingRuleViolation[] = []
-  const hasOpenLine = ctx.facts.includes('빈집 메타 덱 후보')
+  const hasOpenLine = ctx.facts.includes('로비가 안 탄 메타 덱 후보') || ctx.facts.includes('빈집 메타 덱 후보')
   const metaEven = ctx.mode === 'single' && ctx.facts.includes('운영도: 메타 평균 수준')
   const hasGuide = ctx.facts.includes('덱 가이드')
   for (const text of texts) {
     for (const s of sentences(text)) {
       if (ctx.deckType === 'reroll' && REROLL_LEVEL_BLAME_RE.test(s) && !REROLL_EXCUSE_RE.test(s)) out.push({ type: 'rerollLevelBlame', text: s })
       if (metaEven && META_WEAK_RE.test(s)) out.push({ type: 'metaEvenAsWeakness', text: s })
+      if (shopOddsMismatches(s).length) out.push({ type: 'shopOddsMismatch', text: s })
       // 아래 주장형 규칙은 부정·불가 서술이면 위반이 아니다
       if (NEGATED_RE.test(s)) continue
       if (DECK_MUST_RE.test(s) && /덱|빈집/.test(s)) out.push({ type: 'deckMustClaim', text: s })

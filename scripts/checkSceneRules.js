@@ -13,6 +13,7 @@
 const { arg, loadLobbies, writeReport, annotate } = require('./_boards')
 const { allKeyMoments, nearBreakpoints, ITEMS_ON_WEAK_MIN, WEAK_MAX_COST } = require('../lib/keyMoments')
 const { boardCarry } = require('../lib/deckType')
+const { CARRY_STAR_ODDS_MIN, oddsWindow } = require('../lib/shopOdds')
 
 /** 판정 기준: 같은 레벨 비교 등수 차이 (+ = 뜬 보드가 더 나쁨) · 최소 표본 */
 const EFFECT_MIN = 0.25
@@ -24,7 +25,7 @@ const KIND_LABEL = {
   sameComp: '같은 구성 상위 등수와 성급 차이',
   duplicateCopies: '같은 기물 1성 여러 장',
   itemsOnWeak: '아이템이 1성 저코스트에',
-  carryOneStar: '저코스트 캐리가 1성',
+  carryOneStar: `캐리가 1성 (상점 ${CARRY_STAR_ODDS_MIN}%+ 레벨을 지난 코스트)`,
   emptySlots: '보드 빈칸',
 }
 /** 정의상 1등 보드에서는 뜰 수 없는 규칙 — 1등을 빼고 비교한다 (그래도 편향이 남아 참고만) */
@@ -102,6 +103,18 @@ function carryOneStarOfCost(cost) {
     return Boolean(c) && (c.tier || 1) === 1 && (c.rarity || 1) === cost && itemCount(c) >= 2
   }
 }
+/** 캐리(아이템 2+) 1성 · 최종 레벨까지 그 코스트가 상점에 minOdds% 이상 나온 레벨을 지남 (실제 규칙의 하한만 바꾼 것) */
+function carryOneStarPastOdds(minOdds) {
+  return (b) => {
+    const c = boardCarry(b.units)
+    return Boolean(c) && (c.tier || 1) === 1 && itemCount(c) >= 2 && Boolean(oddsWindow(c.rarity || 1, b.level, minOdds))
+  }
+}
+/** 실제 규칙이 그 코스트를 보기 시작하는 레벨 (상점 하한 이상 나오는 첫 레벨) */
+const ruleLevels = (cost) => {
+  const w = oddsWindow(cost, 11)
+  return w ? `Lv.${w.from}부터 대상` : 'Lv.11 까지 대상 아님'
+}
 function itemsOnOneStarUpTo(maxCost) {
   return (b) => b.units.filter((u) => (u.tier || 1) === 1 && (u.rarity || 1) <= maxCost).reduce((s, u) => s + itemCount(u), 0) >= ITEMS_ON_WEAK_MIN
 }
@@ -109,10 +122,20 @@ const emptyByUnitCount = (b) => (b.level || 0) - b.units.length > 0
 
 const PROBES = [
   ...[1, 2, 3, 4, 5].map((c) => ({
-    label: `캐리(아이템 2+)가 1성 ${c}코스트`,
-    note: c <= WEAK_MAX_COST ? '규칙 대상' : '규칙 제외 (후반 정상 운영 가정)',
+    label: `캐리(아이템 2+)가 1성 ${c}코스트 (전 레벨)`,
+    note: `실제 규칙: ${ruleLevels(c)}`,
     fired: carryOneStarOfCost(c),
   })),
+  ...[20, 25, 30, 35].map((t) => ({
+    label: `캐리(아이템 2+) 1성 · 그 코스트 상점 ${t}%+ 레벨을 지남`,
+    note: t === CARRY_STAR_ODDS_MIN ? '현재 기준' : '대안 기준',
+    fired: carryOneStarPastOdds(t),
+  })),
+  {
+    label: '캐리(아이템 2+) 1성 5코스트 · Lv.9 이하',
+    note: '정상 운영 가정 (5코스트 상점 15% 이하)',
+    fired: (b) => carryOneStarOfCost(5)(b) && (b.level || 0) <= 9,
+  },
   ...[3, 4, 5].map((c) => ({
     label: `1성 1~${c}코스트에 아이템 ${ITEMS_ON_WEAK_MIN}개+`,
     note: c === WEAK_MAX_COST ? '현재 기준' : '대안 기준',

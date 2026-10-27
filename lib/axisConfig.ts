@@ -43,7 +43,7 @@ export interface AxisConfig {
       levelGapPenaltyPerLevel: number
       earlyExitPenalty: { maxStage: number; penalty: number }[]
     }
-    itemization: { carryItemsMax: number; carryWeight: number; boardItemsMax: number; boardWeight: number }
+    itemization: { carryItemsMax: number; carryWeight: number; topCostWeight: number; boardItemsMax: number; boardWeight: number }
     tempo: {
       unknownStageScore: number
       levelGapPenaltyPerLevel: number

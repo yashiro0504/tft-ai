@@ -236,6 +236,37 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
     check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
   }
+  // ── 1성 캐리 장면 = 레벨별 상점 확률 (lib/shopOdds, Set 18 표 기준) · [상점 확률] 프롬프트 블록 ──
+  {
+    const { allKeyMoments, oneStarCarry } = require('../lib/keyMoments')
+    const { shopOddsFacts } = require('../lib/llm')
+    const { shopOddsLine } = require('../lib/shopOdds')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const filler = [U('DA_18_GnarSmall', '나르', 2, 2), U('DA_Taric18', '타릭', 3, 2), U('DA_Vi18', '바이', 2, 2)]
+    const board = (rarity, level) => ({
+      ...standard, placement: 6, level, lastRound: '5-6', traits: [], lobbyParticipants: [],
+      units: [U('DA_18_Ivern', '아이번', rarity, 1, ['무한의 대검', '최후의 속삭임', '거인 학살자']), ...filler],
+    })
+    const fires = (rarity, level) => Boolean(oneStarCarry(board(rarity, level)))
+    check('1성 캐리: 4코스트 Lv.8 (상점 30%) → 장면', fires(4, 8))
+    check('1성 캐리: 4코스트 Lv.7 (상점 10%) → 장면 아님', !fires(4, 7))
+    check('1성 캐리: 5코스트 Lv.9·10 (15%·25%) → 정상 운영', !fires(5, 9) && !fires(5, 10))
+    check('1성 캐리: 3코스트 Lv.7 (40%) 장면 · Lv.6 (25%) 아님', fires(3, 7) && !fires(3, 6))
+    check('1성 캐리: 1코스트는 Lv.9 (10%) 여도 장면 (낮은 레벨에서 30% 넘게 나왔다)', fires(1, 9))
+    const fact = allKeyMoments(board(4, 9)).find((x) => x.kind === 'carryOneStar')?.fact || ''
+    check('1성 캐리 장면 문구: 최종 레벨 · 상점 확률 구간', /최종 보드\(Lv\.9\)에서 1성/.test(fact) && /4코스트가 상점에 30% 이상 나오는 레벨\(Lv\.8~9\)을 지남/.test(fact), fact)
+
+    const single = shopOddsFacts([board(4, 8)], 'single')
+    check('상점 확률 블록: 최종 레벨 상점 한 줄', single.includes(`- 최종 ${shopOddsLine(8)}`), single)
+    check('상점 확률 블록: 캐리 코스트의 레벨별 확률', /캐리 아이번\(4코스트\) — 4코스트 레벨별 상점 확률: .*Lv\.8 30% · Lv\.9 33% · Lv\.10 40%/.test(single), single)
+    const multi = shopOddsFacts([board(4, 8), board(4, 8), board(4, 9), board(1, 7)], 'multi')
+    check(
+      '상점 확률 블록(종합): 나온 최종 레벨만 · 캐리 줄 없음',
+      [7, 8, 9].every((lv) => multi.includes(`- ${shopOddsLine(lv)}`)) && !multi.includes('Lv.10 상점') && !/캐리/.test(multi),
+      multi
+    )
+    check('상점 확률 블록: 레벨 없는 판뿐이면 블록 없음', shopOddsFacts([{ ...board(4, 8), level: 0 }], 'single') === '')
+  }
   // ── 여러 판 반복 습관 (lib/habits) · 강의 주제 = 첫 장면 (focusOnMoment) ──
   {
     const { habitPatterns } = require('../lib/habits')
@@ -288,9 +319,9 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     )
     check('채점: 설정 이후 경기가 없으면 진행 0', evaluateGoal(g, [board(50, 0)]).games.length === 0 && !evaluateGoal(g, []).done)
   }
-  // ── 내 덱 성적표 (lib/deckReport): 메타 덱으로 묶어 내 평균 vs 메타 평균 · 2판 이상만 판정 ──
+  // ── 내 덱 성적표 (lib/deckReport): 메타 덱으로 묶어 내 평균 vs 메타 평균 · 4판 이상 + 판수 오차보다 큰 차이만 판정 ──
   {
-    const { buildDeckReport } = require('../lib/deckReport')
+    const { buildDeckReport, deckVerdictMargin } = require('../lib/deckReport')
     const U = (id, name) => ({ id, name, rarity: 4, tier: 2, items: [] })
     const deckA = { name: '테스트 A', avgPlacement: 4, sampleSize: 200, units: ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
     const deckB = { name: '테스트 B', avgPlacement: 4.5, sampleSize: 10, units: ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
@@ -298,14 +329,42 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const aKeys = ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel']
     const bKeys = ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern']
     const r = buildDeckReport(
-      [game('a1', 7, aKeys), game('a2', 6, aKeys), game('b1', 1, bKeys), game('b2', 2, bKeys), game('x', 5, ['Veigar', 'Ornn', 'RekSai', 'Alistar']), { ...game('e', 8, aKeys), lastRound: '2-2' }],
+      [
+        ...[7, 6, 7, 6].map((p, i) => game(`a${i}`, p, aKeys)),
+        game('b1', 1, bKeys),
+        game('b2', 2, bKeys),
+        game('x', 5, ['Veigar', 'Ornn', 'RekSai', 'Alistar']),
+        { ...game('e', 8, aKeys), lastRound: '2-2' },
+      ],
       [deckA, deckB]
     )
     const A = r.rows.find((x) => x.name === '테스트 A')
     const B = r.rows.find((x) => x.name === '테스트 B')
-    check('덱 성적표: 2판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 2 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
+    check('덱 성적표: 4판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 4 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
     check('덱 성적표: 메타 표본 적은 덱은 판정 없음', B && B.games === 2 && B.verdict === null, JSON.stringify(B))
-    check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 5판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 5, JSON.stringify(r.unmatched))
+    check('덱 성적표: 메타 덱과 다른 조합은 따로', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5, JSON.stringify(r.unmatched))
+    check(
+      '덱 성적표: 덱별 판수 + 다른 조합 + 초반 종료 = 분석 경기 수 (8 = 4 + 2 + 1 + 1)',
+      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early === r.total,
+      JSON.stringify({ early: r.early, total: r.total })
+    )
+    check('덱 성적표: 메타 표본을 행에 남김 (참고용 표시)', A.metaSample === 200 && B.metaSample === 10, JSON.stringify([A.metaSample, B.metaSample]))
+    const { deckReportMeta } = require('../lib/deckReport')
+    const meta = deckReportMeta({ source: 'db', filter: { patch: '16.21', tier: 'master' }, updatedAt: '2026-10-26T09:01:22Z' })
+    check('덱 성적표 출처 = 메타 랭킹과 같은 필터 (마스터+ · 16.21 · 갱신 시각)', meta.tier === '마스터+' && meta.patch === '16.21' && meta.updatedAt === '2026-10-26T09:01:22Z', JSON.stringify(meta))
+    // 덱 이름의 캐리가 보드에 없으면 그 덱으로 묶지 않는다 (2026-10-27: 소라카 없는 보드가 "개화 소라카")
+    const withCarry = { ...deckA, carryKey: 'TFT18_Ahri' }
+    const noAhri = game('n', 3, ['Sett', 'Morgana', 'Diana', 'Sentinel', 'Kennen'])
+    check(
+      '덱 분류: 유사도 0.67 이어도 덱 캐리(아리)가 없으면 다른 조합',
+      mostSimilarDeck(noAhri, [deckA]) && !mostSimilarDeck(noAhri, [withCarry]) && buildDeckReport([noAhri], [withCarry]).unmatched.games === 1,
+      JSON.stringify(mostSimilarDeck(noAhri, [withCarry]))
+    )
+    check('덱 분류: 캐리가 있으면 그대로 묶음', mostSimilarDeck(game('y', 3, aKeys), [withCarry])?.deck.name === '테스트 A')
+    const twoGames = buildDeckReport([game('a1', 8, aKeys), game('a2', 8, aKeys)], [deckA]).rows[0]
+    check('덱 성적표: 2판은 4등 차이여도 판정 없음 (2판 평균 오차 ±1.6등)', twoGames.games === 2 && twoGames.delta === 4 && twoGames.verdict === null, JSON.stringify(twoGames))
+    const close = buildDeckReport([5, 5, 5, 5.4].map((p, i) => game(`c${i}`, p, aKeys)), [deckA]).rows[0]
+    check('덱 성적표: 4판 1.1등 차이는 오차(1.15등) 안 → 메타 수준', deckVerdictMargin(4) > 1.1 && close.delta === 1.1 && close.verdict === 'even', JSON.stringify(close))
   }
   // ── 보드 칸 (lib/boardSlots): 장로 드래곤 2칸 — Lv.9 에 기물 8개면 빈칸 아님 ──
   {
@@ -438,7 +497,7 @@ ${mixedFacts}`
   }
   const three = ['보석 건틀릿', '쇼진의 창', '모렐로노미콘']
   const lobbyDecksList = [
-    deck('내 덱', ['A', 'B', 'C', 'D', 'F'], 'F', three, 4.2),
+    deck('내 덱', ['A', 'B', 'C', 'D', 'F'], 'A', three, 4.2), // 덱 캐리가 내 보드에 있어야 묶인다
     deck('빈집1', ['P', 'Q', 'R', 'S', 'T'], 'P', ['공허의 지팡이', '모렐로노미콘', '보석 건틀릿'], 3.5), // 2/3 (곡궁 없음)
     deck('빈집2', ['K', 'Q2', 'R2', 'S2', 'T2'], 'K', ['쇼진의 창', '보석 건틀릿', '무한의 대검'], 3.0), // 2/3 (대검 공유)
     deck('빈집3', ['J', 'Q3', 'R3', 'S3', 'T3'], 'J', ['쇼진의 창', '모렐로노미콘', '공허의 지팡이'], 4.0), // 2/3, 최대 2개 밖
@@ -464,13 +523,13 @@ ${mixedFacts}`
   check(
     '빈집 후보 줄 = 손계산',
     openFacts.includes(
-      '- 빈집 메타 덱 후보(사후 비교): 빈집2 · 로비 0명 · 메타 평균 3.00등(표본 100판) · 캐리 K캐리 핵심템 2/3을 내 캐리(A) 아이템 재료로 조합 가능(쇼진의 창, 보석 건틀릿)'
+      '- 로비가 안 탄 메타 덱 후보(사후 비교): 빈집2 · 로비 0명 · 메타 평균 3.00등(표본 100판) · 캐리 K캐리 핵심템 2/3을 내 캐리(A) 아이템 재료로 조합 가능(쇼진의 창, 보석 건틀릿)'
     ),
     openFacts
   )
   check('로비 정보 없으면 빈집 후보 없음', openDeckCandidates({ ...me, lobbyParticipants: [] }, lobbyDecksList).length === 0)
   const multiOpen = buildComparisonFacts({ matches: [me, me], mode: 'multi', combos: [], decks: lobbyDecksList })
-  check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/빈집|로비 메타 덱/.test(multiOpen), multiOpen)
+  check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/안 탄 메타 덱|로비 메타 덱/.test(multiOpen), multiOpen)
 
   console.log('덱 가이드 (래더 실측)')
   const { opennessLabel } = require('../lib/comparisonFacts')
@@ -802,10 +861,11 @@ ${mixedFacts}`
   }
   check('NaN/Infinity/undefined 없음 · 케이스마다 1줄 이상', bad === 0 && lineCounts.every((x) => Number(x.split(':')[1]) >= 1), lineCounts.join(' '))
 
-  // ── 게임 모드 (lib/queue): 분석은 랭크 판만 · 모르는 큐는 '랭크 게임'으로 표시하지 않음 (2026-10-23 이벤트 판 회귀) ──
+  // ── 게임 모드·시즌 (lib/queue): 분석은 현재 세트 랭크 판만 · 모르는 큐는 '랭크 게임'으로 표시하지 않음 (2026-10-23 이벤트 판 회귀) ──
   {
-    console.log('게임 모드 (랭크만 분석)')
-    const { queueLabel, isRankedMatch, rankedMatches } = require('../lib/queue')
+    console.log('게임 모드·시즌 (현재 세트 랭크만 분석)')
+    const { queueLabel, isRankedMatch, analyzableMatches, matchBreakdown, excludedLabel } = require('../lib/queue')
+    const { CURRENT_SET } = require('../lib/gameFacts')
     const { calculateProfileStats } = require('../lib/profile')
     const { extractSlimMatchData } = require('../lib/summarize')
     const src = fixture.cases[0].matches[0]
@@ -817,9 +877,18 @@ ${mixedFacts}`
     check('extractSlimMatchData: queueId 저장 · 이벤트 판 표시 이름', event.queueId === 6120 && event.queueType === '이벤트·기타 모드' && !isRankedMatch(event) && isRankedMatch(ranked))
     check('queueId 없는 예전 데이터·데모는 표시 이름으로 판단', isRankedMatch({ queueType: '랭크 게임' }) && isRankedMatch({}) && !isRankedMatch({ queueType: '더블 업' }))
     const mixed = [{ ...src, placement: 8, queueId: 6120, queueType: '이벤트·기타 모드' }, { ...src, placement: 2, queueId: 1100 }]
-    check('rankedMatches 가 이벤트 판을 뺌', rankedMatches(mixed).length === 1)
+    check('analyzableMatches 가 이벤트 판을 뺌', analyzableMatches(mixed).length === 1)
     const prof = calculateProfileStats(mixed, 'a', 'b')
     check('프로필 평균 등수는 랭크 판만 (이벤트 8등 제외 → 2등)', prof.avgPlacement === 2 && prof.totalGames === 1, JSON.stringify(prof))
+    // 지난 시즌 판만 있는 계정 (2026-10-27 평가: 시즌 17 판으로 시즌 18 진단이 나옴)
+    const oldSet = extractSlimMatchData({ ...raw(1100), info: { ...raw(1100).info, tft_set_number: CURRENT_SET - 1 } }, 'P')
+    check('lite 게임 데이터에 현재 세트 번호', Number.isInteger(CURRENT_SET) && CURRENT_SET >= 18, String(CURRENT_SET))
+    check('지난 시즌 랭크 판은 분석에서 뺌 · 세트 번호 없는 예전 데이터는 현재 세트로', isRankedMatch(oldSet) && analyzableMatches([oldSet]).length === 0 && analyzableMatches([{ queueId: 1100 }]).length === 1)
+    const onlyOld = calculateProfileStats([oldSet, { ...oldSet, placement: 1 }], 'a', 'b')
+    check('지난 시즌 판만 있으면 프로필 통계 0판 (1판으로 나누지 않음)', onlyOld.totalGames === 0 && onlyOld.avgPlacement === 0, JSON.stringify(onlyOld))
+    const b = matchBreakdown([...mixed, oldSet, { ...oldSet, queueId: 1090 }])
+    check('경기 수: 전체 4 = 분석 1 + 다른 모드 1 + 이전 시즌 2', b.total === 4 && b.analyzed === 1 && b.otherQueue === 1 && b.previousSet === 2, JSON.stringify(b))
+    check('뺀 판 설명', excludedLabel(b) === '일반·이벤트 1판 · 이전 시즌 2판' && excludedLabel(matchBreakdown([ranked])) === '', excludedLabel(b))
   }
 
   console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 비교 사실 테스트 통과')

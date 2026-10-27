@@ -94,8 +94,8 @@ export async function generateMetadata({
   // 쿼리로 연 DB 덱은 그 패치·티어가 canonical (같은 id 의 JSON 덱과 수치가 다르다)
   const canonical = `${SITE_URL}${q.patch || q.tier ? deckPath(id, resolved) : `/deck/${id}`}`
 
-  const title = `${deck.name} 덱 — 평균 ${avg(deck.avgPlacement)}위 · TOP4 ${pct(deck.top4Rate)}`
-  const description = `TFT 시즌 18 ${deck.name} 덱. 평균 ${avg(deck.avgPlacement)}위, 순방률 ${pct(deck.top4Rate)}, 표본 ${deck.sampleSize.toLocaleString()}판. 유닛·아이템·시너지 구성을 확인하세요.`
+  const title = `${deck.name} 덱 — 평균 ${avg(deck.avgPlacement)}등 · TOP4 ${pct(deck.top4Rate)}`
+  const description = `TFT 시즌 18 ${deck.name} 덱. 평균 ${avg(deck.avgPlacement)}등, 순방률 ${pct(deck.top4Rate)}, 표본 ${deck.sampleSize.toLocaleString()}판. 유닛·아이템·시너지 구성을 확인하세요.`
 
   return {
     title,
@@ -261,7 +261,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
                     ) : null}
                     {unit.stat ? (
                       <p className="rk-deck-stat">
-                        {avg(unit.stat.avgPlacement)}위 · TOP4 {pct(unit.stat.top4Rate)} ·{' '}
+                        {avg(unit.stat.avgPlacement)}등 · TOP4 {pct(unit.stat.top4Rate)} ·{' '}
                         {unit.stat.sampleSize.toLocaleString()}판
                       </p>
                     ) : null}

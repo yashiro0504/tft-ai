@@ -20,6 +20,15 @@ interface LiteTrait extends Named {
   breakpoints: number[]
 }
 
+/** 현재 세트 번호 (Riot tft_set_number) — 이전 시즌 판을 분석에서 뺀다 (lib/queue) */
+export const CURRENT_SET: number = (lite as unknown as { set: number }).set
+
+/** 게임 데이터 패치 (예: '16.21') */
+export const GAME_VERSION: string = (lite as unknown as { gameVersion: string }).gameVersion
+
+/** 레벨별 상점 확률(%) — [레벨 1, 레벨 2, …] 마다 [1코, 2코, 3코, 4코, 5코]. 조회는 lib/shopOdds */
+export const SHOP_ODDS: number[][] = (lite as unknown as { shopOdds?: number[][] }).shopOdds ?? []
+
 const CHAMPIONS = (lite as unknown as { champions: LiteChampion[] }).champions
 const TRAITS = (lite as unknown as { traits: LiteTrait[] }).traits
 

@@ -5,7 +5,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { MetaDeckRanking, TftMetaResponse } from '@/lib/types'
-import { assignTiers, tierClass } from './metaShared'
+import { MIN_SAMPLE } from '@/lib/statsShared'
+import { assignSampleTiers, tierClass, tierRank, type Tier } from './metaShared'
 import { TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
 import '../rank/rank.css'
 
@@ -18,11 +19,11 @@ const COST_BORDER: Record<number, string> = {
 }
 
 /**
- * 첫 화면의 "지금 메타 상위 덱" (평균 등수 낮은 순 4개).
- * 메타 랭킹과 같은 /api/tft/meta 응답과 같은 상대 티어 계산을 쓴다.
+ * 첫 화면의 "지금 메타 상위 덱" (티어 → 평균 등수 순 4개, 표본 부족 덱 제외).
+ * 메타 랭킹과 같은 /api/tft/meta 응답과 같은 상대 티어 계산(표본 수 반영)을 쓴다.
  */
 export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
-  const [decks, setDecks] = useState<(MetaDeckRanking & { tier: string })[] | null>(null)
+  const [decks, setDecks] = useState<(MetaDeckRanking & { tier: Tier | '-' })[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -30,11 +31,14 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
       .then((res) => res.json() as Promise<TftMetaResponse>)
       .then((data) => {
         if (cancelled || !data?.decks?.length) return
-        const tiers = assignTiers(data.decks.map((d) => d.avgPlacement ?? 9))
+        const tiers = assignSampleTiers(
+          data.decks.map((d) => ({ avg: d.avgPlacement ?? 9, sample: d.sampleSize })),
+          MIN_SAMPLE.deck
+        )
         const ranked = data.decks
           .map((d, i) => ({ ...d, tier: tiers[i] }))
-          .filter((d) => d.avgPlacement != null)
-          .sort((a, b) => (a.avgPlacement ?? 9) - (b.avgPlacement ?? 9))
+          .filter((d) => d.avgPlacement != null && d.tier !== '-')
+          .sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || (a.avgPlacement ?? 9) - (b.avgPlacement ?? 9))
           .slice(0, 4)
         setDecks(ranked)
       })
@@ -54,7 +58,7 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
         <h2 id="top-decks-title" className="text-xl font-bold text-ink">
           지금 메타 상위 덱
         </h2>
-        <span className="text-sm text-subtle">실측 매치 표본 · 평균 등수 낮은 순</span>
+        <span className="text-sm text-subtle">실측 매치 표본 · 티어(표본 수 반영) 순</span>
         <button
           type="button"
           onClick={onOpenMeta}

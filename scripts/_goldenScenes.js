@@ -21,6 +21,8 @@ const WIN_KINDS = [
   ['3성 ', 'threeStar', '3성 기물'],
   ['높은 단계 시너지', 'deepTraits', '높은 단계 시너지'],
   ['2성 이상', 'twoStar', '2성 수 · 레벨'],
+  // 2026-10-27 '로비 경합 ○○' → '리롤 캐리 겹침' (캐리 한 기물의 겹침이라 경합 등급 이름을 쓰지 않는다). 판정 키(contest)는 그대로
+  ['리롤 캐리 겹침', 'contest', '리롤 캐리 겹침'],
   ['로비 경합', 'contest', '로비 경합'],
 ]
 
@@ -28,7 +30,7 @@ const SCENE_TITLE = {
   sameComp: '같은 구성 상위 등수와 성급 차이',
   duplicateCopies: '같은 기물 1성 여러 장',
   itemsOnWeak: '아이템이 1성 저코스트에',
-  carryOneStar: '저코스트 캐리가 1성',
+  carryOneStar: '캐리가 1성',
   emptySlots: '보드 빈칸',
   nearBreakpoint: '1명 모자란 시너지',
 }

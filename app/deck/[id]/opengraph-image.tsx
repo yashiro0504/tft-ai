@@ -116,7 +116,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               fontWeight: 700,
             }}
           >
-            {`평균 ${avg}위`}
+            {`평균 ${avg}등`}
           </div>
         </div>
 

@@ -9,7 +9,8 @@
  *
  * 산출물
  *  - lib/gameData.json            현재 세트 상세: 기물(코스트·시너지·스탯·스킬) · 시너지(단계·단계별 효과) · 아이템(조합법·효과)
- *  - lib/gameData.lite.json       클라이언트 공용 요약 (기물 슬러그·칸 수, 시너지 단계표) — lib/gameFacts
+ *                                 · 레벨별 상점 확률 (게임 파일 map22.bin — tft/ko_kr.json 에는 없다)
+ *  - lib/gameData.lite.json       클라이언트 공용 요약 (기물 슬러그·칸 수, 시너지 단계표, 상점 확률) — lib/gameFacts
  *  - lib/gameNames.json           전 세트 이름·아이콘 (이전 세트 판 표시 · 다른 세트 시너지명 환각 검사용)
  *  - data/gameData/<버전>.json     패치별 보관본 (lib/gameData.json 과 같은 내용)
  * 입력
@@ -131,6 +132,27 @@ function descTwinIndex(items) {
     if (!prev || (/^TFT_Item_/.test(it.apiName) && !/^TFT_Item_/.test(prev.apiName))) byIcon.set(key, it)
   }
   return (item) => (item.desc ? item : byIcon.get((item.icon || '').toLowerCase()))
+}
+
+/* ───────── 상점 확률 ───────── */
+
+/**
+ * 레벨별 상점 등장 확률 (%) — 게임 파일 map22.bin 의 세트 데이터(TFTSet{N}.DropRateTables.Shop)가 가리키는 표.
+ * Community Dragon tft/ko_kr.json 에는 없어서 원본 bin 의 JSON 변환본(약 70MB, 캐시)을 읽는다.
+ * 반환: [레벨 1, 레벨 2, …] 마다 [1코, 2코, 3코, 4코, 5코]. 표의 값 키가 해시({bcf1e6a6})로만 남아 있어 줄마다 첫 배열을 쓴다.
+ */
+async function shopOddsOf(version) {
+  const source = `${CDRAGON}/${version}/game/data/maps/shipping/map22/map22.bin.json`
+  const bin = await fetchJson(source, `${version}-map22.bin.json`)
+  const setData = bin[`Maps/Shipping/Map22/Sets/TFTSet${SET}`]
+  const table = bin[setData?.DropRateTables?.Shop]
+  if (!table?.mDropRatesByLevel?.length) throw new Error(`세트 ${SET} 상점 확률표(DropRateTables.Shop)가 없습니다`)
+  const levels = table.mDropRatesByLevel.map((r) => (Object.values(r).find(Array.isArray) || []).map((x) => Math.round(x * 100)))
+  levels.forEach((row, i) => {
+    const sum = row.reduce((s, x) => s + x, 0)
+    if (row.length !== 5 || Math.abs(sum - 100) > 1) throw new Error(`상점 확률 Lv.${i + 1} 이 이상합니다: ${row.join('/')} (합 ${sum})`)
+  })
+  return { source, levels }
 }
 
 /* ───────── 본체 ───────── */
@@ -260,6 +282,8 @@ async function main() {
     }
   }
 
+  const shopOdds = await shopOddsOf(version)
+
   const generatedAt = new Date().toISOString()
   const gameData = {
     _comment:
@@ -277,6 +301,7 @@ async function main() {
     champions,
     traits,
     items,
+    shopOdds,
   }
 
   /* 전 세트 이름표 — 같은 apiName 은 최신 세트가 이긴다 */
@@ -304,7 +329,7 @@ async function main() {
   write('lib/gameData.lite.json', liteOf(gameData))
   write('lib/gameNames.json', gameNames)
   write(`data/gameData/${version}.json`, gameData)
-  console.log(`기물 ${gameData.counts.champions} · 시너지 ${gameData.counts.traits} · 아이템 ${gameData.counts.items}`)
+  console.log(`기물 ${gameData.counts.champions} · 시너지 ${gameData.counts.traits} · 아이템 ${gameData.counts.items} · 상점 확률 ${shopOdds.levels.length}레벨`)
 
   if (CHECK) await checkIcons(gameData)
 }
@@ -313,7 +338,11 @@ async function main() {
 function liteOf(gameData) {
   return {
     _comment: 'lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.',
+    // set: 전적의 이전 시즌 판을 분석에서 빼는 기준 (lib/queue)
+    set: gameData.set,
     gameVersion: gameData.gameVersion,
+    // shopOdds: 레벨별 상점 확률 — 1성 캐리 장면(lib/keyMoments)·AI 프롬프트가 같은 표로 판단한다 (lib/shopOdds)
+    shopOdds: gameData.shopOdds?.levels ?? [],
     // traits: 시너지 한글명 — 시너지 인원 계산(lib/traitAnchors)이 클라이언트 장면(lib/keyMoments)에서도 돌도록
     champions: Object.values(gameData.champions).map(({ apiName, slug, name, nameEn, cost, slots, traits }) => ({
       apiName,

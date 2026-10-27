@@ -238,6 +238,8 @@ create table stat_comp (
 - 수집기 ④단계에서 **이번 실행에 들어온 (game_date, patch, tier_bucket) 조합만** 다시 계산해 UPSERT 한다.
   원본에서 `group by` 하므로 재실행해도 결과가 같다.
 - 덱 클러스터(`buildDecksFromBoards.js` 로직)는 1일 1회, 패치 × 티어 구간별로 원본을 읽어 `stat_comp` 를 다시 만든다.
+- 기물 빌드(아이템 3개 세트, `scripts/collect/builds.js`)도 같은 보드로 `stat_unit_build`(0008)를 다시 만든다 — 기물마다 판 수 많은 세트 상위 10개(5판 이상).
+  조합 종류가 많아 일별 영구 집계 대신 패치 × 티어 필터 단위로 교체한다 (기간 필터 없음). 0008 적용 전에는 경고만 남기고 덱 클러스터는 그대로 만든다.
 
 ### 6-2. 필터 정의
 
@@ -258,6 +260,7 @@ create table stat_comp (
 | `GET /api/tft/stats?type=unit&patch=&tier=&days=` | 기물·아이템·시너지 표 | `s-maxage=600, stale-while-revalidate=3600` |
 | `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS). `unit` 은 슬러그(`ahri`)·수집 키(`Ahri`)·Riot ID(`TFT18_Ahri`) 모두 허용, 응답 `unit` = 맞춘 슬러그, `totalBoards` 는 거르기 전 분모 | 동일 |
 | `GET /api/tft/decks?patch=&tier=` | 덱 티어표 | 동일 |
+| `GET /api/tft/builds?patch=&tier=` | 기물 빌드(아이템 3개를 함께 든 세트 · `stat_unit_build`). 메타 BIS 탭 "3개 함께" · 기물 모달 "많이 쓰는 세트". DB 가 없거나 0008 미적용이면 `lib/unitBuilds.json`(래더 보드) 폴백 — 화면은 기물×아이템과 출처가 같을 때만 쓴다 | 동일 |
 | `GET /api/tft/meta/filters` | 사용 가능한 패치·표본 수 | 10분 |
 
 Phase C 예정 (미구현):
@@ -421,6 +424,7 @@ Phase C 예정 (미구현):
     order by last_built desc;
    ```
    또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
+   `check:ops --db` 는 `stat_comp` 와 `stat_unit_build` 의 최신 패치 빌드 시각을 함께 본다(24h/72h) — 세트 저장(`tft_replace_builds`)만 실패해도 잡힌다.
    판정은 **최신 패치**(가장 높은 `숫자.숫자` 패치) 행의 `max(updated_at)` 기준 — 위 SQL 결과에서 최신 패치 줄들을 본다.
    이전 패치가 최근에 다시 빌드됐어도 최신 패치가 늦으면 미충족이다.
    - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행 (키가 없으면 Actions → `Collect Matches to DB` → `rollup_only: true` 로 실행 — 덱 규칙을 바꾼 직후 바로 다시 만들 때도 같다).
@@ -429,9 +433,9 @@ Phase C 예정 (미구현):
 수집기는 `MAX_MINUTES` 보다 7분 일찍 수집을 멈춰 덱 클러스터 몫을 남긴다. 그래도 미루면 `note` 에 남기고, 최신 패치 덱이 24시간 이상
 갱신되지 않았으면 경고한다(위 `stat_comp` 의 `max(updated_at)` 확인 → `npm run collect:db:rollup` 으로 수동 갱신).
 
-조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 15판 미만을 표본 부족으로 표시)
+조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 30판 미만을 표본 부족으로 표시)
 
-표본 규칙 (§6-2): 기물·아이템·시너지 30판, 기물×아이템 20판, 덱 15판 미만은 표본 부족(회색 · 상대 티어 제외 · 정렬 맨 아래).
+표본 규칙 (§6-2): 덱·기물·아이템·시너지 30판(평균등수 오차 ±0.42) 미만은 표본 부족(회색 · 상대 티어 제외 · 정렬 맨 아래). 기물×아이템 20판은 BIS 후보 하한. 상대 티어는 표본 수로 4.5등 쪽에 당긴 추정 평균등수 기준, 기물은 코스트별로 매긴다 (app/components/metaShared).
 평균등수 옆 ± 는 표준오차 2.29/√n. 덱 티어표는 기간 필터 없이 패치 전체로 하루 1회 묶는다.
 
 ## 14. 경제·템포 기준선 (`lib/gameBaselines.json`)

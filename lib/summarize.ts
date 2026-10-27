@@ -174,7 +174,7 @@ export function serializeMatchesForLLM(
         ? '경합 정보 없음'
         : ci.isContested
         ? [
-            `⚠️ 경합 ${ci.level ?? ''} (강도 ${ci.contestScore ?? '?'}/100, 로비 ${ci.opponentCount}명 겹침)`,
+            `⚠️ 경합 등급 ${ci.level ?? '경합'} (강도 ${ci.contestScore ?? '?'}/100, 로비 ${ci.opponentCount}명 겹침)`,
             ci.unitDetails?.length
               ? `기물: ${ci.unitDetails
                   .slice(0, 3)
@@ -190,7 +190,7 @@ export function serializeMatchesForLLM(
           ]
             .filter(Boolean)
             .join(' | ')
-        : `✅ 경합 없음(유리한 조건) (강도 ${ci.contestScore ?? 0}/100, 겹침 거의 없음)`
+        : `✅ 경합 등급 ${ci.level ?? '빈집'} — 겹침 거의 없음(유리한 조건) (강도 ${ci.contestScore ?? 0}/100)`
 
       const augmentLine = m.augments.length ? `\n- 선택 증강체: ${augStr}` : ''
 
