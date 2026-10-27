@@ -101,7 +101,7 @@ export function UserMenu() {
       {open ? (
         <div className="absolute right-0 z-50 mt-2 w-56 rounded-card border border-line bg-panel p-3 text-xs shadow-card">
           <p className="truncate font-bold text-ink">{name}</p>
-          <p className="mt-0.5 truncate text-xs text-subtle">{me.user.email || 'Discord 계정'}</p>
+          <p className="mt-0.5 truncate text-xs text-subtle">{me.user.email || '소셜 로그인 계정'}</p>
           <div className="mt-2 flex items-center justify-between rounded-control border border-line bg-sunken px-2.5 py-1.5">
             <span className="text-muted">오늘 AI 분석</span>
             <span className="font-mono font-bold text-ink">

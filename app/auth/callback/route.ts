@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 /**
- * Supabase OAuth 콜백 (Discord 등).
+ * Supabase OAuth 콜백 (카카오·Google·Discord).
  * PKCE code 를 세션으로 교환한 뒤 next 경로로 이동한다.
  */
 export async function GET(request: Request) {

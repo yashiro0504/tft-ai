@@ -5,13 +5,14 @@ import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 import { getAuthUser } from '@/lib/supabase/server'
-import { LoginButton } from './LoginButton'
+import { enabledAuthProviders, AUTH_PROVIDER_LABEL } from '@/lib/authProviders'
+import { LoginButtons } from './LoginButton'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: '로그인',
-  description: 'Discord 계정으로 TFT LAB에 로그인하고 일일 AI 코칭 쿼터를 확인하세요.',
+  description: '카카오·Google·Discord 계정으로 TFT LAB에 로그인하고 일일 AI 코칭 쿼터를 확인하세요.',
   robots: { index: false, follow: false },
 }
 
@@ -26,6 +27,8 @@ export default async function LoginPage({
 
   const { error, next } = await searchParams
   const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+  const providers = enabledAuthProviders()
+  const providerNames = providers.map((p) => AUTH_PROVIDER_LABEL[p]).join('·')
 
   return (
     <div className="min-h-screen bg-app text-ink">
@@ -35,7 +38,7 @@ export default async function LoginPage({
         <div className="rounded-card border border-line bg-panel p-6 shadow-card">
           <h1 className="text-xl font-black tracking-tight">TFT LAB 로그인</h1>
           <p className="mt-2 text-xs leading-relaxed text-muted">
-            Discord 계정으로 로그인하면 <strong className="text-ink-soft">일일 AI 코칭 쿼터</strong>가
+            {providerNames} 계정으로 로그인하면 <strong className="text-ink-soft">일일 AI 코칭 쿼터</strong>가
             계정 기준으로 관리되고, 기기를 바꿔도 플랜이 유지됩니다. 전적 검색 자체는 로그인 없이도
             가능합니다.
           </p>
@@ -43,17 +46,17 @@ export default async function LoginPage({
           <ul className="mt-4 space-y-1.5 text-xs text-muted">
             <li>· 무료 플랜: AI 분석 3회/일</li>
             <li>· Pro 플랜: AI 분석 10회/일 (운영자가 수동 부여)</li>
-            <li>· 수집 항목: Discord ID, 이메일, 표시 이름, 프로필 이미지</li>
+            <li>· 수집 항목: 로그인한 서비스의 사용자 ID, 이메일(제공 시), 표시 이름, 프로필 이미지</li>
           </ul>
 
           <div className="mt-6">
             {configured ? (
-              <LoginButton next={target} />
+              <LoginButtons providers={providers} next={target} />
             ) : (
               <div className="rounded-card border border-bad/30 bg-bad/10 p-4 text-xs leading-relaxed text-ink">
                 로그인 기능이 아직 설정되지 않았습니다.
                 <br />
-                Supabase 프로젝트와 Discord OAuth 를 연결한 뒤 환경변수를 등록해 주세요.
+                Supabase 프로젝트와 OAuth 제공자를 연결한 뒤 환경변수를 등록해 주세요.
                 <span className="mt-2 block text-muted">docs/supabase-auth.md 참고</span>
               </div>
             )}

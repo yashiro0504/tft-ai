@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <LegalList
           items={[
             '이용자가 입력한 Riot ID(게임명 및 태그)',
-            'Discord 로그인(선택) 시: Discord 사용자 ID, 이메일, 표시 이름, 프로필 이미지 URL',
+            '소셜 로그인(선택, 카카오·Google·Discord) 시: 해당 서비스의 사용자 ID, 이메일(제공에 동의한 경우), 표시 이름(닉네임), 프로필 이미지 URL',
             '서비스 이용 과정에서 자동 생성되는 정보: IP 주소, 브라우저/기기 정보(User-Agent), 요청 시각, 접속 기록',
             '서비스 개선을 위한 이용 이벤트: 검색·AI 분석·탭 전환·덱 열람·공유·로그인 클릭 등의 발생 사실과 시각, 익명 세션 식별자(브라우저 세션 단위 임의 문자열)',
             '로그인 사용자가 직접 저장한 즐겨찾기: 소환사 이름(게임명)과 태그, 저장 시각',
@@ -89,7 +89,9 @@ export default function PrivacyPage() {
             'Upstash — 캐시 저장 (설정된 경우에 한함)',
             'Cloudflare Turnstile — 자동화 요청(봇) 차단을 위한 브라우저 검증 (IP 주소·브라우저 정보 처리, 검색 시)',
             'Supabase — 로그인 인증 및 계정/사용량/즐겨찾기 데이터 저장 (로그인 사용 시)',
-            'Discord — OAuth 로그인 인증 (로그인 사용 시)',
+            '카카오 — OAuth 로그인 인증 (카카오 로그인 사용 시)',
+            'Google — OAuth 로그인 인증 (Google 로그인 사용 시)',
+            'Discord — OAuth 로그인 인증 (Discord 로그인 사용 시)',
           ]}
         />
         <p className="text-xs text-subtle">

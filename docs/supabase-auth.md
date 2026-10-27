@@ -24,6 +24,41 @@
    `https://<project-ref>.supabase.co/auth/v1/callback`
 4. Supabase Dashboard → Authentication → Providers → **Discord** 활성화 후 ID/Secret 입력
 
+## 2-1. 카카오 OAuth
+
+1. https://developers.kakao.com → 내 애플리케이션 → 애플리케이션 추가
+2. 앱 설정 → 플랫폼 → **Web** 사이트 도메인: `https://www.tftlab.kr`, `http://localhost:3000`
+3. 제품 설정 → 카카오 로그인 → **활성화 ON**, Redirect URI:
+   `https://<project-ref>.supabase.co/auth/v1/callback`
+4. 카카오 로그인 → 동의항목: **닉네임**, **프로필 사진** 설정. **카카오계정(이메일)** 은 비즈 앱 전환(개인 개발자도 본인인증으로 가능) 후에만 받을 수 있다
+5. 앱 키 → **REST API 키** = Client ID, 보안 → **Client Secret** 생성 후 상태 **사용함** = Secret
+6. Supabase → Authentication → Providers → **Kakao** 활성화 후 ID/Secret 입력
+   - 이메일 동의항목을 못 켰으면 **Allow users without an email** 을 켜야 로그인이 된다
+
+## 2-2. Google OAuth
+
+1. https://console.cloud.google.com → 프로젝트 생성 → API 및 서비스 → **OAuth 동의 화면**
+   - User Type: **외부**, 앱 이름 `TFT LAB`, 지원 이메일, 승인된 도메인 `tftlab.kr`, `supabase.co`
+   - 범위는 기본(`email`, `profile`, `openid`)만 → 민감 범위 심사 불필요
+   - 게시 상태를 **프로덕션으로 게시** (테스트 상태면 테스트 사용자만 로그인 가능)
+2. 사용자 인증 정보 → **OAuth 클라이언트 ID** (웹 애플리케이션)
+   - 승인된 JavaScript 원본: `https://www.tftlab.kr`
+   - 승인된 리디렉션 URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+3. Supabase → Authentication → Providers → **Google** 활성화 후 Client ID/Secret 입력
+
+## 2-3. 버튼 노출 (`NEXT_PUBLIC_AUTH_PROVIDERS`)
+
+Supabase 에서 켠 제공자만 Vercel 환경변수에 넣고 재배포한다. 켜지 않은 제공자 버튼을 누르면 Supabase 가
+`provider is not enabled` JSON 오류를 띄운다.
+
+```
+NEXT_PUBLIC_AUTH_PROVIDERS=kakao,google,discord
+```
+
+- 순서는 값과 무관하게 카카오 → Google → Discord. 미설정 시 `discord` 만
+- 같은 **인증된 이메일**이면 Supabase 가 한 계정으로 자동 연결한다. 이메일이 없거나 다르면(카카오 이메일 미동의 등)
+  제공자마다 **별도 계정**이 생기고 플랜·사용량도 따로다. Pro 를 수동 부여할 때 `auth.identities` 로 확인
+
 ## 3. Supabase URL 설정
 
 Authentication → URL Configuration
@@ -46,7 +81,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
 
 ## 5. 확인
 
-1. `/login` → Discord 로그인 → `/auth/callback` → 홈 복귀
+1. `/login` → 카카오·Google·Discord 로그인 각각 → `/auth/callback` → 홈 복귀
 2. `/api/me`:
    ```json
    {
@@ -82,6 +117,5 @@ update public.profiles set plan = 'pro' where id = '<user-uuid>';
 ## 8. 한계 / 다음 단계
 
 - 결제(구독)는 아직 없음. Pro 는 수동 부여
-- Discord 외 로그인 제공자 미지원
 - 계정 삭제는 문의 메일로 접수 → `auth.users` 삭제 시 프로필/사용량 cascade
 - 향후: Stripe/토스 결제, 플랜 변경 이력, 팀/코치 플랜
