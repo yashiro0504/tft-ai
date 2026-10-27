@@ -30,10 +30,13 @@
 2. 앱 설정 → 플랫폼 → **Web** 사이트 도메인: `https://www.tftlab.kr`, `http://localhost:3000`
 3. 제품 설정 → 카카오 로그인 → **활성화 ON**, Redirect URI:
    `https://<project-ref>.supabase.co/auth/v1/callback`
-4. 카카오 로그인 → 동의항목: **닉네임**, **프로필 사진** 설정. **카카오계정(이메일)** 은 비즈 앱 전환(개인 개발자도 본인인증으로 가능) 후에만 받을 수 있다
-5. 앱 키 → **REST API 키** = Client ID, 보안 → **Client Secret** 생성 후 상태 **사용함** = Secret
-6. Supabase → Authentication → Providers → **Kakao** 활성화 후 ID/Secret 입력
-   - 이메일 동의항목을 못 켰으면 **Allow users without an email** 을 켜야 로그인이 된다
+4. **비즈 앱 전환 (필수)**: 앱 설정 → 비즈니스 → 개인 개발자 비즈 앱 전환 (카카오톡 추가 인증 → 카카오비즈니스 필수 약관 동의)
+   - Supabase 는 카카오에 scope 를 항상 `account_email profile_image profile_nickname` 으로 요청한다.
+     이메일 동의항목이 없으면 카카오가 **KOE205 (설정하지 않은 동의 항목: account_email)** 로 인가 자체를 거부한다.
+     Supabase 의 *Allow users without an email* 으로는 해결되지 않는다
+5. 카카오 로그인 → 동의항목: **닉네임**(필수), **프로필 사진**(선택), **카카오계정(이메일)**(필수)
+6. 앱 키 → **REST API 키** = Client ID, 보안 → **Client Secret** 생성 후 상태 **사용함** = Secret
+7. Supabase → Authentication → Providers → **Kakao** 활성화 후 ID/Secret 입력
 
 ## 2-2. Google OAuth
 
@@ -56,7 +59,7 @@ NEXT_PUBLIC_AUTH_PROVIDERS=kakao,google,discord
 ```
 
 - 순서는 값과 무관하게 카카오 → Google → Discord. 미설정 시 `discord` 만
-- 같은 **인증된 이메일**이면 Supabase 가 한 계정으로 자동 연결한다. 이메일이 없거나 다르면(카카오 이메일 미동의 등)
+- 같은 **인증된 이메일**이면 Supabase 가 한 계정으로 자동 연결한다. 이메일이 다르면
   제공자마다 **별도 계정**이 생기고 플랜·사용량도 따로다. Pro 를 수동 부여할 때 `auth.identities` 로 확인
 
 ## 3. Supabase URL 설정
