@@ -4,11 +4,12 @@ import {
   getTraitRankings,
   getItemRankings,
   getComboRankings,
-  getCompSets,
   hasMetaStats,
 } from './meta'
 import { translateChampion, translateTrait, translateItem, getChampionCost } from './constants'
 import { getDeckViews, getDeckMetaInfo, type DeckView } from './decks'
+import { buildCompSets } from './statsShared'
+import { jsonBuildRankings } from './unitBuilds'
 import type {
   TftMetaResponse,
   MetaChampRanking,
@@ -142,37 +143,8 @@ export function buildMetaPayload(): TftMetaResponse {
       })
     : []
 
-  // 메타 조합: 기물 + BIS 아이템 세트 (평균등수 낮은 순)
-  const comps: MetaCompRanking[] = hasMeta
-    ? getCompSets(3, 10).map((cp) => {
-        const ct = translateChampion(cp.champKey)
-        return {
-          key: cp.champKey,
-          name: ct.name,
-          imgUrl: ct.imgUrl,
-          cost: getChampionCost(cp.champKey),
-          avgPlacement: cp.avgPlacement,
-          top4Rate: cp.top4Rate,
-          sampleSize: cp.sampleSize,
-          avgTier: cp.avgTier ?? 1,
-          threeStarRate: cp.threeStarRate ?? 0,
-          prevRank: cp.prevRank,
-          rankDelta: cp.rankDelta,
-          avgDelta: cp.avgDelta,
-          items: cp.items.map((it) => {
-            const t = translateItem(it.itemKey)
-            return {
-              key: it.key,
-              name: t.name,
-              iconUrl: t.iconUrl,
-              avgPlacement: it.avgPlacement,
-              top4Rate: it.top4Rate,
-              sampleSize: it.sampleSize,
-            }
-          }),
-        }
-      })
-    : []
+  // BIS 탭: 기물 + 채용 상위 아이템 3개 (+ 3개를 함께 든 세트) — DB 필터 응답과 같은 규칙(buildCompSets)으로 만든다
+  const comps: MetaCompRanking[] = hasMeta ? buildCompSets(champions, combos, jsonBuildRankings()) : []
 
   // 메타 덱(보드 조합): 롤체지지 추천 덱 + 실측 통계 결합
   const decks: MetaDeckRanking[] = getDeckViews().map((d) => toMetaDeck(d))

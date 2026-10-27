@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
 import type {
+  MetaBuildStat,
   MetaChampRanking,
   MetaComboRanking,
   MetaCompRanking,
@@ -15,6 +16,7 @@ import type {
   TftMetaResponse,
 } from '@/lib/types'
 import {
+  BIS_RELIABLE_SAMPLE,
   DAYS_FILTER_OPTIONS,
   MIN_SAMPLE,
   TIER_FILTER_OPTIONS,
@@ -22,6 +24,7 @@ import {
   filterLabel,
   filterQuery,
   placementMargin,
+  type BuildsResponse,
   type DecksResponse,
   type MetaFiltersResponse,
   type StatFilter,
@@ -69,6 +72,8 @@ const SORT_LABEL: Record<'avg' | 'top4' | 'sample', string> = {
   sample: '표본',
 }
 type SortKey = keyof typeof SORT_LABEL
+/** BIS 탭은 아이템 칸이 주인공 — 기물 수치는 기준값(평균·판수)만 두고 TOP4 는 뺀다 */
+const BIS_SORT_LABEL: Partial<Record<SortKey, string>> = { avg: '기물 평균', sample: '기물 판수' }
 
 /** 수집 시각은 서버(UTC)·클라이언트(KST) 렌더 결과가 같아야 하므로 KST 고정 */
 const DATE_FMT = new Intl.DateTimeFormat('en-CA', {
@@ -108,7 +113,9 @@ interface Row {
   /** 표본 하한 미만 → 회색 + "표본 부족" */
   low: boolean
   third?: number
-  bis?: { key: string; name: string; iconUrl: string }[]
+  bis?: MetaCompRanking['items']
+  /** BIS 3개를 함께 든 세트 (undefined = 빌드 집계 없음, null = 그 세트가 드묾) */
+  bisSet?: MetaCompRanking['bisSet']
   deck?: MetaDeckRanking
   delta?: number
 }
@@ -212,9 +219,12 @@ export function MetaDashboard({
         setServed((s) => ({ ...s, decks: json.source }))
         loadedRef.current.decks = key
       } else {
+        // 기물 빌드(3개 세트)는 없어도 표는 그린다 — 실패하면 '3개 함께' 줄만 빠진다
+        const buildsReq = fetchJson<BuildsResponse>(`/api/tft/builds?${q}`).catch(() => null)
         const [unit, item, trait, unitItem] = await Promise.all(
           (['unit', 'item', 'trait', 'unit_item'] as const).map((t) => fetchJson<StatsResponse>(`/api/tft/stats?type=${t}&${q}`))
         )
+        const builds = await buildsReq
         if (seq !== loadSeq.current) return
         const champions = unit.rows as MetaChampRanking[]
         const combos = unitItem.rows as MetaComboRanking[]
@@ -223,7 +233,8 @@ export function MetaDashboard({
           items: item.rows as MetaItemRanking[],
           traits: trait.rows as MetaTraitRanking[],
           combos,
-          comps: buildCompSets(champions, combos),
+          // 세트는 기물×아이템과 출처가 같을 때만 (DB 통계 옆에 래더 스냅샷 세트를 섞지 않는다 — 0008 적용 전)
+          comps: buildCompSets(champions, combos, builds?.source === unitItem.source ? builds.rows : undefined),
         }
         setData((prev) => (prev ? { ...prev, ...sections } : prev))
         setServed((s) => ({ ...s, stats: unit.source, totalMatches: unit.totalMatches }))
@@ -327,6 +338,7 @@ export function MetaDashboard({
         low: c.sampleSize < min,
         third: c.threeStarRate,
         bis: (c.items ?? []).slice(0, 3),
+        bisSet: c.bisSet,
         delta: c.avgDelta,
       }))
     }
@@ -377,24 +389,29 @@ export function MetaDashboard({
     }))
   }, [data, tab])
 
+  /** BIS 탭엔 TOP4 열이 없다 — 다른 탭에서 TOP4 로 정렬하다 넘어오면 평균 순 */
+  const sortBy: SortKey = tab === 'comps' && !BIS_SORT_LABEL[sort] ? 'avg' : sort
+  const sortKeys = (Object.keys(SORT_LABEL) as SortKey[]).filter((k) => tab !== 'comps' || BIS_SORT_LABEL[k])
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     const filtered = rowsAll.filter((r) => {
       const tierOk = tier === '전체' || r.tier === tier
-      const qOk = !q || r.name.toLowerCase().includes(q)
+      // BIS 탭은 아이템 이름으로도 찾는다 (예: 쇼진의 창을 BIS 로 드는 기물)
+      const qOk = !q || r.name.toLowerCase().includes(q) || (r.bis ?? []).some((b) => b.name.toLowerCase().includes(q))
       const classOk = tab !== 'items' || itemClass === 'all' || classifyItem(r.key) === itemClass
       const costOk = !isUnitTab(tab) || cost === 'all' || r.cost === cost
       return tierOk && qOk && classOk && costOk
     })
     return [...filtered].sort((a, b) => {
       // 표본 부족은 평균등수·TOP4 정렬에서 맨 아래로 (우연히 좋은 수치가 위로 오지 않게)
-      if (sort !== 'sample' && a.low !== b.low) return Number(a.low) - Number(b.low)
-      if (sort === 'top4') return b.top4 - a.top4
-      if (sort === 'sample') return b.sample - a.sample
+      if (sortBy !== 'sample' && a.low !== b.low) return Number(a.low) - Number(b.low)
+      if (sortBy === 'top4') return b.top4 - a.top4
+      if (sortBy === 'sample') return b.sample - a.sample
       // 평균등수: 티어(표본 수를 반영한 순위)로 묶고 같은 티어 안에서 평균등수 순
       return tierRank(a.tier) - tierRank(b.tier) || a.avg - b.avg
     })
-  }, [rowsAll, tier, sort, query, tab, itemClass, cost])
+  }, [rowsAll, tier, sortBy, query, tab, itemClass, cost])
 
   // 상세 카드의 티어는 표와 같은 상대 티어를 쓴다 (원본 덱 데이터의 tier 와 다를 수 있음)
   const selectedTier = useMemo(
@@ -466,6 +483,13 @@ export function MetaDashboard({
               <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만(±${placementMargin(minSample)?.toFixed(2)} 초과)은 표본 부족으로 회색 표시`}>
                 ± 표준오차 · {minSample}판 미만 표본 부족
               </EvidenceChip>
+              {tab === 'comps' ? (
+                <EvidenceChip
+                  title={`기물마다 그 아이템을 든 판이 ${MIN_SAMPLE.unit_item}판 이상인 아이템 중 가장 많이 든 3개 (AI 리포트 BIS 일치율과 같은 기준). 평균등수 = 이 기물이 그 아이템을 든 판의 평균, 채용 = 이 기물이 나온 판 중 그 아이템을 든 비율 (아이템 1개 단위). 셋을 함께 든 판은 이름 아래 '3개 함께' — 덱 탭과 같은 기준(패치 단위, 하루 1회 집계)이라 기간 필터와 무관합니다. ${BIS_RELIABLE_SAMPLE}판 미만은 참고용`}
+                >
+                  BIS = 채용 상위 3 · 아이템 1개 단위
+                </EvidenceChip>
+              ) : null}
             </div>
           </header>
 
@@ -587,7 +611,7 @@ export function MetaDashboard({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="덱·기물 이름 검색"
+                placeholder={tab === 'comps' ? '기물·아이템 이름 검색' : '덱·기물 이름 검색'}
                 aria-label="검색"
               />
             </label>
@@ -629,19 +653,23 @@ export function MetaDashboard({
                     <span>구성</span>
                   </span>
                 ) : (
-                  <span>이름</span>
+                  <span>{tab === 'comps' ? '기물' : '이름'}</span>
                 )}
-                {tab === 'comps' ? <span className="rk-bis">BIS</span> : null}
+                {tab === 'comps' ? (
+                  <span className="rk-bishead" title="이 기물이 그 아이템을 든 판의 평균등수 · 이 기물이 나온 판 중 그 아이템을 든 비율 (아이템 1개 단위)">
+                    BIS 아이템 <small>채용 상위 3 · 든 판 평균등수 · 채용률</small>
+                  </span>
+                ) : null}
                 {tab === 'champions' ? <span className="num">3성률</span> : null}
-                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+                {sortKeys.map((k) => (
                   <button
                     key={k}
                     type="button"
-                    className={`num rk-sort ${sort === k ? 'on' : ''}`}
-                    aria-pressed={sort === k}
+                    className={`num rk-sort ${sortBy === k ? 'on' : ''}`}
+                    aria-pressed={sortBy === k}
                     onClick={() => setSort(k)}
                   >
-                    {SORT_LABEL[k]}
+                    {(tab === 'comps' && BIS_SORT_LABEL[k]) || SORT_LABEL[k]}
                   </button>
                 ))}
               </div>
@@ -677,6 +705,7 @@ export function MetaDashboard({
                     <span className="rk-msub">
                       TOP4 {Math.round(r.top4 * 100)}% · {r.sample.toLocaleString()}판
                     </span>
+                    {r.bisSet !== undefined ? <BisSetLine set={r.bisSet} names={(r.bis ?? []).map((b) => b.name)} /> : null}
                     {r.deck ? (
                       <span className="rk-traitrow">
                         {[...r.deck.traits]
@@ -707,12 +736,36 @@ export function MetaDashboard({
                     ) : null}
                   </span>
                   {tab === 'comps' ? (
-                    <span className="rk-bis">
-                      {(r.bis ?? []).map((b) => (
-                        <span key={b.key} className="rk-icon">
-                          <img src={b.iconUrl} alt={b.name} loading="lazy" />
-                        </span>
-                      ))}
+                    <span className="rk-bisset">
+                      {(r.bis ?? []).map((b) => {
+                        const low = b.sampleSize < BIS_RELIABLE_SAMPLE
+                        const pick = Math.round(b.pickRate * 100)
+                        return (
+                          <span
+                            key={b.key}
+                            className={`rk-bisitem ${low ? 'is-low' : ''}`}
+                            title={`${b.name} — 든 ${b.sampleSize.toLocaleString()}판 평균 ${b.avgPlacement.toFixed(2)}등 · 채용 ${pick}%${
+                              low ? ` · ${BIS_RELIABLE_SAMPLE}판 미만 참고용` : ''
+                            }`}
+                          >
+                            <span className="rk-icon">
+                              <img src={b.iconUrl} alt="" loading="lazy" />
+                            </span>
+                            {/* 휴대폰은 이름을 화면에서 숨기고(읽기 도구용으로만 남김) 평균등수·채용 두 줄 (rank/tabs.css) */}
+                            <span className="rk-bisbody">
+                              <span className="rk-bisname">{b.name}</span>
+                              <span className="rk-bisstat">
+                                <b>{b.avgPlacement.toFixed(2)}등</b>
+                                <span className="rk-bispick">
+                                  <i> · </i>채용 {pick}%
+                                </span>
+                                <span className="rk-bisn"> · {b.sampleSize.toLocaleString()}판</span>
+                                {low ? <span className="rk-bislow">참고용</span> : null}
+                              </span>
+                            </span>
+                          </span>
+                        )
+                      })}
                     </span>
                   ) : null}
                   {tab === 'champions' ? (
@@ -727,7 +780,7 @@ export function MetaDashboard({
                       <i style={{ width: `${Math.max(4, Math.min(100, ((5.0 - r.avg) / 1.2) * 100))}%` }} />
                     </i>
                   </span>
-                  <span className="rk-num">{Math.round(r.top4 * 100)}%</span>
+                  {tab !== 'comps' ? <span className="rk-num">{Math.round(r.top4 * 100)}%</span> : null}
                   <span className="rk-num dim">
                     {r.sample.toLocaleString()}
                     {r.low ? (
@@ -780,6 +833,40 @@ export function MetaDashboard({
         {modal && data ? <DetailModal data={data} target={modal} onClose={() => setModal(null)} /> : null}
       </div>
     </>
+  )
+}
+
+/**
+ * BIS 행 이름 아래 "3개 함께" 한 줄 — BIS 3개를 한 기물이 함께 든 판의 평균등수 (lib/unitBuilds, 패치 단위).
+ * 아이템 칸 수치는 아이템 1개 단위라, 셋을 같이 들 때 성적은 여기서만 본다.
+ */
+function BisSetLine({ set, names }: { set: MetaBuildStat | null; names: string[] }) {
+  const what = `${names.join(' + ')} 를 한 기물이 함께 든 판 · 덱 탭과 같은 기준(패치 단위, 하루 1회 집계)`
+  if (!set) {
+    return (
+      <span className="rk-bisline is-low" title={`${what} — 5판 미만이거나 이 기물의 많이 든 세트 10개 밖`}>
+        3개 함께 든 판 적음
+      </span>
+    )
+  }
+  const n = set.sampleSize
+  if (n < MIN_SAMPLE.unit_item) {
+    return (
+      <span className="rk-bisline is-low" title={`${what} — ${MIN_SAMPLE.unit_item}판 미만이라 평균등수는 표시하지 않습니다`}>
+        3개 함께 {n.toLocaleString()}판 · 표본 부족
+      </span>
+    )
+  }
+  const low = n < BIS_RELIABLE_SAMPLE
+  return (
+    <span
+      className={`rk-bisline ${low ? 'is-low' : ''}`}
+      title={`${what} — 평균 ${set.avgPlacement.toFixed(2)}등 ±${placementMargin(n)?.toFixed(2)} · TOP4 ${Math.round(set.top4Rate * 100)}% · 기물의 ${Math.round(
+        set.pickRate * 100
+      )}%${low ? ` · ${BIS_RELIABLE_SAMPLE}판 미만 참고용` : ''}`}
+    >
+      3개 함께 <b>{set.avgPlacement.toFixed(2)}등</b> · {n.toLocaleString()}판{low ? ' · 참고용' : ''}
+    </span>
   )
 }
 

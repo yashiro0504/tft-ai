@@ -587,7 +587,7 @@ export interface MetaCompRanking {
   prevRank?: number
   rankDelta?: number
   avgDelta?: number
-  /** 성적 순 BIS 아이템 (최대 3개) */
+  /** 채용 순 BIS 아이템 (최대 3개, lib/statsShared buildCompSets). 수치는 이 기물이 그 아이템을 든 판 — 3개를 함께 든 판이 아니다 */
   items: {
     key: string
     name: string
@@ -595,7 +595,31 @@ export interface MetaCompRanking {
     avgPlacement: number
     top4Rate: number
     sampleSize: number
+    /** 이 기물이 나온 판 중 이 아이템을 든 비율 (sampleSize ÷ 기물 판수) */
+    pickRate: number
   }[]
+  /** 아이템 3개를 함께 든 세트 — 많이 든 순 상위 3개. 빌드 집계가 없으면(0008 미적용·JSON 미생성) undefined */
+  builds?: MetaBuildStat[]
+  /** items(BIS 3개)를 함께 든 세트. 빌드 집계는 있는데 이 세트가 없으면 null (5판 미만 또는 기물별 상위 10개 밖) */
+  bisSet?: MetaBuildStat | null
+}
+
+/** 기물 빌드 = 기물 1개가 아이템 3개를 함께 든 판 (lib/unitBuilds — 패치 전체, 덱 클러스터와 같은 하루 1회 집계) */
+export interface MetaBuildStat {
+  /** `${기물 키}|${아이템 키 정렬, 쉼표}` */
+  key: string
+  items: { key: string; name: string; iconUrl: string }[]
+  avgPlacement: number
+  top4Rate: number
+  sampleSize: number
+  /** 같은 집계에서 이 기물이 나온 판 중 이 세트를 든 비율 */
+  pickRate: number
+}
+
+export interface MetaBuildRanking extends MetaBuildStat {
+  champKey: string
+  /** 정렬된 아이템 키 3개 */
+  itemKeys: string[]
 }
 
 /** 메타 덱(보드 조합) — Riot 래더 실제 보드를 묶은 덱 (실측) */

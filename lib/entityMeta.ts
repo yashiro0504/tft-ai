@@ -12,10 +12,10 @@ export function entityMetadata(data: EntityPageData | null): Metadata {
   const canonical = `${SITE_URL}${ENTITY_PATH[data.kind]}/${data.slug}`
   const s = data.stat
   const statText = s
-    ? `평균 ${s.avgPlacement.toFixed(2)}위 · TOP4 ${Math.round(s.top4Rate * 100)}% · 표본 ${s.sampleSize.toLocaleString()}판`
+    ? `평균 ${s.avgPlacement.toFixed(2)}등 · TOP4 ${Math.round(s.top4Rate * 100)}% · 표본 ${s.sampleSize.toLocaleString()}판`
     : '통계 수집 중'
   const relatedText =
-    data.kind === 'champion' ? '추천 아이템(BIS)' : data.kind === 'item' ? '잘 쓰는 기물' : '소속 기물'
+    data.kind === 'champion' ? '추천 아이템(BIS)' : data.kind === 'item' ? '많이 드는 기물' : '소속 기물'
   const title = `${data.name} ${KIND_LABEL[data.kind]} 통계 — ${statText}`
   const description = `TFT 시즌 18 ${data.name} ${KIND_LABEL[data.kind]}. ${statText} (${data.filterText}). ${relatedText}과 많이 쓰는 덱을 확인하세요.`
 
