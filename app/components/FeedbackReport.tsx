@@ -278,6 +278,13 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
           {title ? <span className="font-medium">· {title}</span> : null}
         </p>
 
+        {feedback.isFallback ? (
+          <p role="status" className="rounded-control border border-line bg-sunken px-3 py-2 text-xs leading-relaxed text-muted">
+            지금은 AI 분석을 일시적으로 제공할 수 없어 규칙 기반 기본 분석을 보여 드려요. 이번 분석은 이용 횟수에서
+            차감되지 않았어요. 잠시 후 다시 시도하면 AI 코칭을 받을 수 있어요.
+          </p>
+        ) : null}
+
         <p className="max-w-[820px] text-base font-medium leading-relaxed text-ink sm:text-lg">{feedback.overview}</p>
 
         {feedback.dataQuality?.lowSample ? (

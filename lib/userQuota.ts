@@ -54,3 +54,25 @@ export async function consumeUserQuota(
     return null
   }
 }
+
+/**
+ * consumeUserQuota 로 소모한 1회를 되돌린다 (Supabase RPC refund_user_quota, 0009 마이그레이션).
+ * 마이그레이션 전이거나 실패하면 로그만 남긴다.
+ */
+export async function refundUserQuota(bucket: string): Promise<boolean> {
+  try {
+    const supabase = await createSupabaseServerClient()
+    if (!supabase) return false
+    const { error } = await supabase.rpc('refund_user_quota', { p_bucket: bucket })
+    if (error) {
+      incrMetric('quota.user_refund_error')
+      logEvent('warn', 'quota_user_refund_failed', { bucket, ...errorFields(error) })
+      return false
+    }
+    return true
+  } catch (err) {
+    incrMetric('quota.user_refund_error')
+    logEvent('warn', 'quota_user_refund_failed', { bucket, ...errorFields(err) })
+    return false
+  }
+}

@@ -4,7 +4,7 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
 import { SCORING_VERSION } from '@/lib/axisConfig'
-import { quotaGuard, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaGuard, refundQuota, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
 import { getUserPlan } from '@/lib/userPlan'
@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
       if (cached) {
         incrMetric('llm.cache_hit.overview')
+        if (cached.value.feedback?.isFallback) await refundQuota(req, 'ai_fallback')
         logEvent('info', 'api_overview', {
           ms: elapsedMs(startedAt),
           cacheSource: cached.source,
@@ -93,7 +94,9 @@ export async function POST(req: NextRequest) {
       feedback,
     }
 
-    if (!nocache) await cacheSet(cacheKey, response, CACHE_TTL.OVERVIEW)
+    if (!nocache) await cacheSet(cacheKey, response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.OVERVIEW)
+    // AI 를 못 쓴 규칙 기반 폴백은 이용 횟수에서 빼 준다 (DeepSeek 잔액 소진·예산 초과 등)
+    if (feedback.isFallback) await refundQuota(req, 'ai_fallback')
     logEvent('info', 'api_overview', {
       ms: elapsedMs(startedAt),
       cacheSource: nocache ? 'bypass' : 'miss',

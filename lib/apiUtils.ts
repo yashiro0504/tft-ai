@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
-import { consumeDailyQuota, type QuotaResult } from './quota'
-import { consumeUserQuota } from './userQuota'
+import { consumeDailyQuota, refundDailyQuota, type QuotaResult } from './quota'
+import { consumeUserQuota, refundUserQuota } from './userQuota'
 import { isQuotaExempt } from './quotaExempt'
 import { hasOwnerCookie } from './ownerKey'
 import { getAuthUser } from './supabase/server'
@@ -39,6 +39,27 @@ function humanizeRetry(seconds: number): string {
   return `${seconds}초`
 }
 
+/** quotaGuard 가 이 요청에서 실제로 소모한 쿼터 (refundQuota 가 같은 곳에 되돌린다) */
+const charged = new WeakMap<NextRequest, { bucket: string; scope: 'user' | 'ip'; identity: string }>()
+
+/**
+ * 이 요청에서 quotaGuard 가 소모한 1회를 되돌린다. 소모하지 않았으면(면제·무제한) 아무것도 안 한다.
+ * AI 제공자 장애(DeepSeek 잔액 소진·예산 초과 등)로 규칙 기반 폴백만 준 경우에 쓴다.
+ */
+export async function refundQuota(req: NextRequest, reason: string): Promise<void> {
+  const c = charged.get(req)
+  if (!c) return
+  charged.delete(req)
+  try {
+    if (c.scope === 'user') await refundUserQuota(c.bucket)
+    else await refundDailyQuota(c.bucket, c.identity)
+    incrMetric(`quota.refund.${c.bucket}`)
+    logEvent('info', 'quota_refunded', { bucket: c.bucket, scope: c.scope, reason })
+  } catch {
+    /* best-effort */
+  }
+}
+
 /**
  * 일일 쿼터를 1회 소모한다. 초과 시 429 응답을 반환하고, 허용되면 null.
  * - 로그인 사용자(userId)는 Supabase RPC 로 계정 기준 쿼터를 적용한다.
@@ -64,12 +85,14 @@ export async function quotaGuard(
 
   if (userId) {
     result = await consumeUserQuota(userId, bucket, Math.max(0, limit), proLimit ?? Math.max(0, limit))
+    if (result) charged.set(req, { bucket, scope: 'user', identity: userId })
   }
 
   if (!result) {
     if (limit <= 0) return null
     const ip = getClientIp(req.headers)
     result = await consumeDailyQuota(bucket, ip, limit)
+    charged.set(req, { bucket, scope: 'ip', identity: ip })
   }
 
   if (result.allowed) return null

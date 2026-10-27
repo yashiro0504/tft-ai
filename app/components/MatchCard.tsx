@@ -370,7 +370,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         throw new Error(data.error || '이 경기 분석 중 오류가 발생했습니다.')
       }
       setFeedback(data.feedback)
-      quota.consume()
+      // AI 미사용 폴백은 서버가 쿼터를 되돌려 주므로 화면 카운터도 차감하지 않는다
+      if (!data.feedback.isFallback) quota.consume()
       setWasCached(Boolean(data.cached))
       track('analysis_success', {
         scope: 'match',

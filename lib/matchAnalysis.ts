@@ -148,7 +148,7 @@ export async function runMatchAnalysis(
     cached: false,
   }
 
-  await cacheSet(analysisCacheKey(params), response, CACHE_TTL.MATCH)
+  await cacheSet(analysisCacheKey(params), response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.MATCH)
   logEvent('info', 'match_analysis_generated', {
     matchId,
     mode,

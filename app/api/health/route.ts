@@ -6,7 +6,7 @@ import { dailyQuotaLimit } from '@/lib/quota'
 import { getLlmBudgetStatus } from '@/lib/llmBudget'
 import { turnstileStatus } from '@/lib/turnstile'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
-import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, lastLlmHttpError, redactLlmError } from '@/lib/llmStatus'
+import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, isInsufficientBalance, lastLlmHttpError, redactLlmError } from '@/lib/llmStatus'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +57,11 @@ export async function GET(req: NextRequest) {
     warnings.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY만 설정됨: 서버 검증이 비활성입니다.')
   }
   const llmError = lastLlmHttpError()
-  if (llmError && llmError.status >= 400 && llmError.status < 500 && llmError.status !== 429) {
+  if (llmError && isInsufficientBalance(llmError.status)) {
+    warnings.push(
+      `DeepSeek 잔액 부족 (402, ${llmError.at}): AI 코칭이 규칙 기반 폴백으로 응답 중입니다(이용 횟수는 차감 안 함). DeepSeek 콘솔에서 충전하세요.`
+    )
+  } else if (llmError && llmError.status >= 400 && llmError.status < 500 && llmError.status !== 429) {
     warnings.push(
       `DeepSeek ${llmError.status} (${llmError.at}): 모델 ID(${llmError.model})·thinking 파라미터가 API 스펙과 맞는지 확인하세요. AI 코칭이 폴백으로 응답 중일 수 있습니다.`
     )

@@ -15,7 +15,14 @@ import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
-import { DEEPSEEK_MODEL, DEEPSEEK_THINKING, recordLlmHttpError } from './llmStatus'
+import {
+  DEEPSEEK_MODEL,
+  DEEPSEEK_THINKING,
+  deepSeekBalanceBlocked,
+  isInsufficientBalance,
+  recordLlmHttpError,
+  recordLlmSuccess,
+} from './llmStatus'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 import { boardCarry } from './deckType'
 import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
@@ -41,6 +48,12 @@ function deepSeekHttpError(label: string, status: number, errText: string): Erro
   const body = errText.slice(0, 300)
   incrMetric(`llm.http_${status}`)
   recordLlmHttpError({ provider: 'deepseek', model: DEEPSEEK_MODEL, status, body })
+  if (isInsufficientBalance(status)) {
+    // 선불 잔액 소진: 운영자가 충전해야 풀린다. 로그 알림은 이 이벤트명으로 건다.
+    incrMetric('llm.insufficient_balance')
+    logEvent('error', 'llm_insufficient_balance', { provider: 'deepseek', model: DEEPSEEK_MODEL, status, body })
+    return new Error(`${label} (${status}): DeepSeek 잔액 부족`)
+  }
   // 4xx(429 제외)는 모델 ID·파라미터(thinking 등) 스펙 불일치일 가능성이 크다
   logEvent(status >= 400 && status < 500 && status !== 429 ? 'error' : 'warn', 'llm_http_error', {
     provider: 'deepseek',
@@ -351,6 +364,7 @@ async function callDeepSeek(prompt: string, config: DeepSeekCallConfig = reportC
     }
 
     recordDeepSeekUsage(data.usage)
+    recordLlmSuccess()
 
     // max_tokens 에 걸려 잘린 JSON 은 파싱이 깨지거나 일부 필드가 빠진다 → 실패로 보고 다음 제공자로 넘긴다.
     const finishReason = data.choices?.[0]?.finish_reason
@@ -608,7 +622,7 @@ ${facts}
     }
   }
 
-  if (DEEPSEEK_API_KEY) {
+  if (DEEPSEEK_API_KEY && !deepSeekBalanceBlocked()) {
     try {
       const result = await callDeepSeekStream(
         prompt,
@@ -986,7 +1000,7 @@ ${qualityFacts}
   }
 
   // 1. DeepSeek API 키가 있는 경우 우선 사용 (LLM_PROVIDER=gemini 면 건너뜀)
-  if (DEEPSEEK_API_KEY && LLM_PROVIDER !== 'gemini') {
+  if (DEEPSEEK_API_KEY && LLM_PROVIDER !== 'gemini' && !deepSeekBalanceBlocked()) {
     try {
       const text = await callDeepSeek(prompt, reportCallConfig(tier))
       const parsed = parseJsonFeedback(text)
