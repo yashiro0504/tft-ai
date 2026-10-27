@@ -1,4 +1,5 @@
 import type { EntityFactError, MetaCoachFeedback, SlimMatchData } from './types'
+import { costOdds } from './shopOdds'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -274,6 +275,8 @@ export type CoachingRuleType =
   | 'pivotTiming'
   /** 덱 가이드 '채용률'을 조합(슬램) 순서의 근거로 사용 */
   | 'guideOrderClaim'
+  /** 레벨별 상점 확률을 게임 데이터 표와 다르게 인용 ("8레벨 4코 확률 22%") */
+  | 'shopOddsMismatch'
 
 export interface CoachingRuleViolation {
   type: CoachingRuleType
@@ -289,6 +292,22 @@ const OPEN_DECK_RE = /빈집\s*(?:메타\s*)?덱/
 const GUIDE_ORDER_RE = /채용(?:률)?[^.!?\n]{0,40}(?:먼저|우선|선(?:슬램|조합))|(?:먼저|우선)[^.!?\n]{0,40}채용(?:률)?/
 const PIVOT_TIMING_RE =
   /(?:피봇|갈아타|덱\s*전환|전환(?:했|해야|했어야))[^.!?\n]{0,20}\d-\d|\d-\d[^.!?\n]{0,20}(?:피봇|갈아타|덱\s*전환)|(?:비틀|피봇|갈아타)[^.!?\n]{0,15}(?:신호|시점|타이밍|순간)|(?:시점|타이밍|순간)[^.!?\n]{0,15}(?:비틀|피봇|갈아타)/
+/** "Lv.8 … 4코스트 … 30%" / "8레벨 4코 확률 30%" — 레벨·코스트·확률이 한 구절에 있는 상점 확률 인용 */
+const SHOP_ODDS_CLAIM_RE = /(?:Lv\.?\s*(\d{1,2})|(\d{1,2})\s*레벨)[^.!?\n]{0,15}?([1-5])\s*코(?:스트)?[^.!?\n%]{0,12}?(\d{1,3})\s*%/g
+
+/** 문장 속 상점 확률 인용 중 게임 데이터 표(lib/shopOdds)와 다른 것 */
+function shopOddsMismatches(s: string): string[] {
+  const out: string[] = []
+  for (const m of s.matchAll(SHOP_ODDS_CLAIM_RE)) {
+    const level = Number(m[1] ?? m[2])
+    const cost = Number(m[3])
+    const claimed = Number(m[4])
+    const actual = costOdds(level, cost)
+    if (level >= 1 && level <= 11 && claimed !== actual) out.push(`Lv.${level} ${cost}코 ${claimed}% (표: ${actual}%)`)
+  }
+  return out
+}
+
 /** 부정·불가 서술 ("후보가 없었습니다", "데이터로 알 수 없습니다", "~라는 뜻은 아닙니다") — 주장형 규칙에서 제외 */
 const NEGATED_RE = /없었|없습니다|없다|없음|없어|않|아닙니다|아니다|아닌|알\s*수\s*없|모릅|모른/
 
@@ -309,6 +328,7 @@ export function validateCoachingRules(
     for (const s of sentences(text)) {
       if (ctx.deckType === 'reroll' && REROLL_LEVEL_BLAME_RE.test(s) && !REROLL_EXCUSE_RE.test(s)) out.push({ type: 'rerollLevelBlame', text: s })
       if (metaEven && META_WEAK_RE.test(s)) out.push({ type: 'metaEvenAsWeakness', text: s })
+      if (shopOddsMismatches(s).length) out.push({ type: 'shopOddsMismatch', text: s })
       // 아래 주장형 규칙은 부정·불가 서술이면 위반이 아니다
       if (NEGATED_RE.test(s)) continue
       if (DECK_MUST_RE.test(s) && /덱|빈집/.test(s)) out.push({ type: 'deckMustClaim', text: s })

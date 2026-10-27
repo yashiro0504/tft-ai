@@ -236,6 +236,37 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const worse = { ...me, placement: 1, lobbyParticipants: me.lobbyParticipants.map((p) => (p.isUser ? { ...p, placement: 1 } : p)) }
     check('핵심 장면: 같은 구성 상대가 나보다 아래 등수면 비교 장면 없음', !keyMoments(worse).some((x) => x.kind === 'sameComp'))
   }
+  // ── 1성 캐리 장면 = 레벨별 상점 확률 (lib/shopOdds, Set 18 표 기준) · [상점 확률] 프롬프트 블록 ──
+  {
+    const { allKeyMoments, oneStarCarry } = require('../lib/keyMoments')
+    const { shopOddsFacts } = require('../lib/llm')
+    const { shopOddsLine } = require('../lib/shopOdds')
+    const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
+    const filler = [U('DA_18_GnarSmall', '나르', 2, 2), U('DA_Taric18', '타릭', 3, 2), U('DA_Vi18', '바이', 2, 2)]
+    const board = (rarity, level) => ({
+      ...standard, placement: 6, level, lastRound: '5-6', traits: [], lobbyParticipants: [],
+      units: [U('DA_18_Ivern', '아이번', rarity, 1, ['무한의 대검', '최후의 속삭임', '거인 학살자']), ...filler],
+    })
+    const fires = (rarity, level) => Boolean(oneStarCarry(board(rarity, level)))
+    check('1성 캐리: 4코스트 Lv.8 (상점 30%) → 장면', fires(4, 8))
+    check('1성 캐리: 4코스트 Lv.7 (상점 10%) → 장면 아님', !fires(4, 7))
+    check('1성 캐리: 5코스트 Lv.9·10 (15%·25%) → 정상 운영', !fires(5, 9) && !fires(5, 10))
+    check('1성 캐리: 3코스트 Lv.7 (40%) 장면 · Lv.6 (25%) 아님', fires(3, 7) && !fires(3, 6))
+    check('1성 캐리: 1코스트는 Lv.9 (10%) 여도 장면 (낮은 레벨에서 30% 넘게 나왔다)', fires(1, 9))
+    const fact = allKeyMoments(board(4, 9)).find((x) => x.kind === 'carryOneStar')?.fact || ''
+    check('1성 캐리 장면 문구: 최종 레벨 · 상점 확률 구간', /최종 보드\(Lv\.9\)에서 1성/.test(fact) && /4코스트가 상점에 30% 이상 나오는 레벨\(Lv\.8~9\)을 지남/.test(fact), fact)
+
+    const single = shopOddsFacts([board(4, 8)], 'single')
+    check('상점 확률 블록: 최종 레벨 상점 한 줄', single.includes(`- 최종 ${shopOddsLine(8)}`), single)
+    check('상점 확률 블록: 캐리 코스트의 레벨별 확률', /캐리 아이번\(4코스트\) — 4코스트 레벨별 상점 확률: .*Lv\.8 30% · Lv\.9 33% · Lv\.10 40%/.test(single), single)
+    const multi = shopOddsFacts([board(4, 8), board(4, 8), board(4, 9), board(1, 7)], 'multi')
+    check(
+      '상점 확률 블록(종합): 나온 최종 레벨만 · 캐리 줄 없음',
+      [7, 8, 9].every((lv) => multi.includes(`- ${shopOddsLine(lv)}`)) && !multi.includes('Lv.10 상점') && !/캐리/.test(multi),
+      multi
+    )
+    check('상점 확률 블록: 레벨 없는 판뿐이면 블록 없음', shopOddsFacts([{ ...board(4, 8), level: 0 }], 'single') === '')
+  }
   // ── 여러 판 반복 습관 (lib/habits) · 강의 주제 = 첫 장면 (focusOnMoment) ──
   {
     const { habitPatterns } = require('../lib/habits')

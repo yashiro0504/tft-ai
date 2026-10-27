@@ -126,6 +126,11 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('오탐 수정: "빈집 덱 후보가 없었습니다" 통과', rules('빈집 덱 후보가 없었습니다.', {}).length === 0)
   check('오탐 수정: "피봇 시점이 3-2인지는 데이터로 알 수 없습니다" 통과', rules('피봇 시점이 3-2인지는 데이터로 알 수 없습니다.', {}).length === 0)
   check('오탐 수정: "채용률을 먼저 보라는 뜻은 아닙니다" 통과', rules('채용률을 먼저 보라는 뜻은 아닙니다.', { facts: guideFacts }).length === 0)
+  // 상점 확률 인용은 게임 데이터 표(lib/shopOdds)와 대조한다 — 기억 속 다른 세트 확률표를 쓰면 잡힌다
+  const { costOdds } = require('../lib/shopOdds')
+  check('상점 확률을 표대로 인용하면 통과', rules(`Lv.8 상점에서 4코스트는 ${costOdds(8, 4)}%입니다.`, {}).length === 0)
+  check('상점 확률을 표와 다르게 인용 → shopOddsMismatch', rules(`8레벨에서 4코 확률은 ${costOdds(8, 4) + 8}%라 더 굴려야 합니다.`, {}).includes('shopOddsMismatch'))
+  check('레벨 없는 % 는 상점 확률 주장 아님', rules('4코스트 캐리의 채용률은 30%입니다.', {}).length === 0)
 
   console.log('오류 문장 수리')
   const traitSentence = '주문술사 4단계로 화력을 냈습니다.'

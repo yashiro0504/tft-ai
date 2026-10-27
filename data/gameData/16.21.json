@@ -4,7 +4,7 @@
  "set": 18,
  "gameVersion": "16.21",
  "contentVersion": "16.21.8298620+branch.releases-16-21.content.release",
- "generatedAt": "2026-10-22T09:04:22.697Z",
+ "generatedAt": "2026-10-27T04:13:44.059Z",
  "counts": {
   "champions": 74,
   "traits": 36,
@@ -7176,5 +7176,87 @@
    "unique": false,
    "icon": "https://raw.communitydragon.org/16.21/game/assets/maps/tft/icons/items/hexcore/tft_item_warmogsarmor.png"
   }
+ },
+ "shopOdds": {
+  "source": "https://raw.communitydragon.org/16.21/game/data/maps/shipping/map22/map22.bin.json",
+  "levels": [
+   [
+    100,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    100,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    75,
+    25,
+    0,
+    0,
+    0
+   ],
+   [
+    55,
+    30,
+    15,
+    0,
+    0
+   ],
+   [
+    45,
+    33,
+    20,
+    2,
+    0
+   ],
+   [
+    30,
+    40,
+    25,
+    5,
+    0
+   ],
+   [
+    19,
+    30,
+    40,
+    10,
+    1
+   ],
+   [
+    15,
+    20,
+    32,
+    30,
+    3
+   ],
+   [
+    10,
+    17,
+    25,
+    33,
+    15
+   ],
+   [
+    5,
+    10,
+    20,
+    40,
+    25
+   ],
+   [
+    1,
+    2,
+    12,
+    50,
+    35
+   ]
+  ]
  }
 }

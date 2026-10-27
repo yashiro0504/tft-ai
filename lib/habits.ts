@@ -108,7 +108,7 @@ const DETECTORS: Detector[] = [
   },
   {
     kind: 'carryOneStar',
-    title: '저코스트 캐리가 1성으로 끝남',
+    title: '캐리가 1성으로 끝남',
     measure: oneStarCarry,
     describe: (hits) => `아이템 든 캐리가 1성으로 끝남 (${tally(hits.map((h) => (h.v as NonNullable<ReturnType<typeof oneStarCarry>>).name))})`,
   },
