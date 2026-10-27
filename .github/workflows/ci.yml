@@ -166,6 +166,15 @@ jobs:
 
       - name: Start server
         if: steps.keycheck.outputs.present == 'true'
+        env:
+          # LLM 키는 빌드 시 인라인되지 않으므로 실행 시점에도 넘겨야 한다 (없으면 전부 규칙 기반 폴백)
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          RIOT_API_KEY: ""
+          RIOT_REGION: asia
+          GEMINI_API_KEY: ""
+          # CI 전용 서버: 같은 IP 로 케이스×반복을 호출하므로 일일 이용 한도(기본 3회)를 끈다.
+          # 분당 레이트리밋은 그대로 두고 하네스가 Retry-After 를 지켜 재시도한다.
+          QUOTA_OVERVIEW_PER_DAY: "0"
         run: |
           nohup npm run start > server.log 2>&1 &
           for i in $(seq 1 45); do

@@ -13,6 +13,10 @@
  *   node scripts/evalReports.js --api http://localhost:3000
  *
  * 종료코드: 신뢰성 게이트 실패 시 1 (CI 연결 가능)
+ *
+ * /api/tft/overview 는 IP당 분당 레이트리밋(429 + Retry-After)이 걸려 있어
+ * 케이스×반복 호출이 한도를 넘으면 Retry-After 만큼 기다렸다 다시 보낸다.
+ * (일일 이용 한도 429 는 기다려도 풀리지 않으므로 재시도하지 않는다 — CI 는 QUOTA_OVERVIEW_PER_DAY=0)
  */
 const fs = require('fs')
 const path = require('path')
@@ -42,9 +46,24 @@ async function postJson(url, body, timeoutMs = 90000) {
       signal: ctrl.signal,
     })
     const json = await res.json()
-    return { status: res.status, json, ms: Date.now() - t0 }
+    return { status: res.status, json, ms: Date.now() - t0, retryAfter: res.headers.get('retry-after') }
   } finally {
     clearTimeout(timer)
+  }
+}
+
+const MAX_RATE_LIMIT_RETRIES = 5
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms))
+
+/** 분당 레이트리밋(429)이면 Retry-After 만큼 기다렸다 재시도한다. 일일 한도(quota) 429 는 그대로 돌려준다. */
+async function postOverview(url, body) {
+  for (let attempt = 0; ; attempt++) {
+    const result = await postJson(url, body)
+    const rateLimited = result.status === 429 && !result.json?.quota
+    if (!rateLimited || attempt >= MAX_RATE_LIMIT_RETRIES) return result
+    const waitSec = Math.max(1, Number(result.retryAfter) || 60) + 1
+    console.log(`    레이트리밋(429) → ${waitSec}초 대기 후 재시도 (${attempt + 1}/${MAX_RATE_LIMIT_RETRIES})`)
+    await sleep(waitSec * 1000)
   }
 }
 
@@ -77,7 +96,7 @@ async function main() {
     const runs = []
     for (let r = 0; r < RUNS; r++) {
       try {
-        const { status, json, ms } = await postJson(`${API}/api/tft/overview`, {
+        const { status, json, ms } = await postOverview(`${API}/api/tft/overview`, {
           gameName: c.gameName,
           tagLine: c.tagLine,
           matches: c.matches,
@@ -103,13 +122,13 @@ async function main() {
         }
         runs.push(run)
         console.log(
-          `  ${c.name} run ${r + 1}/${RUNS} → ${run.ok ? `${run.metaScore}점 (${ms}ms)` : '실패'}`
+          `  ${c.name} run ${r + 1}/${RUNS} → ${run.ok ? `${run.metaScore}점 (${ms}ms)` : `실패 (HTTP ${status}${run.error ? `: ${run.error}` : ''})`}`
         )
       } catch (e) {
         runs.push({ ok: false, ms: 0, error: e.message })
         console.log(`  ${c.name} run ${r + 1}/${RUNS} → 실패 (${e.message})`)
       }
-      if (r < RUNS - 1) await new Promise((res) => setTimeout(res, 1500))
+      if (r < RUNS - 1) await sleep(1500)
     }
     results.push({ name: c.name, mode: c.mode || 'multi', runs })
   }
