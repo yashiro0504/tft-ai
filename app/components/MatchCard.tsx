@@ -89,7 +89,8 @@ function MatchQuickStats({
           유닛 {match.units.length} · 2성+ {twoStarPlus} · 시너지 {match.traits.length}
         </span>
         <span>
-          완성도 {comp('completion') ?? '-'} · 아이템 {comp('items') ?? '-'} · 경합 {comp('contest') ?? '-'}
+          {/* metaScore 구성 점수 (lib/scoring) — 6축의 '아이템 설계'·'유연성'과 다른 지표라 이름을 그대로 쓴다 */}
+          덱 완성도 {comp('completion') ?? '-'} · 아이템 활용 {comp('items') ?? '-'} · 경합 대응 {comp('contest') ?? '-'}
         </span>
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
         {!ranked ? <span className="font-semibold text-subtle">{match.queueType || '이벤트·기타 모드'} — 분석은 랭크 게임만</span> : null}
@@ -445,10 +446,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>
-                {match.contestedInfo.level && match.contestedInfo.level !== '경합'
-                  ? `경합 ${match.contestedInfo.level}`
-                  : '경합'}{' '}
-                · 로비 {match.contestedInfo.opponentCount}명 겹침
+                {/* 등급 이름(빈집·보통·경합·심각)은 AI 리포트·6축 유연성과 같은 기준 (lib/contestConfig) */}
+                경합 등급 {match.contestedInfo.level ?? '경합'} · 로비 {match.contestedInfo.opponentCount}명 겹침
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>
@@ -459,7 +458,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-good shrink-0" />
               <span>
-                빈집 선점
+                경합 등급 {match.contestedInfo.level ?? '빈집'} · 겹침 거의 없음
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>

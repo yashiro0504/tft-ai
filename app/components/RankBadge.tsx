@@ -2,10 +2,11 @@ import type { TftRankInfo } from '@/lib/types'
 import { formatRankLabel, formatRankLp, formatRankRecord, rankTierStyle, rankWinRate } from '@/lib/rank'
 
 /**
- * 티어/ LP / 승패 배지 (서버·클라이언트 공용).
+ * 티어/ LP / TOP4 기록 배지 (서버·클라이언트 공용).
  *
  * - 랭크가 없으면(배치 중·조회 실패) "배치 중" 만 표시한다.
- * - 360px 에서 넘치지 않도록 승패/승률은 화면 폭에 따라 숨긴다.
+ * - 360px 에서 넘치지 않도록 TOP4 기록/비율은 화면 폭에 따라 숨긴다.
+ * - Riot 의 wins 는 TOP4 횟수라 "승"이 아니라 TOP4 로 쓴다 (lib/rank).
  */
 export function RankBadge({ rank }: { rank: TftRankInfo | null | undefined }) {
   const style = rankTierStyle(rank)
@@ -25,7 +26,7 @@ export function RankBadge({ rank }: { rank: TftRankInfo | null | undefined }) {
           {winRate !== null ? (
             <>
               <span className="hidden text-subtle md:inline">·</span>
-              <span className="hidden font-mono text-muted md:inline">승률 {winRate}%</span>
+              <span className="hidden font-mono text-muted md:inline">TOP4 {winRate}%</span>
             </>
           ) : null}
           {rank.hotStreak ? (

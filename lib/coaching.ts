@@ -10,7 +10,7 @@ import type {
 } from './types'
 import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
-import { DECK_TYPE_LABEL, boardCarryKey, detectDeckType, summarizeDeckInfos } from './deckType'
+import { DECK_TYPE_LABEL, boardCarry, boardCarryKey, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
 import { baselineBoardValue } from './baselines'
 import { slotsUsed } from './boardSlots'
@@ -43,11 +43,21 @@ export interface PerMatchMetrics {
   top4: boolean
   level: number
   stage: number
+  /** 캐리(boardCarry)가 실제로 든 아이템 수 */
   carryItems: number
+  /** 최고 코스트 기물이 든 아이템 수 — 아이템이 비싼 기물로 옮겨 갔는가 (골든셋 등수 상관 0.37, 캐리 아이템은 거의 다 3개라 0) */
+  topCostItems: number
   totalItems: number
   units: number
   /** 보드 칸 합 (장로 드래곤 2칸 — lib/boardSlots). 완성도의 충원율에 쓴다 */
   slotsUsed: number
+  /**
+   * 로비 비교 레벨 — 나와 같은 스테이지에 탈락한 상대들의 평균 레벨 (없으면 바로 위 등수 상대).
+   * 마스터+ 기준선(같은 탈락 스테이지 중앙값)만 보면 5-2 Lv.7 탈락 7등도 "기준과 같음"이라 템포·경제 100점이 나왔다.
+   * 상대 최종 레벨 전체 평균은 오래 산 상대가 레벨을 더 올린 몫까지 들어가 등수를 다시 세는 셈이라, 탈락 시점이 가까운 상대만 본다.
+   * 로비 정보가 없으면 null (감점 없음)
+   */
+  lobbyLevel: number | null
   /** 보드 가치(G) — 경제 축에서 탈락 스테이지 기준치와 비교 (lib/boardValue) */
   boardValue: number
   twoPlus: number
@@ -70,13 +80,22 @@ export interface PerMatchMetrics {
   compKey: string
 }
 
+/** 같은 스테이지에 탈락한 로비 상대의 평균 레벨 (없으면 바로 위 등수 상대 레벨). 로비 정보가 없으면 null */
+export function lobbyLevelAtExit(m: SlimMatchData): number | null {
+  const stage = stageOfRound(m.lastRound)
+  const others = (m.lobbyParticipants || []).filter((p) => !p.isUser && p.level > 0)
+  if (!stage || !others.length) return null
+  const same = others.filter((p) => stageOfRound(p.lastRound) === stage)
+  const ref = same.length ? same : others.filter((p) => p.placement === (m.placement || 8) - 1)
+  return ref.length ? ref.reduce((s, p) => s + p.level, 0) / ref.length : null
+}
+
 export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(m)): PerMatchMetrics {
   const units = m.units || []
-  // 아이템 축의 '캐리' = 최고 코스트 기물 (아이템이 비싼 기물에 몰렸는가를 본다).
-  // 덱 유형의 캐리 3성은 다른 정의(아이템 최다 기물, deckType.boardCarry)를 쓴다.
-  const carry = units
-    .slice()
-    .sort((a, b) => (b.rarity ?? 1) - (a.rarity ?? 1) || b.items.length - a.items.length)[0]
+  // 아이템 축의 '캐리' = 덱 유형·캐리 3성·핵심 장면과 같은 정의(deckType.boardCarry — 딜템 최다 기물).
+  // 예전엔 최고 코스트 기물이라 아이템 3개 든 렝가 대신 빈손 5코스트를 세어 "캐리 아이템 0개"가 나왔다 (v12).
+  const carry = boardCarry(units)
+  const topCost = units.slice().sort((a, b) => (b.rarity ?? 1) - (a.rarity ?? 1) || (b.items?.length || 0) - (a.items?.length || 0))[0]
   const syn = AXIS_CONFIG.axes.synergy
   const allTraits = m.traits || []
   const traits = syn.excludeUniqueTraits && (m.level || 0) < syn.uniqueTraitsCountFromLevel
@@ -87,10 +106,12 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     top4: (m.placement || 8) <= 4,
     level: m.level || 0,
     stage: stageOfRound(m.lastRound),
-    carryItems: carry ? carry.items.length : 0,
+    carryItems: carry?.items?.length || 0,
+    topCostItems: topCost?.items?.length || 0,
     totalItems: units.reduce((s, u) => s + (u.items?.length || 0), 0),
     units: units.length,
     slotsUsed: slotsUsed(units),
+    lobbyLevel: lobbyLevelAtExit(m),
     boardValue: boardValue(units),
     twoPlus: units.filter((u) => (u.tier || 1) >= 2).length,
     three: units.filter((u) => u.tier === 3).length,
@@ -123,8 +144,10 @@ const EFFECT_LABEL: Record<string, string> = {
   base: '기본',
   boardValue: '스테이지 대비 보드 가치',
   levelGap: '표준 레벨보다 부족',
+  lobbyLevelGap: '같은 스테이지 탈락 상대보다 레벨 부족',
   earlyExit: '이른 탈락',
   carryItems: '캐리 아이템',
+  topCostItems: '최고 코스트 기물 아이템',
   boardItems: '보드 전체 아이템',
   missingThreeStars: '3성 부족',
   carryNotThreeStar: '캐리 3성 미완성',
@@ -149,6 +172,7 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
   // 리롤형은 골드를 레벨이 아니라 리롤(3성)에 쓰는 덱이라 레벨 격차를 감점하지 않는다 (템포 축과 같은 기준).
   const c = AXIS_CONFIG.axes.economy
   const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level)
+  const lobbyGap = m.deckType === 'reroll' ? 0 : lobbyGapBeyond(m, levelGap)
   const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
   // 탈락 라운드를 모르면 기준치가 없으므로 보드 가치 항목은 0 (중립)
   const ratio = m.stage ? m.boardValue / expectedBoardValue(m.stage, m.carryKey) : 1
@@ -156,15 +180,26 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
     base: c.base,
     boardValue: (Math.min(Math.max(ratio, c.boardValueRatioMin), c.boardValueRatioMax) - 1) * c.boardValueWeight,
     levelGap: -levelGap * c.levelGapPenaltyPerLevel,
+    lobbyLevelGap: -lobbyGap * c.levelGapPenaltyPerLevel,
     earlyExit: -(early?.penalty ?? 0),
   }
   return { score: clamp(Math.round(sum(effects))), effects }
+}
+
+/**
+ * 로비 비교 레벨 부족 중 표준 레벨 부족(levelGap)을 넘는 몫 — 두 기준 중 더 엄격한 쪽만큼만 감점한다 (중복 감점 없음).
+ * 리롤형은 레벨이 아니라 3성으로 평가하므로 부르지 않는다.
+ */
+function lobbyGapBeyond(m: PerMatchMetrics, levelGap: number): number {
+  if (m.lobbyLevel == null) return 0
+  return Math.max(0, m.lobbyLevel - m.level - levelGap)
 }
 
 function itemizationAxis(m: PerMatchMetrics): AxisResult {
   const c = AXIS_CONFIG.axes.itemization
   const effects = {
     carryItems: (Math.min(m.carryItems, c.carryItemsMax) / c.carryItemsMax) * c.carryWeight,
+    topCostItems: (Math.min(m.topCostItems, c.carryItemsMax) / c.carryItemsMax) * c.topCostWeight,
     boardItems: (Math.min(m.totalItems, c.boardItemsMax) / c.boardItemsMax) * c.boardWeight,
   }
   return { score: clamp(sum(effects)), effects }
@@ -185,9 +220,11 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
   if (!m.stage) return { score: c.unknownStageScore, effects: { unknownStage: c.unknownStageScore } }
   // 표준보다 낮을 때만 감점한다. 빠른 9·10(밸류 덱, 고성능 증강 판)은 의도한 운영이라 감점하지 않는다
   // (예전엔 절대값이라 5스테이지 Lv.10 이 −36 이었다). 레벨만 높고 보드가 약하면 완성도·경제 축이 잡는다.
+  const levelGap = Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level)
   const effects = {
     base: 100,
-    levelGap: -Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level) * c.levelGapPenaltyPerLevel,
+    levelGap: -levelGap * c.levelGapPenaltyPerLevel,
+    lobbyLevelGap: -lobbyGapBeyond(m, levelGap) * c.levelGapPenaltyPerLevel,
   }
   return { score: clamp(sum(effects)), effects }
 }
@@ -357,6 +394,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
     case 'itemization':
       return [
         { key: 'carryItems', label: '캐리 아이템', value: mean((m) => m.carryItems), unit: '개' },
+        { key: 'topCostItems', label: '최고 코스트 기물 아이템', value: mean((m) => m.topCostItems), unit: '개' },
         { key: 'boardItems', label: '보드 전체 아이템', value: mean((m) => m.totalItems), unit: '개' },
       ]
     case 'tempo': {
@@ -366,10 +404,14 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
         { key: 'carryThreeStar', label: '캐리 3성', value: mean((m) => (m.carryThreeStar ? 1 : 0)), unit: '/1' },
       ]
       if (deckType === 'reroll') return [...reroll, { key: 'level', label: '최종 레벨', value: mean((m) => m.level) }]
+      const withLobby = metrics.filter((m) => m.lobbyLevel != null)
       const standard: AxisMetric[] = [
         { key: 'level', label: '최종 레벨', value: mean((m) => m.level) },
         { key: 'expectedLevel', label: '표준 레벨', value: mean((m) => (m.stage ? expectedLevel(m.stage, m.carryKey) : m.level)) },
         { key: 'levelShort', label: '표준 레벨보다 부족', value: mean((m) => Math.max(0, -gap(m))), unit: '레벨' },
+        ...(withLobby.length
+          ? [{ key: 'lobbyLevel', label: '같은 스테이지 탈락 상대 레벨', value: round1(avg(withLobby.map((m) => m.lobbyLevel as number))) }]
+          : []),
       ]
       return deckType === 'mixed' ? [...standard, ...reroll] : standard
     }
@@ -417,7 +459,9 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
     )}G) · ${basis} 탈락 ${round1(
       avg(metrics.map((m) => m.stage))
     )}스테이지`,
-    itemization: `${basis} 캐리 아이템 ${round1(avg(metrics.map((m) => m.carryItems)))}개 · 보드 총 아이템 ${round1(
+    itemization: `${basis} 캐리 아이템 ${round1(avg(metrics.map((m) => m.carryItems)))}개 · 최고 코스트 기물 아이템 ${round1(
+      avg(metrics.map((m) => m.topCostItems))
+    )}개 · 보드 총 아이템 ${round1(
       avg(metrics.map((m) => m.totalItems))
     )}개`,
     tempo:

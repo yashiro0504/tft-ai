@@ -43,11 +43,9 @@ export async function POST(req: NextRequest) {
     const { gameName, tagLine } = nt
 
     const inputMatches = Array.isArray(raw.matches) ? (raw.matches as SlimMatchData[]) : []
-    const valid = inputMatches
-      .filter((m): m is SlimMatchData => Boolean(m && typeof m.placement === 'number' && Array.isArray(m.units)))
-      .slice(0, MAX_MATCH_LIMIT)
-    // 이벤트·일반·이전 시즌 판은 분석에서 뺀다 (lib/queue)
-    const matches = analyzableMatches(valid)
+    const valid = inputMatches.filter((m): m is SlimMatchData => Boolean(m && typeof m.placement === 'number' && Array.isArray(m.units)))
+    // 이벤트·일반·이전 시즌 판은 분석에서 뺀다 (lib/queue). 상한은 뺀 뒤에 — 목록 뒤쪽에 덧붙인 이전 랭크 판(분석 판 보충)이 잘리지 않게
+    const matches = analyzableMatches(valid).slice(0, MAX_MATCH_LIMIT)
 
     if (matches.length === 0) {
       return NextResponse.json(

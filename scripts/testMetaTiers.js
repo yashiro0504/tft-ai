@@ -7,11 +7,12 @@
  *  2. 수축 추정: 표본 적은 덱일수록 4.5등 쪽으로 더 당긴다 (35판 3.17등 vs 177판 3.58등 — 2026-10-27 평가)
  *  3. 표본 부족 행은 티어 '-' · 티어 순서
  *  4. 기물 티어는 코스트별 — S티어가 5코로만 차지 않는다
+ *  5. 동률은 같은 티어 (2026-10-27: 3.68등·38판 두 덱이 S·A 로 갈림) · 경계의 근소한 차이만 위 티어로
  *
  * 사용법: node scripts/testMetaTiers.js   (npm run test:tiers)
  */
 require('./_ts')
-const { assignSampleTiers, shrinkPlacements, tierRank } = require('../app/components/metaShared')
+const { assignSampleTiers, assignTiers, shrinkPlacements, tierRank } = require('../app/components/metaShared')
 const { MIN_SAMPLE, MAX_PLACEMENT_MARGIN, placementMargin } = require('../lib/statsShared')
 const { buildMetaPayload } = require('../lib/metaPayload')
 const decksData = require('../lib/decksData.json')
@@ -56,6 +57,23 @@ const t = assignSampleTiers(
 )
 check('표본 부족 행은 티어 없음 (평균 2.0등이어도)', t[0] === '-' && t[1] === 'S', JSON.stringify(t))
 check('티어 순서: S < A < D < 표본 부족', tierRank('S') < tierRank('A') && tierRank('D') < tierRank('-'))
+
+console.log('동률 · 경계')
+{
+  const others = [4.0, 4.2, 4.4, 4.6, 4.8, 5.0, 5.2, 5.4].map((avg) => ({ avg, sample: 200 }))
+  const tie = assignSampleTiers([{ avg: 3.68, sample: 38 }, { avg: 3.68, sample: 38 }, ...others], 30)
+  check('같은 평균·판수 두 덱은 같은 티어 (10행 중 1·2등 = S·A 경계)', tie[0] === tie[1] && tie[0] === 'S', JSON.stringify(tie))
+  const avgs = [1, 1.02, 3, 4, 5, 6, 7, 8, 9, 10]
+  const sds = avgs.map(() => 0.2)
+  const plain = assignTiers(avgs)
+  const near = assignTiers(avgs, sds)
+  check('경계: 위 티어 마지막 행과 근소한 차이(0.02)면 위 티어', plain[1] === 'A' && near[1] === 'S', `${plain} / ${near}`)
+  check('경계: 올린 행을 타고 줄줄이 올라가지 않음 (3.0 은 A 그대로)', near[2] === 'A' && near.slice(3).join() === plain.slice(3).join(), `${near}`)
+  const decks = decksData.decks.filter((d) => d.sampleSize >= MIN_SAMPLE.deck)
+  const ts = assignSampleTiers(decks.map((d) => ({ avg: d.avgPlacement, sample: d.sampleSize })), MIN_SAMPLE.deck)
+  const sameValue = decks.flatMap((d, i) => decks.slice(i + 1).map((e, k) => [i, i + 1 + k, e])).filter(([i, , e]) => e.avgPlacement === decks[i].avgPlacement && e.sampleSize === decks[i].sampleSize)
+  check('저장소 덱 데이터: 평균·판수가 같은 덱은 모두 같은 티어', sameValue.every(([i, j]) => ts[i] === ts[j]), `${sameValue.length}쌍`)
+}
 
 console.log('기물 코스트')
 const champs = buildMetaPayload().champions

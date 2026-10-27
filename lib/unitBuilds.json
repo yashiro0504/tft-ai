@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "_comment": "기물 빌드(아이템 3개 세트) — scripts/buildUnitBuilds.js --write 가 data/ladderBoards.json 에서 만든다 (매일 collect-ladder 워크플로). 비어 있으면 화면은 '3개 함께' 줄을 그리지 않는다.",
+  "source": "riot-ladder-boards",
+  "generatedAt": null,
+  "sourceUpdatedAt": null,
+  "patches": {},
+  "boards": 0,
+  "builds": []
+}

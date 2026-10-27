@@ -318,8 +318,17 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
               <p className="text-xs text-subtle">근거 검증</p>
               <p className="text-2xl font-bold text-ink">{feedback.grounding.score}%</p>
               <span className="mt-1 inline-block text-xs text-subtle">
-                수치 {feedback.grounding.supported}/{feedback.grounding.total} 확인
+                수치 {feedback.grounding.supported}/{feedback.grounding.total}
+                {feedback.grounding.namesChecked != null ? ` · 이름 ${feedback.grounding.namesChecked}개` : ''} 확인
               </span>
+              {feedback.grounding.entityErrors?.length ? (
+                <span
+                  className="mt-0.5 block text-xs text-gold"
+                  title={feedback.grounding.entityErrors.map((e) => `${e.actual} → ${e.expected}`).join(' / ')}
+                >
+                  경기 데이터와 다른 문장 {new Set(feedback.grounding.entityErrors.map((e) => e.text)).size}개 고침·삭제
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>

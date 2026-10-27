@@ -23,7 +23,7 @@ import type { DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchT
  * 메타 덱 운영도: "메타 덱을 탔을 때 그 덱이 원래 내는 성적만큼 굴렸는가" (내 등수 − 메타 덱 평균등수).
  * 점수(metaScore·6축)에는 넣지 않는다. 한 판 등수 편차가 커서 ±1등 안쪽은 '평균 수준'으로 본다.
  *
- * 로비 메타 덱 · 빈집 메타 덱 후보 (single 만): 로비 7명의 최종 보드를 메타 덱으로 분류하고,
+ * 로비 메타 덱 · 로비가 안 탄 메타 덱 후보 (single 만): 로비 7명의 최종 보드를 메타 덱으로 분류하고,
  * 아무도 타지 않은 메타 덱 중 내 캐리 아이템의 '재료'로 그 덱 캐리 핵심템을 조합할 수 있었던 덱을 최대 2개 보여 준다.
  * (보드 전체 아이템을 재료로 풀면 거의 모든 덱이 조합 가능해져 의미가 없다 — 실제 픽스처 38판 중 34판)
  * 최종 보드 기준 사후 비교라 "갔어야 했다"가 아니라 후보 사실이다 (피봇 시점·상점 기물 공급은 데이터에 없다).
@@ -165,7 +165,11 @@ function slugSet(keys: string[]): Set<string> {
   return new Set(keys.map((k) => entitySlug('champion', k)).filter(Boolean))
 }
 
-/** 가장 유사한 메타 덱 (Jaccard ≥ DECK_SIMILARITY_MIN). 로비 상대 보드에도 쓴다 */
+/**
+ * 가장 유사한 메타 덱 (Jaccard ≥ DECK_SIMILARITY_MIN). 로비 상대 보드에도 쓴다.
+ * 덱 이름의 캐리(carryKey)가 내 최종 보드에 없으면 그 덱으로 묶지 않는다 — 시너지·주변 기물만 겹쳐
+ * 소라카 없는 보드가 "개화 소라카"로, 렝가 없는 보드가 "개화 렝가"로 분류되던 문제 (2026-10-27).
+ */
 export function mostSimilarDeck(
   m: { units: SlimMatchUnit[] },
   decks: DeckFact[]
@@ -174,6 +178,8 @@ export function mostSimilarDeck(
   if (!mine.size) return null
   let best: { deck: DeckFact; similarity: number } | null = null
   for (const d of decks) {
+    const carry = d.carryKey ? entitySlug('champion', d.carryKey) : ''
+    if (carry && !mine.has(carry)) continue
     const theirs = slugSet(d.units.map((u) => u.key))
     let inter = 0
     for (const s of mine) if (theirs.has(s)) inter++
@@ -281,7 +287,7 @@ export interface OpenDeckCandidate {
 }
 
 /**
- * 빈집 메타 덱 후보: 로비 누구도 타지 않았고(덱 매칭 없음 + 그 덱 캐리를 코어로 든 상대 없음 — contest.isCoreUnit),
+ * 로비가 안 탄 메타 덱 후보 (예전 이름 '빈집 메타 덱' — 경합 등급 '빈집'과 헷갈려 바꿨다): 로비 누구도 타지 않았고(덱 매칭 없음 + 그 덱 캐리를 코어로 든 상대 없음 — contest.isCoreUnit),
  * 내 덱도 내 덱의 변형도 아니며
  * (그 덱 캐리가 내 보드에 없음), 표본이 충분하고 메타 평균이 OPEN_DECK_MAX_AVG 이하이고, 그 덱 캐리 핵심템을
  * 내 캐리(아이템 최다 기물) 아이템의 재료로 OPEN_DECK_MIN_BUILDABLE 개 이상 조합할 수 있는 덱.
@@ -325,7 +331,7 @@ export function openDeckCandidates(m: SlimMatchData, decks: DeckFact[]): OpenDec
 function openDeckLines(m: SlimMatchData, decks: DeckFact[]): string[] {
   return openDeckCandidates(m, decks).map(
     (c) =>
-      `- 빈집 메타 덱 후보(사후 비교): ${c.deck.name} · 로비 0명 · 메타 평균 ${(c.deck.avgPlacement as number).toFixed(
+      `- 로비가 안 탄 메타 덱 후보(사후 비교): ${c.deck.name} · 로비 0명 · 메타 평균 ${(c.deck.avgPlacement as number).toFixed(
         2
       )}등(표본 ${c.deck.sampleSize}판) · 캐리 ${c.carryName} 핵심템 ${c.buildable.length}/${c.coreItems.length}을 내 캐리(${c.myCarry}) 아이템 재료로 조합 가능(${c.buildable.join(', ')})`
   )

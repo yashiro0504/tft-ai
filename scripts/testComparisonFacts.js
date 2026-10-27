@@ -342,7 +342,25 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const B = r.rows.find((x) => x.name === '테스트 B')
     check('덱 성적표: 4판 평균 6.5 vs 메타 4 → 안 맞음 (초반 종료 판 제외)', A && A.games === 4 && A.avgPlacement === 6.5 && A.delta === 2.5 && A.verdict === 'bad', JSON.stringify(A))
     check('덱 성적표: 메타 표본 적은 덱은 판정 없음', B && B.games === 2 && B.verdict === null, JSON.stringify(B))
-    check('덱 성적표: 메타 덱과 다른 조합은 따로 · 집계 7판', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5 && r.total === 7, JSON.stringify(r.unmatched))
+    check('덱 성적표: 메타 덱과 다른 조합은 따로', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5, JSON.stringify(r.unmatched))
+    check(
+      '덱 성적표: 덱별 판수 + 다른 조합 + 초반 종료 = 분석 경기 수 (8 = 4 + 2 + 1 + 1)',
+      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early === r.total,
+      JSON.stringify({ early: r.early, total: r.total })
+    )
+    check('덱 성적표: 메타 표본을 행에 남김 (참고용 표시)', A.metaSample === 200 && B.metaSample === 10, JSON.stringify([A.metaSample, B.metaSample]))
+    const { deckReportMeta } = require('../lib/deckReport')
+    const meta = deckReportMeta({ source: 'db', filter: { patch: '16.21', tier: 'master' }, updatedAt: '2026-10-26T09:01:22Z' })
+    check('덱 성적표 출처 = 메타 랭킹과 같은 필터 (마스터+ · 16.21 · 갱신 시각)', meta.tier === '마스터+' && meta.patch === '16.21' && meta.updatedAt === '2026-10-26T09:01:22Z', JSON.stringify(meta))
+    // 덱 이름의 캐리가 보드에 없으면 그 덱으로 묶지 않는다 (2026-10-27: 소라카 없는 보드가 "개화 소라카")
+    const withCarry = { ...deckA, carryKey: 'TFT18_Ahri' }
+    const noAhri = game('n', 3, ['Sett', 'Morgana', 'Diana', 'Sentinel', 'Kennen'])
+    check(
+      '덱 분류: 유사도 0.67 이어도 덱 캐리(아리)가 없으면 다른 조합',
+      mostSimilarDeck(noAhri, [deckA]) && !mostSimilarDeck(noAhri, [withCarry]) && buildDeckReport([noAhri], [withCarry]).unmatched.games === 1,
+      JSON.stringify(mostSimilarDeck(noAhri, [withCarry]))
+    )
+    check('덱 분류: 캐리가 있으면 그대로 묶음', mostSimilarDeck(game('y', 3, aKeys), [withCarry])?.deck.name === '테스트 A')
     const twoGames = buildDeckReport([game('a1', 8, aKeys), game('a2', 8, aKeys)], [deckA]).rows[0]
     check('덱 성적표: 2판은 4등 차이여도 판정 없음 (2판 평균 오차 ±1.6등)', twoGames.games === 2 && twoGames.delta === 4 && twoGames.verdict === null, JSON.stringify(twoGames))
     const close = buildDeckReport([5, 5, 5, 5.4].map((p, i) => game(`c${i}`, p, aKeys)), [deckA]).rows[0]
@@ -479,7 +497,7 @@ ${mixedFacts}`
   }
   const three = ['보석 건틀릿', '쇼진의 창', '모렐로노미콘']
   const lobbyDecksList = [
-    deck('내 덱', ['A', 'B', 'C', 'D', 'F'], 'F', three, 4.2),
+    deck('내 덱', ['A', 'B', 'C', 'D', 'F'], 'A', three, 4.2), // 덱 캐리가 내 보드에 있어야 묶인다
     deck('빈집1', ['P', 'Q', 'R', 'S', 'T'], 'P', ['공허의 지팡이', '모렐로노미콘', '보석 건틀릿'], 3.5), // 2/3 (곡궁 없음)
     deck('빈집2', ['K', 'Q2', 'R2', 'S2', 'T2'], 'K', ['쇼진의 창', '보석 건틀릿', '무한의 대검'], 3.0), // 2/3 (대검 공유)
     deck('빈집3', ['J', 'Q3', 'R3', 'S3', 'T3'], 'J', ['쇼진의 창', '모렐로노미콘', '공허의 지팡이'], 4.0), // 2/3, 최대 2개 밖
@@ -505,13 +523,13 @@ ${mixedFacts}`
   check(
     '빈집 후보 줄 = 손계산',
     openFacts.includes(
-      '- 빈집 메타 덱 후보(사후 비교): 빈집2 · 로비 0명 · 메타 평균 3.00등(표본 100판) · 캐리 K캐리 핵심템 2/3을 내 캐리(A) 아이템 재료로 조합 가능(쇼진의 창, 보석 건틀릿)'
+      '- 로비가 안 탄 메타 덱 후보(사후 비교): 빈집2 · 로비 0명 · 메타 평균 3.00등(표본 100판) · 캐리 K캐리 핵심템 2/3을 내 캐리(A) 아이템 재료로 조합 가능(쇼진의 창, 보석 건틀릿)'
     ),
     openFacts
   )
   check('로비 정보 없으면 빈집 후보 없음', openDeckCandidates({ ...me, lobbyParticipants: [] }, lobbyDecksList).length === 0)
   const multiOpen = buildComparisonFacts({ matches: [me, me], mode: 'multi', combos: [], decks: lobbyDecksList })
-  check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/빈집|로비 메타 덱/.test(multiOpen), multiOpen)
+  check('종합 분석에는 로비·빈집 줄 없음 (한 판 기준 사실)', !/안 탄 메타 덱|로비 메타 덱/.test(multiOpen), multiOpen)
 
   console.log('덱 가이드 (래더 실측)')
   const { opennessLabel } = require('../lib/comparisonFacts')

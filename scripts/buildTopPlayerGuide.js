@@ -2,7 +2,7 @@
  * 상위 랭커 보드 → 메타 덱별 "고수 운영" 집계 (lib/topPlayerGuide.json, 선수 식별자 없음)
  *
  * 입력: data/topPlayerBoards.json (scripts/collectTopPlayers.js) + lib/decksData.json
- * - 보드마다 가장 비슷한 메타 덱(기물 슬러그 Jaccard ≥ 0.6 — 런타임 comparisonFacts.mostSimilarDeck 과 같은 기준)에 붙인다.
+ * - 보드마다 가장 비슷한 메타 덱(기물 슬러그 Jaccard ≥ 0.6 · 덱 캐리가 보드에 있어야 함 — 런타임 comparisonFacts.mostSimilarDeck 과 같은 기준)에 붙인다.
  * - 덱별: 판 수 · 선수 수 · 평균 등수 · TOP4 · 캐리 아이템 채용률 · 레벨 분포 · 캐리 3성 비율 ·
  *   상위 랭커가 자주 쓴 기물(그 덱 래더 가이드의 핵심 기물 제외)
  * - 최종 보드 통계라 '조합 순서'가 아니라 '최종 보드 채용률'이다.
@@ -85,6 +85,7 @@ function main() {
     const mine = new Set(b.units.map((u) => slug(u.id)))
     let best = null
     for (const x of decks) {
+      if (x.carry && !mine.has(x.carry)) continue
       let inter = 0
       for (const s of mine) if (x.set.has(s)) inter++
       const sim = inter / (mine.size + x.set.size - inter || 1)

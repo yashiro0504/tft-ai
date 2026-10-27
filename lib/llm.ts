@@ -9,7 +9,7 @@ import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, repairEntityErrors, validateEntityFacts } from './semanticGrounding'
+import { feedbackTexts, repairEntityErrors, validateBoardNames, validateEntityFacts } from './semanticGrounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
 import { isEarlyGame, lowSampleReason } from './quality'
@@ -21,7 +21,7 @@ import { boardCarry } from './deckType'
 import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-27.1'
+export const COACH_PROMPT_VERSION = '2026-10-27.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -228,6 +228,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 제공된 사실 데이터에 등장한 기물·시너지·아이템·증강 이름만 쓴다. 다른 세트의 시너지명(예: 결투가)이나 존재하지 않는 이름을 만들지 마라.
 - 기물 코스트는 1~5만 존재한다. "6코스트" 같은 표현을 쓰지 마라.
 - 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
+- 로비 경합은 경기 데이터의 '경합 등급 ○○ (강도 N/100)'의 등급 이름(빈집·보통·경합·심각)으로만 말한다 — 경기 카드에 보이는 이름과 같아야 한다.
+  등급이 빈집이 아니면 그 판을 '빈집'이라 부르지 마라. '리롤 캐리 겹침 0명'은 캐리 하나의 겹침이지 경합 등급이 아니다.
 - 레벨 9~10 표준형(밸류) 보드에서 5코스트 겹침은 그 레벨에 간 모두가 겪는 조건이다. "겹쳐서 졌다", "다른 덱으로 비틀었어야" 식으로
   원인 삼지 말고, 같은 5코스트를 쓴 상대와 2성 수·아이템 차이를 비교하라.
 - 완성 아이템은 기물에서 떼어 다른 기물로 옮길 수 없다(아이템 제거기·재조합기 같은 특수 아이템이 없으면). "아이템을 옮겨라/회수하라/나중에 몰아줘라"고
@@ -265,9 +267,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   "고수는 이렇게 한다"를 단정하거나 표본 수 없이 인용하지 마라. 아이템은 채용률이지 조합 순서가 아니다.
 - 패치 변경점은 공식 패치 노트의 변경 수치(이전 ⇒ 이후)다. 수치를 그대로 인용하고, '상향/하향'으로 단정하지 마라.
   경기 결과의 원인으로 쓰지 마라. '경기 이후 패치' 변경은 다음 판 조언의 근거로만 써라.
-- 빈집 메타 덱 후보는 로비 최종 보드 기준의 사후 비교다. "~를 갔어야 했다"고 단정하지 말고 "같은 재료로 ~도 가능했다"는
+- 로비가 안 탄 메타 덱 후보는 로비 최종 보드 기준의 사후 비교다. "~를 갔어야 했다"고 단정하지 말고 "같은 재료로 ~도 가능했다"는
   후보로만 언급하라. 피봇 시점·상점 기물 공급은 데이터에 없으니 언제 갈아탔어야 하는지 말하지 마라.
-  후보 줄이 없으면 빈집 덱을 추천하지 마라(코드가 조건을 만족하는 덱을 찾지 못한 것이다).
+  후보 줄이 없으면 그런 덱을 추천하지 마라(코드가 조건을 만족하는 덱을 찾지 못한 것이다). 이 후보를 '빈집'이라 부르지 마라(경합 등급 이름이다).
 
 ★★★ 라운드 타이밍 단정 금지 ★★★
 - 제공된 데이터에는 라운드별 레벨업·리롤·골드 곡선이 없다(최종 보드·최종 레벨·탈락 라운드만 있다).
@@ -937,12 +939,15 @@ ${qualityFacts}
     const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : rawLecture.checklist.slice(0, 3)
     // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조하고,
     // 잡힌 문장은 보내기 전에 고치거나 지운다 (entityErrors 는 검출 기록으로 남긴다)
-    const entityErrors = validateEntityFacts(feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts), matches)
+    // 보드에 없는 기물·아이템을 맥락 없이 쓴 문장(validateBoardNames)도 같이 지운다
+    const rawTexts = feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts)
+    const entityErrors = [...validateEntityFacts(rawTexts, matches), ...validateBoardNames(rawTexts, matches, prompt).errors]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
     const { fb, lecture, actions, axisVerdicts } = repairEntityErrors(
       { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
       entityErrors
     )
+    const namesChecked = validateBoardNames(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches, prompt).checked
     return {
       ...fb,
       actions,
@@ -957,6 +962,7 @@ ${qualityFacts}
       grounding: {
         ...validateFeedbackGrounding(fb, prompt),
         entityErrors,
+        namesChecked,
       },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),

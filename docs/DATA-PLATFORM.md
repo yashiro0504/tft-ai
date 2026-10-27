@@ -238,6 +238,8 @@ create table stat_comp (
 - 수집기 ④단계에서 **이번 실행에 들어온 (game_date, patch, tier_bucket) 조합만** 다시 계산해 UPSERT 한다.
   원본에서 `group by` 하므로 재실행해도 결과가 같다.
 - 덱 클러스터(`buildDecksFromBoards.js` 로직)는 1일 1회, 패치 × 티어 구간별로 원본을 읽어 `stat_comp` 를 다시 만든다.
+- 기물 빌드(아이템 3개 세트, `scripts/collect/builds.js`)도 같은 보드로 `stat_unit_build`(0008)를 다시 만든다 — 기물마다 판 수 많은 세트 상위 10개(5판 이상).
+  조합 종류가 많아 일별 영구 집계 대신 패치 × 티어 필터 단위로 교체한다 (기간 필터 없음). 0008 적용 전에는 경고만 남기고 덱 클러스터는 그대로 만든다.
 
 ### 6-2. 필터 정의
 
@@ -258,6 +260,7 @@ create table stat_comp (
 | `GET /api/tft/stats?type=unit&patch=&tier=&days=` | 기물·아이템·시너지 표 | `s-maxage=600, stale-while-revalidate=3600` |
 | `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS). `unit` 은 슬러그(`ahri`)·수집 키(`Ahri`)·Riot ID(`TFT18_Ahri`) 모두 허용, 응답 `unit` = 맞춘 슬러그, `totalBoards` 는 거르기 전 분모 | 동일 |
 | `GET /api/tft/decks?patch=&tier=` | 덱 티어표 | 동일 |
+| `GET /api/tft/builds?patch=&tier=` | 기물 빌드(아이템 3개를 함께 든 세트 · `stat_unit_build`). 메타 BIS 탭 "3개 함께" · 기물 모달 "많이 쓰는 세트". DB 가 없거나 0008 미적용이면 `lib/unitBuilds.json`(래더 보드) 폴백 — 화면은 기물×아이템과 출처가 같을 때만 쓴다 | 동일 |
 | `GET /api/tft/meta/filters` | 사용 가능한 패치·표본 수 | 10분 |
 
 Phase C 예정 (미구현):

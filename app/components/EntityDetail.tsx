@@ -42,7 +42,7 @@ function LinkRow({ link }: { link: EntityLink }) {
         </span>
         {s ? (
           <span className="rk-ent-rowstat">
-            <b>{avg(s.avgPlacement)}</b>위 · TOP4 {pct(s.top4Rate)} · {s.sampleSize.toLocaleString()}판
+            <b>{avg(s.avgPlacement)}</b>등 · TOP4 {pct(s.top4Rate)} · {s.sampleSize.toLocaleString()}판
             {s.lowSample ? <small className="rk-low">표본 부족</small> : null}
           </span>
         ) : (
@@ -141,7 +141,7 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
                         {d.fromDb ? <em>DB 집계</em> : null}
                       </span>
                       <span className="rk-ent-rowstat">
-                        <b>{avg(d.avgPlacement)}</b>위 · TOP4 {pct(d.top4Rate)} · {d.sampleSize.toLocaleString()}판
+                        <b>{avg(d.avgPlacement)}</b>등 · TOP4 {pct(d.top4Rate)} · {d.sampleSize.toLocaleString()}판
                       </span>
                     </>
                   )

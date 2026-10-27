@@ -246,6 +246,10 @@ function createSupabaseStore({ url, serviceRoleKey }) {
     async replaceComps(patch, tierMin, rows) {
       return must(await db.rpc('tft_replace_comps', { p_patch: patch, p_tier_min: tierMin, p_rows: rows }), '덱 클러스터 저장')
     },
+
+    async replaceBuilds(patch, tierMin, rows) {
+      return must(await db.rpc('tft_replace_builds', { p_patch: patch, p_tier_min: tierMin, p_rows: rows }), '기물 빌드 저장')
+    },
   }
 }
 
@@ -260,10 +264,11 @@ function createMemoryStore() {
   const patches = new Map()
   const rollups = new Map() // comboKey → rollupBoards 결과 (stat_*_daily 대신)
   const comps = new Map() // `${patch}|${tierMin}` → { rows, updatedAt }
+  const builds = new Map() // `${patch}|${tierMin}` → { rows, updatedAt } (stat_unit_build 대신)
 
   return {
     kind: 'memory',
-    _state: { dict, seeds, matches, boards, failures, runs, patches, rollups, comps },
+    _state: { dict, seeds, matches, boards, failures, runs, patches, rollups, comps, builds },
 
     async loadDict() {
       return dict.size
@@ -412,6 +417,10 @@ function createMemoryStore() {
     },
     async replaceComps(patch, tierMin, rows) {
       comps.set(`${patch}|${tierMin}`, { rows, updatedAt: Date.now() })
+      return rows.length
+    },
+    async replaceBuilds(patch, tierMin, rows) {
+      builds.set(`${patch}|${tierMin}`, { rows, updatedAt: Date.now() })
       return rows.length
     },
   }

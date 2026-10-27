@@ -147,7 +147,8 @@ export function TraitHex({
         {iconUrl && !iconFailed ? (
           <img
             src={iconUrl}
-            alt=""
+            // 작은 칩은 이름을 옆에 쓰지 않으므로 그림이 이름을 대신한다 (큰 칩은 옆 글자와 겹쳐 비워 둔다)
+            alt={compact ? name : ''}
             className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} object-contain ${
               styled ? 'trait-glyph-on-style' : level >= max && max > 0 ? 'trait-glyph-on-accent' : 'trait-glyph'
             }`}

@@ -238,8 +238,9 @@ export function winFactors(m: SlimMatchData): string[] {
   const contest = rerollCarryContest(m)
   if (contest) {
     const { carry, opponents } = contest
-    const verdict = opponents === 0 ? '빈집' : opponents === 1 ? '경합 적음' : '경합'
-    out.push(`로비 경합 ${verdict}: 리롤 캐리 ${carry.name}(${carry.rarity}코 3성)를 코어로 쓴 상대 ${opponents}명`)
+    // 캐리 한 기물의 겹침이다 — 로비 경합 등급(빈집·보통·경합·심각, 경기 카드)과 다른 지표라 등급 이름을 쓰지 않는다.
+    // 예전엔 "로비 경합 빈집"이라 써서 카드는 "경합 보통", 리포트는 "빈집"으로 갈렸다 (2026-10-27)
+    out.push(`리롤 캐리 겹침: ${carry.name}(${carry.rarity}코 3성)를 코어로 쓴 상대 ${opponents}명`)
   }
   return out
 }
