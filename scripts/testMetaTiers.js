@@ -1,5 +1,7 @@
 /**
- * 메타 표 티어 검증 (app/components/metaShared · lib/statsShared) — 저장소의 메타 스냅샷으로 확인한다.
+ * 메타 표 티어 검증 (app/components/metaShared · lib/statsShared).
+ * 덱 수축 사례는 고정 수치(2026-10-25 스냅샷)로, 나머지는 매일 갱신되는 저장소 메타 데이터로 확인한다
+ * (덱 이름·구성은 매일 바뀌므로 이름으로 찾지 않는다).
  *
  *  1. 표본 하한: 덱·기물·시너지·아이템이 같은 오차 기준(30판, ±0.42)
  *  2. 수축 추정: 표본 적은 덱일수록 4.5등 쪽으로 더 당긴다 (35판 3.17등 vs 177판 3.58등 — 2026-10-27 평가)
@@ -25,23 +27,20 @@ check('덱·기물·시너지·아이템 하한이 같음 (30판)', [MIN_SAMPLE.
 check('하한 판수의 오차가 기준 안 · 한 판 적으면 기준 밖', placementMargin(30) <= MAX_PLACEMENT_MARGIN && placementMargin(29) > MAX_PLACEMENT_MARGIN)
 
 console.log('수축 추정')
-const deckRows = decksData.decks.map((d) => ({ name: d.name, avg: d.avgPlacement, sample: d.sampleSize }))
+// 2026-10-25 덱 스냅샷 24개 [평균등수, 판수] — 평가 사례: 0번 주문술사 알룬(35판 3.17) vs 1번 장로 드래곤(177판 3.58)
+const EVAL_DECKS = [[3.17, 35], [3.58, 177], [3.61, 41], [3.7, 33], [4.05, 97], [4.06, 32], [4.14, 64], [4.16, 38], [4.19, 48], [4.27, 79], [4.31, 32], [4.48, 93], [4.5, 32], [4.58, 69], [4.62, 221], [4.7, 91], [4.71, 35], [4.76, 66], [4.94, 32], [4.95, 82], [5.06, 35], [5.12, 41], [5.22, 37], [6.11, 38]]
+const evalEst = shrinkPlacements(EVAL_DECKS.map(([avg, sample]) => ({ avg, sample })))
+check(
+  '표본 적은 덱을 더 많이 당김 (35판 3.17 → 177판 3.58 과의 차이가 0.41 → 0.1 미만)',
+  evalEst[0] - 3.17 > evalEst[1] - 3.58 && Math.abs(evalEst[0] - evalEst[1]) < 0.1,
+  `${evalEst[0].toFixed(2)} vs ${evalEst[1].toFixed(2)}`
+)
+const deckRows = decksData.decks.map((d) => ({ avg: d.avgPlacement, sample: d.sampleSize }))
 const est = shrinkPlacements(deckRows)
-const at = (name) => {
-  const i = deckRows.findIndex((r) => r.name === name)
-  return { raw: deckRows[i], est: est[i] }
-}
-const small = at('주문술사 알룬')
-const big = at('협곡야수 장로 드래곤')
-check('스냅샷에 비교 덱 2개', small.raw && big.raw, deckRows.map((r) => r.name).join(','))
-if (small.raw && big.raw) {
-  check('모든 추정값은 원래 평균과 4.5등 사이', deckRows.every((r, i) => (est[i] - r.avg) * (4.5 - r.avg) >= 0 && Math.abs(est[i] - 4.5) <= Math.abs(r.avg - 4.5)))
-  check(
-    '표본 적은 덱을 더 많이 당김 (35판 3.17 → 177판 3.58 과의 차이가 0.41 → 0.1 미만)',
-    small.est - small.raw.avg > big.est - big.raw.avg && Math.abs(small.est - big.est) < 0.1,
-    `${small.est.toFixed(2)} vs ${big.est.toFixed(2)}`
-  )
-}
+check(
+  '저장소 덱 데이터: 모든 추정값은 원래 평균과 4.5등 사이',
+  deckRows.length > 0 && deckRows.every((r, i) => (est[i] - r.avg) * (4.5 - r.avg) >= 0 && Math.abs(est[i] - 4.5) <= Math.abs(r.avg - 4.5))
+)
 check('표본 0 은 4.5등', shrinkPlacements([{ avg: 1, sample: 0 }])[0] === 4.5)
 check('행이 1개여도 계산됨 (기본 세기)', Math.abs(shrinkPlacements([{ avg: 3, sample: 30 }])[0] - 3.75) < 1e-9)
 
