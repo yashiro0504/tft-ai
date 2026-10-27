@@ -5,6 +5,7 @@
 import Link from 'next/link'
 import { useEffect, type ReactNode } from 'react'
 import { entityHref } from '@/lib/entitySlug'
+import { BIS_RELIABLE_SAMPLE, MIN_SAMPLE, byPickCount } from '@/lib/statsShared'
 import type { TftMetaResponse } from '@/lib/types'
 import { ITEM_CLASS_LABEL, classifyItem, normKey, tierClass, type ModalTarget } from './metaShared'
 
@@ -47,10 +48,10 @@ export function DetailModal({
     const champ =
       (data.champions ?? []).find((c) => c.key === target.key) ||
       (data.comps ?? []).find((c) => c.key === target.key)
-    const bis = (data.combos ?? [])
-      .filter((c) => c.champKey === target.key || normKey(c.champKey) === normKey(target.key))
-      .sort((a, b) => a.avgPlacement - b.avgPlacement)
-      .slice(0, 3)
+    // BIS 탭 행과 같은 아이템 (lib/statsShared buildCompSets — 채용 상위 3, 든 판 20판 이상) · 많이 든 3개 세트
+    const comp = (data.comps ?? []).find((c) => c.key === target.key || normKey(c.key) === normKey(target.key))
+    const bis = comp?.items ?? []
+    const builds = comp?.builds
     const decks = (data.decks ?? [])
       .filter((d) => d.units.some((u) => normKey(u.key) === normKey(target.key)))
       .slice(0, 3)
@@ -67,20 +68,64 @@ export function DetailModal({
           <div><span>3성률</span><b>{fmtPct(champ?.threeStarRate)}</b></div>
         </div>
 
-        <p className="rk-label">BIS 아이템</p>
+        <p className="rk-label">BIS 아이템 · 채용 상위 3</p>
         {bis.length ? (
-          <div className="rk-mitems">
-            {bis.map((item) => (
-              <div key={item.key} className="rk-mrow">
-                <img src={item.itemIconUrl} alt="" loading="lazy" />
-                <span className="rk-mname">{item.itemName}</span>
-                <span className="rk-mval">{fmtAvg(item.avgPlacement)}위 · {item.sampleSize.toLocaleString()}판</span>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="rk-mitems">
+              {bis.map((item) => {
+                const low = item.sampleSize < BIS_RELIABLE_SAMPLE
+                return (
+                  <div key={item.key} className={`rk-mrow ${low ? 'is-low' : ''}`}>
+                    <img src={item.iconUrl} alt="" loading="lazy" />
+                    <span className="rk-mname">{item.name}</span>
+                    <span className="rk-mval">
+                      {fmtAvg(item.avgPlacement)}등 · 채용 {fmtPct(item.pickRate)} · {item.sampleSize.toLocaleString()}판
+                      {low ? ' · 참고용' : ''}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="rk-mnote">이 기물이 그 아이템을 든 판의 평균등수 · 기물 판수 대비 채용률 (3개를 함께 든 판이 아닌 아이템 1개 단위)</p>
+          </>
         ) : (
-          <p className="rk-mempty">BIS 조합 표본이 없습니다.</p>
+          <p className="rk-mempty">BIS 후보가 없습니다 (같은 아이템을 든 판 {MIN_SAMPLE.unit_item}판 이상).</p>
         )}
+
+        {/* 빌드 집계가 없으면(0008 미적용·JSON 미생성) 섹션째 뺀다 */}
+        {builds ? (
+          <>
+            <p className="rk-label">많이 쓰는 세트 · 아이템 3개</p>
+            {builds.length ? (
+              <>
+                <div className="rk-mitems">
+                  {builds.map((b) => {
+                    const low = b.sampleSize < BIS_RELIABLE_SAMPLE
+                    const names = b.items.map((it) => it.name).join(' + ')
+                    return (
+                      <div key={b.key} className={`rk-mrow ${low ? 'is-low' : ''}`} title={names}>
+                        <span className="rk-mset">
+                          {b.items.map((it, i) => (
+                            // 같은 아이템 2개(예: 쇼진 2 + 공허)도 있어 순서로 키를 둔다
+                            <img key={`${it.key}-${i}`} src={it.iconUrl} alt={it.name} loading="lazy" />
+                          ))}
+                        </span>
+                        <span className="rk-mname">{names}</span>
+                        <span className="rk-mval">
+                          {fmtAvg(b.avgPlacement)}등 · 채용 {fmtPct(b.pickRate)} · {b.sampleSize.toLocaleString()}판
+                          {low ? ' · 참고용' : ''}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="rk-mnote">한 기물이 3개를 함께 든 판 · 덱 탭과 같은 기준(패치 단위, 하루 1회 집계)</p>
+              </>
+            ) : (
+              <p className="rk-mempty">5판 이상 나온 3개 세트가 없습니다.</p>
+            )}
+          </>
+        ) : null}
 
         <p className="rk-label">이 기물이 포함된 덱</p>
         {decks.length ? (
@@ -89,7 +134,7 @@ export function DetailModal({
               <div key={deck.id} className="rk-mrow">
                 <span className={tierClass(deck.tier || 'C')}>{deck.tier || '-'}</span>
                 <span className="rk-mname">{deck.name}</span>
-                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}위</span>
+                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}등</span>
               </div>
             ))}
           </div>
@@ -100,9 +145,10 @@ export function DetailModal({
     )
   } else if (target.type === 'item') {
     const item = (data.items ?? []).find((i) => i.key === target.key)
+    // BIS 탭과 같은 규칙: 이 아이템을 든 판 20판 이상 중 채용 판 수 순 (평균등수 순이면 5판짜리 조합이 1위로 왔다)
     const users = (data.combos ?? [])
-      .filter((c) => normKey(c.itemKey) === normKey(target.key))
-      .sort((a, b) => a.avgPlacement - b.avgPlacement)
+      .filter((c) => normKey(c.itemKey) === normKey(target.key) && c.sampleSize >= MIN_SAMPLE.unit_item)
+      .sort(byPickCount)
       .slice(0, 5)
     const decks = (data.decks ?? [])
       .filter((d) =>
@@ -122,19 +168,24 @@ export function DetailModal({
           <div><span>분류</span><b>{badge}</b></div>
         </div>
 
-        <p className="rk-label">이 아이템을 쓰는 기물</p>
+        <p className="rk-label">이 아이템을 많이 드는 기물 · 채용 순</p>
         {users.length ? (
           <div className="rk-musers">
-            {users.map((row) => (
-              <div key={row.key} className="rk-mrow">
-                <img src={row.champImgUrl} alt="" loading="lazy" />
-                <span className="rk-mname">{row.champName}</span>
-                <span className="rk-mval">{fmtAvg(row.avgPlacement)}위 · {row.sampleSize.toLocaleString()}판</span>
-              </div>
-            ))}
+            {users.map((row) => {
+              const low = row.sampleSize < BIS_RELIABLE_SAMPLE
+              return (
+                <div key={row.key} className={`rk-mrow ${low ? 'is-low' : ''}`}>
+                  <img src={row.champImgUrl} alt="" loading="lazy" />
+                  <span className="rk-mname">{row.champName}</span>
+                  <span className="rk-mval">
+                    {fmtAvg(row.avgPlacement)}등 · {row.sampleSize.toLocaleString()}판{low ? ' · 참고용' : ''}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         ) : (
-          <p className="rk-mempty">BIS 조합 표본이 없습니다.</p>
+          <p className="rk-mempty">이 아이템을 {MIN_SAMPLE.unit_item}판 이상 든 기물이 없습니다.</p>
         )}
 
         <p className="rk-label">이 아이템이 포함된 덱</p>
@@ -144,7 +195,7 @@ export function DetailModal({
               <div key={deck.id} className="rk-mrow">
                 <span className={tierClass(deck.tier || 'C')}>{deck.tier || '-'}</span>
                 <span className="rk-mname">{deck.name}</span>
-                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}위</span>
+                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}등</span>
               </div>
             ))}
           </div>
@@ -178,7 +229,7 @@ export function DetailModal({
               <div key={deck.id} className="rk-mrow">
                 <span className={tierClass(deck.tier || 'C')}>{deck.tier || '-'}</span>
                 <span className="rk-mname">{deck.name}</span>
-                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}위</span>
+                <span className="rk-mval">{fmtAvg(deck.avgPlacement)}등</span>
               </div>
             ))}
           </div>

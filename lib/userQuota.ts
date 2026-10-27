@@ -56,7 +56,7 @@ export async function consumeUserQuota(
 }
 
 /**
- * consumeUserQuota 로 소모한 1회를 되돌린다 (Supabase RPC refund_user_quota, 0007 마이그레이션).
+ * consumeUserQuota 로 소모한 1회를 되돌린다 (Supabase RPC refund_user_quota, 0009 마이그레이션).
  * 마이그레이션 전이거나 실패하면 로그만 남긴다.
  */
 export async function refundUserQuota(bucket: string): Promise<boolean> {

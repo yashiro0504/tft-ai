@@ -4,8 +4,9 @@
  * 실행: node scripts/testOps.js
  *  - comparePatchDesc: 숫자.숫자 패치 내림차순 · 비숫자 패치도 결정적
  *  - latestPatchFreshness: 덱 클러스터 신선도는 전역 최신 행이 아니라 최신 패치 기준
+ *  - freshnessLevel: 24시간 / 72시간 판정 (stat_comp · stat_unit_build 공통)
  */
-const { comparePatchDesc, latestPatchFreshness } = require('./checkOps')
+const { comparePatchDesc, latestPatchFreshness, freshnessLevel } = require('./checkOps')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -47,6 +48,13 @@ try {
   threw = true
 }
 check("'set18' 같은 비숫자 패치가 섞여도 throw 없이 숫자 패치 우선", !threw && withSet.latestPatch === '16.20' && Math.round(withSet.ageH) === 5)
+
+console.log('신선도 판정 (stat_comp · stat_unit_build 공통)')
+const level = (spec) => freshnessLevel(latestPatchFreshness(rows(spec), NOW))
+check('24시간 이내 → ok', level([['16.21', 23]]) === 'ok', level([['16.21', 23]]))
+check('24~72시간 → stale', level([['16.21', 30]]) === 'stale', level([['16.21', 30]]))
+check('72시간 초과 → critical', level([['16.21', 73]]) === 'critical', level([['16.21', 73]]))
+check('빌드 없음 → empty', freshnessLevel(latestPatchFreshness([], NOW)) === 'empty')
 
 console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 운영 점검 테스트 통과')
 if (failures) process.exitCode = 1

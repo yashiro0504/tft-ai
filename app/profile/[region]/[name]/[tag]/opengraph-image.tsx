@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { calculateProfileStats } from '@/lib/profile'
-import { rankedMatches } from '@/lib/queue'
+import { analyzableMatches } from '@/lib/queue'
 import { loadProfile } from '@/lib/profileData'
 import { formatRankLabel, formatRankLp } from '@/lib/rank'
 import { loadKoreanFont } from '@/lib/ogFont'
@@ -36,7 +36,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
       data.profileIconId,
       data.rank
     )
-    placements = rankedMatches(data.matches).map((m) => m.placement)
+    placements = analyzableMatches(data.matches).map((m) => m.placement)
   } catch {
     stats = null
   }
@@ -144,7 +144,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
             </div>
           </div>
           <div style={{ display: 'flex', marginTop: 10, fontSize: 22, color: '#94a3b8' }}>
-            {stats ? `최근 ${total}경기 기준 · 평균 등수 ${avg}위` : '전적을 불러오지 못했습니다'}
+            {!stats ? '전적을 불러오지 못했습니다' : total ? `최근 ${total}경기 기준 · 평균 등수 ${avg}위` : '이번 시즌 랭크 게임이 없습니다'}
           </div>
         </div>
 

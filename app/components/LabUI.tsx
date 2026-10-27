@@ -92,12 +92,33 @@ function hexTone(level: number, max: number) {
   return { hex: 'bg-line text-ink', label: 'text-ink' }
 }
 
+/** 시너지 색 단계 → 육각형 바탕 (globals.css --trait-*) */
+const STYLE_FILL: Record<number, string> = {
+  1: 'var(--trait-bronze)',
+  2: 'var(--trait-silver)',
+  3: 'var(--trait-gold)',
+  4: 'var(--trait-prismatic)',
+}
+const STYLE_NAME: Record<number, string> = { 1: '브론즈', 2: '실버', 3: '골드', 4: '프리즘' }
+
+/**
+ * Riot style 이 없을 때(필드 추가 전에 캐시된 경기)의 근사: 첫 단계 브론즈 · 중간 실버 · 최고 단계 골드(4단계 이상이면 프리즘) ·
+ * 단계가 하나뿐인 고유 시너지는 골드. 실제 색 배정은 시너지마다 달라 Riot 값이 있으면 그것을 쓴다.
+ */
+export function approxTraitStyle(level: number, max: number): number {
+  if (level <= 0) return 0
+  if (max <= 1) return 3
+  if (level >= max) return max >= 4 ? 4 : 3
+  return level === 1 ? 1 : 2
+}
+
 export function TraitHex({
   name,
   count,
   level,
   max,
   iconUrl,
+  style,
   compact = false,
 }: {
   name: string
@@ -105,23 +126,32 @@ export function TraitHex({
   level: number
   max: number
   iconUrl?: string
+  /** 게임과 같은 색 단계(1 브론즈 · 2 실버 · 3 골드 · 4 프리즘). 없으면 강조색 농도로 단계를 보인다 */
+  style?: number
   /** 표 행 안에서 쓰는 작은 크기 (이름 생략, 툴팁만) */
   compact?: boolean
 }) {
-  const tone = hexTone(level, max)
+  const styled = level > 0 && style ? Math.min(Math.max(style, 1), 4) : 0
+  const tone = styled ? { hex: 'text-[#121826]', label: 'text-ink' } : hexTone(level, max)
   // 아이콘 주소가 깨지면 육각형 안에 유닛 수를 대신 보여준다 (빈 육각형 방지)
   const [iconFailed, setIconFailed] = useState(false)
   const size = compact ? 'h-5 w-[22px]' : 'h-6 w-[26px]'
-  const title = `${name} ${count}${max ? ` · ${level}/${max}단계` : ''}`
+  const title = `${name} ${count}${max ? ` · ${level}/${max}단계` : ''}${styled ? ` · ${STYLE_NAME[styled]}` : ''}`
 
   return (
     <span className="inline-flex items-center gap-1" title={title}>
-      <span className={`relative inline-flex shrink-0 items-center justify-center ${size} ${tone.hex}`} style={{ clipPath: HEX_CLIP }}>
+      <span
+        className={`relative inline-flex shrink-0 items-center justify-center ${size} ${tone.hex}`}
+        style={{ clipPath: HEX_CLIP, ...(styled ? { background: STYLE_FILL[styled] } : {}) }}
+      >
         {iconUrl && !iconFailed ? (
           <img
             src={iconUrl}
-            alt=""
-            className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} object-contain ${level >= max && max > 0 ? 'trait-glyph-on-accent' : 'trait-glyph'}`}
+            // 작은 칩은 이름을 옆에 쓰지 않으므로 그림이 이름을 대신한다 (큰 칩은 옆 글자와 겹쳐 비워 둔다)
+            alt={compact ? name : ''}
+            className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} object-contain ${
+              styled ? 'trait-glyph-on-style' : level >= max && max > 0 ? 'trait-glyph-on-accent' : 'trait-glyph'
+            }`}
             onError={() => setIconFailed(true)}
           />
         ) : (

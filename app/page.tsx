@@ -19,7 +19,9 @@ import { LimitModal } from './components/LimitModal'
 import { TopDecks } from './components/TopDecks'
 import { SummonerSummary } from './components/SummonerSummary'
 import { RefreshMatchesButton } from './components/RefreshMatchesButton'
+import { SiteFooter } from './components/SiteFooter'
 import { OverviewProgress } from './components/OverviewProgress'
+import { analyzableMatches, excludedLabel, matchBreakdown } from '@/lib/queue'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -212,6 +214,10 @@ export default function TFTCoachPage() {
     handleSearch(name, tag)
   }
 
+  // 경기 수 표기는 한 기준으로: 분석 = 현재 세트 랭크 판 (lib/queue)
+  const breakdown = search ? matchBreakdown(search.matches) : null
+  const excluded = breakdown ? excludedLabel(breakdown) : ''
+
   return (
     <div className="min-h-screen bg-app text-ink selection:bg-accent selection:text-on-accent">
       <SiteHeader active={tab} onChange={handleTabChange} />
@@ -347,7 +353,7 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} matches={search.matches} deckReport={search.deckReport}>
+              <SummonerSummary profile={search.summonerProfile} matches={search.matches} olderScanned={search.olderScanned} deckReport={search.deckReport}>
                 {search.isDemo ? null : (
                   <>
                     <RefreshMatchesButton
@@ -367,7 +373,7 @@ export default function TFTCoachPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
                   <h3 className="flex flex-wrap items-center gap-2 text-xl font-bold text-ink">
-                    최근 {search.matches.length}경기 종합 AI 코칭
+                    최근 {breakdown?.analyzed ?? 0}경기 종합 AI 코칭
                     <span
                       title="Pro 기능 (출시 전까지 무료)"
                       className="inline-flex items-center gap-1 rounded-chip bg-accent-bg px-1.5 py-0.5 text-xs font-bold text-accent"
@@ -385,7 +391,7 @@ export default function TFTCoachPage() {
                 <button
                   type="button"
                   onClick={handleOverview}
-                  disabled={isOverviewLoading}
+                  disabled={isOverviewLoading || !breakdown?.analyzed}
                   className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 text-on-accent font-bold text-sm transition cursor-pointer"
                 >
                   {isOverviewLoading ? (
@@ -423,13 +429,18 @@ export default function TFTCoachPage() {
                 <div className="mt-5 animate-in fade-in duration-300">
                   <FeedbackReport
                     feedback={overviewFeedback}
-                    title={`최근 ${search.matches.length}경기 종합 메타 총평`}
-                    matchCount={search.matches.length}
+                    title={`최근 ${breakdown?.analyzed ?? 0}경기 종합 메타 총평`}
+                    matchCount={breakdown?.analyzed ?? 0}
                     goalSource={
                       search.isDemo || !search.summonerProfile
                         ? undefined
-                        : { gameName: search.summonerProfile.gameName, tagLine: search.summonerProfile.tagLine, matches: search.matches }
+                        : {
+                            gameName: search.summonerProfile.gameName,
+                            tagLine: search.summonerProfile.tagLine,
+                            matches: analyzableMatches(search.matches),
+                          }
                     }
+                    rateable={search.isDemo ? undefined : {}}
                   />
                 </div>
               )}
@@ -438,7 +449,14 @@ export default function TFTCoachPage() {
             {/* 3. 매치 히스토리 리스트 (경기별 AI 분석) */}
             <div className="pt-2">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="text-xl font-bold text-ink">실전 매치 히스토리 ({search.matches.length}경기)</h3>
+                <h3 className="text-xl font-bold text-ink">
+                  실전 매치 히스토리 ({search.matches.length}경기)
+                  {excluded ? (
+                    <span className="ml-2 text-sm font-medium text-subtle">
+                      분석 {breakdown?.analyzed ?? 0} · {excluded} 제외
+                    </span>
+                  ) : null}
+                </h3>
                 <span className="text-xs text-muted">
                   각 경기의 [이 경기 AI 분석] 버튼으로 개별 정밀 코칭을 받아보세요.
                 </span>
@@ -484,17 +502,10 @@ export default function TFTCoachPage() {
 
       <LimitModal open={isLimitOpen} onClose={() => setIsLimitOpen(false)} scope="overview" />
 
-      <footer className="relative mt-16 border-t border-sunken">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-1.5 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
-          <p className="text-[12px] text-muted">
-            <span className="font-black text-muted">TFT LAB</span> · 시즌 18 메타 랭킹 &amp; AI 코치
-          </p>
-          <div className="text-xs leading-relaxed text-subtle sm:text-right">
-            <p>데이터: Riot 실측 매치 표본 · TFT LAB is not endorsed by Riot Games.</p>
-            <p>이 서비스는 라이엇 게임즈와 제휴하거나 승인받지 않았습니다.</p>
-          </div>
-        </div>
-      </footer>
+      {/* 약관·개인정보·문의 링크가 있는 공통 푸터 (메인과 메타 탭에도) */}
+      <div className="mt-16">
+        <SiteFooter />
+      </div>
     </div>
   )
 

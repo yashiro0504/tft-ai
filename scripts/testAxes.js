@@ -62,6 +62,32 @@ if (sample) {
   const after = buildCoachingPlan([upgraded]).axes
   const get = (axes, k) => axes.find((a) => a.key === k).score
   check('2성 승급 시 완성도 비감소', get(after, 'completion') >= get(base, 'completion'))
+  // 캐리 아이템 = 실제 캐리(딜템 최다 기물)의 장착 개수 — 최고 코스트 기물이 빈손이어도 0개가 아니다 (2026-10-27)
+  const { readMatch } = require('../lib/coaching')
+  const carryBoard = { ...sample, units: [{ id: 'TFT18_Rengar', name: '렝가', rarity: 3, tier: 2, items: ['무한의 대검', '마법공학 총검', '피바라기'] }, { id: 'TFT18_Kennen', name: '케넨', rarity: 5, tier: 1, items: [] }] }
+  const cm = readMatch(carryBoard)
+  check('캐리 아이템 = 렝가 3개 · 최고 코스트 기물(케넨) 아이템 0개는 따로', cm.carryItems === 3 && cm.topCostItems === 0, JSON.stringify([cm.carryItems, cm.topCostItems]))
+  // 같은 스테이지에 탈락한 상대보다 레벨이 낮으면 템포·경제 감점 (5-2 Lv.7 탈락 7등이 템포·경제 100점이던 문제)
+  // 표준형 보드로 (리롤형은 템포를 레벨이 아니라 3성으로 본다)
+  const lobby = (myLevel) => ({
+    ...sample,
+    units: sample.units.map((u) => ({ ...u, tier: Math.min(u.tier || 1, 2) })),
+    placement: 7,
+    level: myLevel,
+    lastRound: '5-2',
+    lobbyParticipants: [
+      { placement: 7, isUser: true, level: myLevel, lastRound: '5-2', units: [], traits: [] },
+      { placement: 6, isUser: false, level: 9, lastRound: '5-5', units: [], traits: [] },
+      { placement: 8, isUser: false, level: 9, lastRound: '5-1', units: [], traits: [] },
+      { placement: 1, isUser: false, level: 10, lastRound: '7-1', units: [], traits: [] },
+    ],
+  })
+  const behind = readMatch(lobby(7))
+  check('로비 비교 레벨 = 같은 스테이지 탈락 상대 평균 (Lv.9 · 1등 Lv.10 제외)', behind.lobbyLevel === 9, String(behind.lobbyLevel))
+  const scoreOf = (m, k) => buildCoachingPlan([m]).axes.find((a) => a.key === k)
+  const t7 = scoreOf(lobby(7), 'tempo')
+  const t9 = scoreOf(lobby(9), 'tempo')
+  check('같은 스테이지 상대보다 2레벨 낮으면 템포 감점 · 같으면 감점 없음', t7.score < t9.score && t7.effects.some((e) => e.key === 'lobbyLevelGap' && e.points < 0), JSON.stringify([t7.score, t9.score]))
 }
 console.log(failures ? `  불변식 실패 ${failures}건` : '  ✅ 통과')
 

@@ -4,21 +4,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw, AlertCircle, Info, Database,
 } from 'lucide-react'
-import type { SlimMatchData, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
+import type { SlimMatchData, SlimMatchUnit, LobbyParticipant, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
 import { track } from '@/lib/analytics'
 import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 import { TurnstileWidget } from './TurnstileWidget'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
-import { TraitHex, traitMaxLevel } from './LabUI'
+import { TraitHex, approxTraitStyle, traitMaxLevel } from './LabUI'
 import Link from 'next/link'
 import { entityHref, entitySlug } from '@/lib/entitySlug'
 import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
 import { computeMatchScore } from '@/lib/scoring'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 import { keyMoments } from '@/lib/keyMoments'
-import { isRankedMatch } from '@/lib/queue'
+import { isAnalyzableMatch, isCurrentSetMatch, isRankedMatch } from '@/lib/queue'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -35,6 +35,15 @@ interface MatchCardProps {
 }
 
 type MatchScore = ReturnType<typeof computeMatchScore>
+
+// 코스트 색은 챔피언 아이콘 테두리에만 사용
+const costStyle: Record<number, { border: string }> = {
+  5: { border: 'border-cost-5' },
+  4: { border: 'border-cost-4' },
+  3: { border: 'border-cost-3' },
+  2: { border: 'border-cost-2' },
+  1: { border: 'border-cost-1' },
+}
 
 /**
  * 핵심 지표 패널 (D+C)
@@ -60,8 +69,9 @@ function MatchQuickStats({
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
   const ranked = isRankedMatch(match)
+  const currentSet = isCurrentSetMatch(match)
   // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다). 랭크 판만
-  const moments = useMemo(() => (early || !ranked ? [] : keyMoments(match)), [match, early, ranked])
+  const moments = useMemo(() => (early || !ranked || !currentSet ? [] : keyMoments(match)), [match, early, ranked, currentSet])
 
   return (
     <div
@@ -88,10 +98,12 @@ function MatchQuickStats({
           유닛 {match.units.length} · 2성+ {twoStarPlus} · 시너지 {match.traits.length}
         </span>
         <span>
-          완성도 {comp('completion') ?? '-'} · 아이템 {comp('items') ?? '-'} · 경합 {comp('contest') ?? '-'}
+          {/* metaScore 구성 점수 (lib/scoring) — 6축의 '아이템 설계'·'유연성'과 다른 지표라 이름을 그대로 쓴다 */}
+          덱 완성도 {comp('completion') ?? '-'} · 아이템 활용 {comp('items') ?? '-'} · 경합 대응 {comp('contest') ?? '-'}
         </span>
         {early ? <span className="font-semibold text-gold">표본 부족: {lowSampleReason(match)}</span> : null}
         {!ranked ? <span className="font-semibold text-subtle">{match.queueType || '이벤트·기타 모드'} — 분석은 랭크 게임만</span> : null}
+        {ranked && !currentSet ? <span className="font-semibold text-subtle">이전 시즌 경기 — 분석은 이번 시즌만</span> : null}
       </div>
 
       {!live && moments.length ? (
@@ -111,6 +123,149 @@ function MatchQuickStats({
           {intro ? <span className="ml-0.5 inline-block animate-pulse text-accent">▍</span> : null}
         </p>
       ) : null}
+    </div>
+  )
+}
+
+/** 로비 행의 기물 1개: 36px 아이콘(코스트 테두리 · 성급 겹침) + 아이템 3슬롯. 내 덱과 겹치는 기물은 강조 링 */
+function LobbyUnit({ unit, shared }: { unit: SlimMatchUnit; shared: boolean }) {
+  const cost = unit.rarity || 3
+  const border = (costStyle[cost] || costStyle[3]).border
+  const title = [
+    `${unit.name} ${unit.tier}성 · ${cost}코스트`,
+    unit.items.join(', '),
+    shared ? '내 덱과 겹침' : '',
+  ].filter(Boolean).join('\n')
+
+  return (
+    <div title={title} className="flex w-9 flex-col items-center">
+      <div
+        className={`relative h-9 w-9 overflow-hidden rounded-control border-2 bg-sunken ${border} ${
+          shared ? 'ring-2 ring-accent ring-offset-1 ring-offset-sunken' : ''
+        }`}
+      >
+        {unit.imgUrl ? (
+          <img
+            src={unit.imgUrl}
+            alt={unit.name}
+            className="relative z-10 h-full w-full object-cover"
+            onError={(e) => {
+              ;(e.target as HTMLElement).style.display = 'none'
+            }}
+          />
+        ) : null}
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] font-black text-muted">
+          {unit.name.slice(0, 2)}
+        </span>
+        {unit.tier >= 2 ? (
+          <span
+            className={`absolute inset-x-0 bottom-0 z-20 bg-black/60 text-center text-[9px] leading-3 tracking-[-0.1em] ${
+              unit.tier === 3 ? 'text-[color:var(--gold)]' : 'text-white'
+            }`}
+          >
+            {unit.tier === 3 ? '★★★' : '★★'}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-0.5 flex h-3 items-center gap-px">
+        {unit.items.slice(0, 3).map((item, i) => {
+          const iconUrl = unit.itemIcons?.[i]
+          return (
+            <span key={i} className="flex h-3 w-3 items-center justify-center overflow-hidden rounded-[2px] bg-sunken">
+              {iconUrl ? (
+                <img
+                  src={iconUrl}
+                  alt={item}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    ;(e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+              ) : (
+                <span className="text-[7px] font-black text-muted">{item.charAt(0)}</span>
+              )}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * 로비 8인 순위: 행마다 [등수 | 소환사·레벨·탈락 라운드 | 시너지 육각형 + 기물·아이템].
+ * 좁은 화면에서는 시너지·기물이 소환사 줄 아래로 내려간다.
+ */
+function LobbyBoard({ participants, myUnits }: { participants: LobbyParticipant[]; myUnits: SlimMatchUnit[] }) {
+  // 겹침 판정은 lib/contest.ts 와 같이 id 또는 이름으로 (데모·구버전 데이터는 id 표기가 다르다)
+  const mine = useMemo(() => new Set(myUnits.flatMap((u) => [u.id, u.name])), [myUnits])
+  return (
+    <div className="animate-in fade-in border-t border-line bg-sunken px-3 py-2 duration-200 md:px-5">
+      <p className="px-1 pb-1.5 pt-1 text-[11px] text-subtle">
+        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-[3px] align-middle ring-2 ring-accent" /> 내 덱과 겹치는 기물
+      </p>
+      <ol className="divide-y divide-line">
+        {participants.map((p) => {
+          const rankTone =
+            p.placement === 1
+              ? 'bg-gold/15 text-gold'
+              : p.placement <= 4
+              ? 'bg-good/10 text-good'
+              : 'bg-panel text-muted'
+          return (
+            <li
+              key={`${p.placement}-${p.gameName}`}
+              className={`grid grid-cols-[2rem_1fr] items-start gap-x-3 gap-y-2 rounded-control px-1 py-2.5 md:grid-cols-[2rem_9rem_1fr] ${
+                p.isUser ? 'bg-accent-bg' : ''
+              }`}
+            >
+              <span className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-chip text-sm font-bold ${rankTone}`}>
+                {p.placement}
+              </span>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    title={p.tagLine ? `${p.gameName}#${p.tagLine}` : p.gameName}
+                    className={`truncate text-sm ${p.isUser ? 'font-bold text-accent' : 'font-medium text-ink'}`}
+                  >
+                    {p.gameName}
+                  </span>
+                  {p.isUser && (
+                    <span className="shrink-0 rounded-chip bg-accent px-1.5 text-[10px] font-bold leading-4 text-on-accent">ME</span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-xs text-subtle">
+                  Lv.{p.level} · {p.lastRound}
+                </div>
+              </div>
+
+              <div className="col-span-2 min-w-0 space-y-1.5 md:col-span-1">
+                {p.traits.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    {p.traits.map((t, i) => (
+                      <TraitHex
+                        key={i}
+                        name={t.name}
+                        count={t.count}
+                        level={t.tier}
+                        max={traitMaxLevel(t.name)}
+                        iconUrl={t.iconUrl}
+                        style={t.style ?? approxTraitStyle(t.tier, traitMaxLevel(t.name))}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-1">
+                  {p.units.map((u, i) => (
+                    <LobbyUnit key={i} unit={u} shared={!p.isUser && (mine.has(u.id) || mine.has(u.name))} />
+                  ))}
+                </div>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
     </div>
   )
 }
@@ -161,6 +316,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   const isWin = match.placement === 1
   const isTop4 = match.placement <= 4 && !isWin
+  /** 지난 시즌 판: 목록에는 회색으로 남기고 진단·AI 분석에서는 뺀다 (lib/queue) */
+  const previousSeason = !isCurrentSetMatch(match)
 
   // 등수는 카드 왼쪽 띠 색으로만 표시한다 (1등 gold, 2~4등 good, 5~8등 bad)
   const containerTheme = isWin
@@ -172,15 +329,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   // 등수 라벨: 숫자는 --text, 결과 단어만 등수 의미 색
   const placementLabel = isWin ? '1등 승리' : isTop4 ? '순방' : '탈락'
   const placementLabelColor = isWin ? 'text-gold' : isTop4 ? 'text-good' : 'text-bad'
-
-  // 코스트 색은 챔피언 아이콘 테두리에만 사용
-  const costStyle: Record<number, { border: string }> = {
-    5: { border: 'border-cost-5' },
-    4: { border: 'border-cost-4' },
-    3: { border: 'border-cost-3' },
-    2: { border: 'border-cost-2' },
-    1: { border: 'border-cost-1' },
-  }
 
   const handleAnalyze = async (turnstileToken?: string) => {
     if (isAnalyzing) return
@@ -254,7 +402,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   handleAnalyzeRef.current = handleAnalyze
 
   return (
-    <div data-index={index} className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme}`}>
+    <div
+      data-index={index}
+      className={`border border-line bg-panel shadow-card rounded-card overflow-hidden transition ${containerTheme} ${previousSeason ? 'opacity-70' : ''}`}
+    >
       <div className="px-5 pb-4 pt-5 md:px-6">
         <div className="flex flex-wrap items-start gap-5">
           {/* 1. 왼쪽: 등수 + 경기 정보 + 시너지 */}
@@ -265,15 +416,34 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <span className="text-sm text-subtle">
                 {match.queueType || '랭크 게임'} · {match.timeAgo || '최근'}
               </span>
+              {previousSeason ? (
+                <span
+                  className="rounded-chip border border-line bg-sunken px-1.5 py-0.5 text-xs font-semibold text-muted"
+                  title="이번 시즌 경기가 아니라 진단·AI 분석에서 뺍니다"
+                >
+                  이전 시즌{match.setNumber ? ` (시즌 ${match.setNumber})` : ''}
+                </span>
+              ) : null}
             </div>
             <div className="text-sm text-muted">
               {match.lastRound} 라운드 · {match.gameLengthStr || '31분 20초'} · Lv.{match.level} · 잔여 {match.goldLeft}G
             </div>
-            {/* 시너지: 육각형(단계 농도) + 이름 */}
+            {/* 시너지: 육각형(게임과 같은 브론즈·실버·골드·프리즘) + 이름 */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {match.traits.map((t, i) => (
-                <TraitHex key={i} name={t.name} count={t.count} level={t.tier} max={traitMaxLevel(t.name)} iconUrl={t.iconUrl} />
-              ))}
+              {match.traits.map((t, i) => {
+                const max = traitMaxLevel(t.name)
+                return (
+                  <TraitHex
+                    key={i}
+                    name={t.name}
+                    count={t.count}
+                    level={t.tier}
+                    max={max}
+                    iconUrl={t.iconUrl}
+                    style={t.style ?? approxTraitStyle(t.tier, max)}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -317,7 +487,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               )
 
               return (
-                <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-12 flex-col items-center group/unit relative">
+                <div key={i} title={`${unit.name} · ${cost}코스트`} className="flex w-[52px] flex-col items-center group/unit relative">
                   {/* 기물 아이콘 → 챔피언 상세 (아이콘 단위 링크 · id 가 없거나 현재 세트 기물이 아니면 링크 없음) */}
                   {unit.id && CHAMPION_PAGE_SLUGS.has(entitySlug('champion', unit.id)) ? (
                     <Link
@@ -332,15 +502,15 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                     icon
                   )}
 
-                  {/* 장착 아이템 3슬롯 */}
-                  <div className="flex items-center gap-0.5 mt-1 h-3.5">
+                  {/* 장착 아이템 3슬롯 — 16px, 테두리 없이 그림만 (14px 상자에 1px 테두리라 실제 그림은 12px 였다) */}
+                  <div className="flex items-center gap-0.5 mt-1 h-4">
                     {unit.items.slice(0, 3).map((item, itemIdx) => {
                       const iconUrl = unit.itemIcons?.[itemIdx]
                       return (
                         <div
                           key={itemIdx}
                           title={item}
-                          className="h-3.5 w-3.5 rounded-[2px] bg-sunken border border-line overflow-hidden shrink-0 flex items-center justify-center"
+                          className="h-4 w-4 rounded-[3px] bg-sunken overflow-hidden shrink-0 flex items-center justify-center"
                         >
                           {iconUrl ? (
                             <img
@@ -352,7 +522,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                               }}
                             />
                           ) : (
-                            <span className="text-[7px] text-muted font-black">
+                            <span className="text-[8px] text-muted font-black">
                               {item.charAt(0)}
                             </span>
                           )}
@@ -362,7 +532,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                   </div>
 
                   {/* 기물 이름 */}
-                  <span className="text-xs text-muted truncate max-w-[48px] text-center mt-0.5 font-medium group-hover/unit:text-ink">
+                  <span className="text-xs text-muted truncate max-w-[52px] text-center mt-0.5 font-medium group-hover/unit:text-ink">
                     {unit.name}
                   </span>
                 </div>
@@ -420,10 +590,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>
-                {match.contestedInfo.level && match.contestedInfo.level !== '경합'
-                  ? `경합 ${match.contestedInfo.level}`
-                  : '경합'}{' '}
-                · 로비 {match.contestedInfo.opponentCount}명 겹침
+                {/* 등급 이름(빈집·보통·경합·심각)은 AI 리포트·6축 유연성과 같은 기준 (lib/contestConfig) */}
+                경합 등급 {match.contestedInfo.level ?? '경합'} · 로비 {match.contestedInfo.opponentCount}명 겹침
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>
@@ -434,7 +602,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-good shrink-0" />
               <span>
-                빈집 선점
+                경합 등급 {match.contestedInfo.level ?? '빈집'} · 겹침 거의 없음
                 {match.contestedInfo.contestScore != null ? ` (강도 ${match.contestedInfo.contestScore}/100)` : ''}
               </span>
             </div>
@@ -473,8 +641,10 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               {isOpenEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
-            {!isRankedMatch(match) ? (
-              <span className="text-xs text-subtle">AI 분석은 랭크 게임만 합니다</span>
+            {!isAnalyzableMatch(match) ? (
+              <span className="text-xs text-subtle">
+                {isRankedMatch(match) ? 'AI 분석은 이번 시즌 경기만 합니다' : 'AI 분석은 랭크 게임만 합니다'}
+              </span>
             ) : (
             <>
             <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
@@ -501,113 +671,9 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           </div>
         </div>
       </div>
-      {/* 펼쳐진 로비 8인 순위 테이블 (LOLCHESS 스타일) */}
+      {/* 펼쳐진 로비 8인 순위 (LOLCHESS 스타일) */}
       {isOpenLobby && match.lobbyParticipants && (
-        <div className="bg-sunken border-t border-line p-4 animate-in fade-in duration-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-line text-muted text-xs">
-                  <th className="pb-2 pl-2 w-12">등수</th>
-                  <th className="pb-2 w-32">소환사</th>
-                  <th className="pb-2 w-16">레벨</th>
-                  <th className="pb-2">최종 덱 및 핵심 기물</th>
-                  <th className="pb-2 w-28">활성 시너지</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {match.lobbyParticipants.map((p, idx) => (
-                  <tr
-                    key={idx}
-                    className={`hover:bg-panel transition ${p.isUser ? 'bg-accent-bg font-semibold' : ''}`}
-                  >
-                    <td className="py-2.5 pl-2 font-mono">
-                      <span
-                        className={`inline-block w-6 h-6 rounded-chip text-center leading-6 font-bold text-xs ${
-                          p.placement === 1
-                            ? 'bg-gold/10 text-ink'
-                            : p.placement <= 4
-                            ? 'bg-good/10 text-ink'
-                            : 'bg-sunken text-muted'
-                        }`}
-                      >
-                        {p.placement}
-                      </span>
-                    </td>
-
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`truncate max-w-[120px] ${p.isUser ? 'text-accent font-bold' : 'text-ink-soft'}`}>
-                          {p.gameName}
-                        </span>
-                        {p.isUser && (
-                          <span className="px-1.5 py-0.2 rounded-chip bg-accent-bg text-accent text-xs font-bold">
-                            ME
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="py-2.5 text-muted font-mono">Lv.{p.level}</td>
-
-                    <td className="py-2.5">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {p.units.slice(0, 8).map((u, uIdx) => (
-                          <div
-                            key={uIdx}
-                            title={`${u.name} ${u.tier}성${u.items.length ? ` (${u.items.join(', ')})` : ''}`}
-                            className="relative flex items-center rounded-chip border border-line bg-panel p-0.5"
-                          >
-                            <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-chip bg-sunken">
-                              {u.imgUrl ? (
-                                <img
-                                  src={u.imgUrl}
-                                  alt={u.name}
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    ;(e.target as HTMLElement).style.display = 'none'
-                                  }}
-                                />
-                              ) : (
-                                <span className="flex h-full w-full items-center justify-center text-xs font-black text-muted">
-                                  {u.name.slice(0, 1)}
-                                </span>
-                              )}
-                              {u.tier > 1 && (
-                                <span className="absolute right-0 top-0 rounded-bl bg-black/80 px-0.5 text-[7px] font-black text-[color:var(--gold)]">
-                                  {u.tier}★
-                                </span>
-                              )}
-                            </div>
-                            {u.items.length > 0 && (
-                              <span className="ml-1 pr-1 text-xs font-mono font-bold text-muted">
-                                ⚔{u.items.length}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-
-                    <td className="py-2.5">
-                      <div className="flex flex-wrap gap-1">
-                        {p.traits.slice(0, 3).map((t, tIdx) => (
-                          <span
-                            key={tIdx}
-                            className="inline-flex items-center gap-0.5 rounded-chip px-1.5 py-0.5 bg-sunken text-muted text-xs font-bold border border-line"
-                          >
-                            <span>{t.name}</span>
-                            <span className="text-ink font-mono">{t.count}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <LobbyBoard participants={match.lobbyParticipants} myUnits={match.units} />
       )}
 
       {/* 접지 근거 패널 (AI에 제공된 계산 데이터) */}
@@ -746,6 +812,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             title="이 경기 정밀 코칭 (단일 매치)"
             compact
             goalSource={isDemo ? undefined : { gameName, tagLine, matches: [match] }}
+            rateable={isDemo ? undefined : { matchId: match.matchId }}
           />
         </div>
       )}

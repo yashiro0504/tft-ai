@@ -3,6 +3,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './supabas
 import { getChampionCost, translateChampion, translateItem, translateTrait } from './constants'
 import { buildMetaPayload, toMetaDeck } from './metaPayload'
 import { deckViewsFromRaw, getDeckViews, type DeckView } from './decks'
+import { JSON_BUILDS_INFO, jsonBuildRankings, toBuildRankings, type UnitBuildRow } from './unitBuilds'
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
@@ -14,7 +15,9 @@ import {
   TIER_BUCKETS,
   TIER_FILTER_OPTIONS,
   placementMargin,
+  statChampKey,
   withSample,
+  type BuildsResponse,
   type DecksResponse,
   type MetaFilterPatch,
   type MetaFiltersResponse,
@@ -117,6 +120,34 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
   return (await withTimeout<T[]>((signal) => c.rpc(fn, args).abortSignal(signal))) ?? []
 }
 
+/**
+ * PostgREST 는 한 응답을 max-rows(Supabase 기본 1000)에서 자른다. tft_stat_query 는 정렬이 없어서
+ * 기물×아이템(1천 행 이상)이 임의의 1천 행만 왔다 (2026-10-26). 키 순으로 정렬해 끝까지 페이지로 받는다.
+ * 페이지 크기는 max-rows 이하여야 "덜 왔다 = 마지막 페이지" 판정이 맞다.
+ */
+const RPC_PAGE_SIZE = (() => {
+  const n = Number(process.env.STATS_RPC_PAGE_SIZE)
+  return Number.isInteger(n) && n > 0 ? n : 1000
+})()
+const RPC_MAX_PAGES = 20
+
+async function rpcAll<T>(fn: string, args: Record<string, unknown>): Promise<T[]> {
+  const c = db()
+  if (!c) throw new NoDbError('supabase_not_configured')
+  const out: T[] = []
+  for (let page = 0; page < RPC_MAX_PAGES; page++) {
+    const from = page * RPC_PAGE_SIZE
+    const rows =
+      (await withTimeout<T[]>((signal) =>
+        c.rpc(fn, args).order('key1').order('key2').range(from, from + RPC_PAGE_SIZE - 1).abortSignal(signal)
+      )) ?? []
+    out.push(...rows)
+    if (rows.length < RPC_PAGE_SIZE) return out
+  }
+  logEvent('warn', 'stats_rpc_page_cap', { fn, rows: out.length })
+  return out
+}
+
 function fallbackReason(err: unknown): string {
   if (err instanceof NoDbError) return err.message
   return 'db_error'
@@ -125,17 +156,8 @@ function fallbackReason(err: unknown): string {
 const r2 = (x: number) => Math.round(x * 100) / 100
 const r3 = (x: number) => Math.round(x * 1000) / 1000
 
-/** scripts/buildMetaStats.js normalizeChampId 와 같은 규칙 (metaStats.json 기물 키) */
-export function statChampKey(id: string): string {
-  return String(id || '')
-    .replace(/^TFT\d*_/i, '')
-    .replace(/^DA_\d*_/i, '')
-    .replace(/^DA_/i, '')
-    .replace(/^TFTTutorial_/i, '')
-    .replace(/\d+$/i, '')
-    .replace(/Small$/i, '')
-    .trim()
-}
+/** 기물 키 정규화 — 빌드 집계(lib/unitBuilds)도 같이 써서 lib/statsShared 로 옮겼다 (예전 import 경로 유지) */
+export { statChampKey }
 
 /* ------------------------------------------------------------------ */
 /* 필터 목록                                                            */
@@ -369,7 +391,7 @@ export async function getStats(type: StatType, filter: StatFilter): Promise<Stat
           p_min_games: type === 'unit_item' ? UNIT_ITEM_MIN_ROWS : 1,
         }
         const [rows, total] = await Promise.all([
-          rpc<QueryRow>('tft_stat_query', { p_type: type, ...args }),
+          rpcAll<QueryRow>('tft_stat_query', { p_type: type, ...args }),
           rpc<QueryRow>('tft_stat_query', { p_type: 'total', ...args }),
         ])
         const totalBoards = Number(total[0]?.games) || 0
@@ -465,6 +487,65 @@ export async function getDecks(
       }
     },
     fallback
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* 기물 빌드 (아이템 3개 세트 — 메타 BIS 탭)                             */
+/* ------------------------------------------------------------------ */
+
+function jsonBuilds(reason: string): BuildsResponse {
+  return { success: true, source: 'json', filter: null, updatedAt: JSON_BUILDS_INFO.updatedAt, rows: jsonBuildRankings(), fallbackReason: reason }
+}
+
+/**
+ * 기물 빌드 — 수집기가 덱 클러스터와 같이 하루 1회 패치 × 티어 필터별로 만든 stat_unit_build (기간 필터 없음).
+ * DB 를 쓸 수 없거나 0008 이 아직 적용되지 않았으면 JSON(lib/unitBuilds.json). 화면은 통계와 출처가 같을 때만 쓴다
+ * (DB 기물×아이템 옆에 래더 스냅샷 세트를 섞지 않게).
+ */
+export async function getBuilds(filter: Pick<StatFilter, 'patch' | 'tier'>): Promise<BuildsResponse> {
+  const filters = await getMetaFilters()
+  if (filters.source !== 'db') return jsonBuilds(filters.fallbackReason || 'no_db')
+  const patch = resolvePatch(filters, filter.patch)
+  const c = db()
+  if (!patch || !c) return jsonBuilds('empty')
+  return memoized(
+    `builds:${patch}:${filter.tier}`,
+    async () => {
+      try {
+        // 기물 100종 × 상위 10개면 PostgREST 한 응답 상한(1천 행)에 걸린다 — rpcAll 처럼 페이지로 끝까지
+        const rows: (UnitBuildRow & { updated_at: string })[] = []
+        for (let page = 0; page < RPC_MAX_PAGES; page++) {
+          const from = page * RPC_PAGE_SIZE
+          const got =
+            (await withTimeout<(UnitBuildRow & { updated_at: string })[]>((signal) =>
+              c
+                .from('stat_unit_build')
+                .select('unit, items, games, placement_sum, top4, wins, unit_games, updated_at')
+                .eq('patch', patch)
+                .eq('tier_min', tierArg(filter.tier))
+                .order('unit')
+                .order('items')
+                .range(from, from + RPC_PAGE_SIZE - 1)
+                .abortSignal(signal)
+            )) ?? []
+          rows.push(...got)
+          if (got.length < RPC_PAGE_SIZE) break
+        }
+        const updatedAt = rows.reduce<string | undefined>((m, r) => (!m || r.updated_at > m ? r.updated_at : m), undefined)
+        return {
+          success: true,
+          source: 'db',
+          filter: { patch, tier: filter.tier },
+          updatedAt,
+          rows: toBuildRankings(rows),
+        } satisfies BuildsResponse
+      } catch (err) {
+        logEvent('warn', 'builds_db_failed', errorFields(err))
+        return jsonBuilds(fallbackReason(err))
+      }
+    },
+    jsonBuilds
   )
 }
 

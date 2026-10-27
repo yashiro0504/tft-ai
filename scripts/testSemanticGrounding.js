@@ -12,7 +12,7 @@ process.env.DEEPSEEK_API_KEY = ''
 process.env.GEMINI_API_KEY = ''
 require('./_env').loadEnv()
 require('./_ts')
-const { validateEntityFacts, feedbackTexts, validateCoachingRules, repairEntityErrors } = require('../lib/semanticGrounding')
+const { validateEntityFacts, feedbackTexts, validateCoachingRules, repairEntityErrors, validateBoardNames } = require('../lib/semanticGrounding')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -36,6 +36,10 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('"베이가·알리스타·오른 3성" → 오류 0', errs('베이가·알리스타·오른 3성으로 전열을 세웠습니다.').length === 0)
   check('"카시오페아는 2성" → 오류 0', errs('카시오페아는 2성에 머물렀습니다.').length === 0)
   check('"카시오페아 3성" → 오류 1', errs('카시오페아 3성이 완성되었습니다.').length === 1)
+  // 시너지를 받치는 기물은 올리라는 조언 (lib/traitAnchors) — 2026-10-23 평가 오탐
+  check('"1성 피들스틱을 2성으로 올리는" → 오류 0 (목표)', errs('남는 골드는 1성 피들스틱을 2성으로 올리는 데 우선 사용한다.').length === 0)
+  check('"돌거북·타릭을 2성으로 올릴지" → 오류 0 (목표)', errs('돌거북·타릭을 2성으로 올릴지 최종 보드 직전에 선택한다.', [{ ...sample[0], units: [...sample[0].units, { id: 'x', name: '돌거북', tier: 1, items: [] }, { id: 'y', name: '타릭', tier: 1, items: [] }] }]).length === 0)
+  check('"피들스틱은 3성으로 마감" → 오류 1 (사실 주장은 그대로 검사)', errs('피들스틱은 3성으로 마감했습니다.').length === 1)
   check('목록 중간 오류도 각각 검사 ("베이가, 카시오페아와 오른 모두 3성")', errs('베이가, 카시오페아와 오른 모두 3성입니다.').map((e) => e.actual).join() === '카시오페아 3성')
 
   console.log('3성 개수')
@@ -55,6 +59,10 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   const tr = errs('주문술사 3단계를 유지했습니다.')
   check('"주문술사 3단계" (실제 2) → 오류 1', tr.length === 1 && tr[0].type === 'trait_tier', show(tr))
   check('"주문술사(2단계)" → 오류 0', errs('주문술사(2단계)가 핵심이었습니다.').length === 0)
+  // 1명 모자란 시너지 장면의 목표 단계 (2026-10-23 평가 오탐) — 같은 절에 열린다·올린다가 오면 목표다
+  check('"채워야 주문술사 3단계가 열립니다" → 오류 0 (목표)', errs('한 칸을 채워야 주문술사 3단계가 열립니다.').length === 0)
+  check('"주문술사 3단계까지 올리는" → 오류 0 (목표)', errs('남는 자리로 주문술사 3단계까지 올리는 선택지입니다.').length === 0)
+  check('"주문술사 3단계를 유지했고, 다음엔 열립니다" → 오류 1 (절이 다르면 사실 주장)', errs('주문술사 3단계를 유지했고, 다음 판엔 다른 시너지가 열립니다.').length === 1)
   // a1-rules 실제 출력: 기물 수(4)를 단계로 혼동
   const t4 = errs('베이가에게 보석 건틀릿·루덴의 폭풍·새벽심장을, 카시오페아에게 쇼진의 창·거인 학살자·보석 건틀릿을 분배한 구성은 주문술사 4단계와 맞물려 유효했습니다.')
   check('실제 출력 "주문술사 4단계" (기물 4명 · 실제 2단계) → 오류 1 · 아이템 분배는 정상', t4.length === 1 && t4[0].type === 'trait_tier', show(t4))
@@ -118,6 +126,33 @@ const show = (e) => JSON.stringify(e.map((x) => `${x.type}: ${x.actual} (데이�
   check('오탐 수정: "빈집 덱 후보가 없었습니다" 통과', rules('빈집 덱 후보가 없었습니다.', {}).length === 0)
   check('오탐 수정: "피봇 시점이 3-2인지는 데이터로 알 수 없습니다" 통과', rules('피봇 시점이 3-2인지는 데이터로 알 수 없습니다.', {}).length === 0)
   check('오탐 수정: "채용률을 먼저 보라는 뜻은 아닙니다" 통과', rules('채용률을 먼저 보라는 뜻은 아닙니다.', { facts: guideFacts }).length === 0)
+  // 상점 확률 인용은 게임 데이터 표(lib/shopOdds)와 대조한다 — 기억 속 다른 세트 확률표를 쓰면 잡힌다
+  const { costOdds } = require('../lib/shopOdds')
+  check('상점 확률을 표대로 인용하면 통과', rules(`Lv.8 상점에서 4코스트는 ${costOdds(8, 4)}%입니다.`, {}).length === 0)
+  check('상점 확률을 표와 다르게 인용 → shopOddsMismatch', rules(`8레벨에서 4코 확률은 ${costOdds(8, 4) + 8}%라 더 굴려야 합니다.`, {}).includes('shopOddsMismatch'))
+  check('레벨 없는 % 는 상점 확률 주장 아님', rules('4코스트 캐리의 채용률은 30%입니다.', {}).length === 0)
+
+  console.log('보드에 없는 기물·아이템')
+  {
+    // 2026-10-27: 렝가 보드 리포트의 "니달리 없이도…" (보드에 니달리 없음)인데 근거 검증 100%
+    const facts = ['- 메타 상위 기물: 니달리 4.10등', '- 가장 유사한 메타 덱: 주문술사 베이가'].join('\n')
+    const names = (t, f = facts) => validateBoardNames([t], sample, f)
+    const absent = names('니달리 없이도 베이가가 끝까지 버텼습니다.')
+    check('맥락 없이 보드에 없는 기물 → unit_absent', absent.errors.length === 1 && absent.errors[0].type === 'unit_absent' && absent.errors[0].actual === '니달리', show(absent.errors))
+    check('메타·덱 맥락을 밝히면 통과 ("메타 덱 핵심 니달리 없이도")', names('메타 덱 핵심인 니달리 없이도 베이가로 버텼습니다.').errors.length === 0)
+    check('처방은 사실에 있는 이름이면 통과', names('다음 판에는 니달리를 넣으세요.').errors.length === 0)
+    check('사실에도 없는 이름은 처방이어도 오류 (지어낸 이름)', names('다음 판에는 니달리를 넣으세요.', '- 메타: 베이가').errors.length === 1)
+    check('상대 이야기는 통과', names('1등 상대는 니달리 3성이었습니다.').errors.length === 0)
+    const ok = names('베이가와 르블랑이 딜을 나눴습니다.')
+    check('내 보드 기물 → 오류 0 · 이름 2개 확인', ok.errors.length === 0 && ok.checked === 2, JSON.stringify(ok))
+    const { GAME_ITEMS } = require('../lib/gameData')
+    const held = new Set(sample.flatMap((m) => m.units.flatMap((u) => u.items)))
+    const notHeld = GAME_ITEMS.find((i) => i.kind === 'completed' && !held.has(i.name) && i.name.length >= 3).name
+    const item = names(`피들스틱이 ${notHeld}으로 딜을 했습니다.`)
+    check(`보드에 없는 아이템(${notHeld}) → item_absent`, item.errors.length === 1 && item.errors[0].type === 'item_absent', show(item.errors))
+    const fixed = repairEntityErrors({ overview: `중반은 무난했습니다. 니달리 없이도 베이가가 끝까지 버텼습니다.` }, absent.errors)
+    check('보드에 없는 기물 문장은 지움', fixed.overview === '중반은 무난했습니다.', fixed.overview)
+  }
 
   console.log('오류 문장 수리')
   const traitSentence = '주문술사 4단계로 화력을 냈습니다.'

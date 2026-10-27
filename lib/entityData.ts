@@ -3,7 +3,16 @@ import { GAME_CHAMPIONS, findChampion, findTrait, type GameChampion } from './ga
 import { buildMetaPayload } from './metaPayload'
 import { getDeckViews } from './decks'
 import { getDecks, getStats } from './tftStats'
-import { DEFAULT_FILTER, MIN_SAMPLE, filterLabel, placementMargin, type StatSource, type TierFilter } from './statsShared'
+import {
+  BIS_RELIABLE_SAMPLE,
+  DEFAULT_FILTER,
+  MIN_SAMPLE,
+  byPickCount,
+  filterLabel,
+  placementMargin,
+  type StatSource,
+  type TierFilter,
+} from './statsShared'
 import { entitySlug, type EntityKind } from './entitySlug'
 import type {
   MetaChampRanking,
@@ -111,6 +120,16 @@ const statOf = (r: { avgPlacement: number; top4Rate: number; sampleSize: number;
   lowSample: Boolean(r.lowSample),
 })
 
+/** 기물×아이템: 표본 부족 기준은 다른 표와 같은 30판 (응답의 lowSample 은 BIS 후보 하한 20판 기준) */
+const comboStat = (c: { avgPlacement: number; top4Rate: number; sampleSize: number }) => ({
+  ...statOf(c),
+  lowSample: c.sampleSize < BIS_RELIABLE_SAMPLE,
+})
+
+/** 기물 판수 대비 이 아이템을 든 비율 (같은 아이템 2개는 2번 세므로 100% 에서 자른다) */
+const pickNote = (games: number, unitGames?: number) =>
+  unitGames ? `채용 ${Math.round(Math.min(1, games / unitGames) * 100)}%` : undefined
+
 /** 표본 충분 → 평균등수 낮은 순, 통계 없는 항목은 맨 뒤 */
 const byAvg = <T extends { avgPlacement: number | null; lowSample?: boolean }>(a: T, b: T) =>
   Number(Boolean(a.lowSample)) - Number(Boolean(b.lowSample)) || (a.avgPlacement ?? 99) - (b.avgPlacement ?? 99)
@@ -184,16 +203,19 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
   const name = row?.name ?? ct!.name
   const cost = row?.cost ?? ct?.cost
 
+  // 메타 BIS 탭과 같은 규칙 (statsShared buildCompSets) — 20판 미만은 후보에서 빼고 채용 순, 30판 미만은 표본 부족
   const bis = all.combos
     .filter((c) => entitySlug('champion', c.champKey) === slug)
-    .sort(byAvg)
+    .filter((c) => c.sampleSize >= MIN_SAMPLE.unit_item)
+    .sort(byPickCount)
     .slice(0, 8)
     .map((c): EntityLink => ({
       kind: 'item',
       slug: entitySlug('item', c.itemKey),
       name: c.itemName,
       img: c.itemIconUrl,
-      stat: statOf(c),
+      stat: comboStat(c),
+      note: pickNote(c.sampleSize, row?.sampleSize),
     }))
 
   const traitKeyByName = new Map(all.traits.map((t) => [t.name, t]))
@@ -220,7 +242,7 @@ async function championPage(slug: string): Promise<EntityPageData | null> {
     filterText: all.filterText,
     minSample: all.minSample.unit,
     related: bis,
-    relatedTitle: '추천 아이템 (평균등수 순)',
+    relatedTitle: '추천 아이템 (채용 순)',
     tags,
     decks: deckLinks(all, (d) => d.units.some((u) => entitySlug('champion', u.key) === slug || u.name === name)),
   }
@@ -234,15 +256,18 @@ async function itemPage(slug: string): Promise<EntityPageData | null> {
   const name = row?.name ?? combos[0].itemName
   const img = row?.iconUrl ?? combos[0].itemIconUrl
 
+  const unitGames = new Map(all.units.map((u) => [u.key, u.sampleSize]))
   const holders = combos
-    .sort(byAvg)
+    .filter((c) => c.sampleSize >= MIN_SAMPLE.unit_item)
+    .sort(byPickCount)
     .slice(0, 8)
     .map((c): EntityLink => ({
       kind: 'champion',
       slug: entitySlug('champion', c.champKey),
       name: c.champName,
       img: c.champImgUrl,
-      stat: statOf(c),
+      stat: comboStat(c),
+      note: pickNote(c.sampleSize, unitGames.get(c.champKey)),
     }))
 
   const kindLabel = /emblem/i.test(row?.key ?? '') ? '상징' : /radiant/i.test(row?.key ?? '') ? '찬란한 아이템' : /artifact/i.test(row?.key ?? '') ? '유물' : undefined
@@ -259,7 +284,7 @@ async function itemPage(slug: string): Promise<EntityPageData | null> {
     filterText: all.filterText,
     minSample: all.minSample.item,
     related: holders,
-    relatedTitle: '이 아이템을 잘 쓰는 기물',
+    relatedTitle: '이 아이템을 많이 드는 기물 (채용 순)',
     tags: [],
     decks: deckLinks(all, (d) => d.units.some((u) => (u.items ?? []).some((it) => entitySlug('item', it.key) === slug))),
   }

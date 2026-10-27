@@ -161,7 +161,32 @@ function clientPathsToFullData() {
 const clientHits = clientPathsToFullData()
 check('클라이언트 번들에 본 DB 없음 (lib/gameFacts 를 쓸 것)', clientHits.length === 0, clientHits.slice(0, 3).join(' | '))
 
-const summary = `게임 기준 DB ${GAME_DATA_INFO.gameVersion} · 기물 ${GAME_CHAMPIONS.length} · 시너지 ${GAME_TRAITS.length} · 아이템 ${GAME_ITEMS.length} · 골든셋 기물 ${goldenUnits.size} · ${ladderNote}`
+/* 6. 레벨별 상점 확률 (게임 파일 map22.bin — scripts/buildGameData.js shopOddsOf) */
+const { SHOP_ODDS } = require('../lib/gameFacts')
+const { costOdds, oddsWindow } = require('../lib/shopOdds')
+const fullOdds = require('../lib/gameData.json').shopOdds
+eq('lite 상점 확률 = 본 DB', SHOP_ODDS, fullOdds?.levels)
+check('상점 확률 레벨 수 (1~10 이상)', SHOP_ODDS.length >= 10, String(SHOP_ODDS.length))
+SHOP_ODDS.forEach((row, i) => {
+  const sum = row.reduce((s, x) => s + x, 0)
+  check(`상점 확률 Lv.${i + 1}: 코스트 5개 · 합 100`, row.length === 5 && Math.abs(sum - 100) <= 1, `${row.join('/')} (합 ${sum})`)
+})
+eq('상점 확률 Lv.1 은 1코스트만', SHOP_ODDS[0], [100, 0, 0, 0, 0])
+for (const cost of [4, 5]) {
+  check(`${cost}코스트 확률은 레벨이 오를수록 줄지 않음`, SHOP_ODDS.every((row, i) => i === 0 || row[cost - 1] >= SHOP_ODDS[i - 1][cost - 1]), SHOP_ODDS.map((r) => r[cost - 1]).join('/'))
+}
+// 확률 구간이 이어져 있어야 oddsWindow 의 "~레벨부터" 해석이 맞는다 (올랐다 내려가는 모양)
+for (const cost of [1, 2, 3, 4, 5]) {
+  const at = SHOP_ODDS.map((_, i) => costOdds(i + 1, cost) >= 30)
+  const runs = at.filter((v, i) => v && !at[i - 1]).length
+  check(`${cost}코스트 30%+ 레벨이 한 구간`, runs <= 1, at.map(Number).join(''))
+}
+check('표 밖 레벨은 끝 레벨로 (Lv.0 → Lv.1, Lv.20 → 마지막)', costOdds(0, 1) === 100 && costOdds(20, 5) === SHOP_ODDS[SHOP_ODDS.length - 1][4])
+check('코스트 범위 밖은 0', costOdds(8, 6) === 0 && costOdds(8, 0) === 0)
+check('oddsWindow: 하한 이상인 레벨 구간', JSON.stringify(oddsWindow(1, 9)) === JSON.stringify({ from: 1, to: oddsWindow(1, 11).to }))
+const oddsNote = `상점 확률 ${SHOP_ODDS.length}레벨 (Lv.8 = ${SHOP_ODDS[7]?.join('/')})`
+
+const summary = `게임 기준 DB ${GAME_DATA_INFO.gameVersion} · 기물 ${GAME_CHAMPIONS.length} · 시너지 ${GAME_TRAITS.length} · 아이템 ${GAME_ITEMS.length} · 골든셋 기물 ${goldenUnits.size} · ${oddsNote} · ${ladderNote}`
 if (failures.length) {
   console.error(`❌ 게임 기준 DB 검증 실패 ${failures.length}건\n` + failures.slice(0, 40).map((f) => `  - ${f}`).join('\n'))
   console.error(summary)

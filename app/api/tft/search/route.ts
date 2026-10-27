@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
       puuid: data.puuid,
       summonerProfile,
       matches: data.matches,
+      olderScanned: data.olderScanned,
       isDemo: data.isDemo,
       fetchedAt,
     }

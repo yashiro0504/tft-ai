@@ -10,9 +10,9 @@
  *  - Redis(분산 캐시) 설정 여부
  *  - Turnstile 강제 여부 + 토큰 없이 검색이 403으로 막히는지
  *  - sitemap URL 수/덱 URL 존재 및 덱 페이지 200
- *  - (--db) 덱 클러스터(stat_comp) 신선도: **최신 패치**의 마지막 빌드가 24시간 넘으면 미충족, 72시간 넘으면 수집 파이프라인 점검 안내
- *    (이전 패치가 최근에 다시 빌드돼도 최신 패치가 늦으면 미충족)
- *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — stat_comp 는 anon 읽기 공개.
+ *  - (--db) 덱 클러스터(stat_comp) · 기물 세트(stat_unit_build) 신선도: **최신 패치**의 마지막 빌드가 24시간 넘으면 미충족,
+ *    72시간 넘으면 수집 파이프라인 점검 안내 (이전 패치가 최근에 다시 빌드돼도 최신 패치가 늦으면 미충족)
+ *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — 두 테이블 모두 anon 읽기 공개.
  *    없으면 건너뛴다(CI 등).
  *
  *  - DeepSeek 잔액: 마지막 LLM 오류가 402(잔액 부족)면 미충족.
@@ -126,7 +126,19 @@ async function main() {
   }
   await checkDeepSeekBalance()
 
-  if (DB) await checkDeckFreshness()
+  if (DB) {
+    // 테이블마다 따로 — 한쪽 확인이 throw 해도 다른 쪽은 본다
+    for (const opts of [
+      { table: 'stat_comp', label: '덱 클러스터(stat_comp)', emptyHint: 'npm run collect:db:rollup' },
+      { table: 'stat_unit_build', label: '기물 세트(stat_unit_build)', emptyHint: '0008 적용 여부 확인 후 npm run collect:db:rollup' },
+    ]) {
+      try {
+        await checkRollupFreshness(opts)
+      } catch (err) {
+        fail(`${opts.label} 신선도 확인 실패: ${err.message}`)
+      }
+    }
+  }
 
   if (Array.isArray(health.warnings) && health.warnings.length > 0) {
     console.log('\nwarnings:')
@@ -200,7 +212,7 @@ function comparePatchDesc(a, b) {
 }
 
 /**
- * stat_comp 행 → 최신 패치와 그 패치의 마지막 빌드 시각 (티어 필터별 포함).
+ * stat_comp · stat_unit_build 행 → 최신 패치와 그 패치의 마지막 빌드 시각 (티어 필터별 포함).
  * 행이 없으면 latestPatch null · ageH Infinity.
  */
 function latestPatchFreshness(rows, now = Date.now()) {
@@ -216,42 +228,65 @@ function latestPatchFreshness(rows, now = Date.now()) {
   return { latestPatch, lastBuiltMs, ageH: lastBuiltMs ? (now - lastBuiltMs) / HOUR : Infinity, byTier }
 }
 
-/** 최신 패치 덱 클러스터 신선도 (docs/DATA-PLATFORM.md §13 기준: 24시간 · 72시간) */
-async function checkDeckFreshness() {
+/**
+ * 신선도 판정 (docs/DATA-PLATFORM.md §13 기준): 24시간 이내 ok · 24~72시간 stale · 72시간 초과 critical · 빌드 없음 empty.
+ * f 는 latestPatchFreshness 결과.
+ */
+function freshnessLevel(f) {
+  if (!f.latestPatch || !f.lastBuiltMs) return 'empty'
+  if (f.ageH <= 24) return 'ok'
+  if (f.ageH <= 72) return 'stale'
+  return 'critical'
+}
+
+/** 롤업 테이블 → 그 테이블을 만든 마이그레이션 (REST 404 = 미적용) */
+const ROLLUP_MIGRATION = {
+  stat_comp: '0006_tft_rollups.sql',
+  stat_unit_build: '0008_tft_unit_builds.sql',
+}
+
+/**
+ * 최신 패치 롤업 테이블 신선도 — 덱 클러스터(stat_comp)와 기물 세트(stat_unit_build)를 같은 기준으로 본다.
+ * 세트 저장(tft_replace_builds)만 실패하면 덱은 정상이라 BIS 탭 "3개 함께"만 조용히 사라지므로 따로 본다.
+ */
+async function checkRollupFreshness({ table, label, emptyHint }) {
   require('./_env').loadEnv()
   const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '')
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) {
-    console.log('db: Supabase URL/anon 키가 없어 덱 신선도 점검을 건너뜁니다')
+    console.log(`db: Supabase URL/anon 키가 없어 ${label} 신선도 점검을 건너뜁니다`)
     return
   }
+  const migration = ROLLUP_MIGRATION[table]
   try {
-    // 패치 수 × 티어 4 × 덱 ≤ 수백 행 — 클라이언트에서 패치별로 묶는다 (문서 §13 SQL 의 group by 와 같은 기준)
-    const res = await fetch(`${url}/rest/v1/stat_comp?select=patch,tier_min,updated_at`, {
+    // 패치 수 × 티어 4 × 덱(또는 세트) ≤ 수천 행 — 클라이언트에서 패치별로 묶는다 (문서 §13 SQL 의 group by 와 같은 기준)
+    const res = await fetch(`${url}/rest/v1/${table}?select=patch,tier_min,updated_at`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
       cache: 'no-store',
     })
+    if (res.status === 404) throw new Error(`status 404 — ${table} 없음 (${migration ?? '마이그레이션'} 적용 여부 확인)`)
     if (!res.ok) throw new Error(`status ${res.status}`)
     const f = latestPatchFreshness(await res.json())
-    if (!f.latestPatch || !f.lastBuiltMs) {
-      fail('덱 클러스터(stat_comp) 비어 있음 — npm run collect:db:rollup')
+    const level = freshnessLevel(f)
+    if (level === 'empty') {
+      fail(`${label} 비어 있음 — ${emptyHint}`)
       return
     }
-    console.log(`db: 최신 패치 ${f.latestPatch} · 마지막 빌드 ${new Date(f.lastBuiltMs).toISOString()} (${f.ageH.toFixed(1)}시간 전)`)
+    console.log(`db: ${label} 최신 패치 ${f.latestPatch} · 마지막 빌드 ${new Date(f.lastBuiltMs).toISOString()} (${f.ageH.toFixed(1)}시간 전)`)
     for (const [tier, t] of Object.entries(f.byTier)) {
       console.log(`    ${tier}: ${new Date(t).toISOString()} (${((Date.now() - t) / HOUR).toFixed(1)}시간 전)`)
     }
-    if (f.ageH <= 24) {
-      pass(`덱 클러스터 24시간 이내 갱신 (${f.latestPatch})`)
+    if (level === 'ok') {
+      pass(`${label} 24시간 이내 갱신 (${f.latestPatch})`)
       return
     }
-    fail(`최신 패치 ${f.latestPatch} 덱 클러스터 ${Math.floor(f.ageH)}시간 미갱신 (24시간 초과)`)
-    notes.push('npm run collect:db:rollup 으로 덱 클러스터 수동 갱신 (tft_collect_runs.note 의 "덱 클러스터 미룸" 확인)')
-    if (f.ageH > 72) {
-      notes.push('72시간 초과: collect-db 워크플로 실패 여부 · RIOT_API_KEY 만료 · 0006 마이그레이션 적용 상태를 함께 확인')
+    fail(`최신 패치 ${f.latestPatch} ${label} ${Math.floor(f.ageH)}시간 미갱신 (24시간 초과)`)
+    notes.push(`${label}: npm run collect:db:rollup 으로 수동 갱신 (tft_collect_runs.note 의 "덱 클러스터 미룸" · 수집 로그 경고 확인)`)
+    if (level === 'critical') {
+      notes.push(`${label} 72시간 초과: collect-db 워크플로 실패 여부 · RIOT_API_KEY 만료 · ${migration ?? '마이그레이션'} 적용 상태를 함께 확인`)
     }
   } catch (err) {
-    fail(`덱 클러스터 신선도 확인 실패: ${err.message}`)
+    fail(`${label} 신선도 확인 실패: ${err.message}`)
   }
 }
 
@@ -262,4 +297,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { comparePatchDesc, latestPatchFreshness }
+module.exports = { comparePatchDesc, latestPatchFreshness, freshnessLevel }

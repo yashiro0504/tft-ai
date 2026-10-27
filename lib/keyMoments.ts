@@ -4,6 +4,8 @@ import { boardCarry } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
 import { isCoreUnit } from './contest'
 import { slotsUsed } from './boardSlots'
+import { traitAnchors, unitTraitCounts } from './traitAnchors'
+import { CARRY_STAR_ODDS_MIN, levelRange, oddsWindow } from './shopOdds'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -23,8 +25,9 @@ export const KEY_MOMENTS_MAX = 3
 /** 1성 저코스트 기물에 든 완성 아이템이 이 이상이면 장면으로 본다 (여러 판 습관도 같은 기준) */
 export const ITEMS_ON_WEAK_MIN = 3
 /**
- * '약한 1성'으로 보는 코스트 상한. 4·5코스트 1성은 후반에 BIS 를 몰아주는 게 정상 운영이라
+ * '약한 1성'으로 보는 코스트 상한 (아이템이 1성 기물에 든 장면). 4·5코스트 1성은 후반에 BIS 를 몰아주는 게 정상 운영이라
  * (예: 1등 판의 1성 장로 드래곤 무한의 대검·최후의 속삭임) 아이템이 "1성에 묶였다"고 보지 않는다.
+ * 캐리 1성 장면은 코스트가 아니라 레벨별 상점 확률로 판단한다 (oneStarCarry · lib/shopOdds).
  */
 export const WEAK_MAX_COST = 3
 const isWeakOneStar = (u: SlimMatchUnit) => (u.tier || 1) === 1 && (u.rarity || 1) <= WEAK_MAX_COST
@@ -67,10 +70,14 @@ export function weakItems(m: SlimMatchData) {
   }
 }
 
-/** 아이템 2개+ 든 캐리가 1성 저코스트(1~3코)면 그 기물 (4·5코 1성 캐리는 후반 정상 운영) */
+/**
+ * 아이템 2개+ 든 캐리가 1성인데, 최종 레벨까지 그 코스트가 상점에 CARRY_STAR_ODDS_MIN% 이상 나온 레벨을 지났으면 그 기물.
+ * Set 18 표로 1코스트는 항상 · 3코스트는 Lv.7부터 · 4코스트는 Lv.8부터 해당하고, 5코스트는 Lv.10 까지 해당 없다(정상 운영).
+ */
 export function oneStarCarry(m: SlimMatchData): SlimMatchUnit | null {
   const carry = boardCarry(m.units)
-  return carry && isWeakOneStar(carry) && (carry.items?.length || 0) >= 2 ? carry : null
+  if (!carry || (carry.tier || 1) !== 1 || (carry.items?.length || 0) < 2) return null
+  return oddsWindow(carry.rarity || 1, m.level) ? carry : null
 }
 
 /** 레벨만큼의 칸 중 비운 칸 (장로 드래곤처럼 2칸 차지하는 기물 반영 — lib/boardSlots) */
@@ -85,6 +92,54 @@ export function nearBreakpoints(m: SlimMatchData): { trait: string; count: numbe
     const next = bps.find((b) => b > (t.count || 0))
     return next && next - (t.count || 0) === 1 && (bps[0] ?? 1) > 1 ? [{ trait: t.name, count: t.count || 0, next }] : []
   })
+}
+
+const levelOf = (bps: number[], n: number) => bps.filter((b) => b <= n).length
+
+export interface FillSwap {
+  /** 바꿀 1성 기물 */
+  name: string
+  /** 빼면 내려가는 시너지 (예: "싸움꾼 꺼짐", "달빛 2→1단계"). 비면 공짜 자리 */
+  cost: string[]
+}
+
+/**
+ * 시너지에 1명을 더할 자리 — 빈칸 수와, 바꿀 수 있는 1성 기물(빼면 잃는 것 포함).
+ * 제외: 그 시너지에 이미 속한 기물(타릭을 다른 선봉대로 바꿔도 선봉대는 그대로다) · 핵심 시너지를 받치는 기물(lib/traitAnchors).
+ * 대부분의 자리는 공짜가 아니라 맞바꿈이다(세트를 빼면 싸움꾼 2가 꺼진다) — 잃는 것을 함께 적어 LLM 이 맞바꿈으로 말하게 한다.
+ * 2026-10-23 1등 판에서 "타릭 자리에 선봉대를", "벤치에 남겨둘 것"처럼 채울 수 없는 자리를 권한 오진단을 막는다.
+ */
+export function fillSpots(m: SlimMatchData, trait: string): { empty: number; swaps: FillSwap[] } {
+  const counts = new Map((m.traits || []).map((t) => [t.name, t.count || 0]))
+  const anchored = new Set(traitAnchors(m).flatMap((a) => a.units.map((u) => u.name)))
+  const seen = new Set<string>()
+  const swaps: FillSwap[] = []
+  for (const u of m.units || []) {
+    if ((u.tier || 1) !== 1 || anchored.has(u.name) || seen.has(u.name)) continue
+    const c = unitTraitCounts(u)
+    if (c.get(trait)) continue
+    seen.add(u.name)
+    const cost: string[] = []
+    for (const [name, n] of c) {
+      const total = counts.get(name)
+      const bps = BREAKPOINTS[name] || []
+      if (total === undefined) continue
+      const before = levelOf(bps, total)
+      const after = levelOf(bps, total - n)
+      if (after < before) cost.push(after === 0 ? `${name} 꺼짐` : `${name} ${before}→${after}단계`)
+    }
+    swaps.push({ name: u.name, cost })
+  }
+  // 공짜 자리부터
+  swaps.sort((a, b) => a.cost.length - b.cost.length)
+  return { empty: emptySlotCount(m), swaps }
+}
+
+/** 1명 모자란 시너지 중 채울 자리가 있는 것만 (자리가 없으면 다음 판 행동으로 바꿀 수 없다) */
+export function fillableNearBreakpoints(m: SlimMatchData) {
+  return nearBreakpoints(m)
+    .map((n) => ({ ...n, spot: fillSpots(m, n.trait) }))
+    .filter((n) => n.spot.empty > 0 || n.spot.swaps.length > 0)
 }
 
 /* ───────── 단일 경기 장면 ───────── */
@@ -125,12 +180,15 @@ function itemsOnWeak(m: SlimMatchData): KeyMoment | null {
 
 function carryOneStar(m: SlimMatchData): KeyMoment | null {
   const carry = oneStarCarry(m)
-  if (!carry) return null
+  const window = carry && oddsWindow(carry.rarity || 1, m.level)
+  if (!carry || !window) return null
   return {
     kind: 'carryOneStar',
-    title: '저코스트 캐리가 1성',
-    // 기물 이름 받침에 따라 이/가가 갈리므로 조사 없이 쓴다
-    fact: `아이템 ${carry.items.length}개를 든 캐리 ${carry.name}(${carry.rarity}코스트) — 최종 보드에서 1성`,
+    title: '캐리가 1성',
+    // 기물 이름 받침에 따라 이/가가 갈리므로 조사 없이 쓴다. 상점 확률 구간을 붙여 "올릴 수 있던 코스트"임을 밝힌다
+    fact: `아이템 ${carry.items.length}개를 든 캐리 ${carry.name}(${carry.rarity}코스트) — 최종 보드(Lv.${m.level})에서 1성 · ${
+      carry.rarity || 1
+    }코스트가 상점에 ${CARRY_STAR_ODDS_MIN}% 이상 나오는 레벨(${levelRange(window)})을 지남`,
   }
 }
 
@@ -143,6 +201,7 @@ function emptySlots(m: SlimMatchData): KeyMoment | null {
 // '1명 모자란 시너지'는 단일 경기 장면에서 뺐다 (2026-10-22 정답셋 0/19 맞음 · 래더 보드 같은 레벨 비교 등수 차이 없음).
 // 8·9레벨 밸류 덱은 시너지 하나 더 켜는 것보다 5코스트 하나를 더 쓰는 게 낫다. 여러 판 습관(lib/habits)은
 // 등수 손해와 같이 나타날 때만(requireHarm) 보이므로 그대로 둔다.
+// 다시 장면으로 쓴다면 fillableNearBreakpoints(채울 수 있는 자리 · 빼면 잃는 시너지)로만 말할 것 — 2026-10-23 제보 오진단.
 
 /** 리롤 캐리 = 1~3코스트 3성 캐리. 로비 경합은 이 덱에서만 등수를 가른다 (정답셋: 4·5코 2성 캐리 판의 경합 요인은 모두 틀림) */
 export const REROLL_CARRY_MAX_COST = 3
@@ -179,8 +238,9 @@ export function winFactors(m: SlimMatchData): string[] {
   const contest = rerollCarryContest(m)
   if (contest) {
     const { carry, opponents } = contest
-    const verdict = opponents === 0 ? '빈집' : opponents === 1 ? '경합 적음' : '경합'
-    out.push(`로비 경합 ${verdict}: 리롤 캐리 ${carry.name}(${carry.rarity}코 3성)를 코어로 쓴 상대 ${opponents}명`)
+    // 캐리 한 기물의 겹침이다 — 로비 경합 등급(빈집·보통·경합·심각, 경기 카드)과 다른 지표라 등급 이름을 쓰지 않는다.
+    // 예전엔 "로비 경합 빈집"이라 써서 카드는 "경합 보통", 리포트는 "빈집"으로 갈렸다 (2026-10-27)
+    out.push(`리롤 캐리 겹침: ${carry.name}(${carry.rarity}코 3성)를 코어로 쓴 상대 ${opponents}명`)
   }
   return out
 }

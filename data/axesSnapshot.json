@@ -1,14 +1,14 @@
 {
-  "scoringVersion": "v10",
-  "generatedAt": "2026-10-21T18:01:41.264Z",
+  "scoringVersion": "v12",
+  "generatedAt": "2026-10-27T06:30:54.220Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 89,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 97,
         "completion": 80,
         "synergy": 85,
         "contest": 80
@@ -26,9 +26,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 89,
-        "itemization": 89,
-        "tempo": 100,
+        "economy": 87,
+        "itemization": 94,
+        "tempo": 99,
         "completion": 83,
         "synergy": 88,
         "contest": 83
@@ -43,11 +43,11 @@
       }
     },
     "Seed02 최근 5경기": {
-      "focus": "itemization",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 97,
-        "itemization": 89,
+        "economy": 99,
+        "itemization": 94,
         "tempo": 100,
         "completion": 90,
         "synergy": 94,
@@ -66,9 +66,9 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 91,
-        "itemization": 93,
-        "tempo": 100,
+        "economy": 96,
+        "itemization": 96,
+        "tempo": 99,
         "completion": 90,
         "synergy": 87,
         "contest": 91
@@ -88,7 +88,7 @@
       "axes": {
         "economy": 84,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 99,
         "completion": 91,
         "synergy": 88,
         "contest": 75
@@ -103,11 +103,11 @@
       }
     },
     "Seed01 win 1등 7-1": {
-      "focus": "itemization",
+      "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 89,
-        "itemization": 82,
+        "economy": 85,
+        "itemization": 90,
         "tempo": 100,
         "completion": 85,
         "synergy": 100,
@@ -126,7 +126,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 84,
@@ -146,9 +146,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 93,
+        "economy": 99,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 94,
         "completion": 91,
         "synergy": 94,
         "contest": 95
@@ -163,11 +163,11 @@
       }
     },
     "Seed01 bottom 7등 5-2": {
-      "focus": "itemization",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 86,
-        "itemization": 63,
+        "economy": 88,
+        "itemization": 80,
         "tempo": 100,
         "completion": 85,
         "synergy": 81,
@@ -186,8 +186,8 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 84,
-        "itemization": 63,
+        "economy": 92,
+        "itemization": 80,
         "tempo": 80,
         "completion": 92,
         "synergy": 48,
@@ -206,9 +206,9 @@
       "focus": "itemization",
       "lowSample": false,
       "axes": {
-        "economy": 93,
-        "itemization": 45,
-        "tempo": 100,
+        "economy": 82,
+        "itemization": 70,
+        "tempo": 82,
         "completion": 78,
         "synergy": 94,
         "contest": 65
@@ -226,9 +226,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 100,
+        "economy": 95,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 94,
         "completion": 80,
         "synergy": 96,
         "contest": 95
@@ -246,7 +246,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 98,
+        "economy": 99,
         "itemization": 100,
         "tempo": 100,
         "completion": 96,
@@ -267,7 +267,7 @@
       "lowSample": false,
       "axes": {
         "economy": 100,
-        "itemization": 63,
+        "itemization": 80,
         "tempo": 100,
         "completion": 94,
         "synergy": 81,
@@ -286,7 +286,7 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 75,
+        "economy": 82,
         "itemization": 100,
         "tempo": 100,
         "completion": 79,
@@ -328,7 +328,7 @@
       "axes": {
         "economy": 65,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 96,
         "completion": 89,
         "synergy": 75,
         "contest": 50
@@ -400,6 +400,26 @@
         "completion": 0,
         "items": 0,
         "contest": 75
+      }
+    },
+    "Rift01 win 협곡야수7 장로1성": {
+      "focus": "economy",
+      "lowSample": false,
+      "axes": {
+        "economy": 87,
+        "itemization": 100,
+        "tempo": 100,
+        "completion": 87,
+        "synergy": 87,
+        "contest": 85
+      },
+      "metaScore": 95,
+      "metaTier": "S",
+      "components": {
+        "placement": 100,
+        "completion": 87,
+        "items": 100,
+        "contest": 85
       }
     }
   }

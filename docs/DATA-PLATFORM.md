@@ -238,6 +238,8 @@ create table stat_comp (
 - 수집기 ④단계에서 **이번 실행에 들어온 (game_date, patch, tier_bucket) 조합만** 다시 계산해 UPSERT 한다.
   원본에서 `group by` 하므로 재실행해도 결과가 같다.
 - 덱 클러스터(`buildDecksFromBoards.js` 로직)는 1일 1회, 패치 × 티어 구간별로 원본을 읽어 `stat_comp` 를 다시 만든다.
+- 기물 빌드(아이템 3개 세트, `scripts/collect/builds.js`)도 같은 보드로 `stat_unit_build`(0008)를 다시 만든다 — 기물마다 판 수 많은 세트 상위 10개(5판 이상).
+  조합 종류가 많아 일별 영구 집계 대신 패치 × 티어 필터 단위로 교체한다 (기간 필터 없음). 0008 적용 전에는 경고만 남기고 덱 클러스터는 그대로 만든다.
 
 ### 6-2. 필터 정의
 
@@ -258,6 +260,7 @@ create table stat_comp (
 | `GET /api/tft/stats?type=unit&patch=&tier=&days=` | 기물·아이템·시너지 표 | `s-maxage=600, stale-while-revalidate=3600` |
 | `GET /api/tft/stats?type=unit_item&unit=` | 기물별 아이템 추천 (BIS). `unit` 은 슬러그(`ahri`)·수집 키(`Ahri`)·Riot ID(`TFT18_Ahri`) 모두 허용, 응답 `unit` = 맞춘 슬러그, `totalBoards` 는 거르기 전 분모 | 동일 |
 | `GET /api/tft/decks?patch=&tier=` | 덱 티어표 | 동일 |
+| `GET /api/tft/builds?patch=&tier=` | 기물 빌드(아이템 3개를 함께 든 세트 · `stat_unit_build`). 메타 BIS 탭 "3개 함께" · 기물 모달 "많이 쓰는 세트". DB 가 없거나 0008 미적용이면 `lib/unitBuilds.json`(래더 보드) 폴백 — 화면은 기물×아이템과 출처가 같을 때만 쓴다 | 동일 |
 | `GET /api/tft/meta/filters` | 사용 가능한 패치·표본 수 | 10분 |
 
 Phase C 예정 (미구현):
@@ -421,15 +424,31 @@ Phase C 예정 (미구현):
     order by last_built desc;
    ```
    또는 `npm run check:ops -- https://www.tftlab.kr --db` (`--strict` 면 24시간 초과 시 exit 1, anon 키로 `stat_comp` 를 읽는다).
+   `check:ops --db` 는 `stat_comp` 와 `stat_unit_build` 의 최신 패치 빌드 시각을 함께 본다(24h/72h) — 세트 저장(`tft_replace_builds`)만 실패해도 잡힌다.
    판정은 **최신 패치**(가장 높은 `숫자.숫자` 패치) 행의 `max(updated_at)` 기준 — 위 SQL 결과에서 최신 패치 줄들을 본다.
    이전 패치가 최근에 다시 빌드됐어도 최신 패치가 늦으면 미충족이다.
-   - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행.
+   - 최신 패치 `last_built` **24시간 초과** → `npm run collect:db:rollup` 수동 실행 (키가 없으면 Actions → `Collect Matches to DB` → `rollup_only: true` 로 실행 — 덱 규칙을 바꾼 직후 바로 다시 만들 때도 같다).
    - **72시간 초과** → 수집 워크플로(`collect-db.yml`) 실패 여부 · `RIOT_API_KEY` 만료 · 0006 적용 상태를 함께 확인.
 
 수집기는 `MAX_MINUTES` 보다 7분 일찍 수집을 멈춰 덱 클러스터 몫을 남긴다. 그래도 미루면 `note` 에 남기고, 최신 패치 덱이 24시간 이상
 갱신되지 않았으면 경고한다(위 `stat_comp` 의 `max(updated_at)` 확인 → `npm run collect:db:rollup` 으로 수동 갱신).
 
-조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 15판 미만을 표본 부족으로 표시)
+조절 변수: `DECK_REFRESH_HOURS`(20, 덱 클러스터·전체 재계산 주기) · `COMP_MIN_GAMES`(8, 저장할 덱 최소 판수 — 화면은 30판 미만을 표본 부족으로 표시)
 
-표본 규칙 (§6-2): 기물·아이템·시너지 30판, 기물×아이템 20판, 덱 15판 미만은 표본 부족(회색 · 상대 티어 제외 · 정렬 맨 아래).
+표본 규칙 (§6-2): 덱·기물·아이템·시너지 30판(평균등수 오차 ±0.42) 미만은 표본 부족(회색 · 상대 티어 제외 · 정렬 맨 아래). 기물×아이템 20판은 BIS 후보 하한. 상대 티어는 표본 수로 4.5등 쪽에 당긴 추정 평균등수 기준, 기물은 코스트별로 매긴다 (app/components/metaShared).
 평균등수 옆 ± 는 표준오차 2.29/√n. 덱 티어표는 기간 필터 없이 패치 전체로 하루 1회 묶는다.
+
+## 14. 경제·템포 기준선 (`lib/gameBaselines.json`)
+
+6축의 경제·템포·완성도는 "이 탈락 스테이지면 보통 몇 레벨, 보드 가치 몇 G"라는 기준과 비교한다. 이 기준을 손 표 대신
+원본 보드에서 잰다 (2026-10-26, axisConfig v11).
+
+- **만드는 곳:** `scripts/buildBaselines.js` — Supabase `tft_boards` 최신 패치 마스터+ 보드(최대 6천 판)를 앱과 같은 함수
+  (`stageOfRound` · `boardValue` · `boardCarryKey`)로 읽어, 같은 탈락 스테이지의 레벨·보드 가치 **중앙값**을 스테이지 전체와
+  캐리 × 스테이지로 만든다. 칸 표본 하한은 스테이지 100 · 캐리×스테이지 40판. 패치 표본이 500판 미만이면 파일을 바꾸지 않는다.
+- **갱신:** `collect-ladder` 워크플로가 매일 `--write` 로 다시 만들어 메타 데이터와 함께 커밋한다 (service role 키 필요, 실패해도 이전 파일 유지).
+- **쓰는 곳:** `lib/baselines` — 같은 캐리 × 스테이지 → 스테이지 → `axisConfig.json` 손 표(폴백). 경제(보드 가치·레벨 격차)·템포(레벨 격차)는
+  캐리별 칸을 쓰고, 완성도(채워야 할 칸 수)는 스테이지 전체 칸만 쓴다 — 캐리별 레벨을 쓰면 낮은 레벨 리롤 보드가 "다 채운 보드"가 돼
+  골든셋 로비 보드의 스테이지 내 등수 상관이 떨어졌다.
+- **한계:** Riot 데이터는 최종 보드뿐이라, 스테이지 기준은 "그 스테이지에서 탈락한 보드"의 모습이다. 살아남은 보드의 그 시점 레벨은 알 수 없다.
+- **분석 캐시:** 기준선은 매일 바뀌지만 분석 캐시가 24시간이라 캐시 키에 넣지 않는다. 공식(조회 순서·적용 축)을 바꾸면 `axisConfig.json` version 을 올린다.

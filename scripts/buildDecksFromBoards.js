@@ -390,6 +390,19 @@ function deckGuide(c) {
   }
 }
 
+/**
+ * 덱 수 상한: 넘으면 **판 수가 많은 덱부터** 남기고, 화면 순서는 평균 등수 순.
+ * 예전엔 평균 등수 순으로 자르는 바람에 많이 하지만 성적 나쁜 덱(래더 143판 5.62등)이 빠지고 8판짜리 운 좋은 덱이 남았다 —
+ * 티어표에서 "피해야 할 인기 덱"이 사라지고, 그 덱을 한 유저는 내 덱 성적표·AI 비교에서 엉뚱한 덱에 묶였다 (2026-10-26).
+ * @param games 항목 → 판 수 · avg 항목 → 평균 등수
+ */
+function capByGames(items, maxDecks, games = (d) => d.games, avg = (d) => d.avgPlacement) {
+  return [...items]
+    .sort((a, b) => games(b) - games(a) || avg(a) - avg(b))
+    .slice(0, maxDecks)
+    .sort((a, b) => avg(a) - avg(b))
+}
+
 function tierFromAvgPlacement(avg) {
   if (avg <= 3.95) return 'S'
   if (avg <= 4.15) return 'A'
@@ -521,11 +534,14 @@ function buildDecks(boards, { minGames = MIN_GAMES, maxDecks = MAX_DECKS } = {})
     }
   }
 
-  const decks = merged
-    .filter((c) => c.boards >= minGames)
-    .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements }))
-    .sort((a, b) => a.deck.avgPlacement - b.deck.avgPlacement)
-    .slice(0, maxDecks)
+  const decks = capByGames(
+    merged
+      .filter((c) => c.boards >= minGames)
+      .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements })),
+    maxDecks,
+    (d) => d.deck.games,
+    (d) => d.deck.avgPlacement
+  )
   setSharedCarry(decks.map((d) => d.deck))
 
   return { decks, labeled, clusterCount: clusters.size, mergedCount: merged.length }
@@ -602,9 +618,7 @@ function main() {
     boards = allBoards.filter((b) => b.patch === current || b.patch === previous)
     const builtCurrent = buildDecks(currentBoards)
     const builtMixed = buildDecks(boards)
-    decks = dedupeByUnits(choosePatchDecks(builtCurrent.decks.map((d) => d.deck), builtMixed.decks.map((d) => d.deck)))
-      .sort((a, b) => a.avgPlacement - b.avgPlacement)
-      .slice(0, MAX_DECKS)
+    decks = capByGames(dedupeByUnits(choosePatchDecks(builtCurrent.decks.map((d) => d.deck), builtMixed.decks.map((d) => d.deck))), MAX_DECKS)
     setSharedCarry(decks)
     ;({ labeled, clusterCount, mergedCount } = builtMixed)
     console.log(`패치: 현재 ${current} ${currentBoards.length}보드 · 직전 ${previous ?? '-'} ${boards.length - currentBoards.length}보드 · 제외(더 이전) ${allBoards.length - boards.length}보드`)
@@ -657,4 +671,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { labelBoard, damageScore, itemRole, buildDecks, choosePatchDecks }
+module.exports = { labelBoard, damageScore, itemRole, buildDecks, choosePatchDecks, capByGames }

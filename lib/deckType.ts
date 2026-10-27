@@ -52,6 +52,12 @@ export function boardCarry(units: SlimMatchUnit[], preferKey?: string | null): S
     )[0]
 }
 
+/** 캐리 기물의 슬러그 (예: 'lux') — 기준선(lib/baselines)의 캐리별 칸 키. 보드가 비었으면 null */
+export function boardCarryKey(units: SlimMatchUnit[]): string | null {
+  const carry = boardCarry(units || [])
+  return carry ? entitySlug('champion', carry.id) || null : null
+}
+
 export function detectDeckType(m: SlimMatchData): DeckTypeInfo {
   const cfg = AXIS_CONFIG.deckType
   const units = m.units || []

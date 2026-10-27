@@ -12,7 +12,8 @@ const fs = require('fs')
 const path = require('path')
 const { createMemoryStore } = require('./collect/store')
 const { rollupBoards, queryRollups, rollupFilters, comboKey, tierBuckets, minusDays } = require('./collect/rollup')
-const { toDeckBoards, compRows } = require('./collect/decks')
+const { toDeckBoards, compRows, rebuildComps } = require('./collect/decks')
+const { buildRows } = require('./collect/builds')
 
 // 테스트 데이터는 수십 판이라 lib/tftStats 의 최소 판 수(기본 500) 미만 → 항상 JSON 폴백이 된다.
 // 서빙 검사는 DB 경로를 보려는 것이므로 기준을 끈다 (lib 를 불러오기 전에 설정해야 한다).
@@ -174,6 +175,91 @@ const sortRows = (rows) =>
     check('deck 은 decksData.json 덱 모양', d.deck.id === d.comp_id && Array.isArray(d.deck.units) && d.deck.carryKey && d.core_units.includes('khazix'))
   }
   check('표본 하한 미만 덱은 저장 안 함', compRows(deckBoards.slice(0, 10), { minGames: 15 }).length === 0)
+  // 덱 수 상한을 넘으면 판 수 많은 덱부터 남긴다 — 많이 하지만 성적 나쁜 덱이 티어표·내 덱 비교에서 빠지지 않게
+  {
+    const more = new Map([
+      ...names,
+      [61, 'DA_18_Veigar'], [62, 'DA_18_Ahri'], [63, 'DA_18_Cassiopeia'], [64, 'DA_Fiddlesticks18'], [65, 'DA_Karma18'], [66, 'DA_18_LeBlanc'],
+      [71, 'DA_18_Spellweaver'],
+    ])
+    // 카직스 덱 20판은 전부 7·8등, 주문술사 베이가 덱 8판은 전부 1등
+    const popularBad = deckRaw.map((b, i) => ({ ...b, placement: 7 + (i % 2) }))
+    const rareGood = Array.from({ length: 8 }, (_, i) => ({
+      ...board(`KR_V${i}`, 1, [[61, 2, 31, 32, 33], [62, 1], [63, 1], [64, 1], [65, 1], [66, 1]], [[71, 6, 3]]),
+      tier_bucket: 'MASTER',
+    }))
+    const capBoards = toDeckBoards([...popularBad, ...rareGood], (id) => more.get(id))
+    const one = compRows(capBoards, { minGames: 5, maxDecks: 1 })
+    check('덱 상한: 판 수 많은 덱을 남긴다 (20판 7·8등 > 8판 1등)', one.length === 1 && one[0].games === 20, JSON.stringify(one.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+    const two = compRows(capBoards, { minGames: 5, maxDecks: 2 })
+    check('덱 상한 안의 덱은 평균 등수 순', two.length === 2 && two[0].games === 8 && two[0].deck.avgPlacement <= two[1].deck.avgPlacement, JSON.stringify(two.map((x) => [x.comp_id, x.games, x.deck.avgPlacement])))
+  }
+
+  console.log('기물 빌드 (보드 → stat_unit_build 행 · 0008)')
+  {
+    const built = buildRows(deckBoards, { minGames: 5 })
+    const kz = built.find((b) => b.unit === 'TFT18_Khazix')
+    check(
+      '카직스 20판 · 3개 세트 1개 · 정렬 키 · 분모 = 기물 등장 수',
+      built.length === 1 && kz && kz.items.join(',') === 'TFT_Item_Bloodthirster,TFT_Item_InfinityEdge,TFT_Item_LastWhisper' && kz.games === 20 && kz.unit_games === 20,
+      JSON.stringify(built)
+    )
+    check('등수합 · TOP4 · 1등', kz && kz.placement_sum === deckRaw.reduce((s, b) => s + b.placement, 0) && kz.top4 === deckRaw.filter((b) => b.placement <= 4).length && kz.wins === deckRaw.filter((b) => b.placement === 1).length)
+    const u = (id, items) => ({ id, items })
+    const mk = (placement, units) => ({ placement, units })
+    const mixed = [
+      // 든 순서가 달라도 같은 세트 · 같은 아이템 2개도 세트
+      mk(1, [u('A', ['x', 'y', 'z'])]),
+      mk(2, [u('A', ['z', 'x', 'y'])]),
+      mk(3, [u('A', ['y', 'y', 'x'])]),
+      mk(5, [u('A', ['y', 'x', 'y'])]),
+      // 아이템 2개는 세트가 아니지만 분모에는 든다
+      mk(8, [u('A', ['x', 'y'])]),
+      mk(4, [u('A', ['w', 'x', 'y'])]),
+    ]
+    const rows = buildRows(mixed, { minGames: 1, maxPerUnit: 2 })
+    check(
+      '순서 무관 · 2개짜리 세트 · 2개 든 기물은 분모만 · 판 수 → 평균등수 순 상위 N',
+      rows.length === 2 &&
+        rows[0].items.join() === 'x,y,z' && rows[0].games === 2 &&
+        rows[1].items.join() === 'x,y,y' && rows[1].games === 2 &&
+        rows.every((r) => r.unit_games === 6),
+      JSON.stringify(rows.map((r) => [r.items.join(), r.games, r.unit_games]))
+    )
+    check('표본 하한 미만 세트는 저장 안 함', buildRows(mixed, { minGames: 3 }).length === 0)
+
+    // 덱 클러스터와 같은 보드로 티어 필터마다 저장 · 0008 이 없어도 덱 클러스터는 그대로
+    const saved = new Map()
+    const warns = []
+    // failBuilds: true = 모든 티어 실패 · 'GRANDMASTER' 등 = 그 티어만 실패
+    const fakeStore = (failBuilds) => ({
+      loadBoardsForPatch: async () => deckRaw,
+      dictName: (id) => names.get(id),
+      replaceComps: async () => 1,
+      replaceBuilds: async (patch, tierMin, r) => {
+        if (failBuilds === true || failBuilds === tierMin) throw new Error('relation "stat_unit_build" does not exist')
+        saved.set(tierMin, r)
+        return r.length
+      },
+    })
+    const quiet = { log: () => {}, warn: (m) => warns.push(m) }
+    await rebuildComps(fakeStore(false), '16.20', { log: quiet, minGames: 15 })
+    check(
+      '덱 클러스터 재빌드가 티어 필터 4개에 빌드 저장 (챌린저 10판 · 마스터+ 20판)',
+      saved.size === 4 && saved.get('CHALLENGER')[0]?.games === 10 && saved.get('MASTER')[0]?.games === 20 && saved.get('DIAMOND')[0]?.games === 20,
+      JSON.stringify([...saved].map(([t, r]) => [t, r.map((x) => x.games)]))
+    )
+    const comps = await rebuildComps(fakeStore(true), '16.20', { log: quiet, minGames: 15 })
+    check('빌드 저장 실패(0008 미적용)해도 덱 클러스터 결과 · 경고만', comps.MASTER === 1 && warns.some((w) => /0008/.test(w)), JSON.stringify({ comps, warns }))
+    saved.clear()
+    warns.length = 0
+    await rebuildComps(fakeStore('GRANDMASTER'), '16.20', { log: quiet, minGames: 15 })
+    check(
+      '한 티어(GRANDMASTER)만 실패해도 나머지 3티어는 저장 · 경고에 티어명',
+      saved.size === 3 && !saved.has('GRANDMASTER') && ['CHALLENGER', 'MASTER', 'DIAMOND'].every((t) => saved.has(t)) && warns.length === 1 && /\(1\/4 티어\)/.test(warns[0]) && /GRANDMASTER:/.test(warns[0]),
+      JSON.stringify({ saved: [...saved.keys()], warns })
+    )
+  }
 
   console.log('서빙 (lib/tftStats — DB 미설정 → JSON 폴백)')
   delete process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -187,7 +273,9 @@ const sortRows = (rows) =>
   const fbFilters = await fallback.getMetaFilters()
   const fbUnits = await fallback.getStats('unit', shared.DEFAULT_FILTER)
   const fbDecks = await fallback.getDecks(shared.DEFAULT_FILTER)
+  const fbBuilds = await fallback.getBuilds(shared.DEFAULT_FILTER)
   check('필터 목록: json · 패치 없음', fbFilters.source === 'json' && fbFilters.patches.length === 0 && fbFilters.fallbackReason === 'supabase_not_configured')
+  check('기물 빌드: lib/unitBuilds.json 폴백 (source json)', fbBuilds.source === 'json' && fbBuilds.filter === null && Array.isArray(fbBuilds.rows))
   check(
     '기물: metaStats.json 폴백 · 표본 필드',
     fbUnits.source === 'json' && fbUnits.filter === null && fbUnits.rows.length > 0 && fbUnits.rows.every((r) => typeof r.lowSample === 'boolean' && r.margin > 0)
@@ -218,8 +306,10 @@ const sortRows = (rows) =>
   check('unit 필터: 없는 기물은 빈 배열', shared.filterStatsByUnit(fbCombos, 'nope').rows.length === 0 && fbCombos.rows.length === comboCount)
   // ?unit= 은 슬러그·수집 키·Riot ID 를 같은 기물로 맞춘다 (REVIEW R6)
   const slug = require('../lib/entitySlug').entitySlug('champion', String(someChamp))
-  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3)
-  const unitInputs = [slug, String(someChamp), `TFT18_${someChamp}`, slug.toUpperCase(), `DA_18_${someChamp}`, `DA_${someChamp}`, `${someChamp}18_Base`]
+  // DA_18_* · DA_* · *18_Base 는 실제 DB 원본 id 형식 (FOLLOWUP F3).
+  // 형식은 접두사·꼬리 없는 이름에 붙인다 — 데이터 첫 키가 이미 'Lux18_Base' 여도 'Lux18_Base18_Base' 같은 없는 id 를 만들지 않게.
+  const bareChamp = String(someChamp).replace(/^(TFT\d*_|DA_\d*_|DA_)/i, '').replace(/_?Base$/i, '').replace(/\d+$/, '')
+  const unitInputs = [slug, String(someChamp), `TFT18_${bareChamp}`, slug.toUpperCase(), `DA_18_${bareChamp}`, `DA_${bareChamp}`, `${bareChamp}18_Base`]
   const variants = unitInputs.map((u) => shared.filterStatsByUnit(fbCombos, u))
   check(
     `unit 필터: ${unitInputs.join(' · ')} 같은 결과 · 응답 unit = 슬러그`,
@@ -251,7 +341,7 @@ const sortRows = (rows) =>
     hangCalls++
     return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
   }
-  const slow = loadStatsLib({ rpc: () => ({ abortSignal: hanging }) })
+  const slow = loadStatsLib({ rpc: () => rpcBuilder(hanging) })
   let t = Date.now()
   const firstFail = await slow.getStats('unit', shared.DEFAULT_FILTER)
   const firstMs = Date.now() - t
@@ -272,13 +362,12 @@ const sortRows = (rows) =>
   let queryCalls = 0
   const filterRows = [{ patch: '16.20', tier_bucket: 'MASTER', matches: 10, first_date: '2026-10-19', last_date: '2026-10-20' }]
   const partial = loadStatsLib({
-    rpc: (fn) => ({
-      abortSignal: (signal) => {
+    rpc: (fn) =>
+      rpcBuilder((signal) => {
         if (fn === 'tft_stat_filters') return Promise.resolve({ data: filterRows, error: null })
         queryCalls++
         return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ data: null, error: { message: 'aborted' } })))
-      },
-    }),
+      }),
   })
   t = Date.now()
   const qFirst = await partial.getStats('unit', shared.DEFAULT_FILTER)
@@ -332,11 +421,17 @@ function loadStatsLib(fakeClient) {
   return require('../lib/tftStats')
 }
 
+/** rpc() 빌더 흉내 — order · range 는 무시하고 abortSignal 에서 run 을 부른다 */
+function rpcBuilder(run) {
+  const b = { order: () => b, range: () => b, abortSignal: run }
+  return b
+}
+
 /**
- * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자) · from(t).select().eq().abortSignal().
- * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려준다.
+ * PGlite 위의 최소 supabase-js 흉내: rpc(fn, 인자).order().range() · from(t).select().eq().abortSignal().
+ * PostgREST 처럼 date 는 문자열, bigint 는 숫자로 돌려주고, maxRows 를 주면 한 응답을 그 행 수에서 자른다.
  */
-function fakeSupabase(db, { failRpc = false } = {}) {
+function fakeSupabase(db, { failRpc = false, maxRows = Infinity } = {}) {
   const parsers = { 1082: (v) => v, 20: (v) => Number(v), 1700: (v) => Number(v) }
   const run = (sql, params) =>
     failRpc
@@ -348,12 +443,37 @@ function fakeSupabase(db, { failRpc = false } = {}) {
   return {
     rpc(fn, args) {
       const keys = Object.keys(args)
-      const sql = `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})`
-      return { abortSignal: () => run(sql, keys.map((k) => args[k])) }
+      const order = []
+      let from = 0
+      let to = Infinity
+      const b = {
+        order(c) {
+          order.push(c)
+          return b
+        },
+        range(f, t) {
+          from = f
+          to = t
+          return b
+        },
+        abortSignal: () => {
+          const limit = Math.min(to - from + 1, maxRows)
+          const sql =
+            `select * from ${fn}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')})` +
+            (order.length ? ` order by ${order.join(', ')}` : '') +
+            (Number.isFinite(limit) ? ` limit ${limit}` : '') +
+            (from ? ` offset ${from}` : '')
+          return run(sql, keys.map((k) => args[k]))
+        },
+      }
+      return b
     },
     from(table) {
       const conds = []
+      const order = []
       let cols = '*'
+      let from = 0
+      let to = Infinity
       const b = {
         select(c) {
           cols = c
@@ -363,8 +483,24 @@ function fakeSupabase(db, { failRpc = false } = {}) {
           conds.push([c, v])
           return b
         },
-        abortSignal: () =>
-          run(`select ${cols} from ${table}${conds.length ? ` where ${conds.map(([c], i) => `${c} = $${i + 1}`).join(' and ')}` : ''}`, conds.map((c) => c[1])),
+        order(c) {
+          order.push(c)
+          return b
+        },
+        range(f, t) {
+          from = f
+          to = t
+          return b
+        },
+        abortSignal: () => {
+          const limit = Math.min(to - from + 1, maxRows)
+          const sql =
+            `select ${cols} from ${table}${conds.length ? ` where ${conds.map(([c], i) => `${c} = $${i + 1}`).join(' and ')}` : ''}` +
+            (order.length ? ` order by ${order.join(', ')}` : '') +
+            (Number.isFinite(limit) ? ` limit ${limit}` : '') +
+            (from ? ` offset ${from}` : '')
+          return run(sql, conds.map((c) => c[1]))
+        },
       }
       return b
     },
@@ -407,6 +543,21 @@ async function apiChecks(db, mem) {
   check('기물: 평균등수 오름차순', units.rows.every((r, i, a) => i === 0 || a[i - 1].avgPlacement <= r.avgPlacement))
   const combos = await stats.getStats('unit_item', f)
   check('기물×아이템: 5판 미만 행 제외 · 키 = 기물|아이템', combos.rows.every((r) => r.sampleSize >= 5 && r.key === `${r.champKey}|${r.itemKey}`) && combos.rows.length > 0)
+  // PostgREST max-rows 로 한 응답이 잘려도 페이지로 끝까지 받는다 (운영에서 1천 행에서 임의로 잘렸다, 2026-10-26)
+  {
+    process.env.STATS_RPC_PAGE_SIZE = '10'
+    const paged = loadStatsLib(fakeSupabase(db, { maxRows: 10 }))
+    const all = await paged.getStats('unit_item', f)
+    const keys = (res) => res.rows.map((r) => r.key).sort().join(',')
+    check(
+      '기물×아이템: 응답이 10행에서 잘리는 DB 에서도 페이지로 모든 행 (중복 없음)',
+      combos.rows.length > 10 && all.source === 'db' && keys(all) === keys(combos) && new Set(all.rows.map((r) => r.key)).size === all.rows.length,
+      `${all.rows.length} / ${combos.rows.length}`
+    )
+    delete process.env.STATS_RPC_PAGE_SIZE
+    // 아래 엔티티 페이지 검사가 require 캐시의 lib/tftStats 를 쓰므로 잘림 없는 클라이언트로 되돌린다
+    loadStatsLib(fakeSupabase(db))
+  }
   const traits = await stats.getStats('trait', { ...f, tier: 'challenger', days: 3 })
   check('시너지: 다른 필터 조합도 db', traits.source === 'db' && traits.filter.tier === 'challenger' && traits.filter.days === 3)
   const unknownPatch = await stats.getStats('item', { ...f, patch: '9.99' })
@@ -449,11 +600,44 @@ async function apiChecks(db, mem) {
   const chDecks = await stats.getDecks({ patch: '16.20', tier: 'challenger' })
   check('덱: 기본 아닌 필터에 덱이 없으면 빈 목록 (db)', chDecks.source === 'db' && chDecks.decks.length === 0)
 
+  // 기물 빌드 (0008): stat_unit_build → 화면 모양. sqlChecks 가 MASTER 에 12판 세트 1개(기물 60판)를 남겼다
+  {
+    const b = await stats.getBuilds({ patch: '16.20', tier: 'master' })
+    const r = b.rows[0]
+    check(
+      '빌드: db · 기물 키 statChampKey · 평균등수 · 채용률(12/60)',
+      b.source === 'db' && b.filter.patch === '16.20' && b.rows.length === 1 && r.champKey === 'ChampA' && r.itemKeys.join() === 'TFT_Item_A,TFT_Item_B,TFT_Item_C' && r.avgPlacement === 3.33 && r.sampleSize === 12 && r.pickRate === 0.2,
+      JSON.stringify(b.rows)
+    )
+    // 한 응답이 10행에서 잘리는 DB 에서도 페이지로 끝까지 (기물 100종 × 10개 = 1천 행 상한 대비)
+    const many = Array.from({ length: 25 }, (_, i) => ({
+      unit: `TFT18_Champ${String.fromCharCode(65 + i)}`,
+      items: ['TFT_Item_A', 'TFT_Item_B', 'TFT_Item_C'],
+      games: 10 + i,
+      placement_sum: 40,
+      top4: 5,
+      wins: 1,
+      unit_games: 100,
+    }))
+    await db.query('select tft_replace_builds($1, $2, $3::jsonb)', ['16.20', 'DIAMOND', JSON.stringify(many)])
+    process.env.STATS_RPC_PAGE_SIZE = '10'
+    const paged = loadStatsLib(fakeSupabase(db, { maxRows: 10 }))
+    const all = await paged.getBuilds({ patch: '16.20', tier: 'diamond' })
+    delete process.env.STATS_RPC_PAGE_SIZE
+    loadStatsLib(fakeSupabase(db))
+    check('빌드: 응답이 10행에서 잘려도 25행 모두 · 채용 판 수 순', all.source === 'db' && all.rows.length === 25 && all.rows[0].sampleSize === 34, `${all.rows.length}`)
+    const none = await stats.getBuilds({ patch: '16.20', tier: 'grandmaster' })
+    check('빌드: 그 필터에 행이 없으면 빈 목록 (db)', none.source === 'db' && none.rows.length === 0)
+  }
+
   // DB 오류 → JSON 폴백
   const broken = loadStatsLib(fakeSupabase(db, { failRpc: true }))
   const fb = await broken.getStats('unit', f)
   check('DB 오류 → JSON 폴백 (db_error)', fb.source === 'json' && fb.fallbackReason === 'db_error' && fb.rows.length > 0)
   check('getDeckById: DB 오류 → null (예외를 밖으로 던지지 않음)', (await broken.getDeckById(sampleDeck.id)) === null)
+  // 0008 미적용(표 없음)도 같은 길 — 화면은 출처(json ≠ db)를 보고 DB 통계 옆에 섞지 않는다
+  const fbBuilds = await broken.getBuilds({ patch: '16.20', tier: 'master' })
+  check('빌드: DB 오류 → JSON 폴백 (source json · db_error)', fbBuilds.source === 'json' && fbBuilds.fallbackReason === 'db_error' && Array.isArray(fbBuilds.rows))
 }
 
 function loadPglite() {
@@ -486,9 +670,10 @@ async function sqlChecks() {
     alter default privileges in schema public grant all on tables to service_role;
   `)
   const migrations = path.join(__dirname, '..', 'supabase', 'migrations')
-  for (const f of ['0005_tft_stats.sql', '0006_tft_rollups.sql']) await db.exec(fs.readFileSync(path.join(migrations, f), 'utf-8'))
+  for (const f of ['0005_tft_stats.sql', '0006_tft_rollups.sql', '0008_tft_unit_builds.sql']) await db.exec(fs.readFileSync(path.join(migrations, f), 'utf-8'))
   await db.exec(fs.readFileSync(path.join(migrations, '0006_tft_rollups.sql'), 'utf-8'))
-  check('0005 + 0006 실행 · 0006 재실행 안전', true)
+  await db.exec(fs.readFileSync(path.join(migrations, '0008_tft_unit_builds.sql'), 'utf-8'))
+  check('0005 + 0006 + 0008 실행 · 0006 · 0008 재실행 안전', true)
 
   const data = randomData()
   const mem = createMemoryStore()
@@ -586,8 +771,35 @@ async function sqlChecks() {
   const comps = (await db.query('select comp_id, games, deck from stat_comp')).rows
   check('stat_comp 교체 (이전 덱 삭제)', comps.length === 1 && comps[0].deck.id === 'ladder-a-b')
 
+  // 기물 빌드 교체 (0008) — 같은 패치 × 티어 필터만 바뀌고, 다른 티어는 남는다
+  const buildRow = { unit: 'TFT18_ChampA', items: ['TFT_Item_A', 'TFT_Item_B', 'TFT_Item_C'], games: 12, placement_sum: 40, top4: 8, wins: 2, unit_games: 60 }
+  const replaceBuilds = (patch, tier, rows) => db.query('select tft_replace_builds($1, $2, $3::jsonb) as n', [patch, tier, JSON.stringify(rows)])
+  await replaceBuilds('16.20', 'MASTER', [buildRow, { ...buildRow, items: ['TFT_Item_A', 'TFT_Item_A', 'TFT_Item_B'], games: 6 }])
+  await replaceBuilds('16.20', 'CHALLENGER', [{ ...buildRow, games: 5 }])
+  const n = (await replaceBuilds('16.20', 'MASTER', [buildRow])).rows[0].n
+  const buildsLeft = (await db.query(`select tier_min, items, games from stat_unit_build order by tier_min`)).rows
+  check(
+    'stat_unit_build 교체 (같은 패치·티어만) · 아이템 배열 그대로',
+    n === 1 && buildsLeft.length === 2 && buildsLeft[1].tier_min === 'MASTER' && buildsLeft[1].games === 12 && buildsLeft[1].items.join() === 'TFT_Item_A,TFT_Item_B,TFT_Item_C',
+    JSON.stringify(buildsLeft)
+  )
+  let badBuild = false
+  try {
+    await replaceBuilds('16.20', 'MASTER', [{ ...buildRow, items: ['TFT_Item_A', 'TFT_Item_B'] }])
+  } catch {
+    badBuild = true
+  }
+  check('stat_unit_build: 아이템 3개가 아니면 거부 (교체도 되돌림)', badBuild && (await db.query(`select count(*)::int as n from stat_unit_build where tier_min = 'MASTER'`)).rows[0].n === 1)
+
   // RLS · 권한: anon 은 집계·조회 RPC 만
   await db.exec('set role anon')
+  const anonBuilds = await db.query(`select count(*)::int as n from stat_unit_build`)
+  let buildsWriteDenied = false
+  try {
+    await db.query(`select tft_replace_builds('16.20', 'MASTER', '[]'::jsonb)`)
+  } catch {
+    buildsWriteDenied = true
+  }
   const anonRead = await db.query(`select count(*)::int as n from stat_unit_daily`)
   const anonQuery = await db.query(`select * from tft_stat_query('unit', '16.20', 'MASTER', 0, 1, '2026-10-20'::date)`)
   const anonBoards = await db.query(`select count(*)::int as n from tft_boards`)
@@ -607,6 +819,7 @@ async function sqlChecks() {
   check('anon: 집계 읽기 · 조회 RPC 가능', anonRead.rows[0].n > 0 && anonQuery.rows.length > 0)
   check('anon: 원본 보드 0행 (RLS)', anonBoards.rows[0].n === 0)
   check('anon: 집계 갱신 RPC · 집계 쓰기 불가', refreshDenied && writeDenied)
+  check('anon: 기물 빌드 읽기 가능 · 교체 RPC 불가', anonBuilds.rows[0].n === 2 && buildsWriteDenied)
 
   await apiChecks(db, mem)
   await db.close()
