@@ -42,14 +42,42 @@ export type ModalTarget =
 
 export type Tier = 'S' | 'A' | 'B' | 'C' | 'D'
 
-/** 평균등수 분포 기준 상대 티어 (절대 임계값 대신 상위 퍼센타일) */
-export function assignTiers(avgs: number[]): Tier[] {
+const TIERS: Tier[] = ['S', 'A', 'B', 'C', 'D']
+/**
+ * 티어 경계에서 '같은 티어'로 볼 차이 = 두 추정값 차이의 표준오차 × 이 값.
+ * ±1 표준오차(1.0)로 묶으면 2026-10-27 마스터+ 덱 84개 중 43개가 한 티어씩 올라가 B티어가 사라졌다 —
+ * 수축 추정값끼리는 차이가 작아 거의 모든 경계가 '겹침'이 된다. 0.25 는 경계의 근소한 차이만 묶는다 (8개).
+ */
+export const TIER_BOUNDARY_Z = 0.25
+const percentileTier = (p: number): Tier => (p < 0.1 ? 'S' : p < 0.3 ? 'A' : p < 0.6 ? 'B' : p < 0.85 ? 'C' : 'D')
+
+/**
+ * 평균등수 분포 기준 상대 티어 (절대 임계값 대신 상위 퍼센타일).
+ * - 값이 같은 행은 같은 티어 (예전엔 3.68등 두 덱이 순서만으로 S·A 로 갈렸다)
+ * - sds(추정값의 표준오차)를 주면 경계 바로 아래 행이 위 티어 마지막 행과 근소한 차이(TIER_BOUNDARY_Z)면 위 티어로 올린다.
+ *   기준은 위 티어의 '원래' 마지막 행이라 올린 행을 타고 줄줄이 올라가지 않는다. 경계에서 이어진 행만 본다.
+ */
+export function assignTiers(avgs: number[], sds?: number[]): Tier[] {
   const order = avgs.map((a, i) => ({ a, i })).sort((x, y) => x.a - y.a)
-  const out: Tier[] = new Array(avgs.length).fill('D')
   const total = order.length || 1
+  const own = order.map((_, idx) => percentileTier(idx / total))
+  /** 퍼센타일 티어별 원래 마지막 행 */
+  const lastOf = new Map<Tier, { a: number; i: number }>()
+  order.forEach((it, idx) => lastOf.set(own[idx], it))
+  const out: Tier[] = new Array(avgs.length).fill('D')
   order.forEach((it, idx) => {
-    const p = idx / total
-    out[it.i] = p < 0.1 ? 'S' : p < 0.3 ? 'A' : p < 0.6 ? 'B' : p < 0.85 ? 'C' : 'D'
+    out[it.i] = own[idx]
+    if (!idx) return
+    const prev = order[idx - 1]
+    const up = out[prev.i]
+    if (it.a === prev.a) {
+      out[it.i] = up
+      return
+    }
+    // 앞 행이 바로 위 티어일 때만 (경계에서 이어진 행). 올린 행 다음도 보지만 기준은 원래 마지막 행이다
+    const anchor = lastOf.get(up)
+    if (!sds || !anchor || TIERS.indexOf(up) !== TIERS.indexOf(own[idx]) - 1) return
+    if (it.a - anchor.a < TIER_BOUNDARY_Z * Math.hypot(sds[it.i] ?? 0, sds[anchor.i] ?? 0)) out[it.i] = up
   })
   return out
 }
@@ -68,6 +96,18 @@ const SHRINK_K_DEFAULT = 30
  * 행끼리 차이가 큰 표(덱, k≈18)는 덜 당기고, 차이가 작은 표(아이템, k≈110)는 많이 당긴다.
  */
 export function shrinkPlacements(rows: { avg: number; sample: number }[]): number[] {
+  const k = shrinkStrength(rows)
+  return rows.map((r) => (r.sample > 0 ? (r.sample * r.avg + k * BASE_PLACEMENT) / (r.sample + k) : BASE_PLACEMENT))
+}
+
+/** 수축 추정값의 표준오차 ≈ 2.29/√(n+k) — 표본이 적을수록 크다 (티어 경계 판단용) */
+export function shrunkPlacementSds(rows: { avg: number; sample: number }[]): number[] {
+  const k = shrinkStrength(rows)
+  return rows.map((r) => PLACEMENT_SD / Math.sqrt(Math.max(r.sample, 0) + k))
+}
+
+/** 당기는 세기 k = 한 판 등수 분산 ÷ 행들 사이 실제 차이의 분산 (shrinkPlacements 설명 참고) */
+function shrinkStrength(rows: { avg: number; sample: number }[]): number {
   const ok = rows.filter((r) => r.sample > 0 && Number.isFinite(r.avg))
   let k = SHRINK_K_DEFAULT
   if (ok.length >= 3) {
@@ -77,18 +117,20 @@ export function shrinkPlacements(rows: { avg: number; sample: number }[]): numbe
     const real = variance - noise
     k = real > 0 ? Math.min(SHRINK_K_MAX, Math.max(SHRINK_K_MIN, PLACEMENT_SD ** 2 / real)) : SHRINK_K_MAX
   }
-  return rows.map((r) => (r.sample > 0 ? (r.sample * r.avg + k * BASE_PLACEMENT) / (r.sample + k) : BASE_PLACEMENT))
+  return k
 }
 
 /**
  * 표본 충분한 행끼리만 상대 티어를 매긴다 (표본 부족은 '-').
  * 순위는 추정 평균등수(shrinkPlacements) 기준. group 이 있으면 같은 group 안에서만 비교한다 (기물: 코스트별).
+ * 같은 값은 같은 티어, 경계에서 위 티어와 오차 안이면 위 티어 (assignTiers).
  */
 export function assignSampleTiers(rows: { avg: number; sample: number; group?: string | number }[], min: number): (Tier | '-')[] {
   const out: (Tier | '-')[] = rows.map(() => '-')
   const okIdx = rows.map((_, i) => i).filter((i) => rows[i].sample >= min)
   // 당기는 세기는 표 전체에서 구하고, 티어만 group 안에서 나눈다 (group 하나는 행이 적어 분산이 흔들린다)
   const est = shrinkPlacements(okIdx.map((i) => rows[i]))
+  const sds = shrunkPlacementSds(okIdx.map((i) => rows[i]))
   const groups = new Map<string | number | undefined, number[]>()
   okIdx.forEach((i, k) => {
     const g = groups.get(rows[i].group) ?? []
@@ -96,7 +138,10 @@ export function assignSampleTiers(rows: { avg: number; sample: number; group?: s
     groups.set(rows[i].group, g)
   })
   for (const members of groups.values()) {
-    const tiers = assignTiers(members.map((k) => est[k]))
+    const tiers = assignTiers(
+      members.map((k) => est[k]),
+      members.map((k) => sds[k])
+    )
     members.forEach((k, j) => {
       out[okIdx[k]] = tiers[j]
     })

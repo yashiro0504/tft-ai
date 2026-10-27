@@ -297,9 +297,10 @@ export async function getTftLeagueByPuuid(
 export async function getTftMatchIds(
   puuid: string,
   count: number = 10,
-  region: string = DEFAULT_REGIONAL_ROUTING
+  region: string = DEFAULT_REGIONAL_ROUTING,
+  start = 0
 ): Promise<string[]> {
-  const url = `https://${region}.api.riotgames.com/tft/match/v1/matches/by-puuid/${encodeURIComponent(puuid)}/ids?count=${count}`
+  const url = `https://${region}.api.riotgames.com/tft/match/v1/matches/by-puuid/${encodeURIComponent(puuid)}/ids?start=${start}&count=${count}`
 
   const response = await riotFetch(url, 'tft.match.ids')
 

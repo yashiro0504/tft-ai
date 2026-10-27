@@ -119,8 +119,8 @@ export function computeMatchScore(m: SlimMatchData): { total: number; components
       score: contestScore(r),
       contribution: 0,
       detail: r.contested
-        ? `경합 ${r.contestLevel ?? ''} ${r.contestScore ?? '?'}/100 · ${r.top4 ? '순방' : '하위권'}`
-        : `경합 없음(유리한 조건) ${r.contestScore ?? 0}/100`,
+        ? `경합 등급 ${r.contestLevel ?? '경합'} ${r.contestScore ?? '?'}/100 · ${r.top4 ? '순방' : '하위권'}`
+        : `경합 등급 ${r.contestLevel ?? '빈집'} (유리한 조건) ${r.contestScore ?? 0}/100`,
     },
   ]
   comps.forEach((c) => {

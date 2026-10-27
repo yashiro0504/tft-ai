@@ -70,7 +70,11 @@ export function formatRankLp(rank: TftRankInfo | null | undefined): string {
   return `${rank.leaguePoints} LP`
 }
 
-/** 랭크 승률(%) — 표본이 없으면 null */
+/**
+ * 시즌 TOP4 비율(%) — 표본이 없으면 null.
+ * Riot TFT 리그 API 의 wins 는 1등이 아니라 TOP4(순방) 횟수, losses 는 5~8등 횟수다.
+ * 그래서 "승"·"승률"이라고 쓰면 옆의 '1등' 지표와 헷갈린다 (2026-10-27).
+ */
 export function rankWinRate(rank: TftRankInfo | null | undefined): number | null {
   if (!rank) return null
   const total = rank.wins + rank.losses
@@ -78,10 +82,10 @@ export function rankWinRate(rank: TftRankInfo | null | undefined): number | null
   return Math.round((rank.wins / total) * 100)
 }
 
-/** "32승 28패" */
+/** "TOP4 32 · 하위 28" (wins = TOP4 횟수 — rankWinRate 참고) */
 export function formatRankRecord(rank: TftRankInfo | null | undefined): string {
   if (!rank) return '-'
-  return `${rank.wins}승 ${rank.losses}패`
+  return `TOP4 ${rank.wins} · 하위 ${rank.losses}`
 }
 
 /** OG 이미지 등 텍스트 전용 문맥용 한 줄 요약 */
@@ -90,5 +94,5 @@ export function formatRankSummary(rank: TftRankInfo | null | undefined): string 
   const label = formatRankLabel(rank)
   const winRate = rankWinRate(rank)
   const lp = `${rank.leaguePoints} LP`
-  return winRate === null ? `${label} · ${lp}` : `${label} · ${lp} · 승률 ${winRate}%`
+  return winRate === null ? `${label} · ${lp}` : `${label} · ${lp} · TOP4 ${winRate}%`
 }

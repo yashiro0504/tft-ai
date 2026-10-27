@@ -460,7 +460,7 @@ export function MetaDashboard({
               <EvidenceChip>
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
-              <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다">
+              <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
                 {isUnitTab(tab) ? '티어 = 같은 코스트 안 상대 순위' : '티어 = 표 안 상대 순위'} · 표본 수 반영
               </EvidenceChip>
               <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만(±${placementMargin(minSample)?.toFixed(2)} 초과)은 표본 부족으로 회색 표시`}>
@@ -671,6 +671,11 @@ export function MetaDashboard({
                       ) : null}
                       <span className="rk-name">{r.name}</span>
                       {r.cost ? <span className="rk-cost">{r.cost}코</span> : null}
+                      {r.low ? <span className="rk-cost">참고용</span> : null}
+                    </span>
+                    {/* 휴대폰은 TOP4·표본 열을 숨기므로 이름 아래 한 줄로 (rank/tabs.css .rk-msub) */}
+                    <span className="rk-msub">
+                      TOP4 {Math.round(r.top4 * 100)}% · {r.sample.toLocaleString()}판
                     </span>
                     {r.deck ? (
                       <span className="rk-traitrow">
@@ -692,7 +697,8 @@ export function MetaDashboard({
                               className={`rk-unit c${u.cost ?? 1}${u.flex ? ' is-flex' : ''}`}
                               title={u.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
                             >
-                              <img src={u.imgUrl} alt="" loading="lazy" />
+                              {/* 덱 행의 기물 그림은 옆에 이름이 없다 — alt 가 기물 이름 (읽기 도구·이미지 미표시용) */}
+                              <img src={u.imgUrl} alt={`${u.name}${u.star >= 2 ? ` ${u.star}성` : ''}`} loading="lazy" />
                               <em>{u.star >= 2 ? `★${u.star}` : ''}</em>
                             </span>
                           </UnitHover>

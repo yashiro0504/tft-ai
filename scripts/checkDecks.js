@@ -189,6 +189,16 @@ function main() {
     signatures.add(signature)
   })
 
+  // 같은 보드 묶음이 두 덱에 들어가면 평균·판수·등수 분포가 모두 같아진다 (보드는 덱 하나에만 붙는다 — buildDecks).
+  // 평균·판수만 같은 건 우연일 수 있다 (2026-10-27: 처형자 이즈리얼·적응가 니달리 38판 3.68등 — 등수 분포가 다름)
+  decks.forEach((a, i) =>
+    decks.slice(i + 1).forEach((b) => {
+      const dist = (d) => (d.placementDist || []).join(',')
+      if (a.games !== b.games || a.avgPlacement !== b.avgPlacement || !dist(a)) return
+      check(`${a.name} · ${b.name}: 판수·평균·등수 분포가 모두 같음 (같은 보드 묶음 중복 의심)`, dist(a) !== dist(b), dist(a))
+    })
+  )
+
   console.log(`파일: ${path.relative(path.join(__dirname, '..'), FILE)}`)
   console.log(`출처: ${data.source} · 패치: ${data.patch} · 원본 수집: ${data.sourceUpdatedAt || '-'} · 빌드: ${data.generatedAt}`)
   console.log(`덱 ${decks.length}개 · 유닛 매칭률 ${data.unitMatchRate} · 중복 조합 0`)

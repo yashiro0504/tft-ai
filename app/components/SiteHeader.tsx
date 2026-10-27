@@ -102,7 +102,7 @@ export function SiteHeader({
         <div className="ml-auto flex items-center gap-2">
           <Link
             href="/pro"
-            className="hidden rounded-control px-2 py-2 text-sm font-bold text-accent transition hover:bg-accent-bg sm:inline-block"
+            className="inline-block rounded-control px-1.5 py-2 text-xs font-bold text-accent transition hover:bg-accent-bg sm:px-2 sm:text-sm"
           >
             PRO
           </Link>

@@ -226,10 +226,13 @@ export interface GroundingReport {
   /** 의미(엔티티 사실) 오류 — 기물 성급·3성 개수·아이템 소유·시너지 단계가 최종 보드와 다름 (lib/semanticGrounding).
    * 검출 기록이다: 해당 문장은 응답 전에 고치거나 지웠다 (repairEntityErrors) */
   entityErrors?: EntityFactError[]
+  /** 리포트에 나온 기물·아이템 이름 중 내 보드(또는 메타·상대 맥락의 사실)로 확인한 수 — 확인 못 한 문장은 지운 뒤 센다 */
+  namesChecked?: number
 }
 
 export interface EntityFactError {
-  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier'
+  /** unit_absent · item_absent: 내 최종 보드에 없는 기물·아이템을 내 보드 이야기처럼 쓴 문장 (지운다) */
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent'
   /** 오류가 있는 문장 */
   text: string
   /** 데이터 값 */
@@ -473,6 +476,8 @@ export interface TftSearchResponse {
   puuid: string
   summonerProfile?: SummonerProfile
   matches: SlimMatchData[]
+  /** 랭크 판이 모자라 최근 N판 이전에서 더 훑은 판 수 (lib/tftService 분석 판 보충) */
+  olderScanned?: number
   isDemo?: boolean
   /** Riot 에서 이 전적을 받아온 시각 (epoch ms). 캐시 응답이면 원래 받아온 시각 */
   fetchedAt?: number

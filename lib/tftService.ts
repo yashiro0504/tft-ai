@@ -4,10 +4,18 @@ import { errorFields, incrMetric, logEvent } from './observability'
 import { extractSlimMatchData } from './summarize'
 import { getDemoMatches } from './demo'
 import { RiotAccount, SlimMatchData, TftRankInfo } from './types'
+import { analyzableMatches, isAnalyzableMatch, isCurrentSetMatch } from './queue'
 
 /** 한 번에 로드 가능한 최대 매치 수 */
 export const MAX_MATCH_LIMIT = 20
 export const DEFAULT_MATCH_LIMIT = 10
+/**
+ * 분석 판 보충: 최근 N판에 현재 세트 랭크 판이 N판보다 적으면 그 이전 판을 이만큼까지 더 훑는다.
+ * Riot 매치 ID 목록은 큐로 거를 수 없어서, 일반 게임만 10판 한 챌린저(1693 LP)가 "진단할 수 없습니다"였다 (2026-10-27).
+ * 개발 키 한도(2분 100회)를 생각해 한 검색에 상세 조회를 최대 이만큼만 더 한다 (매치 상세는 장기 캐시라 재검색은 거의 0회).
+ */
+export const BACKFILL_SCAN_MAX = 20
+const BACKFILL_BATCH = 10
 
 const REGION = process.env.RIOT_REGION || 'asia'
 const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
@@ -32,6 +40,8 @@ export interface LoadedSummonerData {
   /** 랭크(티어/LP). 배치 중·조회 실패 시 null */
   rank: TftRankInfo | null
   matches: SlimMatchData[]
+  /** 랭크 판이 모자라 최근 N판 이전에서 더 훑은 판 수 (덧붙인 건 그중 현재 세트 랭크 판만) */
+  olderScanned?: number
   isDemo: boolean
 }
 
@@ -135,8 +145,8 @@ export async function loadSummonerData(
 
   // 4. 매치 세부 데이터 — 불변 데이터이므로 (matchId + puuid) 기준 장기 캐시.
   //    캐시 히트 시 Riot 호출이 0회가 되어, 웜 상태 검색은 사실상 account/summoner/matchIds 만 소모한다.
-  const matchDetails = await Promise.all(
-    matchIds.map(async (id) => {
+  const loadDetails = (ids: string[]) => Promise.all(
+    ids.map(async (id) => {
       // match2: queueId 추가 (2026-10-23) — 예전 캐시는 이벤트 판도 '랭크 게임'으로 저장돼 있어 다시 받는다
       const matchKey = `match2:${REGION}:${id}:${acct.puuid}`
       const cachedMatch = await cacheGet<SlimMatchData>(matchKey)
@@ -157,11 +167,36 @@ export async function loadSummonerData(
       }
     })
   )
-
-  const matches = matchDetails.filter((m): m is SlimMatchData => m !== null)
-  if (matches.length === 0) {
+  const loaded = (await loadDetails(matchIds)).filter((m): m is SlimMatchData => m !== null)
+  if (loaded.length === 0) {
     throw new RiotApiError('TFT 매치 세부 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 502)
   }
+
+  // 5. 분석 판 보충 — 랭크 판이 모자라면 이전 판을 더 훑어 현재 세트 랭크 판만 덧붙인다 (일반·이벤트 판은 목록에 늘리지 않는다).
+  //    이전 시즌 판이 보이면 그보다 오래된 판도 이전 시즌이라 멈춘다. 실패해도 검색은 그대로 돌려준다.
+  const need = normalizedLimit - analyzableMatches(loaded).length
+  let olderScanned = 0
+  const older: SlimMatchData[] = []
+  if (need > 0 && matchIds.length >= normalizedLimit && loaded.every(isCurrentSetMatch)) {
+    try {
+      const olderKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}+${BACKFILL_SCAN_MAX}`
+      const cachedOlder = fresh ? null : await cacheGet<string[]>(olderKey)
+      const olderIds = cachedOlder ?? (await getTftMatchIds(acct.puuid, BACKFILL_SCAN_MAX, REGION, normalizedLimit))
+      if (!cachedOlder && olderIds.length) await cacheSet(olderKey, olderIds, CACHE_TTL.MATCH_IDS)
+      scan: for (let i = 0; i < olderIds.length && older.length < need; i += BACKFILL_BATCH) {
+        const batch = (await loadDetails(olderIds.slice(i, i + BACKFILL_BATCH))).filter((m): m is SlimMatchData => m !== null)
+        for (const m of batch) {
+          olderScanned++
+          if (!isCurrentSetMatch(m)) break scan
+          if (isAnalyzableMatch(m) && older.length < need) older.push(m)
+        }
+      }
+      incrMetric('riot.backfill', older.length)
+    } catch (err) {
+      logEvent('warn', 'match_backfill_failed', errorFields(err))
+    }
+  }
+  const matches = [...loaded, ...older]
 
   return {
     gameName: acct.gameName,
@@ -171,6 +206,7 @@ export async function loadSummonerData(
     profileIconId: summonerInfo.profileIconId,
     rank,
     matches,
+    olderScanned,
     isDemo: false,
   }
 }
