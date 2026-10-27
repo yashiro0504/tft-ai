@@ -122,7 +122,7 @@ async function main() {
         }
         runs.push(run)
         console.log(
-          `  ${c.name} run ${r + 1}/${RUNS} → ${run.ok ? `${run.metaScore}점 (${ms}ms)` : '실패'}`
+          `  ${c.name} run ${r + 1}/${RUNS} → ${run.ok ? `${run.metaScore}점 (${ms}ms)` : `실패 (HTTP ${status}${run.error ? `: ${run.error}` : ''})`}`
         )
       } catch (e) {
         runs.push({ ok: false, ms: 0, error: e.message })
