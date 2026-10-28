@@ -1,14 +1,14 @@
 {
-  "scoringVersion": "v12",
-  "generatedAt": "2026-10-28T00:39:22.335Z",
+  "scoringVersion": "v13",
+  "generatedAt": "2026-10-28T02:08:20.967Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 84,
         "itemization": 100,
-        "tempo": 97,
+        "tempo": 92,
         "completion": 80,
         "synergy": 85,
         "contest": 80
@@ -23,12 +23,12 @@
       }
     },
     "Seed01 최근 5경기": {
-      "focus": "completion",
+      "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 86,
-        "itemization": 94,
-        "tempo": 99,
+        "economy": 82,
+        "itemization": 96,
+        "tempo": 95,
         "completion": 83,
         "synergy": 88,
         "contest": 83
@@ -46,9 +46,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 99,
-        "itemization": 94,
-        "tempo": 100,
+        "economy": 98,
+        "itemization": 98,
+        "tempo": 99,
         "completion": 90,
         "synergy": 94,
         "contest": 95
@@ -68,7 +68,7 @@
       "axes": {
         "economy": 95,
         "itemization": 96,
-        "tempo": 99,
+        "tempo": 97,
         "completion": 90,
         "synergy": 87,
         "contest": 91
@@ -86,9 +86,9 @@
       "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 84,
+        "economy": 83,
         "itemization": 100,
-        "tempo": 99,
+        "tempo": 96,
         "completion": 91,
         "synergy": 88,
         "contest": 75
@@ -107,7 +107,7 @@
       "lowSample": false,
       "axes": {
         "economy": 79,
-        "itemization": 90,
+        "itemization": 100,
         "tempo": 100,
         "completion": 85,
         "synergy": 100,
@@ -166,9 +166,9 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 82,
         "itemization": 80,
-        "tempo": 100,
+        "tempo": 93,
         "completion": 85,
         "synergy": 81,
         "contest": 65
@@ -186,9 +186,9 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 95,
-        "itemization": 80,
-        "tempo": 80,
+        "economy": 88,
+        "itemization": 100,
+        "tempo": 73,
         "completion": 92,
         "synergy": 48,
         "contest": 65
@@ -203,12 +203,12 @@
       }
     },
     "Seed05 bottom 8등 4-6": {
-      "focus": "itemization",
+      "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 80,
         "itemization": 70,
-        "tempo": 82,
+        "tempo": 68,
         "completion": 78,
         "synergy": 94,
         "contest": 65
@@ -226,9 +226,9 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 95,
+        "economy": 88,
         "itemization": 100,
-        "tempo": 94,
+        "tempo": 87,
         "completion": 80,
         "synergy": 96,
         "contest": 95
@@ -268,7 +268,7 @@
       "axes": {
         "economy": 100,
         "itemization": 80,
-        "tempo": 100,
+        "tempo": 93,
         "completion": 94,
         "synergy": 81,
         "contest": 95
@@ -286,9 +286,9 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 82,
+        "economy": 79,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 96,
         "completion": 79,
         "synergy": 75,
         "contest": 65
@@ -308,7 +308,7 @@
       "axes": {
         "economy": 100,
         "itemization": 100,
-        "tempo": 100,
+        "tempo": 93,
         "completion": 85,
         "synergy": 89,
         "contest": 50
@@ -323,12 +323,12 @@
       }
     },
     "Seed05 contested-bot4 5등 5-3": {
-      "focus": "contest",
+      "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 65,
+        "economy": 58,
         "itemization": 100,
-        "tempo": 96,
+        "tempo": 89,
         "completion": 89,
         "synergy": 75,
         "contest": 50
@@ -348,7 +348,7 @@
       "axes": {
         "economy": 14,
         "itemization": 47,
-        "tempo": 82,
+        "tempo": 52,
         "completion": 22,
         "synergy": 16,
         "contest": 75
@@ -388,7 +388,7 @@
       "axes": {
         "economy": 0,
         "itemization": 0,
-        "tempo": 64,
+        "tempo": 26,
         "completion": 0,
         "synergy": 16,
         "contest": 75

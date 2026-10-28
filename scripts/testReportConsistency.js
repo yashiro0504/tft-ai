@@ -87,6 +87,48 @@ const kog = {
   check('리포트의 "캐리 아이템 2개" → 실제 장착 3개로 고침', fixed.lecture.evidence.includes('캐리 아이템 3개'), fixed.lecture.evidence)
 }
 
+console.log('6. 탈락 시점 → 템포·경제')
+{
+  const { buildCoachingPlan } = require('../lib/coaching')
+  const lobby = (stage) =>
+    [1, 2, 3, 4, 5, 6, 8].map((p) => ({ placement: p, gameName: `p${p}`, tagLine: 'KR1', level: 8, lastRound: p >= 6 ? `${stage}-2` : '6-3', damageToPlayers: 0, traits: [], units: [], isUser: false }))
+  const at = (stage) => ({ ...kog, lastRound: `${stage}-2`, lobbyParticipants: lobby(stage) })
+  const axis = (m, k) => buildCoachingPlan([m]).axes.find((a) => a.key === k)
+  const t5 = axis(at(5), 'tempo')
+  const t6 = axis(at(6), 'tempo')
+  const e5 = axis(at(5), 'economy')
+  const e6 = axis(at(6), 'economy')
+  check('같은 보드, 5스테이지 탈락이 6스테이지보다 템포 낮음', t5.score < t6.score, `${t5.score} vs ${t6.score}`)
+  check('같은 보드, 5스테이지 탈락이 6스테이지보다 경제 낮음', e5.score < e6.score, `${e5.score} vs ${e6.score}`)
+  check('템포 근거에 탈락 시점', /탈락 5스테이지/.test(t5.detail) && (t5.effects || []).some((x) => x.key === 'exitStage' && x.points < 0), t5.detail)
+  check('경제 근거에 탈락 시점·로비 레벨', /탈락 5스테이지/.test(e5.detail) && /상대 Lv\./.test(e5.detail), e5.detail)
+}
+
+console.log('8. 리롤형 아이템 지표')
+{
+  const { buildCoachingPlan } = require('../lib/coaching')
+  const { detectDeckType } = require('../lib/deckType')
+  // 리롤형: 1~2코 3성 캐리, 캐리가 아닌 4코 이즈리얼·니달리
+  const reroll = {
+    ...kog,
+    matchId: 'reroll',
+    level: 7,
+    units: [
+      U('DA_18_Kayle', '케일', 3, ['구인수의 격노검', '내셔의 이빨', '거인 학살자'], 2),
+      U('DA_18_Leona', '레오나', 3, ['워모그의 갑옷'], 1),
+      U('DA_18_Sejuani', '세주아니', 3, [], 2),
+      U('DA_18_Ezreal', '이즈리얼', 1, [], 4),
+      U('DA_Nidalee18_AP', '니달리', 1, [], 4),
+      U('DA_18_Varus', '바루스', 2, [], 1),
+    ],
+  }
+  check('리롤형 판정', detectDeckType(reroll).type === 'reroll', detectDeckType(reroll).type)
+  const item = buildCoachingPlan([reroll]).axes.find((a) => a.key === 'itemization')
+  check('리롤형 아이템 축에 "최고 코스트 기물" 지표 없음', !(item.metrics || []).some((x) => x.key === 'topCostItems') && !/최고 코스트 기물 아이템 \d/.test(item.detail), item.detail)
+  const { errors } = validateAdviceAndCounts(['이즈리얼에게 아이템을 더 몰아주세요.', '니달리에게 아이템을 추가로 맞춰 주세요.'], [reroll])
+  check('리롤형에서 캐리가 아닌 4코스트에 아이템 몰아주기 조언은 삭제', errors.filter((e) => e.type === 'advice_conflict').length === 2, JSON.stringify(errors.map((e) => e.expected)))
+}
+
 console.log('5. 메타 평균 스냅샷')
 {
   const fs = require('fs')

@@ -3,7 +3,7 @@ import { costOdds } from './shopOdds'
 import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
 import { validateItemRecipes } from './itemRecipes'
 import { boardCounts } from './boardStats'
-import { boardCarry } from './deckType'
+import { boardCarry, detectDeckType } from './deckType'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -293,10 +293,26 @@ export function validateAdviceAndCounts(texts: string[], matches: SlimMatchData[
   const single = matches.length === 1 ? matches[0] : null
   const counts = single ? boardCounts(single) : null
   const carry = single ? carries[0] : undefined
+  // 리롤형 판에서 캐리가 아닌 4~5코스트 기물 (아이템을 몰아줄 대상이 아니다 — v13 아이템 축과 같은 기준)
+  const rerollNonCarryHigh = new Set<string>()
+  matches.forEach((m, i) => {
+    if (detectDeckType(m).type !== 'reroll') return
+    for (const u of m.units) if ((u.rarity ?? 1) >= 4 && u.name !== carries[i]?.name) rerollNonCarryHigh.add(u.name)
+  })
 
   for (const s of all) {
     if (ITEM_FILL_RE.test(s) && !OPPONENT_RE.test(s)) {
       const named = findNames(s, unitNames).map((x) => x.name)
+      const offCarry = named.filter((n) => rerollNonCarryHigh.has(n))
+      if (offCarry.length && offCarry.length === named.length) {
+        errors.push({
+          type: 'advice_conflict',
+          text: s,
+          expected: `리롤형 — ${offCarry.join('·')}은(는) 캐리가 아님 (캐리 ${[...new Set(carries.map((c) => c?.name).filter(Boolean))].join('·')})`,
+          actual: '캐리가 아닌 고코스트 기물에 아이템 조언',
+        })
+        continue
+      }
       const target = named.length ? named.every(full) : /캐리/.test(s) && carryFull
       if (target) {
         const who = named.length ? named : carries.map((c) => c?.name).filter(Boolean)
