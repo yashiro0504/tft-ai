@@ -87,6 +87,18 @@ const kog = {
   check('리포트의 "캐리 아이템 2개" → 실제 장착 3개로 고침', fixed.lecture.evidence.includes('캐리 아이템 3개'), fixed.lecture.evidence)
 }
 
+console.log('5. 메타 평균 스냅샷')
+{
+  const fs = require('fs')
+  const path = require('path')
+  const read = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
+  check('덱 성적표는 메타 덱 스냅샷(getMetaDeckSnapshot)을 씀', /getMetaDeckSnapshot\(\)/.test(read('lib/deckReport.ts')))
+  check('메타 페이지 덱 탭도 같은 스냅샷을 씀', /getMetaDeckSnapshot\(\)/.test(read('app/meta/page.tsx')))
+  const { metaSnapshotLabel } = require('../lib/deckReportShared')
+  const label = metaSnapshotLabel({ source: 'json', patch: 'set18', updatedAt: '2026-10-28T00:29:04.802Z' })
+  check('갱신 시각은 KST 분 단위 (두 화면 같은 함수)', label.includes('10.28 09:29 갱신'), label)
+}
+
 if (failures) {
   console.error(`\n❌ 리포트 일치 테스트 실패 ${failures}건`)
   process.exit(1)

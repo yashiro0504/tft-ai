@@ -49,3 +49,31 @@ export const DECK_REPORT_MIN_SAMPLE = 30
  * 2판이면 ±1.6등 — 메타와 1등 차이도 운으로 설명된다. 최근 10~20판 중 4판 이상이면 주력 덱으로 본다.
  */
 export const DECK_REPORT_MIN_GAMES = 4
+
+/** 갱신 시각 KST 'MM.DD HH:mm' (서버·브라우저가 같은 문자열을 그리게 시간대 고정) */
+const SNAPSHOT_TIME_FMT = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+export function snapshotTime(iso?: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = Object.fromEntries(SNAPSHOT_TIME_FMT.formatToParts(d).map((p) => [p.type, p.value]))
+  return `${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`
+}
+
+/**
+ * 메타 덱 스냅샷 출처 한 줄 — 메타 랭킹 페이지 머리말과 덱 성적표가 같은 함수로 그린다
+ * (예: "KR 랭크 마스터+ 집계 · 패치 16.21 · 10.28 09:29 갱신")
+ */
+export function metaSnapshotLabel(meta: DeckReportMeta): string {
+  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : '챌린저 래더 표본'
+  const updated = snapshotTime(meta.updatedAt)
+  return [base, meta.patch ? `패치 ${meta.patch}` : '', updated ? `${updated} 갱신` : ''].filter(Boolean).join(' · ')
+}

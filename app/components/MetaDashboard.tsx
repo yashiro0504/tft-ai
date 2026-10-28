@@ -158,6 +158,7 @@ export function MetaDashboard({
   deferSections = false,
   filters,
   initialDecksSource,
+  decksUpdatedAt,
   syncUrl = false,
 }: {
   onOpenCoach?: () => void
@@ -168,6 +169,8 @@ export function MetaDashboard({
   filters?: MetaFiltersResponse
   /** initialData.decks 가 DB 덱(기본 필터)인가 */
   initialDecksSource?: 'db' | 'json'
+  /** 덱 스냅샷 갱신 시각 — 덱 탭의 '수집' 칩은 덱 성적표와 같은 시각을 보인다 */
+  decksUpdatedAt?: string
   /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
   syncUrl?: boolean
 }) {
@@ -473,7 +476,9 @@ export function MetaDashboard({
               ) : (
                 <>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
-                  {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
+                  {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (
+                    <EvidenceChip>수집 {fmtDate(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt)}</EvidenceChip>
+                  ) : null}
                   {fellBack ? (
                     <EvidenceChip title="DB 집계를 불러오지 못해 빌드 시점 스냅샷을 보여 줍니다">필터 미적용 스냅샷</EvidenceChip>
                   ) : null}

@@ -1,7 +1,7 @@
 import { metaExecution, mostSimilarDeck, META_EXECUTION_MARGIN, type DeckFact } from './comparisonFacts'
 import { isEarlyGame, sampleIssue } from './quality'
-import { getDecks } from './tftStats'
-import { DEFAULT_FILTER, PLACEMENT_SD, TIER_FILTER_OPTIONS, type DecksResponse } from './statsShared'
+import { getMetaDeckSnapshot } from './tftStats'
+import { PLACEMENT_SD, TIER_FILTER_OPTIONS, type DecksResponse } from './statsShared'
 import { logEvent, errorFields } from './observability'
 import type { SlimMatchData } from './types'
 import { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, type DeckReport, type DeckReportMeta, type DeckReportRow } from './deckReportShared'
@@ -84,8 +84,8 @@ export function deckReportMeta(res: Pick<DecksResponse, 'source' | 'filter' | 'p
 /** 서버: 기본 필터(현재 패치·기본 티어)의 메타 덱으로 성적표를 만든다. 덱 데이터를 못 읽으면 null (화면은 카드를 숨긴다) */
 export async function loadDeckReport(matches: SlimMatchData[]): Promise<DeckReport | null> {
   try {
-    // 메타 랭킹 페이지(app/meta)와 같은 호출 — 같은 패치·티어·수집 시각의 덱 평균을 쓴다
-    const res = await getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier })
+    // 메타 랭킹 페이지(app/meta)와 같은 스냅샷 — 같은 패치·티어·수집 시각의 덱 평균을 쓴다
+    const res = await getMetaDeckSnapshot()
     return buildDeckReport(analyzableMatches(matches), res.decks, deckReportMeta(res))
   } catch (err) {
     logEvent('warn', 'deck_report_failed', errorFields(err))
