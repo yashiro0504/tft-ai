@@ -2,9 +2,9 @@ name: Collect Ladder Meta
 
 on:
   schedule:
-    # 매일 21:00 UTC = 06:00 KST · 09:00 UTC = 18:00 KST (하루 2회 — 상위 덱 300판+ · 픽률 상위 5덱 100판+ 목표, 2026-10-28)
+    # 매일 21:00 UTC = 06:00 KST. 하루 1회만 — DB 수집(collect-db, 매시 17분)이 같은 Riot 키를 쓰므로 이 시간만 비워 둔다.
+    # 보드는 실행마다 새로 모으므로(data/ladderBoards.json 미커밋) 실행을 늘려도 표본은 커지지 않는다. 표본은 1500판 상한으로 키운다
     - cron: '0 21 * * *'
-    - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
       players:
@@ -101,6 +101,8 @@ jobs:
           PLAYERS: ${{ github.event.inputs.board_players || '160' }}
           MATCHES_PER_PLAYER: '15'
           MAX_MATCHES: ${{ github.event.inputs.board_matches || '1500' }}
+          # 1500판 × 1.25초 ≈ 31분. 다음 DB 수집(22:17 UTC, 같은 키) 전에 끝나게 판 수집은 35분에서 멈춘다
+          MAX_MINUTES: '35'
         run: npm run collect:boards
 
       # 공식 패치 노트(키 불필요). 덱 빌드의 패치 분리가 이 파일을 쓰므로 덱 빌드 전에 받는다. 실패해도 계속
