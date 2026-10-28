@@ -30,6 +30,16 @@ const NOW = Date.UTC(2026, 9, 28, 1, 0, 0)
 console.log('경과 시간 (화면에서 현재 시각으로 계산)')
 check('19시간 전 경기는 이틀 뒤 "2일 전"', formatTimeAgo(NOW - 19 * HOUR, NOW + 29 * HOUR) === '2일 전', formatTimeAgo(NOW - 19 * HOUR, NOW + 29 * HOUR))
 check('4시간 전 경기는 하루 뒤 "1일 전"', formatTimeAgo(NOW - 4 * HOUR, NOW + 24 * HOUR) === '1일 전')
+// 2026-10-28 16시 재확인 P2: 경기 종료 시각과의 차이를 반올림 (lolchess 와 같은 값). 빈 틈#123 새벽 경기 패턴
+{
+  const KST = (d, h, m) => Date.UTC(2026, 9, d, h - 9, m)
+  const game = KST(26, 2, 30) // 10.26 02:30 KST 종료
+  check('10.26 02:30 경기: 10.28 12:43 → "2일 전" (2.43일)', formatTimeAgo(game, KST(28, 12, 43)) === '2일 전', formatTimeAgo(game, KST(28, 12, 43)))
+  check('같은 경기 10.28 16:00 → "3일 전" (2.56일 · 내림이면 2일이라 lolchess 보다 하루 적었다)', formatTimeAgo(game, KST(28, 16, 0)) === '3일 전', formatTimeAgo(game, KST(28, 16, 0)))
+  check('경계: 44분 = "44분 전" · 45분 = "1시간 전"', formatTimeAgo(NOW - 44 * 60_000, NOW) === '44분 전' && formatTimeAgo(NOW - 45 * 60_000, NOW) === '1시간 전')
+  check('경계: 21시간 = "21시간 전" · 22시간 = "1일 전" · 36시간 = "2일 전"', formatTimeAgo(NOW - 21 * HOUR, NOW) === '21시간 전' && formatTimeAgo(NOW - 22 * HOUR, NOW) === '1일 전' && formatTimeAgo(NOW - 36 * HOUR, NOW) === '2일 전')
+  check('달력 날짜와 무관: 자정 직전·직후 경기도 차이만 본다 (23:50 → 다음 날 00:10 = "20분 전")', formatTimeAgo(KST(27, 23, 50), KST(28, 0, 10)) === '20분 전')
+}
 check('1분 미만은 "1분 전"', formatTimeAgo(NOW - 10_000, NOW) === '1분 전')
 check('시각이 없으면 "최근"', formatTimeAgo(0, NOW) === '최근')
 {

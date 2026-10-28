@@ -1,4 +1,5 @@
 import { entitySlug } from './entitySlug'
+import { TRAIT_NAMES, traitNameOf } from './gameFacts'
 import { boardCarry, summarizeDeckTypes } from './deckType'
 import { scoringSample } from './quality'
 import { bestBuildable, componentPool, isCraftable } from './itemRecipes'
@@ -166,21 +167,40 @@ function slugSet(keys: string[]): Set<string> {
   return new Set(keys.map((k) => entitySlug('champion', k)).filter(Boolean))
 }
 
+/** 덱 이름 "협곡야수 장로 드래곤" → { trait: '협곡야수', unit: '장로 드래곤' } (앞이 시너지 이름이 아니면 trait null) */
+export function deckNameParts(name: string): { trait: string | null; unit: string } {
+  const trait = TRAIT_NAMES.find((t) => name.startsWith(`${t} `)) ?? null
+  return { trait, unit: trait ? name.slice(trait.length + 1) : name }
+}
+
+/** 보드에서 켜진(최소 단계 이상, Riot tier_current > 0) 시너지 이름 */
+function activeTraitNames(traits: SlimMatchTrait[]): Set<string> {
+  return new Set(traits.filter((t) => (t.tier ?? 0) > 0).map((t) => traitNameOf(t.name) ?? t.name))
+}
+
 /**
  * 가장 유사한 메타 덱 (Jaccard ≥ DECK_SIMILARITY_MIN). 로비 상대 보드에도 쓴다.
- * 덱 이름의 캐리(carryKey)가 내 최종 보드에 없으면 그 덱으로 묶지 않는다 — 시너지·주변 기물만 겹쳐
- * 소라카 없는 보드가 "개화 소라카"로, 렝가 없는 보드가 "개화 렝가"로 분류되던 문제 (2026-10-27).
+ * 덱 이름이 보드와 맞는 덱만 후보다 (못 찾으면 null = "메타 덱과 다른 조합"):
+ * - 덱 이름의 캐리(carryKey · 이름의 기물)가 최종 보드에 있어야 한다 — 소라카 없는 보드가 "개화 소라카"로 묶이던 문제 (2026-10-27)
+ * - 덱 이름의 시너지가 최종 보드에서 켜져 있어야 한다 (traits 를 주면) — 악의 여단이 꺼진 클레스메이트#KR1 1등 보드가
+ *   "악의 여단 알룬"으로 묶이던 문제 (2026-10-28)
  */
 export function mostSimilarDeck(
-  m: { units: SlimMatchUnit[] },
+  m: { units: SlimMatchUnit[]; traits?: SlimMatchTrait[] },
   decks: DeckFact[]
 ): { deck: DeckFact; similarity: number } | null {
   const mine = slugSet(m.units.map((u) => u.id))
   if (!mine.size) return null
+  const active = m.traits ? activeTraitNames(m.traits) : null
   let best: { deck: DeckFact; similarity: number } | null = null
   for (const d of decks) {
     const carry = d.carryKey ? entitySlug('champion', d.carryKey) : ''
     if (carry && !mine.has(carry)) continue
+    const { trait, unit } = deckNameParts(d.name)
+    if (active && trait && !active.has(trait)) continue
+    // 이름의 기물(덱 기물 목록에서 같은 이름) 도 보드에 있어야 한다 — carryKey 가 없는 덱 대비
+    const named = d.units.find((u) => u.name === unit)
+    if (named && !mine.has(entitySlug('champion', named.key))) continue
     const theirs = slugSet(d.units.map((u) => u.key))
     let inter = 0
     for (const s of mine) if (theirs.has(s)) inter++

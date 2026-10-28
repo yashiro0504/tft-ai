@@ -73,7 +73,9 @@ export function buildDeckReport(matches: SlimMatchData[], decks: DeckFact[], met
 }
 
 /** getDecks 응답 → 성적표 출처 줄 (메타 랭킹 페이지 머리말과 같은 값) */
-export function deckReportMeta(res: Pick<DecksResponse, 'source' | 'filter' | 'patch' | 'updatedAt' | 'totalMatches'>): DeckReportMeta {
+export function deckReportMeta(
+  res: Pick<DecksResponse, 'source' | 'filter' | 'patch' | 'updatedAt' | 'totalMatches' | 'fallbackReason'>
+): DeckReportMeta {
   const tier = res.filter?.tier
   return {
     source: res.source,
@@ -81,6 +83,7 @@ export function deckReportMeta(res: Pick<DecksResponse, 'source' | 'filter' | 'p
     tier: tier ? TIER_FILTER_OPTIONS.find((o) => o.id === tier)?.label : undefined,
     updatedAt: res.updatedAt,
     matches: res.totalMatches,
+    ...(res.source === 'json' && res.fallbackReason ? { fallbackReason: res.fallbackReason } : {}),
   }
 }
 

@@ -97,6 +97,55 @@ console.log('P2-7 로비 비교 수치 (등수 · 시너지 인원/단계 · 단
   check('리포트 검증(validateAdviceAndCounts)에 로비 대조 연결', viaAdvice.errors.some((e) => e.type === 'lobby_mismatch') && viaAdvice.checkedLobby === 1, JSON.stringify(viaAdvice))
 }
 
+console.log('P1 덱 이름: 시너지는 보드에서 켜진 것만 · 기물은 보드에 있는 것만 (16시 재확인)')
+{
+  const { mostSimilarDeck, deckNameParts } = require('../lib/comparisonFacts')
+  const { buildDeckReport } = require('../lib/deckReport')
+  const { traitNameOf } = require('../lib/gameFacts')
+  const { entitySlug } = require('../lib/entitySlug')
+  const keys = ['DA_18_Alune', 'DA_18_Lux_Moonbeam', 'DA_Taric18', 'DA_18_Morgana', 'DA_18_Sentry', 'DA_Sentinel18', 'DA_18_Rakan']
+  const deckUnits = keys.map((k) => ({ key: k, name: k === 'DA_18_Alune' ? '알룬' : k === 'DA_18_Lux_Moonbeam' ? '럭스' : k }))
+  const coven = { name: '악의 여단 알룬', avgPlacement: 4.2, sampleSize: 120, carryKey: 'DA_18_Alune', units: deckUnits }
+  const lunar = { name: '달빛 럭스', avgPlacement: 4.4, sampleSize: 90, carryKey: 'DA_18_Lux_Moonbeam', units: deckUnits }
+  // 클레스메이트#KR1 35:29 1등 (Lv.9): 선봉대 4 · 검은 가시 2 · 기원자 2 · 달빛 2 · 주문술사 2 — 악의 여단 없음
+  const traits = [['선봉대', 4, 2], ['검은 가시', 2, 1], ['기원자', 2, 1], ['달빛', 2, 1], ['주문술사', 2, 1], ['악의 여단', 1, 0]].map(([name, count, tier]) => ({ name, count, tier }))
+  const board = { matchId: 'K', placement: 1, level: 9, lastRound: '6-5', traits, units: keys.map((id) => ({ id, name: id, tier: 2, rarity: 3, items: [] })) }
+  check('악의 여단이 꺼진 보드는 "악의 여단 알룬"이 아님 (켜진 달빛 → 달빛 럭스)', mostSimilarDeck(board, [coven, lunar])?.deck.name === '달빛 럭스', mostSimilarDeck(board, [coven, lunar])?.deck.name)
+  check('맞는 메타 덱이 없으면 "메타 덱과 다른 조합"', mostSimilarDeck(board, [coven]) === null)
+  const rep = buildDeckReport([board], [coven])
+  check('덱 성적표: 다른 조합으로 세고 합계 = 분석 경기 수', rep.rows.length === 0 && rep.unmatched.games === 1 && rep.total === 1, JSON.stringify(rep))
+  check('시너지가 켜져 있으면 그 덱으로 묶음', mostSimilarDeck({ ...board, traits: [...traits.slice(0, 5), { name: '악의 여단', count: 3, tier: 1 }] }, [coven])?.deck.name === '악의 여단 알룬')
+  // 픽스처·골든셋 실제 보드 전체: 분류된 덱 이름의 시너지는 켜져 있고, 이름의 기물은 보드에 있다
+  const { buildMetaPayload } = require('../lib/metaPayload')
+  const decks = buildMetaPayload().decks
+  const fs = require('fs')
+  const path = require('path')
+  function* walk(o) {
+    if (Array.isArray(o)) for (const v of o) yield* walk(v)
+    else if (o && typeof o === 'object') {
+      if (Array.isArray(o.units) && Array.isArray(o.traits) && typeof o.placement === 'number') yield o
+      for (const v of Object.values(o)) yield* walk(v)
+    }
+  }
+  let classified = 0
+  const wrong = []
+  for (const f of ['evalMatches.json', 'goldenLabels.json']) {
+    const file = path.join(__dirname, '..', 'data', f)
+    if (!fs.existsSync(file)) continue
+    for (const b of walk(JSON.parse(fs.readFileSync(file, 'utf8')))) {
+      const hit = mostSimilarDeck(b, decks)
+      if (!hit) continue
+      classified++
+      const { trait, unit } = deckNameParts(hit.deck.name)
+      const active = new Set(b.traits.filter((t) => (t.tier ?? 0) > 0).map((t) => traitNameOf(t.name) ?? t.name))
+      const named = hit.deck.units.find((u) => u.name === unit)
+      const onBoard = !named || b.units.some((u) => entitySlug('champion', u.id) === entitySlug('champion', named.key))
+      if ((trait && !active.has(trait)) || !onBoard) wrong.push(hit.deck.name)
+    }
+  }
+  check(`실제 보드 ${classified}개 분류: 덱 이름 시너지 켜짐 · 이름 기물 보드에 있음`, classified > 0 && wrong.length === 0, wrong.slice(0, 5).join(', '))
+}
+
 console.log('4. 조언·수치 모순')
 const U = (id, name, tier, items, rarity = 3) => ({ id, name, tier, rarity, items })
 // 102#2600 26분 29초 7등: 코그모 3템, 시너지 적응가·개화·싸움꾼·부식
@@ -195,7 +244,7 @@ console.log('5. 메타 평균 스냅샷')
   const path = require('path')
   const read = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
   check('덱 성적표는 메타 덱 스냅샷(getMetaDeckSnapshot)을 씀', /getMetaDeckSnapshot\(\)/.test(read('lib/deckReport.ts')))
-  check('메타 페이지 덱 탭도 같은 스냅샷을 씀', /getMetaDeckSnapshot\(\)/.test(read('app/meta/page.tsx')))
+  check('메타 페이지 덱 탭도 같은 스냅샷을 씀 (lib/metaSnapshot → getMetaDeckSnapshot)', /withDeckSnapshot\(/.test(read('app/meta/page.tsx')) && /getMetaDeckSnapshot\(\)/.test(read('lib/metaSnapshot.ts')))
   const { metaSnapshotLabel } = require('../lib/deckReportShared')
   const label = metaSnapshotLabel({ source: 'json', patch: 'set18', updatedAt: '2026-10-28T00:29:04.802Z' })
   check('갱신 시각은 KST 분 단위 (두 화면 같은 함수)', label.includes('10.28 09:29 갱신'), label)
@@ -211,7 +260,7 @@ console.log('5. 메타 평균 스냅샷')
   const jsonMeta = { source: 'json', matches: 292 }
   check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (db)', metaSnapshotLabel(dbMeta).startsWith(`${metaScopeLabel(dbMeta)} · ${metaMatchesLabel(dbMeta)}`), metaSnapshotLabel(dbMeta))
   check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (json)', metaSnapshotLabel(jsonMeta).startsWith('KR 마스터+ 래더 · 292판'), metaSnapshotLabel(jsonMeta))
-  check('P1-3 메타 페이지 배지·덱 탭 칩이 같은 함수', /metaScopeLabel\(snapshotMeta\)/.test(metaPage) && /decksScope=/.test(metaPage) && /decksScope\.scope/.test(read('app/components/MetaDashboard.tsx')))
+  check('P1-3 메타 페이지 배지·덱 탭 칩이 같은 함수', /metaScopeLabel\(snapshotMeta\)/.test(metaPage) && /metaScopeLabel\(snapMeta\)/.test(read('app/components/MetaDashboard.tsx')))
   check('P2-5 덱 탭 JSON 칩도 같은 범위 함수 (챌린저 래더 하드코딩 없음)', !/KR 챌린저 래더/.test(read('app/components/MetaDashboard.tsx')))
   const ladderWf = read('.github/workflows/collect-ladder.yml')
   // 하루 1회: DB 수집(매시 17분)이 같은 Riot 키를 쓰므로 21시(UTC)만 비워 두고, 래더는 그 시간에만 돈다
@@ -242,8 +291,44 @@ console.log('5. 메타 평균 스냅샷')
   check('P1-2 화면: 메타 평균 없으면 "메타 표본 없음"', /메타 표본 없음/.test(read('app/components/DeckReportCard.tsx')))
 }
 
-if (failures) {
-  console.error(`\n❌ 리포트 일치 테스트 실패 ${failures}건`)
-  process.exit(1)
+/**
+ * 16시 재확인 P0: 메타 화면은 /meta 페이지·/api/tft/meta(홈 메타 탭·홈 추천 덱) 모두 lib/metaSnapshot 하나로 덱을 채우고,
+ * 덱 성적표와 같은 스냅샷(같은 갱신 시각·같은 평균)을 본다. 스냅샷 실패면 '같은 데이터'라고 말하지 않는다.
+ */
+async function snapshotChecks() {
+  console.log('P0 메타 화면 ↔ 덱 성적표 같은 스냅샷 (16시 재확인)')
+  const fs = require('fs')
+  const path = require('path')
+  const read = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
+  check('API(/api/tft/meta → 홈 메타 탭·추천 덱)가 스냅샷으로 덱을 채움', /withDeckSnapshot\(/.test(read('app/api/tft/meta/route.ts')))
+  check('/meta 페이지도 같은 함수', /withDeckSnapshot\(/.test(read('app/meta/page.tsx')))
+  check('메타 대시보드 칩은 응답의 decksMeta(덱 성적표와 같은 출처)로 그림', /data\?\.decksMeta/.test(read('app/components/MetaDashboard.tsx')))
+  check('홈 메타 탭 → MetaRanking → /api/tft/meta (래더 JSON 직접 읽기 없음)', /<MetaRanking/.test(read('app/page.tsx')) && /fetch\('\/api\/tft\/meta'/.test(read('app/components/MetaDashboard.tsx')))
+  const { withDeckSnapshot } = require('../lib/metaSnapshot')
+  const { buildMetaPayload } = require('../lib/metaPayload')
+  const { loadDeckReport } = require('../lib/deckReport')
+  const meta = await withDeckSnapshot(buildMetaPayload())
+  const ladder = require('../lib/decksData.json').decks[0]
+  const unit = (u) => ({ id: `TFT18_${u.matchedKey}`, name: u.name, tier: 2, rarity: u.cost, items: [] })
+  const game = { matchId: 'S', placement: 3, level: 8, lastRound: '5-5', traits: (ladder.traits || []).map((t) => ({ name: t.name ?? t, count: 4, tier: 2 })), units: ladder.units.map(unit) }
+  const report = await loadDeckReport([game])
+  check('메타 화면 decksMeta = 덱 성적표 출처 (같은 갱신 시각·표본 수·출처)', !!meta.decksMeta && !!report?.meta && JSON.stringify(meta.decksMeta) === JSON.stringify(report.meta), JSON.stringify([meta.decksMeta, report?.meta]))
+  const row = report?.rows[0]
+  const metaDeck = row && meta.decks.find((d) => d.name === row.name)
+  check('같은 덱의 메타 평균이 두 화면에서 같음', !row || (metaDeck && Math.round((metaDeck.avgPlacement ?? 0) * 100) / 100 === row.metaAvg), JSON.stringify({ row, metaAvg: metaDeck?.avgPlacement }))
+  const { snapshotFailed } = require('../lib/deckReportShared')
+  check('스냅샷 실패(db_error)면 실패로 표시', snapshotFailed({ source: 'json', fallbackReason: 'db_error' }) && !snapshotFailed({ source: 'db' }) && !snapshotFailed({ source: 'json', fallbackReason: 'small_sample' }))
+  check('스냅샷 실패면 성적표·메타 화면이 "같은 데이터"라고 말하지 않음', /snapshotFailed\(report\.meta\)/.test(read('app/components/DeckReportCard.tsx')) && /snapshotFailed\(snapMeta\)/.test(read('app/components/MetaDashboard.tsx')))
+  check('API 엣지 캐시는 스냅샷 TTL 안 (s-maxage 60)', /s-maxage=60/.test(read('app/api/tft/meta/route.ts')))
 }
-console.log('\n✅ 리포트 일치 테스트 통과')
+
+snapshotChecks()
+  .catch((e) => check('스냅샷 검사 실행', false, e.stack))
+  .finally(() => {
+    if (failures) {
+      console.error(`\n❌ 리포트 일치 테스트 실패 ${failures}건`)
+      process.exit(1)
+    }
+    console.log('\n✅ 리포트 일치 테스트 통과')
+  })
+

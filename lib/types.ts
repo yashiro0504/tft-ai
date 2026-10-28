@@ -1,3 +1,5 @@
+import type { DeckReportMeta } from './deckReportShared'
+
 export interface RiotAccount {
   puuid: string
   gameName: string
@@ -707,8 +709,10 @@ export interface TftMetaResponse {
   combos: MetaComboRanking[]
   /** 메타 조합 (기물 + BIS 아이템 세트) */
   comps: MetaCompRanking[]
-  /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) */
+  /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) — 덱 성적표와 같은 스냅샷 (lib/tftStats getMetaDeckSnapshot) */
   decks: MetaDeckRanking[]
+  /** decks 의 출처·수집 범위·표본 수·갱신 시각 (덱 성적표 출처 줄과 같은 값). 없으면 래더 JSON(deckMeta) */
+  decksMeta?: DeckReportMeta
   deckMeta?: {
     /** decksData.json 빌드 시각 */
     generatedAt: string

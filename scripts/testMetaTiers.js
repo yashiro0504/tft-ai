@@ -87,7 +87,51 @@ const flatS = new Set(champs.filter((_, i) => flatTiers[i] === 'S').map((c) => c
 check('코스트별 티어: S티어에 1~5코가 모두', [1, 2, 3, 4, 5].every((c) => sCosts.has(c)), [...sCosts].join(','))
 console.log(`  (참고: 한 줄로 매기면 S티어 코스트 = ${[...flatS].join(',')})`)
 
-console.log('덱 티어: 기준 덱 비교 · 3~5개 · 한 티어 50% 이하 (2026-10-28 머지 후 재평가)')
+/**
+ * 화면 설명(DECK_TIER_RULE)만 보고 손으로 세는 방법 — 함수 구현을 보지 않고 문장 그대로 옮긴 것.
+ * ds: { a: 평균등수, s: 오차 2.29/√n }
+ */
+function handTiers(ds) {
+  const N = ds.length
+  const cap = Math.max(1, Math.floor(N / 2))
+  // 평균등수 순 (같으면 판 수 많은 = 오차 작은 덱 먼저)
+  const idx = ds.map((_, i) => i).sort((x, y) => ds[x].a - ds[y].a || ds[x].s - ds[y].s)
+  let tiers = []
+  for (const i of idx) {
+    const cur = tiers[tiers.length - 1]
+    const base = cur && ds[cur[0]]
+    const overlaps = base && Math.abs(ds[i].a - base.a) <= ds[i].s + base.s
+    if (cur && overlaps && cur.length < cap) cur.push(i)
+    else tiers.push([i])
+  }
+  const lastA = (t) => ds[t[t.length - 1]].a
+  // 5개 초과: 경계 차이가 가장 작은 이웃 두 티어 합치기 (합쳐도 50% 이하인 곳 먼저)
+  while (tiers.length > 5) {
+    let best = null
+    for (let k = 0; k + 1 < tiers.length; k++) {
+      const c = { k, d: ds[tiers[k + 1][0]].a - lastA(tiers[k]), size: tiers[k].length + tiers[k + 1].length }
+      const fits = c.size <= cap
+      const better = !best || (fits && !best.fits) || (fits === best.fits && (c.d < best.d || (c.d === best.d && c.size < best.size)))
+      if (better) best = { ...c, fits }
+    }
+    tiers.splice(best.k, 2, [...tiers[best.k], ...tiers[best.k + 1]])
+  }
+  // 3개 미만: 가장 큰 티어를 이웃 차이가 가장 큰 곳에서 둘로
+  while (tiers.length < 3) {
+    let big = 0
+    tiers.forEach((t, k) => t.length > tiers[big].length && (big = k))
+    const t = tiers[big]
+    if (t.length < 2) break
+    let at = 1
+    for (let p = 2; p < t.length; p++) if (ds[t[p]].a - ds[t[p - 1]].a > ds[t[at]].a - ds[t[at - 1]].a) at = p
+    tiers.splice(big, 1, t.slice(0, at), t.slice(at))
+  }
+  const out = new Array(N)
+  tiers.forEach((t, k) => t.forEach((i) => (out[i] = 'SABCD'[Math.min(k, 4)])))
+  return out
+}
+
+console.log('덱 티어: 기준 덱 비교 · 3~5개 · 한 티어 50% 이하, 차면 다음 티어 (2026-10-28 16시 재확인)')
 {
   const { PLACEMENT_SD } = require('../lib/statsShared')
   const named = decksData.decks.filter((d) => d.sampleSize >= MIN_SAMPLE.deck)
@@ -109,16 +153,39 @@ console.log('덱 티어: 기준 덱 비교 · 3~5개 · 한 티어 50% 이하 (2
   const ov = (i, j) => Math.abs(rows[i].avg - rows[j].avg) <= m[i] + m[j]
   const notAnchored = order.filter((i) => !ov(i, firstOf.get(tiers[i])))
   check('모든 덱이 자기 티어 기준 덱(첫 덱)과 구간이 겹침', notAnchored.length === 0, notAnchored.map((i) => named[i].name).join(','))
-  // 새 티어가 앞 티어 기준 덱과 겹치는데도 시작됐다면, 앞 티어에 넣었을 때 50% 를 넘는 경우(재분할)뿐이다
+  // 새 티어가 앞 티어 기준 덱과 겹치는데도 시작됐다면, 앞 티어가 이미 한도(⌊N/2⌋개)를 채운 경우뿐이다
+  const cap = Math.floor(rows.length / 2)
   const stray = [...firstOf.entries()].filter(([t, i]) => {
     const prev = [...firstOf.entries()].find(([u]) => tierRank(u) === tierRank(t) - 1)
-    if (!prev || !ov(i, prev[1])) return false
-    const from = order.indexOf(prev[1])
-    let k = from
-    while (k < order.length && ov(order[k], prev[1])) k++
-    return k - from <= rows.length / 2
+    return prev && ov(i, prev[1]) && tiers.filter((x) => x === prev[0]).length < cap
   })
-  check('기준 덱과 겹치는 덱은 50% 재분할 말고는 다음 티어로 안 밀림', stray.length === 0, stray.map(([, i]) => named[i].name).join(','))
+  check(`기준 덱과 겹치는 덱은 그 티어가 ${cap}개(50%)를 채웠을 때만 다음 티어로`, stray.length === 0, stray.map(([, i]) => named[i].name).join(','))
+  const hand = handTiers(rows.map((r, i) => ({ a: r.avg, s: m[i] })))
+  const diff = rows.map((_, i) => i).filter((i) => hand[i] !== tiers[i])
+  check('화면 설명대로 손으로 센 티어 = 표시 티어 (저장소 덱 데이터)', diff.length === 0, diff.map((i) => `${named[i].name} 손${hand[i]}/화면${tiers[i]}`).join(', '))
+  // 16시 재확인 사례: 18덱 중 9번째(50%)가 A 기준 덱과 겹치면 A (예전엔 '가운데 절반 최대 차이' 재분할로 B)
+  const ari = [3.0, 3.02, 3.04, 4.0, 4.05, 4.1, 4.15, 4.2, 4.25, 4.3, 4.35, 4.4, 4.45, 4.5, 4.55, 4.6, 4.65, 6.5]
+  const ariSd = ari.map((a) => (a < 3.5 ? 0.05 : 0.3))
+  const ariTiers = assignSeparatedTiers(ari, ariSd)
+  const ariCount = (t) => ariTiers.filter((x) => x === t).length
+  check('18덱 중 9번째(4.40)가 A 기준 덱(4.00)과 겹치면 A — 9/18 = 50% 이하', ariTiers[11] === 'A' && ariCount('A') === 9, JSON.stringify(ariTiers))
+  check('10번째(4.45)는 겹쳐도 A 가 9개를 채워 B 의 기준 덱 → S3 A9 B5 C1', ariTiers[12] === 'B' && ['S', 'A', 'B', 'C'].map(ariCount).join() === '3,9,5,1', ['S', 'A', 'B', 'C'].map(ariCount).join())
+  // 무작위 덱 표 200개: 함수 = 설명대로 센 값 (5개 초과 합치기 · 3개 미만 나누기 포함)
+  let seed = 7
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+  let mismatch = 0
+  let shareOver = 0
+  for (let t = 0; t < 200; t++) {
+    const len = 3 + Math.floor(rnd() * 24)
+    const spread = 0.2 + rnd() * 3
+    const ds = Array.from({ length: len }, () => ({ a: +(3 + rnd() * spread).toFixed(2), s: +(2.29 / Math.sqrt(30 + Math.floor(rnd() * 900))).toFixed(3) }))
+    const fn = assignSeparatedTiers(ds.map((d) => d.a), ds.map((d) => d.s))
+    if (handTiers(ds).join() !== fn.join()) mismatch++
+    const most = Math.max(...['S', 'A', 'B', 'C', 'D'].map((x) => fn.filter((y) => y === x).length))
+    if (most > Math.max(1, Math.floor(len / 2)) && new Set(fn).size < 5) shareOver++
+  }
+  check('무작위 덱 표 200개: 함수 = 설명대로 센 티어', mismatch === 0, `${mismatch}개 다름`)
+  check('무작위 덱 표 200개: 한 티어 50% 이하 (5개 초과로 합친 경우 말고)', shareOver === 0, `${shareOver}개`)
   const sep = assignSeparatedTiers([3.5, 3.6, 4.5, 4.6, 5.8], [0.1, 0.1, 0.1, 0.1, 0.1])
   check('구간이 떨어진 곳에서는 끊음 (3.5·3.6 | 4.5·4.6 | 5.8)', sep[0] === sep[1] && sep[2] === sep[3] && sep[1] !== sep[2] && sep[3] !== sep[4] && sep[0] === 'S', JSON.stringify(sep))
   const one = assignSeparatedTiers([3.84, 4.16, 4.6, 5.0, 5.4], [0.4, 0.41, 0.1, 0.1, 0.1])

@@ -27,6 +27,15 @@ export interface DeckReportMeta {
   updatedAt?: string
   /** 표본 규모 (판) — 메타 페이지 머리말 */
   matches?: number
+  /** DB 집계 대신 래더 JSON 을 쓴 이유 (getDecks fallbackReason) — SNAPSHOT_FAILURE_REASONS 면 스냅샷 생성 실패 */
+  fallbackReason?: string
+}
+
+/** 이 사유로 JSON 폴백이면 '스냅샷 생성 실패' — 두 화면이 같은 데이터라고 말하지 않고 각자 갱신 시각만 보여 준다 */
+export const SNAPSHOT_FAILURE_REASONS = ['db_error', 'empty']
+
+export function snapshotFailed(meta?: Pick<DeckReportMeta, 'source' | 'fallbackReason'>): boolean {
+  return !!meta && meta.source === 'json' && SNAPSHOT_FAILURE_REASONS.includes(meta.fallbackReason ?? '')
 }
 
 export interface DeckReport {

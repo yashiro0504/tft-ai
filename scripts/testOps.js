@@ -6,7 +6,7 @@
  *  - latestPatchFreshness: 덱 클러스터 신선도는 전역 최신 행이 아니라 최신 패치 기준
  *  - freshnessLevel: 24시간 / 72시간 판정 (stat_comp · stat_unit_build 공통)
  */
-const { comparePatchDesc, latestPatchFreshness, freshnessLevel } = require('./checkOps')
+const { comparePatchDesc, latestPatchFreshness, freshnessLevel, snapshotHealth, SNAPSHOT_MAX_AGE_H } = require('./checkOps')
 
 let failures = 0
 function check(label, condition, detail = '') {
@@ -55,6 +55,16 @@ check('24시간 이내 → ok', level([['16.21', 23]]) === 'ok', level([['16.21'
 check('24~72시간 → stale', level([['16.21', 30]]) === 'stale', level([['16.21', 30]]))
 check('72시간 초과 → critical', level([['16.21', 73]]) === 'critical', level([['16.21', 73]]))
 check('빌드 없음 → empty', freshnessLevel(latestPatchFreshness([], NOW)) === 'empty')
+
+console.log('메타 덱 스냅샷 신선도 (2026-10-28 16시 재확인 P0)')
+check('DB 집계 · 3시간 전 → 정상', snapshotHealth({ source: 'db', updatedAt: ago(3) }, NOW).ok)
+check(`DB 집계 · ${SNAPSHOT_MAX_AGE_H + 1}시간 전 → 알림 (덱 클러스터 주기 8시간 + 6시간 초과)`, !snapshotHealth({ source: 'db', updatedAt: ago(SNAPSHOT_MAX_AGE_H + 1) }, NOW).ok)
+const jsonFb = snapshotHealth({ source: 'json', updatedAt: ago(1), fallbackReason: 'db_error' }, NOW)
+check('래더 JSON 폴백(db_error) → 알림 (스냅샷 생성 실패)', !jsonFb.ok && jsonFb.reason.includes('db_error'), jsonFb.reason)
+check('decksMeta 없음 → 알림 (메타 화면이 스냅샷을 안 읽음)', !snapshotHealth(undefined, NOW).ok)
+check('새 패치 표본 부족(small_sample) 래더 표본 → 실패 아님', snapshotHealth({ source: 'json', updatedAt: ago(30), fallbackReason: 'small_sample' }, NOW).ok)
+const wf = require('fs').readFileSync(require('path').join(__dirname, '..', '.github', 'workflows', 'meta-snapshot-check.yml'), 'utf8')
+check('스냅샷 점검 워크플로: 2시간마다 --snapshot-only --strict', /cron: '\d+ \*\/2 \* \* \*'/.test(wf) && /--snapshot-only/.test(wf) && /--strict/.test(wf))
 
 console.log(failures ? `\n❌ 실패 ${failures}건` : '\n✅ 운영 점검 테스트 통과')
 if (failures) process.exitCode = 1

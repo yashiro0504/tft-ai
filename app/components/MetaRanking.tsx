@@ -15,8 +15,6 @@ export function MetaRanking({
   deferSections,
   filters,
   initialDecksSource,
-  decksUpdatedAt,
-  decksScope,
   syncUrl,
 }: {
   onOpenCoach?: () => void
@@ -25,10 +23,6 @@ export function MetaRanking({
   deferSections?: boolean
   filters?: MetaFiltersResponse
   initialDecksSource?: 'db' | 'json'
-  /** 덱 스냅샷 갱신 시각 (덱 성적표와 같은 값) */
-  decksUpdatedAt?: string
-  /** 덱 스냅샷 수집 범위·표본 수 (메타 페이지 배지·덱 성적표와 같은 문구) */
-  decksScope?: { scope: string; matches: string | null }
   /** 필터·탭 URL 동기화 (/meta) */
   syncUrl?: boolean
 }) {
@@ -40,8 +34,6 @@ export function MetaRanking({
       deferSections={deferSections}
       filters={filters}
       initialDecksSource={initialDecksSource}
-      decksUpdatedAt={decksUpdatedAt}
-      decksScope={decksScope}
       syncUrl={syncUrl}
     />
   )
