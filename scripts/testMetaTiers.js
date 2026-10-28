@@ -12,7 +12,7 @@
  * 사용법: node scripts/testMetaTiers.js   (npm run test:tiers)
  */
 require('./_ts')
-const { assignSampleTiers, assignTiers, shrinkPlacements, tierRank } = require('../app/components/metaShared')
+const { assignSampleTiers, assignSeparatedTiers, assignTiers, shrinkPlacements, shrunkPlacementSds, tierRank } = require('../app/components/metaShared')
 const { MIN_SAMPLE, MAX_PLACEMENT_MARGIN, placementMargin } = require('../lib/statsShared')
 const { buildMetaPayload } = require('../lib/metaPayload')
 const decksData = require('../lib/decksData.json')
@@ -86,6 +86,26 @@ const flatTiers = assignSampleTiers(champs.map((c) => ({ avg: c.avgPlacement, sa
 const flatS = new Set(champs.filter((_, i) => flatTiers[i] === 'S').map((c) => c.cost))
 check('코스트별 티어: S티어에 1~5코가 모두', [1, 2, 3, 4, 5].every((c) => sCosts.has(c)), [...sCosts].join(','))
 console.log(`  (참고: 한 줄로 매기면 S티어 코스트 = ${[...flatS].join(',')})`)
+
+console.log('덱 티어: 오차 범위가 겹치는 이웃은 같은 티어 (2026-10-28)')
+{
+  // 처형자 이즈리얼 3.84±0.40(32판) · 적응가 니달리 4.16±0.41(31판) 이 S·A 로 갈렸다
+  const rows = decksData.decks.filter((d) => d.sampleSize >= MIN_SAMPLE.deck).map((d) => ({ avg: d.avgPlacement, sample: d.sampleSize }))
+  const tiers = assignSampleTiers(rows, MIN_SAMPLE.deck, { separated: true })
+  const est = shrinkPlacements(rows)
+  const sds = shrunkPlacementSds(rows)
+  const order = rows.map((_, i) => i).sort((a, b) => est[a] - est[b])
+  const split = order.slice(0, -1).filter((i, k) => {
+    const j = order[k + 1]
+    return tiers[i] !== tiers[j] && est[j] - est[i] < sds[i] + sds[j]
+  })
+  check('저장소 덱 데이터: 오차 구간이 겹치는 이웃이 다른 티어로 갈린 곳 0', rows.length > 1 && split.length === 0, `${split.length}곳`)
+  check('티어는 추정 평균등수 순서를 거스르지 않음', order.every((i, k) => !k || tierRank(tiers[order[k - 1]]) <= tierRank(tiers[i])))
+  const sep = assignSeparatedTiers([3.5, 3.6, 4.5, 4.6, 5.8], [0.1, 0.1, 0.1, 0.1, 0.1])
+  check('구간이 떨어진 곳에서는 끊음 (3.5·3.6 | 4.5·4.6 | 5.8)', sep[0] === sep[1] && sep[2] === sep[3] && sep[1] !== sep[2] && sep[3] !== sep[4] && sep[0] === 'S', JSON.stringify(sep))
+  const one = assignSeparatedTiers([3.84, 4.16], [0.4, 0.41])
+  check('이즈리얼 3.84±0.40 · 니달리 4.16±0.41 → 같은 티어', one[0] === one[1], JSON.stringify(one))
+}
 
 console.log(failures.length ? `\n❌ 실패 ${failures.length}건` : '\n✅ 메타 티어 테스트 통과')
 if (failures.length) process.exitCode = 1

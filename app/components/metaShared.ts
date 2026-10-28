@@ -82,6 +82,38 @@ export function assignTiers(avgs: number[], sds?: number[]): Tier[] {
   return out
 }
 
+/**
+ * 덱 티어: 오차 범위가 겹치는 인접 덱은 같은 티어 (2026-10-28 — 처형자 이즈리얼 S 3.84±0.40 와 적응가 니달리 A 4.16±0.41 이 갈렸다).
+ * 추정 평균등수 순으로 늘어놓고, 이웃한 두 덱의 '추정값 ± 표준오차' 구간이 겹치지 않는 곳에서만 티어를 끊는다
+ * (끊을 수 있는 곳이 많으면 차이가 큰 곳부터 최대 4곳). 맨 위 묶음은 S, 나머지는 묶음 가운데 순위의 퍼센타일 티어로 붙이되
+ * 위 묶음보다 낮은 티어가 되게 한 칸씩 내린다. 표본이 적어 구분이 안 되면 티어 수가 줄어든다 — 표본이 늘면 다시 나뉜다.
+ */
+export function assignSeparatedTiers(avgs: number[], sds: number[]): Tier[] {
+  const order = avgs.map((a, i) => ({ a, s: sds[i] ?? 0, i })).sort((x, y) => x.a - y.a)
+  const n = order.length
+  if (!n) return []
+  const cuts = order
+    .slice(0, -1)
+    .map((it, j) => ({ j, gap: order[j + 1].a - it.a, need: it.s + order[j + 1].s }))
+    .filter((c) => c.gap > 0 && c.gap >= c.need)
+    .sort((x, y) => y.gap / (y.need || 1) - x.gap / (x.need || 1))
+    .slice(0, TIERS.length - 1)
+    .map((c) => c.j)
+    .sort((x, y) => x - y)
+  const out: Tier[] = new Array(avgs.length).fill('D')
+  let start = 0
+  let prev = -1
+  for (const end of [...cuts, n - 1]) {
+    // 가장 좋은 덱이 든 묶음은 S, 그 아래는 묶음 가운데 순위의 퍼센타일 티어 (위 묶음보다 최소 한 칸 아래)
+    const center = (start + end) / 2 / n
+    const t = prev < 0 ? 0 : Math.min(TIERS.length - 1, Math.max(prev + 1, TIERS.indexOf(percentileTier(center))))
+    for (let k = start; k <= end; k++) out[order[k].i] = TIERS[t]
+    prev = t
+    start = end + 1
+  }
+  return out
+}
+
 /** 아무 정보가 없을 때의 평균등수 (8명 평균) */
 const BASE_PLACEMENT = 4.5
 /** 당기는 세기 범위 · 표 행이 너무 적어 분산을 못 구할 때의 값 */
@@ -124,8 +156,13 @@ function shrinkStrength(rows: { avg: number; sample: number }[]): number {
  * 표본 충분한 행끼리만 상대 티어를 매긴다 (표본 부족은 '-').
  * 순위는 추정 평균등수(shrinkPlacements) 기준. group 이 있으면 같은 group 안에서만 비교한다 (기물: 코스트별).
  * 같은 값은 같은 티어, 경계에서 위 티어와 오차 안이면 위 티어 (assignTiers).
+ * separated: 오차 범위가 겹치는 이웃은 같은 티어 (assignSeparatedTiers — 덱 탭)
  */
-export function assignSampleTiers(rows: { avg: number; sample: number; group?: string | number }[], min: number): (Tier | '-')[] {
+export function assignSampleTiers(
+  rows: { avg: number; sample: number; group?: string | number }[],
+  min: number,
+  { separated = false }: { separated?: boolean } = {}
+): (Tier | '-')[] {
   const out: (Tier | '-')[] = rows.map(() => '-')
   const okIdx = rows.map((_, i) => i).filter((i) => rows[i].sample >= min)
   // 당기는 세기는 표 전체에서 구하고, 티어만 group 안에서 나눈다 (group 하나는 행이 적어 분산이 흔들린다)
@@ -138,7 +175,7 @@ export function assignSampleTiers(rows: { avg: number; sample: number; group?: s
     groups.set(rows[i].group, g)
   })
   for (const members of groups.values()) {
-    const tiers = assignTiers(
+    const tiers = (separated ? assignSeparatedTiers : assignTiers)(
       members.map((k) => est[k]),
       members.map((k) => sds[k])
     )
