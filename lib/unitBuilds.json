@@ -2,9 +2,1923 @@
   "version": 1,
   "_comment": "기물 빌드(아이템 3개 세트) — scripts/buildUnitBuilds.js --write 가 data/ladderBoards.json 에서 만든다 (매일 collect-ladder 워크플로). 비어 있으면 화면은 '3개 함께' 줄을 그리지 않는다.",
   "source": "riot-ladder-boards",
-  "generatedAt": null,
-  "sourceUpdatedAt": null,
-  "patches": {},
-  "boards": 0,
-  "builds": []
+  "generatedAt": "2026-10-28T00:39:21.427Z",
+  "sourceUpdatedAt": "2026-10-28T00:39:18.423Z",
+  "patches": {
+    "18.5": 2104
+  },
+  "boards": 2104,
+  "builds": [
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_JeweledGauntlet",
+        "DA_SpearOfShojin",
+        "DA_StrikersFlail"
+      ],
+      "games": 28,
+      "placement_sum": 115,
+      "top4": 17,
+      "wins": 5,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_JeweledGauntlet",
+        "DA_RabadonsDeathcap",
+        "DA_SpearOfShojin"
+      ],
+      "games": 18,
+      "placement_sum": 74,
+      "top4": 9,
+      "wins": 3,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet",
+        "DA_StrikersFlail"
+      ],
+      "games": 10,
+      "placement_sum": 42,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_18_EmblemInvoker",
+        "DA_JeweledGauntlet",
+        "DA_StrikersFlail"
+      ],
+      "games": 9,
+      "placement_sum": 51,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_JeweledGauntlet",
+        "DA_NashorsTooth",
+        "DA_StrikersFlail"
+      ],
+      "games": 8,
+      "placement_sum": 30,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_GiantSlayer",
+        "DA_JeweledGauntlet",
+        "DA_SpearOfShojin"
+      ],
+      "games": 6,
+      "placement_sum": 35,
+      "top4": 1,
+      "wins": 1,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Ahri",
+      "items": [
+        "DA_18_EmblemInvoker",
+        "DA_JeweledGauntlet",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 5,
+      "placement_sum": 13,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 228
+    },
+    {
+      "unit": "DA_18_Alistar",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 8,
+      "placement_sum": 25,
+      "top4": 6,
+      "wins": 1,
+      "unit_games": 361
+    },
+    {
+      "unit": "DA_18_Alistar",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 17,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 361
+    },
+    {
+      "unit": "DA_18_Alistar",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 12,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 361
+    },
+    {
+      "unit": "DA_18_Alistar",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 5,
+      "placement_sum": 16,
+      "top4": 3,
+      "wins": 2,
+      "unit_games": 361
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_Deathblade",
+        "DA_GuinsoosRageblade",
+        "DA_KrakensFury"
+      ],
+      "games": 12,
+      "placement_sum": 53,
+      "top4": 8,
+      "wins": 0,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_18_EmblemElderwood",
+        "DA_GuinsoosRageblade",
+        "DA_KrakensFury"
+      ],
+      "games": 11,
+      "placement_sum": 39,
+      "top4": 8,
+      "wins": 2,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge",
+        "DA_KrakensFury"
+      ],
+      "games": 11,
+      "placement_sum": 50,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_KrakensFury",
+        "DA_KrakensFury"
+      ],
+      "games": 8,
+      "placement_sum": 36,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge",
+        "DA_LastWhisper"
+      ],
+      "games": 6,
+      "placement_sum": 26,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Aphelios",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge",
+        "DA_RedBuff"
+      ],
+      "games": 5,
+      "placement_sum": 19,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Ashe",
+      "items": [
+        "DA_LastWhisper",
+        "DA_RedBuff",
+        "DA_SpearOfShojin"
+      ],
+      "games": 5,
+      "placement_sum": 15,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 139
+    },
+    {
+      "unit": "DA_18_Ashe",
+      "items": [
+        "DA_18_EmblemInferno",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 5,
+      "placement_sum": 25,
+      "top4": 2,
+      "wins": 1,
+      "unit_games": 139
+    },
+    {
+      "unit": "DA_18_Azir",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HextechGunblade",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 8,
+      "placement_sum": 27,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Azir",
+      "items": [
+        "DA_ArchangelsStaff",
+        "DA_GuinsoosRageblade",
+        "DA_HextechGunblade"
+      ],
+      "games": 5,
+      "placement_sum": 24,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 217
+    },
+    {
+      "unit": "DA_18_Caitlyn",
+      "items": [
+        "DA_GuinsoosRagebladeRadiant",
+        "DA_HextechGunblade",
+        "DA_KrakensFury"
+      ],
+      "games": 5,
+      "placement_sum": 8,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 23
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_Deathblade",
+        "DA_InfinityEdge",
+        "DA_LastWhisper"
+      ],
+      "games": 17,
+      "placement_sum": 63,
+      "top4": 11,
+      "wins": 3,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_LastWhisper",
+        "DA_SteraksGage"
+      ],
+      "games": 11,
+      "placement_sum": 49,
+      "top4": 6,
+      "wins": 1,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_SteraksGage",
+        "DA_StrikersFlail"
+      ],
+      "games": 9,
+      "placement_sum": 32,
+      "top4": 6,
+      "wins": 1,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_LastWhisper",
+        "DA_StrikersFlail"
+      ],
+      "games": 8,
+      "placement_sum": 27,
+      "top4": 6,
+      "wins": 2,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_LastWhisper",
+        "DA_RedBuff"
+      ],
+      "games": 6,
+      "placement_sum": 14,
+      "top4": 5,
+      "wins": 4,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_GiantSlayer",
+        "DA_InfinityEdge",
+        "DA_LastWhisper"
+      ],
+      "games": 6,
+      "placement_sum": 19,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_HandOfJustice",
+        "DA_InfinityEdge",
+        "DA_LastWhisper"
+      ],
+      "games": 5,
+      "placement_sum": 15,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_LastWhisper",
+        "DA_SteraksGage",
+        "DA_StrikersFlail"
+      ],
+      "games": 5,
+      "placement_sum": 16,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_ElderDragon",
+      "items": [
+        "DA_Deathblade",
+        "DA_InfinityEdge",
+        "DA_StrikersFlail"
+      ],
+      "games": 5,
+      "placement_sum": 17,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 387
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_Deathblade",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 17,
+      "placement_sum": 56,
+      "top4": 13,
+      "wins": 4,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 11,
+      "placement_sum": 43,
+      "top4": 7,
+      "wins": 3,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_LastWhisper",
+        "DA_SpearOfShojin",
+        "DA_StrikersFlail"
+      ],
+      "games": 9,
+      "placement_sum": 30,
+      "top4": 7,
+      "wins": 2,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin",
+        "DA_StrikersFlail"
+      ],
+      "games": 8,
+      "placement_sum": 16,
+      "top4": 8,
+      "wins": 4,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_Deathblade",
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin"
+      ],
+      "games": 6,
+      "placement_sum": 19,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Ezreal",
+      "items": [
+        "DA_LastWhisper",
+        "DA_RedBuff",
+        "DA_SpearOfShojin"
+      ],
+      "games": 5,
+      "placement_sum": 19,
+      "top4": 2,
+      "wins": 1,
+      "unit_games": 322
+    },
+    {
+      "unit": "DA_18_Hecarim",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 30,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 359
+    },
+    {
+      "unit": "DA_18_Hecarim",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_IonicSpark",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 18,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 359
+    },
+    {
+      "unit": "DA_18_Hecarim",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_ProtectorsVow",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 26,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 359
+    },
+    {
+      "unit": "DA_18_KhaZix",
+      "items": [
+        "DA_HandOfJustice",
+        "DA_NashorsTooth",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 14,
+      "placement_sum": 51,
+      "top4": 10,
+      "wins": 2,
+      "unit_games": 106
+    },
+    {
+      "unit": "DA_18_KhaZix",
+      "items": [
+        "DA_HandOfJustice",
+        "DA_HandOfJustice",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 9,
+      "placement_sum": 36,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 106
+    },
+    {
+      "unit": "DA_18_KhaZix",
+      "items": [
+        "DA_HandOfJustice",
+        "DA_HandOfJustice",
+        "DA_NashorsTooth"
+      ],
+      "games": 5,
+      "placement_sum": 13,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 106
+    },
+    {
+      "unit": "DA_18_LeBlanc",
+      "items": [
+        "DA_AdaptiveHelm",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 6,
+      "placement_sum": 29,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 343
+    },
+    {
+      "unit": "DA_18_Malphite",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 15,
+      "placement_sum": 66,
+      "top4": 8,
+      "wins": 1,
+      "unit_games": 151
+    },
+    {
+      "unit": "DA_18_Malphite",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 12,
+      "placement_sum": 53,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 151
+    },
+    {
+      "unit": "DA_18_Malphite",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 30,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 151
+    },
+    {
+      "unit": "DA_18_Malphite",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 7,
+      "placement_sum": 29,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 151
+    },
+    {
+      "unit": "DA_18_Malphite",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate"
+      ],
+      "games": 6,
+      "placement_sum": 35,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 151
+    },
+    {
+      "unit": "DA_18_Maokai",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 12,
+      "placement_sum": 41,
+      "top4": 9,
+      "wins": 4,
+      "unit_games": 250
+    },
+    {
+      "unit": "DA_18_Maokai",
+      "items": [
+        "DA_DragonsClaw",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 10,
+      "top4": 6,
+      "wins": 3,
+      "unit_games": 250
+    },
+    {
+      "unit": "DA_18_Maokai",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 14,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 250
+    },
+    {
+      "unit": "DA_18_Maokai",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SteadfastHeart",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 14,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 250
+    },
+    {
+      "unit": "DA_18_MasterYi_AD",
+      "items": [
+        "DA_18_EmblemBrawler",
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade"
+      ],
+      "games": 8,
+      "placement_sum": 29,
+      "top4": 6,
+      "wins": 0,
+      "unit_games": 124
+    },
+    {
+      "unit": "DA_18_MasterYi_AD",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_Quicksilver"
+      ],
+      "games": 7,
+      "placement_sum": 37,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 124
+    },
+    {
+      "unit": "DA_18_MasterYi_AD",
+      "items": [
+        "DA_18_EmblemBrawler",
+        "DA_EdgeOfNight",
+        "DA_Quicksilver"
+      ],
+      "games": 5,
+      "placement_sum": 14,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 124
+    },
+    {
+      "unit": "DA_18_Morgana",
+      "items": [
+        "DA_HextechGunblade",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 7,
+      "placement_sum": 28,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 154
+    },
+    {
+      "unit": "DA_18_Morgana",
+      "items": [
+        "DA_Morellonomicon",
+        "DA_RabadonsDeathcap",
+        "DA_VoidStaff"
+      ],
+      "games": 5,
+      "placement_sum": 12,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 154
+    },
+    {
+      "unit": "DA_18_Morgana",
+      "items": [
+        "DA_18_EmblemSpellweaver",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 5,
+      "placement_sum": 19,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 154
+    },
+    {
+      "unit": "DA_18_Morgana",
+      "items": [
+        "DA_GiantSlayer",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 5,
+      "placement_sum": 20,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 154
+    },
+    {
+      "unit": "DA_18_Morgana",
+      "items": [
+        "DA_AdaptiveHelm",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 5,
+      "placement_sum": 21,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 154
+    },
+    {
+      "unit": "DA_18_Ornn",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 8,
+      "placement_sum": 46,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 462
+    },
+    {
+      "unit": "DA_18_Ornn",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 31,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 462
+    },
+    {
+      "unit": "DA_18_Ornn",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 29,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 462
+    },
+    {
+      "unit": "DA_18_Rammus",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate"
+      ],
+      "games": 6,
+      "placement_sum": 17,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 109
+    },
+    {
+      "unit": "DA_18_Rammus",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 5,
+      "placement_sum": 24,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 109
+    },
+    {
+      "unit": "DA_18_Rengar",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_SteraksGage"
+      ],
+      "games": 10,
+      "placement_sum": 40,
+      "top4": 5,
+      "wins": 3,
+      "unit_games": 127
+    },
+    {
+      "unit": "DA_18_Rengar",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_TitansResolve"
+      ],
+      "games": 9,
+      "placement_sum": 27,
+      "top4": 6,
+      "wins": 4,
+      "unit_games": 127
+    },
+    {
+      "unit": "DA_18_Sejuani",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 15,
+      "placement_sum": 56,
+      "top4": 9,
+      "wins": 3,
+      "unit_games": 329
+    },
+    {
+      "unit": "DA_18_Sejuani",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 11,
+      "placement_sum": 37,
+      "top4": 8,
+      "wins": 2,
+      "unit_games": 329
+    },
+    {
+      "unit": "DA_18_Sejuani",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 9,
+      "placement_sum": 46,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 329
+    },
+    {
+      "unit": "DA_18_Sejuani",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SteadfastHeart",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 32,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 329
+    },
+    {
+      "unit": "DA_18_Sejuani",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 38,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 329
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SteraksGage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 10,
+      "placement_sum": 47,
+      "top4": 6,
+      "wins": 0,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 9,
+      "placement_sum": 35,
+      "top4": 6,
+      "wins": 2,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 9,
+      "placement_sum": 41,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_SteraksGage"
+      ],
+      "games": 8,
+      "placement_sum": 28,
+      "top4": 5,
+      "wins": 3,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SteadfastHeart",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 27,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_SteraksGage"
+      ],
+      "games": 5,
+      "placement_sum": 15,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 15,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_DragonsClaw",
+        "DA_GargoyleStoneplate",
+        "DA_SteadfastHeart"
+      ],
+      "games": 5,
+      "placement_sum": 25,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sett",
+      "items": [
+        "DA_BrambleVest",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 5,
+      "placement_sum": 26,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 393
+    },
+    {
+      "unit": "DA_18_Sivir",
+      "items": [
+        "DA_18_EmblemFae",
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin"
+      ],
+      "games": 7,
+      "placement_sum": 31,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 174
+    },
+    {
+      "unit": "DA_18_Sivir",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge",
+        "DA_LastWhisper"
+      ],
+      "games": 6,
+      "placement_sum": 29,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 174
+    },
+    {
+      "unit": "DA_18_Sivir",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin",
+        "DA_StrikersFlail"
+      ],
+      "games": 5,
+      "placement_sum": 24,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 174
+    },
+    {
+      "unit": "DA_18_Veigar",
+      "items": [
+        "DA_BlueBuff",
+        "DA_HextechGunblade",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 18,
+      "placement_sum": 100,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 190
+    },
+    {
+      "unit": "DA_18_Veigar",
+      "items": [
+        "DA_Artifact_Dawncore",
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 9,
+      "placement_sum": 33,
+      "top4": 6,
+      "wins": 3,
+      "unit_games": 190
+    },
+    {
+      "unit": "DA_18_Veigar",
+      "items": [
+        "DA_Artifact_LudensTempest",
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 9,
+      "placement_sum": 34,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 190
+    },
+    {
+      "unit": "DA_18_Veigar",
+      "items": [
+        "DA_Artifact_Manazane",
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 8,
+      "placement_sum": 34,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 190
+    },
+    {
+      "unit": "DA_18_Veigar",
+      "items": [
+        "DA_Artifact_EternalPact",
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 7,
+      "placement_sum": 45,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 190
+    },
+    {
+      "unit": "DA_18_Yorick",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 35,
+      "top4": 0,
+      "wins": 0,
+      "unit_games": 487
+    },
+    {
+      "unit": "DA_18_Yunara",
+      "items": [
+        "DA_Deathblade",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 14,
+      "placement_sum": 55,
+      "top4": 9,
+      "wins": 3,
+      "unit_games": 218
+    },
+    {
+      "unit": "DA_18_Yunara",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 12,
+      "placement_sum": 48,
+      "top4": 8,
+      "wins": 0,
+      "unit_games": 218
+    },
+    {
+      "unit": "DA_18_Yunara",
+      "items": [
+        "DA_18_EmblemBlackthorn",
+        "DA_LastWhisper",
+        "DA_SpearOfShojin"
+      ],
+      "games": 6,
+      "placement_sum": 15,
+      "top4": 6,
+      "wins": 1,
+      "unit_games": 218
+    },
+    {
+      "unit": "DA_18_Yunara",
+      "items": [
+        "DA_Deathblade",
+        "DA_SpearOfShojin",
+        "DA_StrikersFlail"
+      ],
+      "games": 5,
+      "placement_sum": 11,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 218
+    },
+    {
+      "unit": "DA_18_Yunara",
+      "items": [
+        "DA_Deathblade",
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin"
+      ],
+      "games": 5,
+      "placement_sum": 20,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 218
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_ArchangelsStaff",
+        "DA_ArchangelsStaff",
+        "DA_HextechGunblade"
+      ],
+      "games": 12,
+      "placement_sum": 49,
+      "top4": 6,
+      "wins": 3,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_Morellonomicon",
+        "DA_SpearOfShojin",
+        "DA_VoidStaff"
+      ],
+      "games": 10,
+      "placement_sum": 45,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_RedBuff",
+        "DA_SpearOfShojin",
+        "DA_VoidStaff"
+      ],
+      "games": 8,
+      "placement_sum": 25,
+      "top4": 6,
+      "wins": 2,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_18_EmblemExecutioner",
+        "DA_RedBuff",
+        "DA_VoidStaff"
+      ],
+      "games": 7,
+      "placement_sum": 35,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_18_EmblemExecutioner",
+        "DA_SpearOfShojin",
+        "DA_VoidStaff"
+      ],
+      "games": 6,
+      "placement_sum": 14,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_ArchangelsStaff",
+        "DA_HextechGunblade",
+        "DA_SpearOfShojin"
+      ],
+      "games": 5,
+      "placement_sum": 17,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_18_Zyra",
+      "items": [
+        "DA_ArchangelsStaff",
+        "DA_Morellonomicon",
+        "DA_VoidStaff"
+      ],
+      "games": 5,
+      "placement_sum": 26,
+      "top4": 1,
+      "wins": 0,
+      "unit_games": 264
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 8,
+      "placement_sum": 42,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 45,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 7,
+      "placement_sum": 30,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SteadfastHeart",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 28,
+      "top4": 2,
+      "wins": 1,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 18,
+      "top4": 3,
+      "wins": 2,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Amumu18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 20,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 509
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_HandOfJustice"
+      ],
+      "games": 151,
+      "placement_sum": 656,
+      "top4": 86,
+      "wins": 21,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_Quicksilver"
+      ],
+      "games": 80,
+      "placement_sum": 356,
+      "top4": 42,
+      "wins": 12,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_SteraksGage"
+      ],
+      "games": 13,
+      "placement_sum": 64,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_Bloodthirster",
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade"
+      ],
+      "games": 12,
+      "placement_sum": 64,
+      "top4": 6,
+      "wins": 0,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GuinsoosRageblade",
+        "DA_TitansResolve"
+      ],
+      "games": 10,
+      "placement_sum": 40,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HandOfJustice",
+        "DA_SteraksGage"
+      ],
+      "games": 9,
+      "placement_sum": 44,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_HandOfJustice",
+        "DA_Quicksilver"
+      ],
+      "games": 7,
+      "placement_sum": 27,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HandOfJustice",
+        "DA_Quicksilver"
+      ],
+      "games": 6,
+      "placement_sum": 25,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_Brambleback18",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_GiantSlayer",
+        "DA_GuinsoosRageblade"
+      ],
+      "games": 5,
+      "placement_sum": 19,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 456
+    },
+    {
+      "unit": "DA_CrimsonRaptor18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HextechGunblade",
+        "DA_TitansResolve"
+      ],
+      "games": 6,
+      "placement_sum": 28,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 105
+    },
+    {
+      "unit": "DA_CrimsonRaptor18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HextechGunblade",
+        "DA_KrakensFury"
+      ],
+      "games": 5,
+      "placement_sum": 21,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 105
+    },
+    {
+      "unit": "DA_Draven18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge",
+        "DA_KrakensFury"
+      ],
+      "games": 15,
+      "placement_sum": 61,
+      "top4": 9,
+      "wins": 3,
+      "unit_games": 158
+    },
+    {
+      "unit": "DA_Draven18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_KrakensFury",
+        "DA_LastWhisper"
+      ],
+      "games": 9,
+      "placement_sum": 28,
+      "top4": 7,
+      "wins": 3,
+      "unit_games": 158
+    },
+    {
+      "unit": "DA_Draven18",
+      "items": [
+        "DA_GuinsoosRageblade",
+        "DA_HextechGunblade",
+        "DA_KrakensFury"
+      ],
+      "games": 8,
+      "placement_sum": 31,
+      "top4": 4,
+      "wins": 3,
+      "unit_games": 158
+    },
+    {
+      "unit": "DA_Draven18",
+      "items": [
+        "DA_Deathblade",
+        "DA_GuinsoosRageblade",
+        "DA_KrakensFury"
+      ],
+      "games": 8,
+      "placement_sum": 33,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 158
+    },
+    {
+      "unit": "DA_Draven18",
+      "items": [
+        "DA_Deathblade",
+        "DA_GuinsoosRageblade",
+        "DA_InfinityEdge"
+      ],
+      "games": 6,
+      "placement_sum": 15,
+      "top4": 5,
+      "wins": 3,
+      "unit_games": 158
+    },
+    {
+      "unit": "DA_Karma18",
+      "items": [
+        "DA_18_EmblemExecutioner",
+        "DA_BlueBuff",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 13,
+      "placement_sum": 32,
+      "top4": 12,
+      "wins": 5,
+      "unit_games": 232
+    },
+    {
+      "unit": "DA_Karma18",
+      "items": [
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet",
+        "DA_RabadonsDeathcap"
+      ],
+      "games": 13,
+      "placement_sum": 60,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 232
+    },
+    {
+      "unit": "DA_Karma18",
+      "items": [
+        "DA_JeweledGauntlet",
+        "DA_RabadonsDeathcap",
+        "DA_SpearOfShojin"
+      ],
+      "games": 6,
+      "placement_sum": 31,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 232
+    },
+    {
+      "unit": "DA_Karma18",
+      "items": [
+        "DA_18_EmblemExecutioner",
+        "DA_BlueBuff",
+        "DA_JeweledGauntlet"
+      ],
+      "games": 5,
+      "placement_sum": 9,
+      "top4": 5,
+      "wins": 2,
+      "unit_games": 232
+    },
+    {
+      "unit": "DA_Krug18",
+      "items": [
+        "DA_Crownguard",
+        "DA_Evenshroud",
+        "DA_SpiritVisage"
+      ],
+      "games": 5,
+      "placement_sum": 20,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 641
+    },
+    {
+      "unit": "DA_Krug18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 25,
+      "top4": 2,
+      "wins": 1,
+      "unit_games": 641
+    },
+    {
+      "unit": "DA_Nidalee18_AP",
+      "items": [
+        "DA_HandOfJustice",
+        "DA_InfinityEdge",
+        "DA_SteraksGage"
+      ],
+      "games": 9,
+      "placement_sum": 39,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 249
+    },
+    {
+      "unit": "DA_Nidalee18_AP",
+      "items": [
+        "DA_InfinityEdge",
+        "DA_SpearOfShojin",
+        "DA_SteraksGage"
+      ],
+      "games": 9,
+      "placement_sum": 41,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 249
+    },
+    {
+      "unit": "DA_Nidalee18_AP",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_HandOfJustice",
+        "DA_SteraksGage"
+      ],
+      "games": 5,
+      "placement_sum": 22,
+      "top4": 2,
+      "wins": 0,
+      "unit_games": 249
+    },
+    {
+      "unit": "DA_Nidalee18_AP",
+      "items": [
+        "DA_EdgeOfNight",
+        "DA_InfinityEdge",
+        "DA_SteraksGage"
+      ],
+      "games": 5,
+      "placement_sum": 22,
+      "top4": 3,
+      "wins": 0,
+      "unit_games": 249
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_ProtectorsVow",
+        "DA_ProtectorsVow",
+        "DA_ProtectorsVow"
+      ],
+      "games": 17,
+      "placement_sum": 71,
+      "top4": 10,
+      "wins": 3,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_ProtectorsVow",
+        "DA_SpiritVisage"
+      ],
+      "games": 13,
+      "placement_sum": 56,
+      "top4": 7,
+      "wins": 1,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_AdaptiveHelm",
+        "DA_ProtectorsVow",
+        "DA_ProtectorsVow"
+      ],
+      "games": 12,
+      "placement_sum": 52,
+      "top4": 8,
+      "wins": 1,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_ProtectorsVow",
+        "DA_WarmogsArmor"
+      ],
+      "games": 11,
+      "placement_sum": 46,
+      "top4": 6,
+      "wins": 2,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 8,
+      "placement_sum": 34,
+      "top4": 5,
+      "wins": 0,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_ProtectorsVow"
+      ],
+      "games": 7,
+      "placement_sum": 19,
+      "top4": 7,
+      "wins": 3,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage"
+      ],
+      "games": 7,
+      "placement_sum": 37,
+      "top4": 3,
+      "wins": 1,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_AdaptiveHelm",
+        "DA_ProtectorsVow",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 13,
+      "top4": 6,
+      "wins": 2,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_ProtectorsVow",
+        "DA_ProtectorsVow",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 20,
+      "top4": 5,
+      "wins": 1,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Sentinel18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_ProtectorsVow",
+        "DA_ProtectorsVow"
+      ],
+      "games": 5,
+      "placement_sum": 18,
+      "top4": 4,
+      "wins": 1,
+      "unit_games": 829
+    },
+    {
+      "unit": "DA_Taric18",
+      "items": [
+        "DA_GargoyleStoneplate",
+        "DA_SpiritVisage",
+        "DA_WarmogsArmor"
+      ],
+      "games": 5,
+      "placement_sum": 17,
+      "top4": 4,
+      "wins": 2,
+      "unit_games": 521
+    },
+    {
+      "unit": "DA_Vi18",
+      "items": [
+        "DA_Crownguard",
+        "DA_GargoyleStoneplate",
+        "DA_WarmogsArmor"
+      ],
+      "games": 6,
+      "placement_sum": 25,
+      "top4": 4,
+      "wins": 0,
+      "unit_games": 353
+    }
+  ]
 }
