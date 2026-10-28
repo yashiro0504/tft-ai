@@ -33,7 +33,8 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
         if (cancelled || !data?.decks?.length) return
         const tiers = assignSampleTiers(
           data.decks.map((d) => ({ avg: d.avgPlacement ?? 9, sample: d.sampleSize })),
-          MIN_SAMPLE.deck
+          MIN_SAMPLE.deck,
+          { separated: true }
         )
         const ranked = data.decks
           .map((d, i) => ({ ...d, tier: tiers[i] }))

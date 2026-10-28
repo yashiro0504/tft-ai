@@ -84,7 +84,7 @@ export function UserMenu() {
         className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-line px-1.5 py-1.5 text-xs font-bold text-muted transition hover:bg-sunken hover:text-ink"
       >
         {me.user.avatarUrl ? (
-          <img src={me.user.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+          <img src={me.user.avatarUrl} alt={`${name} 프로필 사진`} className="h-6 w-6 rounded-full object-cover" />
         ) : (
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-bg text-xs text-accent">
             {name.slice(0, 1)}

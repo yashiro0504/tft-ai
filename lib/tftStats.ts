@@ -5,6 +5,7 @@ import { buildMetaPayload, toMetaDeck } from './metaPayload'
 import { deckViewsFromRaw, getDeckViews, type DeckView } from './decks'
 import { JSON_BUILDS_INFO, jsonBuildRankings, toBuildRankings, type UnitBuildRow } from './unitBuilds'
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
+import { cacheGet, cacheSet } from './cache'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
   DAYS_FILTER_OPTIONS,
@@ -432,6 +433,7 @@ function jsonDecks(reason: string, withGuide = false): DecksResponse {
     patch: p.patch,
     // 빌드 시각이 아니라 원본 래더 보드 수집 시각
     updatedAt: p.deckMeta?.sourceUpdatedAt,
+    totalMatches: p.deckMeta?.matchCount,
     minSample: MIN_SAMPLE.deck,
     decks: decks.map((d) => withSample(d, MIN_SAMPLE.deck)),
     fallbackReason: reason,
@@ -477,6 +479,7 @@ export async function getDecks(
           source: 'db',
           filter: { patch, tier: filter.tier },
           totalBoards: rows?.[0]?.total_boards,
+          totalMatches: filters.patches.find((p) => p.patch === patch)?.matches[filter.tier],
           updatedAt,
           minSample: MIN_SAMPLE.deck,
           decks,
@@ -488,6 +491,25 @@ export async function getDecks(
     },
     fallback
   )
+}
+
+/** 메타 덱 스냅샷 공유 캐시 (Redis L2) — 인스턴스마다 DB·폴백 결과가 달라 두 화면 값이 갈리지 않게 */
+const SNAPSHOT_KEY = 'meta-deck-snapshot:v2'
+const SNAPSHOT_TTL_MS = 5 * 60_000
+const SNAPSHOT_FALLBACK_TTL_MS = 60_000
+
+/**
+ * 메타 랭킹 덱 탭 첫 화면(app/meta)과 내 덱 성적표(lib/deckReport)가 같이 쓰는 스냅샷 — 기본 필터(최신 패치 · 기본 티어).
+ * 2026-10-28: 성적표는 DB 집계(10.27), 메타 페이지는 래더 JSON(10.28 09:29)을 보여 같은 덱 평균이 달랐다.
+ * 두 화면 모두 이 함수만 부르고, 결과는 인스턴스 간 공유 캐시에 두어 갱신 시 같이 바뀐다.
+ */
+export async function getMetaDeckSnapshot(): Promise<DecksResponse> {
+  const cached = await cacheGet<DecksResponse>(SNAPSHOT_KEY)
+  if (cached?.decks?.length) return cached
+  const filters = await getMetaFilters()
+  const res = await getDecks({ patch: filters.source === 'db' ? filters.defaults.patch : null, tier: filters.defaults?.tier ?? DEFAULT_TIER })
+  if (res.decks?.length) await cacheSet(SNAPSHOT_KEY, res, res.source === 'db' ? SNAPSHOT_TTL_MS : SNAPSHOT_FALLBACK_TTL_MS)
+  return res
 }
 
 /* ------------------------------------------------------------------ */

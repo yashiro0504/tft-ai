@@ -1,3 +1,4 @@
+import { boardCounts } from './boardStats'
 import type {
   AxisEffect,
   AxisMetric,
@@ -8,7 +9,7 @@ import type {
   DeckTypeInfo,
   SlimMatchData,
 } from './types'
-import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
+import { excludedSummary, expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { DECK_TYPE_LABEL, boardCarry, boardCarryKey, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
@@ -70,7 +71,10 @@ export interface PerMatchMetrics {
   deckType: Exclude<DeckType, 'mixed'>
   /** 캐리 슬러그 (lib/deckType boardCarryKey) — 같은 캐리 보드의 스테이지 기준선을 찾는 키 */
   carryKey: string | null
+  /** 활성 시너지 수 — 카드·리포트와 같은 값 (lib/boardStats) */
   activeTraits: number
+  /** 시너지 축 점수용 시너지 수 (저레벨이면 고유 시너지 제외 — axisConfig.synergy). 화면·서술에는 activeTraits 를 쓴다 */
+  synergyTraits: number
   bestTraitCount: number
   /** 켠 시너지 단계(tier_current)의 합 — 고유 시너지 포함 */
   traitTierTotal: number
@@ -119,7 +123,8 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     carryThreeStar: deck.carryThreeStar,
     deckType: deck.type,
     carryKey: boardCarryKey(units),
-    activeTraits: traits.length,
+    activeTraits: boardCounts(m).activeTraits,
+    synergyTraits: traits.length,
     bestTraitCount: traits.reduce((s, t) => Math.max(s, t.count || 0), 0),
     traitTierTotal: allTraits.reduce((s, t) => s + (t.tier || 0), 0),
     contested: Boolean(m.contestedInfo?.isContested),
@@ -146,6 +151,8 @@ const EFFECT_LABEL: Record<string, string> = {
   levelGap: '표준 레벨보다 부족',
   lobbyLevelGap: '같은 스테이지 탈락 상대보다 레벨 부족',
   earlyExit: '이른 탈락',
+  exitStage: '탈락 시점 (6스테이지 전 탈락)',
+  carryFocusItems: '캐리 아이템 집중 (리롤형 — 최고 코스트 대신 캐리 기준)',
   carryItems: '캐리 아이템',
   topCostItems: '최고 코스트 기물 아이템',
   boardItems: '보드 전체 아이템',
@@ -172,8 +179,7 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
   // 리롤형은 골드를 레벨이 아니라 리롤(3성)에 쓰는 덱이라 레벨 격차를 감점하지 않는다 (템포 축과 같은 기준).
   const c = AXIS_CONFIG.axes.economy
   const levelGap = m.deckType === 'reroll' ? 0 : Math.max(0, expectedLevel(m.stage, m.carryKey) - m.level)
-  const lobbyGap = m.deckType === 'reroll' ? 0 : lobbyGapBeyond(m, levelGap)
-  const early = m.stage > 0 ? c.earlyExitPenalty.find((p) => m.stage <= p.maxStage) : undefined
+  const lobbyGap = lobbyGapBeyond(m, levelGap)
   // 탈락 라운드를 모르면 기준치가 없으므로 보드 가치 항목은 0 (중립)
   const ratio = m.stage ? m.boardValue / expectedBoardValue(m.stage, m.carryKey) : 1
   const effects = {
@@ -181,25 +187,38 @@ function economyAxis(m: PerMatchMetrics): AxisResult {
     boardValue: (Math.min(Math.max(ratio, c.boardValueRatioMin), c.boardValueRatioMax) - 1) * c.boardValueWeight,
     levelGap: -levelGap * c.levelGapPenaltyPerLevel,
     lobbyLevelGap: -lobbyGap * c.levelGapPenaltyPerLevel,
-    earlyExit: -(early?.penalty ?? 0),
+    exitStage: -exitStagePenalty(m),
   }
   return { score: clamp(Math.round(sum(effects))), effects }
 }
 
 /**
+ * 탈락 시점 감점 (템포·경제 공통, 덱 유형 무관) — 같은 보드라도 일찍 탈락하면 낮다.
+ * 5-2 Lv.7 탈락 7등 리롤 판이 템포 80·경제 81이고 감점 이유가 '3성 2개'뿐이던 문제 (2026-10-28, v13)
+ */
+export function exitStagePenalty(m: Pick<PerMatchMetrics, 'stage'>): number {
+  if (!m.stage) return 0
+  return AXIS_CONFIG.exitTiming.penaltyByStage[String(m.stage)] ?? 0
+}
+
+/**
  * 로비 비교 레벨 부족 중 표준 레벨 부족(levelGap)을 넘는 몫 — 두 기준 중 더 엄격한 쪽만큼만 감점한다 (중복 감점 없음).
- * 리롤형은 레벨이 아니라 3성으로 평가하므로 부르지 않는다.
+ * 리롤형은 레벨을 덜 올리는 덱이라 같은 스테이지 탈락 상대보다 rerollLobbyLevelAllowance 넘게 낮을 때만 센다 (v13).
  */
 function lobbyGapBeyond(m: PerMatchMetrics, levelGap: number): number {
   if (m.lobbyLevel == null) return 0
-  return Math.max(0, m.lobbyLevel - m.level - levelGap)
+  const allowance = m.deckType === 'reroll' ? AXIS_CONFIG.exitTiming.rerollLobbyLevelAllowance : 0
+  return Math.max(0, m.lobbyLevel - m.level - levelGap - allowance)
 }
 
 function itemizationAxis(m: PerMatchMetrics): AxisResult {
   const c = AXIS_CONFIG.axes.itemization
+  // 리롤형은 저코스트 캐리가 아이템을 드는 덱이라 '최고 코스트 기물 아이템' 대신 캐리 기준으로 센다 (v13)
+  const focusKey = m.deckType === 'reroll' ? 'carryFocusItems' : 'topCostItems'
+  const focusItems = m.deckType === 'reroll' ? m.carryItems : m.topCostItems
   const effects = {
     carryItems: (Math.min(m.carryItems, c.carryItemsMax) / c.carryItemsMax) * c.carryWeight,
-    topCostItems: (Math.min(m.topCostItems, c.carryItemsMax) / c.carryItemsMax) * c.topCostWeight,
+    [focusKey]: (Math.min(focusItems, c.carryItemsMax) / c.carryItemsMax) * c.topCostWeight,
     boardItems: (Math.min(m.totalItems, c.boardItemsMax) / c.boardItemsMax) * c.boardWeight,
   }
   return { score: clamp(sum(effects)), effects }
@@ -214,6 +233,8 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
       base: 100,
       missingThreeStars: -Math.max(r.targetThreeStars - m.three, 0) * r.missingThreeStarPenalty,
       carryNotThreeStar: m.carryThreeStar ? 0 : -r.carryNotThreeStarPenalty,
+      lobbyLevelGap: -lobbyGapBeyond(m, 0) * c.levelGapPenaltyPerLevel,
+      exitStage: -exitStagePenalty(m),
     }
     return { score: clamp(Math.round(sum(effects))), effects }
   }
@@ -225,6 +246,7 @@ function tempoAxis(m: PerMatchMetrics): AxisResult {
     base: 100,
     levelGap: -levelGap * c.levelGapPenaltyPerLevel,
     lobbyLevelGap: -lobbyGapBeyond(m, levelGap) * c.levelGapPenaltyPerLevel,
+    exitStage: -exitStagePenalty(m),
   }
   return { score: clamp(sum(effects)), effects }
 }
@@ -256,7 +278,7 @@ function synergyAxis(m: PerMatchMetrics): AxisResult {
   // v2 는 "3개가 이상 + 주력 인원"이라 상위권의 넓은 보드를 깎았다 (골든셋 등수 상관 -0.21).
   // 단계 합은 골든셋에서 등수 상관이 가장 높았다 (0.52, 최대 단계 하나만 보면 -0.28).
   const c = AXIS_CONFIG.axes.synergy
-  const outside = Math.max(0, c.idealActiveMin - m.activeTraits, m.activeTraits - c.idealActiveMax)
+  const outside = Math.max(0, c.idealActiveMin - m.synergyTraits, m.synergyTraits - c.idealActiveMax)
   const spread = clamp(100 - outside * c.spreadPenaltyPerTrait)
   const tiers = clamp((m.traitTierTotal / c.tierTotalTarget) * 100)
   const effects = { spread: spread * c.spreadWeight, depth: tiers * c.tierWeight }
@@ -394,7 +416,8 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
     case 'itemization':
       return [
         { key: 'carryItems', label: '캐리 아이템', value: mean((m) => m.carryItems), unit: '개' },
-        { key: 'topCostItems', label: '최고 코스트 기물 아이템', value: mean((m) => m.topCostItems), unit: '개' },
+        // 리롤형은 최고 코스트 기물이 캐리가 아니다 — 지표에서 빼서 "4코스트에 아이템을 더 주라"는 근거가 되지 않게 (v13)
+        ...(deckType === 'reroll' ? [] : [{ key: 'topCostItems', label: '최고 코스트 기물 아이템', value: mean((m) => m.topCostItems), unit: '개' }]),
         { key: 'boardItems', label: '보드 전체 아이템', value: mean((m) => m.totalItems), unit: '개' },
       ]
     case 'tempo': {
@@ -453,15 +476,24 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
   const deck = summarizeDeckInfos(deckInfos)
   const deckLabel = DECK_TYPE_LABEL[deck.type]
 
+  // 탈락 시점 근거 (템포·경제 공통, v13): "이 경기 5스테이지 탈락 (감점 7) · 같은 스테이지 탈락 상대 Lv.8, 나 Lv.7"
+  const withLobby = metrics.filter((m) => m.lobbyLevel != null)
+  const exitPenalty = round1(avg(metrics.map(exitStagePenalty)))
+  const exitLine = `${basis} 탈락 ${round1(avg(metrics.map((m) => m.stage)))}스테이지${exitPenalty ? ` (이른 탈락 −${exitPenalty})` : ''}${
+    withLobby.length
+      ? ` · 같은 스테이지 탈락 상대 Lv.${round1(avg(withLobby.map((m) => m.lobbyLevel as number)))}, 나 Lv.${round1(avg(withLobby.map((m) => m.level)))}`
+      : ''
+  }`
+
   const detail: Record<CoachingAxisKey, string> = {
     economy: `${basis} 보드 가치 ${round1(avg(metrics.map((m) => m.boardValue)))}G (스테이지 기준 ${round1(
       avg(metrics.map((m) => expectedBoardValue(m.stage, m.carryKey)))
-    )}G) · ${basis} 탈락 ${round1(
-      avg(metrics.map((m) => m.stage))
-    )}스테이지`,
-    itemization: `${basis} 캐리 아이템 ${round1(avg(metrics.map((m) => m.carryItems)))}개 · 최고 코스트 기물 아이템 ${round1(
-      avg(metrics.map((m) => m.topCostItems))
-    )}개 · 보드 총 아이템 ${round1(
+    )}G) · ${exitLine}`,
+    itemization: `${basis} 캐리 아이템 ${round1(avg(metrics.map((m) => m.carryItems)))}개 · ${
+      deck.type === 'reroll'
+        ? '리롤형이라 최고 코스트 기물 대신 캐리 기준'
+        : `최고 코스트 기물 아이템 ${round1(avg(metrics.map((m) => m.topCostItems)))}개`
+    } · 보드 총 아이템 ${round1(
       avg(metrics.map((m) => m.totalItems))
     )}개`,
     tempo:
@@ -474,10 +506,8 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
                 ? '캐리 3성 완성'
                 : '캐리 3성 미완성'
               : `캐리 3성 ${metrics.filter((m) => m.carryThreeStar).length}/${base.length}판`
-          }`
-        : `${basis} 레벨 ${round1(avg(metrics.map((m) => m.level)))} · ${basis} 탈락 ${round1(
-            avg(metrics.map((m) => m.stage))
-          )}스테이지`,
+          } · ${exitLine}`
+        : `${basis} 레벨 ${round1(avg(metrics.map((m) => m.level)))} · ${exitLine}`,
     completion: `${basis} 2성+ ${round1(avg(metrics.map((m) => m.twoPlus)))}개 · 3성 ${metrics.reduce(
       (s, m) => s + m.three,
       0
@@ -519,9 +549,9 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
   }
 
   const sampleWarning = lowSample
-    ? `표본 부족: 초반 종료 경기만 있어 강의·점수 해석에 주의가 필요합니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+    ? `표본 부족: 초반 종료·보드 불완전 경기만 있어 강의·점수 해석에 주의가 필요합니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
     : excludedMatches
-      ? `초반 종료 ${excludedMatches}경기는 강의·점수에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+      ? `${excludedSummary(valid.filter(isEarlyGame))}는 강의·점수에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
       : undefined
 
   // 덱 유형을 주제 선택에 반영한다: 리롤형에서 템포가 초점이면 '레벨업'이 아니라 '리롤 성과' 강의.

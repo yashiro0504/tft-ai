@@ -120,8 +120,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('리롤형 판정이 강의 계획에 반영', plan.deckType === 'reroll' && plan.deckTypeLabel === '리롤형', JSON.stringify(plan.deckType))
   const tempo = plan.axes.find((a) => a.key === 'tempo')
   check(
-    '리롤 템포 = 100 − 3성 부족 0 − 캐리(베이가) 3성 미완성 0 = 100 (표준형과 같은 100점 척도)',
-    tempo.score === 100 &&
+    '리롤 템포 = 100 − 3성 부족 0 − 캐리(베이가) 3성 미완성 0 − 로비 레벨·탈락 시점(v13) (표준형과 같은 100점 척도)',
+    tempo.score === Math.round(100 + tempo.effects.filter((e) => e.key === 'lobbyLevelGap' || e.key === 'exitStage').reduce((s, e) => s + e.points, 0)) &&
       tempo.effects.some((e) => e.key === 'missingThreeStars' && e.points === 0) &&
       tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === 0),
     JSON.stringify(tempo)
@@ -183,7 +183,12 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const { openDeckCandidates } = require('../lib/comparisonFacts')
     const fast10 = { ...standard, level: 10, lastRound: '5-6' }
     const t = buildCoachingPlan([fast10]).axes.find((a) => a.key === 'tempo')
-    check('템포: 표준(5스테이지 Lv.8)보다 높은 Lv.10 은 감점 없음', t.score === 100, JSON.stringify(t.effects))
+    const eff = (k) => t.effects.find((e) => e.key === k)?.points ?? 0
+    check(
+      '템포: 표준(5스테이지 Lv.8)보다 높은 Lv.10 은 레벨 감점 없음 (탈락 시점 감점만 — v13)',
+      eff('levelGap') === 0 && eff('lobbyLevelGap') === 0 && t.score === 100 + eff('exitStage'),
+      JSON.stringify(t.effects)
+    )
     const mine = [{ id: 'DA_Taric18', name: '타릭', tier: 1, rarity: 5, items: ['수호자의 맹세'] }]
     const opp = (units) => ({ placement: 2, gameName: 'o', tagLine: 'x', level: 10, lastRound: '6-1', damageToPlayers: 0, traits: [], units, isUser: false })
     const filler = analyzeContest(mine, [], [opp([{ id: 'DA_Taric18', name: '타릭', tier: 1, rarity: 5, items: [] }])])
@@ -392,7 +397,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     check('덱 성적표: 메타 덱과 다른 조합은 따로', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5, JSON.stringify(r.unmatched))
     check(
       '덱 성적표: 덱별 판수 + 다른 조합 + 초반 종료 = 분석 경기 수 (8 = 4 + 2 + 1 + 1)',
-      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early === r.total,
+      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early + r.incomplete === r.total,
       JSON.stringify({ early: r.early, total: r.total })
     )
     check('덱 성적표: 메타 표본을 행에 남김 (참고용 표시)', A.metaSample === 200 && B.metaSample === 10, JSON.stringify([A.metaSample, B.metaSample]))

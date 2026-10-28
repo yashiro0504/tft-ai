@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { SlimMatchData, SlimMatchUnit, LobbyParticipant, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
+import { TimeAgo } from './TimeAgo'
 import { track } from '@/lib/analytics'
 import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 import { TurnstileWidget } from './TurnstileWidget'
@@ -16,6 +17,7 @@ import Link from 'next/link'
 import { entityHref, entitySlug } from '@/lib/entitySlug'
 import { CURRENT_CHAMPION_SLUGS } from '@/lib/gameFacts'
 import { computeMatchScore } from '@/lib/scoring'
+import { boardCounts } from '@/lib/boardStats'
 import { isEarlyGame, lowSampleReason } from '@/lib/quality'
 import { keyMoments } from '@/lib/keyMoments'
 import { isAnalyzableMatch, isCurrentSetMatch, isRankedMatch } from '@/lib/queue'
@@ -68,6 +70,7 @@ function MatchQuickStats({
   const comp = (key: 'placement' | 'completion' | 'items' | 'contest') =>
     score.components.find((c) => c.key === key)?.score
   const early = isEarlyGame(match)
+  const counts = boardCounts(match)
   const ranked = isRankedMatch(match)
   const currentSet = isCurrentSetMatch(match)
   // 핵심 장면: AI 버튼 없이 바로 보이는 이 판의 구체적 사실 (AI 분석은 이 장면들의 '왜·다음엔'을 해설한다). 랭크 판만
@@ -95,7 +98,7 @@ function MatchQuickStats({
           {match.placement}등 · Lv.{match.level} · {match.lastRound} 종료 · {match.goldLeft}G
         </span>
         <span>
-          유닛 {match.units.length} · 2성+ {twoStarPlus} · 시너지 {match.traits.length}
+          유닛 {counts.units} · 2성+ {twoStarPlus} · 시너지 {counts.activeTraits}
         </span>
         <span>
           {/* metaScore 구성 점수 (lib/scoring) — 6축의 '아이템 설계'·'유연성'과 다른 지표라 이름을 그대로 쓴다 */}
@@ -414,7 +417,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <span className="text-xl font-bold text-ink">#{match.placement}</span>
               <span className={`text-sm font-semibold ${placementLabelColor}`}>{placementLabel}</span>
               <span className="text-sm text-subtle">
-                {match.queueType || '랭크 게임'} · {match.timeAgo || '최근'}
+                {match.queueType || '랭크 게임'} · <TimeAgo timestamp={match.gameDatetime} />
               </span>
               {previousSeason ? (
                 <span

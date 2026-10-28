@@ -1,5 +1,6 @@
+import { boardCounts } from './boardStats'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan, LectureMoment } from './types'
+import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan, LectureMoment, EntityFactError, GroundingReport } from './types'
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
 import { getDecks, getStats } from './tftStats'
@@ -9,10 +10,11 @@ import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, repairEntityErrors, validateBoardNames, validateEntityFacts } from './semanticGrounding'
+import { feedbackTexts, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts } from './semanticGrounding'
+import { recipeFactsFor } from './itemRecipes'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
-import { isEarlyGame, lowSampleReason } from './quality'
+import { excludedSummary, isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import {
@@ -279,6 +281,9 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   '메타 평균 수준'이면 강의 근거로 쓰지 마라. '못 굴림'의 원인은 "내 보드에 없음"으로 제공된 기물처럼 확인된 사실로만 설명하고,
   그 외 원인(타이밍·리롤 횟수 등)을 지어내지 마라. '참고용' 표시가 있으면 참고용임을 밝혀라.
 - 보드 가치(G)는 최종 보드에 들어간 골드 총량이다. 늦게 탈락할수록 커지므로, 상대와의 차이를 "그래서 졌다"로 단정하지 마라.
+- 아이템 조합법(재료)은 [아이템 조합법] 표에 있는 것만 그대로 써라. 표에 없는 아이템의 재료는 말하지 마라 — 지어낸 조합법은 검증에서 문장째 지운다.
+- 이미 아이템 3개를 든 기물에 아이템을 "추가/채우라"고 조언하지 마라 (기물별 아이템 수는 최종 기물/아이템 구성 줄 그대로다).
+  '활성 시너지 N개'·'2성+ N개'처럼 수치를 쓸 때는 '계산 지표(코드 산출)' 줄의 값만 써라 — 경기 카드와 같은 값이다.
 - 덱 가이드는 래더 상위권 최종 보드 통계다. 캐리 아이템은 '채용률 순'이지 조합(슬램) 순서가 아니다 — "먼저 만들어라"로 바꿔 말하지 마라.
   채용률·가이드 수치를 '먼저/우선 슬램' 같은 순서 조언의 근거로 붙이지 마라. 조합 순서 원칙을 말하려면 가이드 수치 없이 일반 원칙으로만 말하라.
   초반 기물·빌드업 경로·전환 시점은 데이터에 없으니 지어내지 마라. 핵심 기물 미보유·유동 기물 선택·레벨은 가이드 수치와 비교로 말하라.
@@ -428,13 +433,28 @@ export function shopOddsFacts(matches: SlimMatchData[], mode: 'single' | 'multi'
 }
 
 /** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
+/** 조합법 대조 결과를 근거 검증 점수에 더한다: 대조한 조합법 주장은 분모, 맞은 것만 분자 (불일치가 있으면 100% 가 아니다) */
+function withRecipeClaims(g: GroundingReport, check: { errors: EntityFactError[]; checkedRecipes: number }): GroundingReport {
+  const wrong = check.errors.filter((e) => e.type === 'item_recipe')
+  if (!check.checkedRecipes) return g
+  const total = g.total + check.checkedRecipes
+  const supported = g.supported + check.checkedRecipes - wrong.length
+  return {
+    ...g,
+    total,
+    supported,
+    score: total ? Math.round((supported / total) * 100) : 100,
+    unsupported: [...g.unsupported, ...wrong.map((e) => `조합법 불일치: ${e.actual} (데이터: ${e.expected})`)],
+  }
+}
+
 function buildIntroFacts(match: SlimMatchData, mode: 'single' | 'multi'): IntroFacts {
   const scoring = computeScoreBreakdown([match])
   const plan = buildCoachingPlan([match])
   const axis = plan.axes.find((a) => a.key === plan.focus)
-  const twoPlus = match.units.filter((u) => (u.tier || 1) >= 2).length
-  const three = match.units.filter((u) => u.tier === 3).length
-  const traits = (match.traits || []).filter((t) => (t.count || 0) >= 2).slice(0, 3)
+  const counts = boardCounts(match)
+  const twoPlus = counts.twoStarPlus
+  const three = counts.threeStar
   const early = isEarlyGame(match)
   const reason = lowSampleReason(match)
   const others = (match.lobbyParticipants || [])
@@ -448,9 +468,9 @@ function buildIntroFacts(match: SlimMatchData, mode: 'single' | 'multi'): IntroF
 
   const facts = [
     `- 경기: ${match.placement}등 · Lv.${match.level} · ${match.lastRound} 종료`,
-    `- 보드: 유닛 ${match.units.length} · 2성+ ${twoPlus} · 3성 ${three} · 활성 시너지 ${match.traits.length}${
-      traits.length ? ` (${traits.map((t) => `${t.name} ${t.count}`).join(', ')})` : ''
-    }`,
+    `- 보드: 유닛 ${counts.units} · 2성+ ${twoPlus} · 3성 ${three} · 활성 시너지 ${counts.activeTraits}개 (${
+      match.traits.map((t) => `${t.name} ${t.count}`).join(', ') || '없음'
+    })`,
     `- 표본: ${early ? `표본 부족 (${reason})` : '정상'}`,
     scoring
       ? `- 코드 점수: ${scoring.total}/100 ${scoring.tier} (${scoring.components
@@ -891,10 +911,10 @@ export async function generateMetaCoachFeedback(
     ...(plan.lowSample
       ? [
           `- ${plan.sampleWarning ?? '표본 부족'}`,
-          '※ 초반 종료 표본뿐이다. 점수/등급을 단정하지 말고 리포트 첫 문장에 "표본 부족"을 명시하라.',
+          '※ 초반 종료·보드 데이터 불완전 표본뿐이다. 점수/등급을 단정하지 말고 리포트 첫 문장에 "표본 부족"을 명시하라.',
         ]
       : [
-          `- 집계 경기 ${plan.matchCount}건${plan.excludedMatches ? ` (초반 종료 ${plan.excludedMatches}건 제외)` : ''}`,
+          `- 집계 경기 ${plan.matchCount}건${plan.excludedMatches ? ` (${excludedSummary(matches.filter(isEarlyGame), '건')} 제외)` : ''}`,
         ]),
   ].join('\n')
 
@@ -914,6 +934,9 @@ export async function generateMetaCoachFeedback(
     metaNote =
       '※ 이번 요청에는 메타 통계(증강 승률/티어리스트, 패치 변경점, 아이템 BIS 통계)가 제공되지 않았다. 증강체/메타 관련 평가는 "메타 통계 미제공으로 단정 불가"임을 명시하고 추측을 배제하라.'
   }
+
+  // 조합법은 AI 가 만들지 않는다 — 사실 블록에 나온 아이템의 조합법을 게임 데이터에서 넣는다
+  const recipeFacts = recipeFactsFor([matchSerialized, metaFacts, comparisonFacts, winFacts, momentFacts].filter(Boolean).join('\n'))
 
   const prompt = `소환사명: ${gameName}
 ${modeContext}
@@ -940,7 +963,9 @@ ${scoreFacts}
 ${planFacts}
 
 ${qualityFacts}
-
+${recipeFacts ? `
+${recipeFacts}
+` : ''}
    모든 서술은 위 데이터의 수치(골드, 레벨, 탈락 라운드, 2성 수, 아이템 수, 로비 수렴도)를 직접 인용해 작성하라.
 
 위 유저의 경기 데이터를 접지(Grounding) 원칙에 따라 분석하되, [이번 강의 주제]를 중심으로 "원리 → 데이터 근거 → 더 나은 선택 → 연습 과제"가 이어지는 강의형 JSON 리포트를 작성하라.
@@ -964,7 +989,13 @@ ${qualityFacts}
     // 잡힌 문장은 보내기 전에 고치거나 지운다 (entityErrors 는 검출 기록으로 남긴다)
     // 보드에 없는 기물·아이템을 맥락 없이 쓴 문장(validateBoardNames)도 같이 지운다
     const rawTexts = feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts)
-    const entityErrors = [...validateEntityFacts(rawTexts, matches), ...validateBoardNames(rawTexts, matches, prompt).errors]
+    // 조합법·조언-데이터 모순·보드 수치(카드와 같은 값)도 대조한다 — 조합법 불일치는 근거 검증 점수에도 반영한다
+    const adviceCheck = validateAdviceAndCounts(rawTexts, matches)
+    const entityErrors = [
+      ...validateEntityFacts(rawTexts, matches),
+      ...validateBoardNames(rawTexts, matches, prompt).errors,
+      ...adviceCheck.errors,
+    ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
     const { fb, lecture, actions, axisVerdicts } = repairEntityErrors(
       { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
@@ -983,7 +1014,7 @@ ${qualityFacts}
       plan: withVerdicts(axisVerdicts),
       lecture,
       grounding: {
-        ...validateFeedbackGrounding(fb, prompt),
+        ...withRecipeClaims(validateFeedbackGrounding(fb, prompt), adviceCheck),
         entityErrors,
         namesChecked,
       },

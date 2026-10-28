@@ -25,15 +25,19 @@ export interface DeckReportMeta {
   /** 티어 필터 화면 이름 (예: '마스터+') */
   tier?: string
   updatedAt?: string
+  /** 표본 규모 (판) — 메타 페이지 머리말 */
+  matches?: number
 }
 
 export interface DeckReport {
   rows: DeckReportRow[]
   /** 메타 덱과 비슷하지 않은 판 (자체 조합) */
   unmatched: { games: number; avgPlacement: number | null }
-  /** 초반 종료라 덱으로 묶지 않은 판 (기물이 적어 덱을 판정할 수 없다) */
+  /** 초반 종료(3스테이지 전 탈락)라 덱으로 묶지 않은 판 */
   early: number
-  /** 분석 경기 수 = 덱별 판수 합 + unmatched.games + early (화면의 '최근 N경기'와 같다) */
+  /** 늦게 끝났는데 보드 기물이 적게 잡혀(보드 데이터 불완전) 덱을 판정하지 않은 판 */
+  incomplete: number
+  /** 분석 경기 수 = 덱별 판수 합 + unmatched.games + early + incomplete (화면의 '최근 N경기'와 같다) */
   total: number
   /** 메타 평균의 출처 (없으면 출처 줄을 숨긴다) */
   meta?: DeckReportMeta
@@ -47,3 +51,38 @@ export const DECK_REPORT_MIN_SAMPLE = 30
  * 2판이면 ±1.6등 — 메타와 1등 차이도 운으로 설명된다. 최근 10~20판 중 4판 이상이면 주력 덱으로 본다.
  */
 export const DECK_REPORT_MIN_GAMES = 4
+
+/** 갱신 시각 KST 'MM.DD HH:mm' (서버·브라우저가 같은 문자열을 그리게 시간대 고정) */
+const SNAPSHOT_TIME_FMT = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+export function snapshotTime(iso?: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = Object.fromEntries(SNAPSHOT_TIME_FMT.formatToParts(d).map((p) => [p.type, p.value]))
+  return `${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`
+}
+
+/**
+ * 메타 덱 스냅샷 출처 한 줄 — 메타 랭킹 페이지 머리말과 덱 성적표가 같은 함수로 그린다
+ * (예: "KR 랭크 마스터+ 집계 · 패치 16.21 · 10.28 09:29 갱신")
+ */
+export function metaSnapshotLabel(meta: DeckReportMeta, { withMatches = false }: { withMatches?: boolean } = {}): string {
+  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : 'KR 챌린저 래더 표본'
+  const updated = snapshotTime(meta.updatedAt)
+  return [
+    base,
+    withMatches && meta.matches ? `${meta.matches.toLocaleString('ko-KR')}판` : '',
+    meta.patch && /^\d/.test(meta.patch) ? `패치 ${meta.patch}` : '',
+    updated ? `${updated} 갱신` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}

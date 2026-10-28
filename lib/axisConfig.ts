@@ -15,6 +15,8 @@ export interface AxisConfig {
   /** 폴백 — 실측 기준선(lib/baselines · lib/gameBaselines.json)에 그 스테이지 칸이 없을 때만 쓴다 */
   expectedLevelByStage: Record<string, number>
   earlyGame: { minStage: number; minUnits: number; minGameSec: number }
+  /** 탈락 시점 감점 (템포·경제 공통, 덱 유형 무관) — 스테이지 → 감점. 리롤형은 로비 레벨 차이에서 이만큼 봐준다 */
+  exitTiming: { penaltyByStage: Record<string, number>; rerollLobbyLevelAllowance: number }
   /** 덱 유형(리롤형/표준형) 판정 임계값 — lib/deckType.ts */
   deckType: {
     /** 이보다 기물이 적으면 판정 불가 */
@@ -41,7 +43,6 @@ export interface AxisConfig {
       boardValueRatioMin: number
       boardValueRatioMax: number
       levelGapPenaltyPerLevel: number
-      earlyExitPenalty: { maxStage: number; penalty: number }[]
     }
     itemization: { carryItemsMax: number; carryWeight: number; topCostWeight: number; boardItemsMax: number; boardWeight: number }
     tempo: {

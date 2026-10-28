@@ -18,6 +18,7 @@ import type {
 import {
   BIS_RELIABLE_SAMPLE,
   DAYS_FILTER_OPTIONS,
+  DECK_RELIABLE_SAMPLE,
   MIN_SAMPLE,
   TIER_FILTER_OPTIONS,
   buildCompSets,
@@ -113,6 +114,8 @@ interface Row {
   tier: Tier | '-'
   /** 표본 하한 미만 → 회색 + "표본 부족" */
   low: boolean
+  /** 하한은 넘었지만 덱 참고용 하한(DECK_RELIABLE_SAMPLE) 미만 → '참고용' 배지만 */
+  reference?: boolean
   third?: number
   bis?: MetaCompRanking['items']
   /** BIS 3개를 함께 든 세트 (undefined = 빌드 집계 없음, null = 그 세트가 드묾) */
@@ -134,10 +137,16 @@ const TAB_MIN_SAMPLE: Record<TabId, number> = {
  * 표본 충분한 행끼리만 상대 티어 (추정 평균등수 기준 — metaShared.assignSampleTiers).
  * 기물은 코스트별로 나눠 매긴다: 5코는 오래 살아남은 보드에만 올라와 평균등수가 낮게 나와서, 한 줄로 매기면 S티어가 5코로만 찬다.
  */
-function tiersFor(rows: { avgPlacement: number; sampleSize: number; cost?: number }[], min: number, byCost = false): (Tier | '-')[] {
+function tiersFor(
+  rows: { avgPlacement: number; sampleSize: number; cost?: number }[],
+  min: number,
+  byCost = false,
+  separated = false
+): (Tier | '-')[] {
   return assignSampleTiers(
     rows.map((r) => ({ avg: r.avgPlacement, sample: r.sampleSize, group: byCost ? r.cost ?? 0 : undefined })),
-    min
+    min,
+    { separated }
   )
 }
 
@@ -158,6 +167,7 @@ export function MetaDashboard({
   deferSections = false,
   filters,
   initialDecksSource,
+  decksUpdatedAt,
   syncUrl = false,
 }: {
   onOpenCoach?: () => void
@@ -168,6 +178,8 @@ export function MetaDashboard({
   filters?: MetaFiltersResponse
   /** initialData.decks 가 DB 덱(기본 필터)인가 */
   initialDecksSource?: 'db' | 'json'
+  /** 덱 스냅샷 갱신 시각 — 덱 탭의 '수집' 칩은 덱 성적표와 같은 시각을 보인다 */
+  decksUpdatedAt?: string
   /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
   syncUrl?: boolean
 }) {
@@ -316,7 +328,8 @@ export function MetaDashboard({
     if (!data) return []
     const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min)
+      // 덱 티어는 오차 범위가 겹치는 이웃을 같은 티어로 (metaShared.assignSeparatedTiers)
+      const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min, false, true)
       return data.decks.map((d, i) => ({
         key: d.id,
         name: d.name,
@@ -325,6 +338,7 @@ export function MetaDashboard({
         sample: d.sampleSize,
         tier: tiers[i],
         low: d.sampleSize < min,
+        reference: d.sampleSize >= min && d.sampleSize < DECK_RELIABLE_SAMPLE,
         deck: d,
       }))
     }
@@ -461,8 +475,8 @@ export function MetaDashboard({
             <div className="rk-evidence">
               {dbMode && !fellBack ? (
                 <>
-                  <EvidenceChip title="KR 랭크 판 누적 집계 (매시간 갱신)">
-                    {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
+                  <EvidenceChip title="수집 범위: KR 랭크 판 누적 집계 (매시간 수집 · 덱은 하루 몇 번 다시 묶음)">
+                    KR · {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
                   </EvidenceChip>
                   {tab !== 'decks' && served.totalMatches != null ? (
                     <EvidenceChip title="이 필터에 들어간 판 수">{served.totalMatches.toLocaleString()}판</EvidenceChip>
@@ -472,8 +486,13 @@ export function MetaDashboard({
                 </>
               ) : (
                 <>
+                  <EvidenceChip title="수집 범위: KR 챌린저 래더 상위 플레이어의 최근 랭크 판 (하루 1회)">
+                    KR 챌린저 래더{data?.deckMeta?.matchCount ? ` · ${data.deckMeta.matchCount.toLocaleString()}판` : ''}
+                  </EvidenceChip>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
-                  {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
+                  {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (
+                    <EvidenceChip>수집 {fmtDate(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt)}</EvidenceChip>
+                  ) : null}
                   {fellBack ? (
                     <EvidenceChip title="DB 집계를 불러오지 못해 빌드 시점 스냅샷을 보여 줍니다">필터 미적용 스냅샷</EvidenceChip>
                   ) : null}
@@ -482,9 +501,17 @@ export function MetaDashboard({
               <EvidenceChip>
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
-              <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
-                {isUnitTab(tab) ? '티어 = 같은 코스트 안 상대 순위' : '티어 = 표 안 상대 순위'} · 표본 수 반영
-              </EvidenceChip>
+              {tab === 'decks' ? (
+                <EvidenceChip
+                  title={`표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값 순으로 늘어놓고, 이웃한 두 덱의 추정값 ± 표준오차 구간이 겹치지 않는 곳에서만 티어를 끊습니다. 오차 범위가 겹치는 이웃 덱은 같은 티어라, 표본이 적으면 티어 수가 줄고 표본이 늘면 다시 나뉩니다. ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}
+                >
+                  티어 = 오차가 겹치면 같은 티어 · {DECK_RELIABLE_SAMPLE}판 미만 참고용
+                </EvidenceChip>
+              ) : (
+                <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
+                  {isUnitTab(tab) ? '티어 = 같은 코스트 안 상대 순위' : '티어 = 표 안 상대 순위'} · 표본 수 반영
+                </EvidenceChip>
+              )}
               <EvidenceChip title={`평균등수 ± 는 표준오차 2.29/√n. ${minSample}판 미만(±${placementMargin(minSample)?.toFixed(2)} 초과)은 표본 부족으로 회색 표시`}>
                 ± 표준오차 · {minSample}판 미만 표본 부족
               </EvidenceChip>
@@ -684,6 +711,14 @@ export function MetaDashboard({
                   type="button"
                   className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''} ${r.low ? 'is-low' : ''}`}
                   title={r.low ? `표본 부족 (${minSample}판 미만) — 수치 변동이 큽니다` : undefined}
+                  // 덱 행: "협곡야수 장로 드래곤, S티어, 평균 3.52등, 155판" (읽기 도구가 행 안 그림·숫자를 하나씩 읽지 않게)
+                  aria-label={
+                    tab === 'decks'
+                      ? `${r.name}, ${r.tier === '-' ? '표본 부족' : `${r.tier}티어`}, 평균 ${r.avg.toFixed(2)}등, ${r.sample.toLocaleString()}판${
+                          r.low || r.reference ? ', 참고용' : ''
+                        }`
+                      : undefined
+                  }
                   onClick={() => {
                     if (tab === 'decks') {
                       setSelectedId(r.key)
@@ -699,12 +734,19 @@ export function MetaDashboard({
                     <span className="rk-name-cell">
                       {r.img ? (
                         <span className="rk-icon">
-                          <img src={r.img} alt="" loading="lazy" />
+                          <img src={r.img} alt={r.name} loading="lazy" />
                         </span>
                       ) : null}
                       <span className="rk-name">{r.name}</span>
                       {r.cost ? <span className="rk-cost">{r.cost}코</span> : null}
-                      {r.low ? <span className="rk-cost">참고용</span> : null}
+                      {r.low || r.reference ? (
+                        <span
+                          className="rk-cost"
+                          title={r.reference ? `${DECK_RELIABLE_SAMPLE}판 미만 — 오차가 커 참고용입니다` : undefined}
+                        >
+                          참고용
+                        </span>
+                      ) : null}
                     </span>
                     {/* 휴대폰은 TOP4·표본 열을 숨기므로 이름 아래 한 줄로 (rank/tabs.css .rk-msub) */}
                     <span className="rk-msub">
@@ -754,7 +796,7 @@ export function MetaDashboard({
                             }`}
                           >
                             <span className="rk-icon">
-                              <img src={b.iconUrl} alt="" loading="lazy" />
+                              <img src={b.iconUrl} alt={b.name} loading="lazy" />
                             </span>
                             {/* 휴대폰은 이름을 화면에서 숨기고(읽기 도구용으로만 남김) 평균등수·채용 두 줄 (rank/tabs.css) */}
                             <span className="rk-bisbody">
@@ -1010,7 +1052,7 @@ function DeckDetail({
           <div className="rk-builds">
             {holders.map((u) => (
               <div key={`it-${u.key}-${u.index}`} className="rk-build">
-                <img className="rk-build-unit" src={u.imgUrl} alt="" loading="lazy" />
+                <img className="rk-build-unit" src={u.imgUrl} alt={u.name} loading="lazy" />
                 <div className="rk-build-body">
                   <span className="rk-build-name">
                     {u.name}
@@ -1019,7 +1061,7 @@ function DeckDetail({
                   <span className="rk-build-items">
                     {u.items.map((it) => (
                       <span key={it.key} className="rk-build-item" title={it.name}>
-                        <img src={it.iconUrl} alt="" loading="lazy" />
+                        <img src={it.iconUrl} alt={it.name} loading="lazy" />
                         {it.name}
                       </span>
                     ))}

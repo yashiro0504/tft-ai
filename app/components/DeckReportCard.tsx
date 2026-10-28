@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, type DeckReport, type DeckReportMeta, type DeckReportRow } from '@/lib/deckReportShared'
+import { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, metaSnapshotLabel, type DeckReport, type DeckReportRow } from '@/lib/deckReportShared'
 
 /**
  * 내 덱 성적표 (AI 미사용 — lib/deckReport 가 서버에서 메타 덱으로 묶어 계산).
@@ -9,13 +9,6 @@ const VERDICT: Record<NonNullable<DeckReportRow['verdict']>, { label: string; to
   good: { label: '잘 맞음', tone: 'border-good/50 bg-good/10 text-good' },
   even: { label: '메타 수준', tone: 'border-line bg-sunken text-muted' },
   bad: { label: '안 맞음', tone: 'border-bad/50 bg-bad/10 text-bad' },
-}
-
-/** 메타 평균 출처 한 줄 — 메타 랭킹 페이지 머리말과 같은 값 (예: "KR 랭크 마스터+ 집계 · 패치 16.21 · 10. 26. 갱신") */
-function metaSourceLabel(meta: DeckReportMeta): string {
-  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : '챌린저 래더 표본'
-  const updated = meta.updatedAt ? new Date(meta.updatedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) : ''
-  return [base, meta.patch ? `패치 ${meta.patch}` : '', updated ? `${updated} 갱신` : ''].filter(Boolean).join(' · ')
 }
 
 export function DeckReportCard({ report }: { report: DeckReport }) {
@@ -51,12 +44,13 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
       </ul>
       <p className="mt-1.5 text-[11px] leading-relaxed text-subtle">
         {report.unmatched.games ? `메타 덱과 다른 조합 ${report.unmatched.games}판 (평균 ${report.unmatched.avgPlacement}등) · ` : ''}
-        {report.early ? `초반 종료 ${report.early}판 (기물이 적어 덱 판정 제외) · ` : ''}
+        {report.early ? `초반 종료 ${report.early}판 (3스테이지 전 탈락 · 덱 판정 제외) · ` : ''}
+        {report.incomplete ? `보드 데이터 불완전 ${report.incomplete}판 (기물이 일부만 잡혀 덱 판정 제외) · ` : ''}
         판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱에서 차이가 판수 오차보다 클 때만 — 판수가 적으면 운의 영향이 큽니다.
       </p>
       {report.meta ? (
         <p className="mt-1 text-[11px] text-subtle">
-          메타 평균: {metaSourceLabel(report.meta)} —{' '}
+          메타 평균: {metaSnapshotLabel(report.meta)} —{' '}
           <Link href="/meta" className="underline hover:text-ink">
             메타 랭킹
           </Link>

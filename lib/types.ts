@@ -164,7 +164,9 @@ export interface AugmentAnalysis {
 export interface SlimMatchData {
   matchId: string
   setNumber?: number
+  /** 경기 시각 (Riot game_datetime, ms). 경과 시간은 화면에서 이 값으로 계산한다 (lib/timeAgo) */
   gameDatetime: number
+  /** @deprecated 예전 캐시에 남은 문자열 — 읽을 때 지운다 (lib/boardUnits normalizeSlimMatch) */
   timeAgo?: string
   gameLengthStr?: string
   /** 게임 길이(초) — 초반 종료 표본 판정용 */
@@ -232,7 +234,7 @@ export interface GroundingReport {
 
 export interface EntityFactError {
   /** unit_absent · item_absent: 내 최종 보드에 없는 기물·아이템을 내 보드 이야기처럼 쓴 문장 (지운다) */
-  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent'
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch'
   /** 오류가 있는 문장 */
   text: string
   /** 데이터 값 */
@@ -716,6 +718,8 @@ export interface TftMetaResponse {
     patch: string | null
     deckCount: number
     unitMatchRate: number
+    /** 덱을 묶은 래더 판 수 */
+    matchCount?: number
   }
   error?: string
 }

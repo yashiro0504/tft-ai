@@ -68,7 +68,7 @@ jobs:
           # 개발 키(100/2분)는 앱 검색과 나눠 쓰므로 절반만 쓴다. 프로덕션 키 승인 후 변수로 34 (한도 60%).
           RIOT_MIN_INTERVAL_MS: ${{ vars.RIOT_MIN_INTERVAL_MS || '2500' }}
           MAX_MINUTES: ${{ github.event.inputs.max_minutes || '50' }}
-          MAX_MATCHES: ${{ vars.MAX_MATCHES || '200' }}
+          MAX_MATCHES: ${{ vars.MAX_MATCHES || '300' }}
           SEED_TIERS: ${{ vars.SEED_TIERS || 'challenger,grandmaster,master' }}
           MASTER_LIMIT: ${{ vars.MASTER_LIMIT || '1000' }}
           KEEP_PATCHES: ${{ vars.KEEP_PATCHES || '1' }}

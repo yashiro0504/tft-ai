@@ -1,5 +1,5 @@
 import type { ScoreBreakdown, ScoreComponent, SlimMatchData } from './types'
-import { isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
+import { excludedSummary, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { completionAxis, contestAxis } from './coaching'
 import { slotsUsed } from './boardSlots'
@@ -193,9 +193,9 @@ export function computeScoreBreakdown(matches: SlimMatchData[]): ScoreBreakdown 
   const excludedMatches = valid.length - sample.length
   const reasons = [...new Set(early.map(lowSampleReason).filter(Boolean))]
   const sampleWarning = lowSample
-    ? `표본 부족: 초반 종료 경기만 있어 점수를 신뢰하기 어렵습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+    ? `표본 부족: 초반 종료·보드 불완전 경기만 있어 점수를 신뢰하기 어렵습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
     : excludedMatches
-      ? `초반 종료 ${excludedMatches}경기는 점수 집계에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+      ? `${excludedSummary(early)}는 점수 집계에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
       : undefined
 
   return {

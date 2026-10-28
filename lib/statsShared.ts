@@ -67,6 +67,9 @@ export const MIN_SAMPLE = {
   unit_item: 20,
 } as const
 
+/** 덱 탭 '참고용' 배지 하한 — 티어는 30판부터 매기지만 50판 미만은 오차(±0.32 이상)가 커 참고용으로 표시 (BIS 탭과 같은 방식) */
+export const DECK_RELIABLE_SAMPLE = 50
+
 /** 기물×아이템 수치를 그대로 믿을 하한 — 다른 표와 같은 30판(±0.42). BIS 후보(unit_item 20판)부터 이 미만은 '참고용' */
 export const BIS_RELIABLE_SAMPLE = MIN_SAMPLE.item
 
@@ -180,6 +183,8 @@ export interface DecksResponse {
   filter: (Omit<StatFilter, 'days'> & { patch: string }) | null
   patch?: string
   totalBoards?: number
+  /** 이 패치 · 티어 필터의 전체 판 수 (JSON 폴백이면 래더 판 수) — 메타 페이지 머리말 표본 규모 */
+  totalMatches?: number
   updatedAt?: string
   minSample: number
   decks: (MetaDeckRanking & SampleFields)[]

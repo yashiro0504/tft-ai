@@ -2,14 +2,16 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buildMetaPayload } from '@/lib/metaPayload'
 import { toDecksOnly } from '@/lib/metaSlim'
-import { getDecks, getMetaFilters } from '@/lib/tftStats'
+import { getMetaDeckSnapshot, getMetaFilters } from '@/lib/tftStats'
+import { deckReportMeta } from '@/lib/deckReport'
+import { metaSnapshotLabel } from '@/lib/deckReportShared'
 import { MetaRanking } from '@/app/components/MetaRanking'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { SITE_URL } from '@/lib/site'
 
-// 정적 생성 + 5분 ISR. DB 집계(Phase B)가 있으면 기본 필터(최신 패치 · 마스터+) 덱을, 없으면 빌드 타임 JSON 을 그린다.
-export const revalidate = 300
+// 정적 생성 + 1분 ISR (덱 성적표와 같은 스냅샷 — lib/tftStats getMetaDeckSnapshot 이 인스턴스 간 공유 캐시로 맞춘다). DB 집계(Phase B)가 있으면 기본 필터(최신 패치 · 마스터+) 덱을, 없으면 빌드 타임 JSON 을 그린다.
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: '시즌 18 메타 랭킹 — 기물·시너지·아이템 티어표',
@@ -32,15 +34,16 @@ export const metadata: Metadata = {
 export default async function MetaPage() {
   const data = buildMetaPayload()
   const filters = await getMetaFilters()
-  const dbDecks = filters.source === 'db' ? await getDecks({ patch: filters.defaults.patch, tier: filters.defaults.tier }) : null
-  const fromDb = dbDecks?.source === 'db'
-  if (fromDb && dbDecks) {
-    data.decks = dbDecks.decks
-    data.patch = dbDecks.filter?.patch ?? data.patch
-    data.generatedAt = dbDecks.updatedAt ?? data.generatedAt
-  }
-  const patchLabel = data.patch ? `패치 ${data.patch}` : '패치 정보 없음'
-  const updated = data.generatedAt ? new Date(data.generatedAt).toLocaleDateString('ko-KR') : '-'
+  // 덱 탭 = 내 덱 성적표와 같은 스냅샷 (DB 집계 또는 폴백 JSON 어느 쪽이든 두 화면이 같은 값)
+  const snapshot = await getMetaDeckSnapshot()
+  const fromDb = snapshot.source === 'db' && filters.source === 'db'
+  data.decks = snapshot.decks
+  if (fromDb) data.patch = snapshot.filter?.patch ?? data.patch
+  const snapshotMeta = deckReportMeta(snapshot)
+  const snapshotLabel = metaSnapshotLabel(snapshotMeta)
+  // 상단 배지: 수집 랭크 구간 + 전체 경기 수 (메타 페이지만 보고도 데이터 범위·규모를 알 수 있게)
+  const scopeBadge = snapshotMeta.source === 'db' ? `KR ${snapshotMeta.tier ?? '랭크'}` : 'KR 챌린저 래더'
+  const matchesBadge = snapshotMeta.matches ? `${snapshotMeta.matches.toLocaleString('ko-KR')}경기` : null
 
   return (
     <div className="min-h-screen bg-app text-ink">
@@ -49,8 +52,18 @@ export default async function MetaPage() {
       <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
         <div className="mb-4">
           <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 18 메타 랭킹</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-semibold text-ink" title="수집 랭크 구간">
+              {scopeBadge}
+            </span>
+            {matchesBadge ? (
+              <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-semibold text-ink" title="덱 표에 들어간 전체 경기 수">
+                {matchesBadge}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 text-xs text-muted">
-            {fromDb ? 'KR 랭크 판 누적 집계' : '챌린저 래더 실측 표본'} · {patchLabel} · 갱신 {updated}
+            {snapshotLabel}
             {!data.hasMeta && !fromDb ? ' · 표본 수집 전(샘플)' : ''}
           </p>
         </div>
@@ -60,6 +73,7 @@ export default async function MetaPage() {
           deferSections
           filters={filters}
           initialDecksSource={fromDb ? 'db' : 'json'}
+          decksUpdatedAt={snapshot.updatedAt}
           syncUrl
         />
 

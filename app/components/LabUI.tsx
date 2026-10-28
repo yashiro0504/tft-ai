@@ -147,8 +147,8 @@ export function TraitHex({
         {iconUrl && !iconFailed ? (
           <img
             src={iconUrl}
-            // 작은 칩은 이름을 옆에 쓰지 않으므로 그림이 이름을 대신한다 (큰 칩은 옆 글자와 겹쳐 비워 둔다)
-            alt={compact ? name : ''}
+            // 시너지 아이콘은 늘 이름을 alt 로 (메타 랭킹 접근성 점검: alt 빈 이미지 0개 — 2026-10-28)
+            alt={name}
             className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} object-contain ${
               styled ? 'trait-glyph-on-style' : level >= max && max > 0 ? 'trait-glyph-on-accent' : 'trait-glyph'
             }`}
@@ -236,7 +236,7 @@ export function UnitHover({ unit, children }: { unit: HoverUnit; children: React
               style={{ left: pos.x, top: pos.y, transform: pos.above ? 'translateY(-100%)' : undefined }}
             >
               <div className="flex items-center gap-2">
-                <img src={unit.imgUrl} alt="" className="h-9 w-9 rounded-control object-cover" />
+                <img src={unit.imgUrl} alt={unit.name} className="h-9 w-9 rounded-control object-cover" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-ink">{unit.name}</p>
                   <p className="text-xs text-muted">
@@ -252,7 +252,7 @@ export function UnitHover({ unit, children }: { unit: HoverUnit; children: React
                 <div className="mt-2 space-y-1">
                   {unit.items.map((it) => (
                     <div key={it.key} className="flex items-center gap-1.5 text-xs text-ink">
-                      <img src={it.iconUrl} alt="" className="h-4 w-4 rounded-[3px] object-cover" />
+                      <img src={it.iconUrl} alt={it.name} className="h-4 w-4 rounded-[3px] object-cover" />
                       <span className="truncate">{it.name}</span>
                     </div>
                   ))}

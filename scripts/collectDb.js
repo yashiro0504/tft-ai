@@ -19,10 +19,10 @@
  *   RIOT_API_KEY, RIOT_REGION=asia, RIOT_PLATFORM=kr
  *   NEXT_PUBLIC_SUPABASE_URL (또는 SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY, TFT_SEED_KEY(32자+)
  *   RIOT_MIN_INTERVAL_MS=1250   개발 키 기준. 프로덕션 키는 34 (한도 60%)
- *   MAX_MINUTES=50 · MAX_MATCHES=200(무료 플랜: 시간당 200판 ≈ 패치당 6.4만 판 ≈ 170MB, 실측 2.6KB/판) · SEED_TIERS=challenger,grandmaster,master · MASTER_LIMIT=1000
+ *   MAX_MINUTES=50 · MAX_MATCHES=300(무료 플랜: 시간당 300판 ≈ 패치당 9.6만 판 ≈ 250MB, 실측 2.6KB/판 — 2026-10-28 상위 덱 300판+ 목표로 200→300) · SEED_TIERS=challenger,grandmaster,master · MASTER_LIMIT=1000
  *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1
  *   MAX_RAW_MB=400(소프트: 넘으면 수집만 중단) · MAX_RAW_MB_HARD=480(하드: 넘으면 무조건 정리) · PRUNE_ON_LIMIT=0(1 이면 소프트에서도 정리)
- *   SET_NUMBER=18 · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=20 · COMP_MIN_GAMES=8
+ *   SET_NUMBER=18 · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=8(덱 클러스터를 하루 3번 — 메타 페이지·덱 성적표 갱신이 하루 늦던 문제) · COMP_MIN_GAMES=8
  */
 const crypto = require('crypto')
 const { loadEnv } = require('./_env')
@@ -51,7 +51,7 @@ const CFG = {
   platform: env('RIOT_PLATFORM', 'kr'),
   minIntervalMs: num('RIOT_MIN_INTERVAL_MS', 1250),
   maxMinutes: num('MAX_MINUTES', 50),
-  maxMatches: num('MAX_MATCHES', 200),
+  maxMatches: num('MAX_MATCHES', 300),
   seedTiers: env('SEED_TIERS', 'challenger,grandmaster,master')
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -66,7 +66,7 @@ const CFG = {
   pruneOnLimit: process.env.PRUNE_ON_LIMIT === '1',
   setNumber: num('SET_NUMBER', 18),
   rankedQueue: num('RANKED_QUEUE', 1100),
-  deckRefreshHours: num('DECK_REFRESH_HOURS', 20),
+  deckRefreshHours: num('DECK_REFRESH_HOURS', 8),
 }
 /** 덱 클러스터는 원본 1패치를 다 읽으므로 남은 시간이 이보다 적으면 다음 실행으로 미룬다 */
 const DECK_JOB_MIN_MS = 5 * 60 * 1000

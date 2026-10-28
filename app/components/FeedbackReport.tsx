@@ -289,7 +289,7 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
 
         {feedback.dataQuality?.lowSample ? (
           <p className="rounded-control border border-gold/40 bg-gold/5 px-3 py-2 text-xs leading-relaxed text-muted">
-            초반 종료 표본이라 점수·강의 해석에 주의가 필요합니다
+            초반 종료·보드 데이터 불완전 표본이라 점수·강의 해석에 주의가 필요합니다
             {feedback.dataQuality.reason ? ` (${feedback.dataQuality.reason})` : ''}. 판을 끝까지 운영한 경기가
             쌓이면 더 정확해집니다.
           </p>

@@ -25,6 +25,25 @@ function decodeTraits(arr) {
   return out
 }
 
+/**
+ * 복제 기물 정리 (lib/boardUnits.cleanBoardUnits 와 같은 규칙의 간단판): 같은 기물·성급 3장 이상(3성은 2장 이상)은
+ * 정상 보드에 동시에 있을 수 없어 복제로 보고 아이템이 가장 많은 1장만 남긴다 (장로 드래곤 9개 보드, 2026-10-28).
+ */
+function dedupeClones(units) {
+  const groups = new Map()
+  for (const u of units) {
+    const key = `${u.character_id}|${u.tier || 1}`
+    groups.set(key, [...(groups.get(key) || []), u])
+  }
+  const keep = new Set()
+  for (const g of groups.values()) {
+    const cloned = g.length >= 3 || ((g[0].tier || 1) >= 3 && g.length >= 2)
+    if (!cloned) g.forEach((u) => keep.add(u))
+    else keep.add(g.reduce((best, u) => ((u.itemNames || []).length > (best.itemNames || []).length ? u : best), g[0]))
+  }
+  return units.filter((u) => keep.has(u))
+}
+
 const TIER_RANK = { EMERALD: 1, DIAMOND: 2, MASTER: 3, GRANDMASTER: 4, CHALLENGER: 5 }
 
 /**
@@ -89,7 +108,7 @@ function normalizeMatch(match, { platform, tierBucket, patchAt }, dictId) {
   const boards = info.participants
     .filter((p) => p.placement >= 1 && p.placement <= 8)
     .map((p) => {
-      const units = (p.units || []).filter((u) => u.character_id)
+      const units = dedupeClones((p.units || []).filter((u) => u.character_id))
       const unitIds = units.map((u) => dictId('unit', u.character_id))
       const traits = (p.traits || []).filter((t) => t.tier_current > 0 && t.name)
       return {
@@ -137,6 +156,7 @@ module.exports = {
   kstDate,
   collectDictKeys,
   normalizeMatch,
+  dedupeClones,
   decodeUnits,
   decodeTraits,
   TIER_RANK,
