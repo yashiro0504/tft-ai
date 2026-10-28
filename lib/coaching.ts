@@ -1,3 +1,4 @@
+import { boardCounts } from './boardStats'
 import type {
   AxisEffect,
   AxisMetric,
@@ -70,7 +71,10 @@ export interface PerMatchMetrics {
   deckType: Exclude<DeckType, 'mixed'>
   /** 캐리 슬러그 (lib/deckType boardCarryKey) — 같은 캐리 보드의 스테이지 기준선을 찾는 키 */
   carryKey: string | null
+  /** 활성 시너지 수 — 카드·리포트와 같은 값 (lib/boardStats) */
   activeTraits: number
+  /** 시너지 축 점수용 시너지 수 (저레벨이면 고유 시너지 제외 — axisConfig.synergy). 화면·서술에는 activeTraits 를 쓴다 */
+  synergyTraits: number
   bestTraitCount: number
   /** 켠 시너지 단계(tier_current)의 합 — 고유 시너지 포함 */
   traitTierTotal: number
@@ -119,7 +123,8 @@ export function readMatch(m: SlimMatchData, deck: DeckTypeInfo = detectDeckType(
     carryThreeStar: deck.carryThreeStar,
     deckType: deck.type,
     carryKey: boardCarryKey(units),
-    activeTraits: traits.length,
+    activeTraits: boardCounts(m).activeTraits,
+    synergyTraits: traits.length,
     bestTraitCount: traits.reduce((s, t) => Math.max(s, t.count || 0), 0),
     traitTierTotal: allTraits.reduce((s, t) => s + (t.tier || 0), 0),
     contested: Boolean(m.contestedInfo?.isContested),
@@ -256,7 +261,7 @@ function synergyAxis(m: PerMatchMetrics): AxisResult {
   // v2 는 "3개가 이상 + 주력 인원"이라 상위권의 넓은 보드를 깎았다 (골든셋 등수 상관 -0.21).
   // 단계 합은 골든셋에서 등수 상관이 가장 높았다 (0.52, 최대 단계 하나만 보면 -0.28).
   const c = AXIS_CONFIG.axes.synergy
-  const outside = Math.max(0, c.idealActiveMin - m.activeTraits, m.activeTraits - c.idealActiveMax)
+  const outside = Math.max(0, c.idealActiveMin - m.synergyTraits, m.synergyTraits - c.idealActiveMax)
   const spread = clamp(100 - outside * c.spreadPenaltyPerTrait)
   const tiers = clamp((m.traitTierTotal / c.tierTotalTarget) * 100)
   const effects = { spread: spread * c.spreadWeight, depth: tiers * c.tierWeight }

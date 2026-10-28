@@ -1,6 +1,9 @@
 import type { EntityFactError, MetaCoachFeedback, SlimMatchData } from './types'
 import { costOdds } from './shopOdds'
 import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
+import { validateItemRecipes } from './itemRecipes'
+import { boardCounts } from './boardStats'
+import { boardCarry } from './deckType'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -256,6 +259,71 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
   return errors
 }
 
+/* ───────────── 조합법 · 조언-데이터 모순 · 보드 수치 (2026-10-28) ───────────── */
+
+/** 아이템을 더 주라는 조언 ("무한의 대검을 추가로 맞춰 캐리 아이템 3개를 채우기") */
+const ITEM_FILL_RE =
+  /(?:아이템|템)[^.!?\n]{0,15}(?:채우|채워(?!진|져)|채울|더\s*(?:맞|주|넣|몰)|추가)|추가로\s*[^.!?\n]{0,20}(?:맞춰|맞추|맞출|만들|넣|주|장착)|몰아\s*주|몰아줘|몰아주/
+/** "활성 시너지 3개" · "시너지 3개" (기준값 "시너지 3개 이상" 은 제외) */
+const TRAIT_COUNT_RE = /(?<!주력\s?|핵심\s?|메인\s?|상대\s?)(활성\s*시너지|시너지)\s*(\d+)\s*개(?!\s*(?:이상|이하|미만|초과|를\s*목표|까지))/g
+/** "캐리 아이템 3개" */
+const CARRY_ITEM_COUNT_RE = /캐리\s*(?:아이템|템)\s*(\d)\s*개(?!\s*(?:이상|이하|미만|초과|를\s*목표|까지))/g
+
+/**
+ * 리포트 문장을 경기 데이터와 대조한다 (근거 검증 단계).
+ * - item_recipe: "아이템 + 조합 재료"가 아이템 데이터(lib/gameData)와 다름 → 문장 삭제
+ * - advice_conflict: 이미 아이템 3개를 든 기물(또는 캐리)에 아이템을 더 채우라는 조언 → 문장 삭제
+ * - count_mismatch: "활성 시너지 N개"·"캐리 아이템 N개"가 카드 값(lib/boardStats)과 다름 → 값 교체 (단일 경기만)
+ * checkedRecipes = 대조한 조합법 주장 수 (근거 검증 분모에 더한다)
+ */
+export function validateAdviceAndCounts(texts: string[], matches: SlimMatchData[]): { errors: EntityFactError[]; checkedRecipes: number } {
+  const errors: EntityFactError[] = []
+  const all = texts.flatMap(sentences)
+  const recipes = validateItemRecipes(all)
+  for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.expected, actual: r.actual })
+  if (!matches.length) return { errors, checkedRecipes: recipes.checked }
+
+  // 기물별 아이템 수 — 여러 판이면 모든 판에서 3개 이상일 때만 '가득 참'
+  const itemCounts = new Map<string, number[]>()
+  for (const m of matches) for (const u of m.units) itemCounts.set(u.name, [...(itemCounts.get(u.name) ?? []), u.items?.length ?? 0])
+  const full = (name: string) => (itemCounts.get(name) ?? []).every((n) => n >= 3) && itemCounts.has(name)
+  const carries = matches.map((m) => boardCarry(m.units || []))
+  const carryFull = carries.every((c) => c && (c.items?.length ?? 0) >= 3)
+  const unitNames = [...itemCounts.keys()]
+  const single = matches.length === 1 ? matches[0] : null
+  const counts = single ? boardCounts(single) : null
+  const carry = single ? carries[0] : undefined
+
+  for (const s of all) {
+    if (ITEM_FILL_RE.test(s) && !OPPONENT_RE.test(s)) {
+      const named = findNames(s, unitNames).map((x) => x.name)
+      const target = named.length ? named.every(full) : /캐리/.test(s) && carryFull
+      if (target) {
+        const who = named.length ? named : carries.map((c) => c?.name).filter(Boolean)
+        errors.push({
+          type: 'advice_conflict',
+          text: s,
+          expected: `${[...new Set(who)].join('·')}: 이미 아이템 3개 — 더 채울 칸 없음`,
+          actual: '아이템 추가 조언',
+        })
+      }
+    }
+    if (!counts || OPPONENT_RE.test(s) || PRESCRIPTIVE_RE.test(s)) continue
+    for (const m of s.matchAll(TRAIT_COUNT_RE)) {
+      if (Number(m[2]) !== counts.activeTraits) {
+        errors.push({ type: 'count_mismatch', text: s, expected: `${m[1]} ${counts.activeTraits}개`, actual: m[0] })
+      }
+    }
+    if (carry) {
+      for (const m of s.matchAll(CARRY_ITEM_COUNT_RE)) {
+        const n = carry.items?.length ?? 0
+        if (Number(m[1]) !== n) errors.push({ type: 'count_mismatch', text: s, expected: `캐리 아이템 ${n}개`, actual: m[0] })
+      }
+    }
+  }
+  return { errors, checkedRecipes: recipes.checked }
+}
+
 /**
  * 검증기가 잡은 의미 오류를 사용자에게 보내기 전에 고친다.
  * - 데이터 값이 하나로 정해지고 문장에 틀린 표현("주문술사 4단계")이 그대로 있으면 맞는 값으로 바꾼다.
@@ -269,7 +337,8 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
   const bySentence = new Map<string, string>()
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
-    const fixable = !['item_owner', 'unit_absent', 'item_absent'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
+    const fixable =
+      !['item_owner', 'unit_absent', 'item_absent', 'item_recipe', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
 

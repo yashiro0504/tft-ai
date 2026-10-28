@@ -5,6 +5,7 @@ import { analyzeAugments } from './meta'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { queueLabel } from './queue'
 import { cleanBoardUnits } from './boardUnits'
+import { boardCounts } from './boardStats'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -160,9 +161,7 @@ export function serializeMatchesForLLM(
         : '없음'
       const setStr = m.setNumber ? `시즌 ${m.setNumber}` : '현재 시즌'
 
-      const twoStarPlus = m.units.filter((u) => (u.tier || 1) >= 2).length
-      const threeStar = m.units.filter((u) => u.tier === 3).length
-      const totalItems = m.units.reduce((s, u) => s + (u.items?.length || 0), 0)
+      const { twoStarPlus, threeStar, totalItems, activeTraits } = boardCounts(m)
 
       const ci = m.contestedInfo
       const contestStr = !ci
@@ -216,7 +215,7 @@ export function serializeMatchesForLLM(
       return `[매치 ${idx + 1} - ${setStr}]
 - 최종 등수: ${m.placement}등 (${m.placement <= 4 ? '순방/승리' : '하위권/탈락'})
 - 로비 경쟁 현황: ${contestStr}
-- 계산 지표(코드 산출): 2성+기물 ${twoStarPlus}개, 3성 ${threeStar}개, 총 장착아이템 ${totalItems}개
+- 계산 지표(코드 산출): 2성+기물 ${twoStarPlus}개, 3성 ${threeStar}개, 총 장착아이템 ${totalItems}개, 활성 시너지 ${activeTraits}개 (경기 카드와 같은 값)
 - 최종 레벨: Lv.${m.level} (탈락 라운드: ${m.lastRound}, 경기 길이: ${m.gameLengthStr ?? '?'})${augmentLine}${sampleLine}${lobbyLine}
 - 활성 시너지: ${traitStr}
 - 최종 기물/아이템 구성: ${unitStr}`
