@@ -708,6 +708,14 @@ export function MetaDashboard({
                   type="button"
                   className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''} ${r.low ? 'is-low' : ''}`}
                   title={r.low ? `표본 부족 (${minSample}판 미만) — 수치 변동이 큽니다` : undefined}
+                  // 덱 행: "협곡야수 장로 드래곤, S티어, 평균 3.52등, 155판" (읽기 도구가 행 안 그림·숫자를 하나씩 읽지 않게)
+                  aria-label={
+                    tab === 'decks'
+                      ? `${r.name}, ${r.tier === '-' ? '표본 부족' : `${r.tier}티어`}, 평균 ${r.avg.toFixed(2)}등, ${r.sample.toLocaleString()}판${
+                          r.low || r.reference ? ', 참고용' : ''
+                        }`
+                      : undefined
+                  }
                   onClick={() => {
                     if (tab === 'decks') {
                       setSelectedId(r.key)
@@ -723,7 +731,7 @@ export function MetaDashboard({
                     <span className="rk-name-cell">
                       {r.img ? (
                         <span className="rk-icon">
-                          <img src={r.img} alt="" loading="lazy" />
+                          <img src={r.img} alt={r.name} loading="lazy" />
                         </span>
                       ) : null}
                       <span className="rk-name">{r.name}</span>
@@ -785,7 +793,7 @@ export function MetaDashboard({
                             }`}
                           >
                             <span className="rk-icon">
-                              <img src={b.iconUrl} alt="" loading="lazy" />
+                              <img src={b.iconUrl} alt={b.name} loading="lazy" />
                             </span>
                             {/* 휴대폰은 이름을 화면에서 숨기고(읽기 도구용으로만 남김) 평균등수·채용 두 줄 (rank/tabs.css) */}
                             <span className="rk-bisbody">
@@ -1041,7 +1049,7 @@ function DeckDetail({
           <div className="rk-builds">
             {holders.map((u) => (
               <div key={`it-${u.key}-${u.index}`} className="rk-build">
-                <img className="rk-build-unit" src={u.imgUrl} alt="" loading="lazy" />
+                <img className="rk-build-unit" src={u.imgUrl} alt={u.name} loading="lazy" />
                 <div className="rk-build-body">
                   <span className="rk-build-name">
                     {u.name}
@@ -1050,7 +1058,7 @@ function DeckDetail({
                   <span className="rk-build-items">
                     {u.items.map((it) => (
                       <span key={it.key} className="rk-build-item" title={it.name}>
-                        <img src={it.iconUrl} alt="" loading="lazy" />
+                        <img src={it.iconUrl} alt={it.name} loading="lazy" />
                         {it.name}
                       </span>
                     ))}

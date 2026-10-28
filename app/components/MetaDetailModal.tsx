@@ -76,7 +76,7 @@ export function DetailModal({
                 const low = item.sampleSize < BIS_RELIABLE_SAMPLE
                 return (
                   <div key={item.key} className={`rk-mrow ${low ? 'is-low' : ''}`}>
-                    <img src={item.iconUrl} alt="" loading="lazy" />
+                    <img src={item.iconUrl} alt={item.name} loading="lazy" />
                     <span className="rk-mname">{item.name}</span>
                     <span className="rk-mval">
                       {fmtAvg(item.avgPlacement)}등 · 채용 {fmtPct(item.pickRate)} · {item.sampleSize.toLocaleString()}판
@@ -175,7 +175,7 @@ export function DetailModal({
               const low = row.sampleSize < BIS_RELIABLE_SAMPLE
               return (
                 <div key={row.key} className={`rk-mrow ${low ? 'is-low' : ''}`}>
-                  <img src={row.champImgUrl} alt="" loading="lazy" />
+                  <img src={row.champImgUrl} alt={row.champName} loading="lazy" />
                   <span className="rk-mname">{row.champName}</span>
                   <span className="rk-mval">
                     {fmtAvg(row.avgPlacement)}등 · {row.sampleSize.toLocaleString()}판{low ? ' · 참고용' : ''}

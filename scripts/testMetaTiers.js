@@ -109,3 +109,22 @@ console.log('덱 티어: 오차 범위가 겹치는 이웃은 같은 티어 (202
 
 console.log(failures.length ? `\n❌ 실패 ${failures.length}건` : '\n✅ 메타 티어 테스트 통과')
 if (failures.length) process.exitCode = 1
+
+// 접근성 (2026-10-28 P2-9): 메타 랭킹 화면 컴포넌트에 alt 가 빈 이미지가 없어야 한다 (덱 상세 패널 시너지·기물·아이템 20개)
+{
+  const fs = require('fs')
+  const path = require('path')
+  const files = ['MetaDashboard.tsx', 'LabUI.tsx', 'MetaDetailModal.tsx', 'EntityDetail.tsx', 'UserMenu.tsx']
+  const empty = files.flatMap((f) => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'components', f), 'utf8')
+    return [...src.matchAll(/<img\b[\s\S]*?\/>/g)]
+      .filter((m) => /alt=""/.test(m[0]) || !/alt=/.test(m[0]))
+      .map((m) => ({ f, i: src.slice(0, m.index).split('\n').length }))
+  })
+  const ok = empty.length === 0
+  console.log(`  ${ok ? '✅' : '❌'} 메타 랭킹 이미지 alt 빈 값 0개${ok ? '' : ` — ${empty.map((x) => `${x.f}:${x.i}`).join(', ')}`}`)
+  const dash = fs.readFileSync(path.join(__dirname, '..', 'app', 'components', 'MetaDashboard.tsx'), 'utf8')
+  const aria = /aria-label=\{\s*tab === 'decks'/.test(dash)
+  console.log(`  ${aria ? '✅' : '❌'} 덱 행 버튼 aria-label ("덱 이름, S티어, 평균 N등, N판")`)
+  if (!ok || !aria) process.exitCode = 1
+}

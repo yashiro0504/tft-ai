@@ -35,7 +35,7 @@ function LinkRow({ link }: { link: EntityLink }) {
   return (
     <li className={`rk-ent-row${s?.lowSample ? ' is-low' : ''}`}>
       <Link href={`${ENTITY_PATH[link.kind]}/${link.slug}`} className="rk-ent-rowlink">
-        <span className="rk-icon">{link.img ? <img src={link.img} alt="" loading="lazy" /> : null}</span>
+        <span className="rk-icon">{link.img ? <img src={link.img} alt={link.name} loading="lazy" /> : null}</span>
         <span className="rk-ent-rowname">
           {link.name}
           {link.note ? <em>{link.note}</em> : null}
@@ -70,7 +70,7 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
           </nav>
 
           <header className="rk-deck-hero rk-ent-hero">
-            <div className={`rk-ent-icon is-${data.kind}`}>{data.img ? <img src={data.img} alt="" /> : null}</div>
+            <div className={`rk-ent-icon is-${data.kind}`}>{data.img ? <img src={data.img} alt={data.name} /> : null}</div>
             <div className="rk-ent-head">
               <div className="rk-deck-title">
                 <h1>{data.name}</h1>
@@ -89,7 +89,7 @@ export function EntityDetail({ data }: { data: EntityPageData }) {
                 <div className="rk-ent-tags">
                   {data.tags.map((t) => (
                     <Link key={t.slug} href={`${ENTITY_PATH[t.kind]}/${t.slug}`}>
-                      {t.img ? <img src={t.img} alt="" loading="lazy" /> : null}
+                      {t.img ? <img src={t.img} alt={t.name} loading="lazy" /> : null}
                       {t.name}
                     </Link>
                   ))}
