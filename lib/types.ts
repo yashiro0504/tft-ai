@@ -718,6 +718,8 @@ export interface TftMetaResponse {
     patch: string | null
     deckCount: number
     unitMatchRate: number
+    /** 덱을 묶은 래더 판 수 */
+    matchCount?: number
   }
   error?: string
 }

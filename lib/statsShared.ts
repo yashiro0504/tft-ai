@@ -183,6 +183,8 @@ export interface DecksResponse {
   filter: (Omit<StatFilter, 'days'> & { patch: string }) | null
   patch?: string
   totalBoards?: number
+  /** 이 패치 · 티어 필터의 전체 판 수 (JSON 폴백이면 래더 판 수) — 메타 페이지 머리말 표본 규모 */
+  totalMatches?: number
   updatedAt?: string
   minSample: number
   decks: (MetaDeckRanking & SampleFields)[]

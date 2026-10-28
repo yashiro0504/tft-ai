@@ -433,6 +433,7 @@ function jsonDecks(reason: string, withGuide = false): DecksResponse {
     patch: p.patch,
     // 빌드 시각이 아니라 원본 래더 보드 수집 시각
     updatedAt: p.deckMeta?.sourceUpdatedAt,
+    totalMatches: p.deckMeta?.matchCount,
     minSample: MIN_SAMPLE.deck,
     decks: decks.map((d) => withSample(d, MIN_SAMPLE.deck)),
     fallbackReason: reason,
@@ -478,6 +479,7 @@ export async function getDecks(
           source: 'db',
           filter: { patch, tier: filter.tier },
           totalBoards: rows?.[0]?.total_boards,
+          totalMatches: filters.patches.find((p) => p.patch === patch)?.matches[filter.tier],
           updatedAt,
           minSample: MIN_SAMPLE.deck,
           decks,
@@ -492,7 +494,7 @@ export async function getDecks(
 }
 
 /** 메타 덱 스냅샷 공유 캐시 (Redis L2) — 인스턴스마다 DB·폴백 결과가 달라 두 화면 값이 갈리지 않게 */
-const SNAPSHOT_KEY = 'meta-deck-snapshot:v1'
+const SNAPSHOT_KEY = 'meta-deck-snapshot:v2'
 const SNAPSHOT_TTL_MS = 5 * 60_000
 const SNAPSHOT_FALLBACK_TTL_MS = 60_000
 

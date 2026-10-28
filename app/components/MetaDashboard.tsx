@@ -475,8 +475,8 @@ export function MetaDashboard({
             <div className="rk-evidence">
               {dbMode && !fellBack ? (
                 <>
-                  <EvidenceChip title="KR 랭크 판 누적 집계 (매시간 갱신)">
-                    {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
+                  <EvidenceChip title="수집 범위: KR 랭크 판 누적 집계 (매시간 수집 · 덱은 하루 몇 번 다시 묶음)">
+                    KR · {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
                   </EvidenceChip>
                   {tab !== 'decks' && served.totalMatches != null ? (
                     <EvidenceChip title="이 필터에 들어간 판 수">{served.totalMatches.toLocaleString()}판</EvidenceChip>
@@ -486,6 +486,9 @@ export function MetaDashboard({
                 </>
               ) : (
                 <>
+                  <EvidenceChip title="수집 범위: KR 챌린저 래더 상위 플레이어의 최근 랭크 판 (하루 1회)">
+                    KR 챌린저 래더{data?.deckMeta?.matchCount ? ` · ${data.deckMeta.matchCount.toLocaleString()}판` : ''}
+                  </EvidenceChip>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
                   {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (
                     <EvidenceChip>수집 {fmtDate(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt)}</EvidenceChip>

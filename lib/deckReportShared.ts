@@ -25,6 +25,8 @@ export interface DeckReportMeta {
   /** 티어 필터 화면 이름 (예: '마스터+') */
   tier?: string
   updatedAt?: string
+  /** 표본 규모 (판) — 메타 페이지 머리말 */
+  matches?: number
 }
 
 export interface DeckReport {
@@ -72,8 +74,15 @@ export function snapshotTime(iso?: string): string {
  * 메타 덱 스냅샷 출처 한 줄 — 메타 랭킹 페이지 머리말과 덱 성적표가 같은 함수로 그린다
  * (예: "KR 랭크 마스터+ 집계 · 패치 16.21 · 10.28 09:29 갱신")
  */
-export function metaSnapshotLabel(meta: DeckReportMeta): string {
-  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : '챌린저 래더 표본'
+export function metaSnapshotLabel(meta: DeckReportMeta, { withMatches = false }: { withMatches?: boolean } = {}): string {
+  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : 'KR 챌린저 래더 표본'
   const updated = snapshotTime(meta.updatedAt)
-  return [base, meta.patch ? `패치 ${meta.patch}` : '', updated ? `${updated} 갱신` : ''].filter(Boolean).join(' · ')
+  return [
+    base,
+    withMatches && meta.matches ? `${meta.matches.toLocaleString('ko-KR')}판` : '',
+    meta.patch && /^\d/.test(meta.patch) ? `패치 ${meta.patch}` : '',
+    updated ? `${updated} 갱신` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }

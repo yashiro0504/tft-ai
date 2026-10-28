@@ -139,6 +139,9 @@ console.log('5. 메타 평균 스냅샷')
   const { metaSnapshotLabel } = require('../lib/deckReportShared')
   const label = metaSnapshotLabel({ source: 'json', patch: 'set18', updatedAt: '2026-10-28T00:29:04.802Z' })
   check('갱신 시각은 KST 분 단위 (두 화면 같은 함수)', label.includes('10.28 09:29 갱신'), label)
+  const scoped = metaSnapshotLabel({ source: 'db', tier: '마스터+', patch: '16.21', matches: 12345, updatedAt: '2026-10-28T00:29:04.802Z' }, { withMatches: true })
+  check('10. 메타 머리말에 수집 랭크 구간·전체 경기 수', scoped.startsWith('KR 랭크 마스터+ 집계 · 12,345판'), scoped)
+  check('10. 메타 페이지 상단 배지(랭크 구간·경기 수)', /scopeBadge/.test(read('app/meta/page.tsx')) && /matchesBadge/.test(read('app/meta/page.tsx')))
 }
 
 if (failures) {

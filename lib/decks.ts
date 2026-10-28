@@ -66,6 +66,8 @@ const DATA = decksData as unknown as {
   patch: string | null
   deckCount: number
   unitMatchRate: number
+  /** 덱을 묶은 래더 판 수 */
+  matchCount?: number
   decks: RawDeck[]
 }
 
@@ -123,6 +125,8 @@ export interface DeckMetaInfo {
   patch: string | null
   deckCount: number
   unitMatchRate: number
+  /** 덱을 묶은 래더 판 수 (KR 챌린저 래더) */
+  matchCount?: number
 }
 
 export function getDeckMetaInfo(): DeckMetaInfo {
@@ -133,6 +137,7 @@ export function getDeckMetaInfo(): DeckMetaInfo {
     patch: DATA.patch,
     deckCount: DATA.deckCount,
     unitMatchRate: DATA.unitMatchRate,
+    matchCount: DATA.matchCount,
   }
 }
 

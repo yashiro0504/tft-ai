@@ -71,13 +71,14 @@ export function buildDeckReport(matches: SlimMatchData[], decks: DeckFact[], met
 }
 
 /** getDecks 응답 → 성적표 출처 줄 (메타 랭킹 페이지 머리말과 같은 값) */
-export function deckReportMeta(res: Pick<DecksResponse, 'source' | 'filter' | 'patch' | 'updatedAt'>): DeckReportMeta {
+export function deckReportMeta(res: Pick<DecksResponse, 'source' | 'filter' | 'patch' | 'updatedAt' | 'totalMatches'>): DeckReportMeta {
   const tier = res.filter?.tier
   return {
     source: res.source,
     patch: res.filter?.patch ?? res.patch,
     tier: tier ? TIER_FILTER_OPTIONS.find((o) => o.id === tier)?.label : undefined,
     updatedAt: res.updatedAt,
+    matches: res.totalMatches,
   }
 }
 

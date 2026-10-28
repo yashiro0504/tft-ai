@@ -39,7 +39,11 @@ export default async function MetaPage() {
   const fromDb = snapshot.source === 'db' && filters.source === 'db'
   data.decks = snapshot.decks
   if (fromDb) data.patch = snapshot.filter?.patch ?? data.patch
-  const snapshotLabel = metaSnapshotLabel(deckReportMeta(snapshot))
+  const snapshotMeta = deckReportMeta(snapshot)
+  const snapshotLabel = metaSnapshotLabel(snapshotMeta)
+  // 상단 배지: 수집 랭크 구간 + 전체 경기 수 (메타 페이지만 보고도 데이터 범위·규모를 알 수 있게)
+  const scopeBadge = snapshotMeta.source === 'db' ? `KR ${snapshotMeta.tier ?? '랭크'}` : 'KR 챌린저 래더'
+  const matchesBadge = snapshotMeta.matches ? `${snapshotMeta.matches.toLocaleString('ko-KR')}경기` : null
 
   return (
     <div className="min-h-screen bg-app text-ink">
@@ -48,6 +52,16 @@ export default async function MetaPage() {
       <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
         <div className="mb-4">
           <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 18 메타 랭킹</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-semibold text-ink" title="수집 랭크 구간">
+              {scopeBadge}
+            </span>
+            {matchesBadge ? (
+              <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-semibold text-ink" title="덱 표에 들어간 전체 경기 수">
+                {matchesBadge}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 text-xs text-muted">
             {snapshotLabel}
             {!data.hasMeta && !fromDb ? ' · 표본 수집 전(샘플)' : ''}
