@@ -70,12 +70,16 @@ export function snapshotTime(iso?: string): string {
   return `${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`
 }
 
+/** JSON 래더 표본의 수집 범위 — scripts/collectLadderBoards.js 가 챌린저 → 그마 → 마스터 LP 상위 선수 판을 모은다 */
+export const JSON_LADDER_SCOPE = 'KR 마스터+ 래더'
+export const JSON_LADDER_SCOPE_DETAIL = 'KR 챌린저·그랜드마스터·마스터 LP 상위 선수의 최근 랭크 판 (하루 2회 수집)'
+
 /**
  * 수집 범위 · 표본 수 — 메타 페이지 배지·덱 탭 칩·덱 성적표가 모두 이 함수 하나로 그린다 (2026-10-28: 'KR 챌린저 래더 · 292판' 과 'KR 랭크 마스터+ 집계' 가 갈렸다)
  * 예: "KR 랭크 마스터+" · "12,345판"
  */
 export function metaScopeLabel(meta: Pick<DeckReportMeta, 'source' | 'tier'>): string {
-  return meta.source === 'db' ? `KR 랭크 ${meta.tier ?? '전체'}` : 'KR 챌린저 래더'
+  return meta.source === 'db' ? `KR 랭크 ${meta.tier ?? '전체'}` : JSON_LADDER_SCOPE
 }
 
 export function metaMatchesLabel(meta: Pick<DeckReportMeta, 'matches'>): string {

@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: '시즌 18 메타 랭킹 — 기물·시너지·아이템 티어표',
   description:
-    '챌린저 래더 실측 표본 기반 TFT 시즌 18 메타 랭킹. 기물 티어, 시너지, 아이템, BIS 조합과 추천 덱을 평균 등수·순방률로 확인하세요.',
+    'KR 마스터+ 랭크 실측 표본 기반 TFT 시즌 18 메타 랭킹. 기물 티어, 시너지, 아이템, BIS 조합과 추천 덱을 평균 등수·순방률로 확인하세요.',
   alternates: { canonical: `${SITE_URL}/meta` },
   openGraph: {
     title: 'TFT LAB — 시즌 18 메타 랭킹',

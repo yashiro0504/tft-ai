@@ -37,7 +37,7 @@ import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount 
 import { ShareButton } from './ShareButton'
 import { MetaUrlSync } from './MetaUrlSync'
 import { track } from '@/lib/analytics'
-import { snapshotTime } from '@/lib/deckReportShared'
+import { JSON_LADDER_SCOPE_DETAIL, metaMatchesLabel, metaScopeLabel, snapshotTime } from '@/lib/deckReportShared'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -487,7 +487,7 @@ export function MetaDashboard({
             <div className="rk-evidence">
               {showingSnapshot && decksScope ? (
                 <>
-                  <EvidenceChip title="수집 범위 · 덱 표에 들어간 판 수 (덱 성적표의 메타 평균과 같은 스냅샷)">
+                  <EvidenceChip title={`${initialDecksSource === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수 (덱 성적표의 메타 평균과 같은 스냅샷)`}>
                     {[decksScope.scope, decksScope.matches].filter(Boolean).join(' · ')}
                   </EvidenceChip>
                   {dbMode ? (
@@ -510,8 +510,8 @@ export function MetaDashboard({
                 </>
               ) : (
                 <>
-                  <EvidenceChip title="수집 범위: KR 챌린저 래더 상위 플레이어의 최근 랭크 판 (하루 1회)">
-                    KR 챌린저 래더{data?.deckMeta?.matchCount ? ` · ${data.deckMeta.matchCount.toLocaleString()}판` : ''}
+                  <EvidenceChip title={`수집 범위: ${JSON_LADDER_SCOPE_DETAIL}`}>
+                    {[metaScopeLabel({ source: 'json' }), metaMatchesLabel({ matches: data?.deckMeta?.matchCount })].filter(Boolean).join(' · ')}
                   </EvidenceChip>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
                   {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (

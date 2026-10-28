@@ -150,8 +150,11 @@ console.log('5. 메타 평균 스냅샷')
   const dbMeta = { source: 'db', tier: '마스터+', matches: 292 }
   const jsonMeta = { source: 'json', matches: 292 }
   check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (db)', metaSnapshotLabel(dbMeta).startsWith(`${metaScopeLabel(dbMeta)} · ${metaMatchesLabel(dbMeta)}`), metaSnapshotLabel(dbMeta))
-  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (json)', metaSnapshotLabel(jsonMeta).startsWith('KR 챌린저 래더 · 292판'), metaSnapshotLabel(jsonMeta))
+  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (json)', metaSnapshotLabel(jsonMeta).startsWith('KR 마스터+ 래더 · 292판'), metaSnapshotLabel(jsonMeta))
   check('P1-3 메타 페이지 배지·덱 탭 칩이 같은 함수', /metaScopeLabel\(snapshotMeta\)/.test(metaPage) && /decksScope=/.test(metaPage) && /decksScope\.scope/.test(read('app/components/MetaDashboard.tsx')))
+  check('P2-5 덱 탭 JSON 칩도 같은 범위 함수 (챌린저 래더 하드코딩 없음)', !/KR 챌린저 래더/.test(read('app/components/MetaDashboard.tsx')))
+  const ladderWf = read('.github/workflows/collect-ladder.yml')
+  check('P2-5 덱 보드 수집 1500판 · 하루 2회', /board_matches \|\| '1500'/.test(ladderWf) && (ladderWf.match(/- cron:/g) || []).length >= 2)
   check('P1-3 성적표 출처 줄도 같은 함수', /metaSnapshotLabel\(report\.meta\)/.test(read('app/components/DeckReportCard.tsx')))
   // 메타 표본 없는 덱: 성적표가 메타 평균을 비교하지 않는다 (30판 미만은 메타 랭킹 티어 밖)
   const { buildDeckReport } = require('../lib/deckReport')
