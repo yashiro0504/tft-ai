@@ -34,7 +34,37 @@ console.log('3. 아이템 조합법')
   check('프롬프트 조합법 줄은 게임 데이터에서', facts.includes('보석 건틀릿 = 연습용 장갑 + 쓸데없이 큰 지팡이') && facts.includes('쇼진의 창 ='), facts)
   const { errors } = validateAdviceAndCounts([`${bad} 다음 판도 같은 방향입니다.`], [])
   const fixed = repairEntityErrors({ actions: [bad, '다른 조언'] }, errors)
-  check('불일치 문장은 리포트에서 지움', fixed.actions.length === 1 && fixed.actions[0] === '다른 조언', JSON.stringify(fixed))
+  check('불일치 조합법은 데이터의 재료로 고침', fixed.actions.length === 2 && fixed.actions[0] === '코그모에게 보석 건틀릿 재료(연습용 장갑 + 쓸데없이 큰 지팡이)를 먼저 모으세요.' && fixed.actions[1] === '다른 조언', JSON.stringify(fixed))
+}
+{
+  // P2-6 (머지 후 재평가): 백승민#agent 36:05 같은 판 — 보드의 조합 아이템 조합법이 프롬프트에 데이터로 들어가고, 리포트 문장과 전부 일치해야 한다
+  const { componentsOf } = require('../lib/itemRecipes')
+  const boardItems = ['보석 건틀릿', '쇼진의 창', '정의의 손', '무한의 대검', '최후의 속삭임', '거인 학살자', '워모그의 갑옷', '가고일 돌갑옷']
+  const craftable = boardItems.filter((n) => componentsOf(n)?.length === 2)
+  check('36:05 판 조합 아이템이 데이터에 있음', craftable.length >= 6, craftable.join(','))
+  const facts = recipeFactsFor(`최종 보드: ${boardItems.join(', ')}`)
+  check('프롬프트 조합법 줄 = 게임 데이터 (아이템마다 한 줄)', craftable.every((n) => facts.includes(`- ${n} = ${componentsOf(n).join(' + ')}`)), facts)
+  const report = {
+    overview: '이번 판은 캐리 아이템이 잘 맞았습니다.',
+    actions: craftable.map((n) => `${n}은(는) ${componentsOf(n).join(' + ')} 조합입니다.`),
+  }
+  const all = validateAdviceAndCounts(report.actions, [])
+  const allRecipes = validateItemRecipes(report.actions)
+  check('36:05 판: 모든 조합법 문장이 데이터와 일치 (오류 0 · 전부 대조)', all.errors.length === 0 && allRecipes.checked === craftable.length, JSON.stringify({ errors: all.errors, checked: allRecipes.checked }))
+  check('일치하면 리포트는 그대로', JSON.stringify(repairEntityErrors(report, all.errors)) === JSON.stringify(report))
+  // 일부러 틀린 조합법을 하나 넣으면 그 문장만 고쳐지고 나머지는 그대로
+  const target = craftable[0]
+  const right = componentsOf(target)
+  const wrongParts = ['곡궁', '쓸데없이 큰 지팡이', 'B.F. 대검', '쇠사슬 조끼'].filter((c) => !right.includes(c)).slice(0, 2)
+  const wrongSentence = `${target}은(는) ${wrongParts.join(' + ')} 조합입니다.`
+  const tampered = { ...report, actions: [wrongSentence, ...report.actions.slice(1)] }
+  const errs = validateAdviceAndCounts(tampered.actions, []).errors
+  const repaired = repairEntityErrors(tampered, errs)
+  check('틀린 조합법 1개만 잡힘', errs.length === 1 && errs[0].type === 'item_recipe', JSON.stringify(errs))
+  check('틀린 조합법은 데이터 재료로 고쳐지고 나머지 문장은 그대로', repaired.actions[0] === report.actions[0] && JSON.stringify(repaired.actions.slice(1)) === JSON.stringify(report.actions.slice(1)), JSON.stringify(repaired.actions[0]))
+  check('고친 뒤 다시 대조하면 오류 0', validateItemRecipes(repaired.actions).errors.length === 0)
+  const llmSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'lib', 'llm.ts'), 'utf8')
+  check('AI 프롬프트에 조합법 데이터 줄 삽입 · 응답 검증 연결 (lib/llm)', /recipeFactsFor\(/.test(llmSrc) && /\$\{recipeFacts\}/.test(llmSrc) && /validateAdviceAndCounts\(rawTexts/.test(llmSrc))
 }
 
 console.log('4. 조언·수치 모순')

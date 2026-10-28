@@ -51,7 +51,8 @@ function findNames(text: string, names: string[]): Span[] {
 /** 문장 분리 (마침표·물음표·느낌표·줄바꿈). 숫자 소수점은 자르지 않는다 */
 function sentences(text: string): string[] {
   return text
-    .split(/(?<=[^\d][.!?。])\s+|\n+/)
+    // 'B.F. 대검' 의 마침표는 문장 끝이 아니다 (대문자 한 글자 + 마침표)
+    .split(/(?<=[^\dA-Z][.!?。])\s+|\n+/)
     .map((s) => s.trim())
     .filter(Boolean)
 }
@@ -271,7 +272,7 @@ const CARRY_ITEM_COUNT_RE = /캐리\s*(?:아이템|템)\s*(\d)\s*개(?!\s*(?:이
 
 /**
  * 리포트 문장을 경기 데이터와 대조한다 (근거 검증 단계).
- * - item_recipe: "아이템 + 조합 재료"가 아이템 데이터(lib/gameData)와 다름 → 문장 삭제
+ * - item_recipe: "아이템 + 조합 재료"가 아이템 데이터(lib/gameData)와 다름 → 재료를 데이터 값으로 교체 (못 바꾸면 삭제)
  * - advice_conflict: 이미 아이템 3개를 든 기물(또는 캐리)에 아이템을 더 채우라는 조언 → 문장 삭제
  * - count_mismatch: "활성 시너지 N개"·"캐리 아이템 N개"가 카드 값(lib/boardStats)과 다름 → 값 교체 (단일 경기만)
  * checkedRecipes = 대조한 조합법 주장 수 (근거 검증 분모에 더한다)
@@ -280,7 +281,8 @@ export function validateAdviceAndCounts(texts: string[], matches: SlimMatchData[
   const errors: EntityFactError[] = []
   const all = texts.flatMap(sentences)
   const recipes = validateItemRecipes(all)
-  for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.expected, actual: r.actual })
+  // 잘못된 재료 구간을 데이터의 재료로 바꾼다 (예: '곡궁+주문력' → '연습용 장갑 + 쓸데없이 큰 지팡이')
+  for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.right, actual: r.wrong })
   if (!matches.length) return { errors, checkedRecipes: recipes.checked }
 
   // 기물별 아이템 수 — 여러 판이면 모든 판에서 3개 이상일 때만 '가득 참'
@@ -354,7 +356,7 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
     const fixable =
-      !['item_owner', 'unit_absent', 'item_absent', 'item_recipe', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
+      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
 
