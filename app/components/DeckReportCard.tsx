@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, metaSnapshotLabel, type DeckReport, type DeckReportRow } from '@/lib/deckReportShared'
+import { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, metaSnapshotLabel, snapshotFailed, type DeckReport, type DeckReportRow } from '@/lib/deckReportShared'
 
 /**
  * 내 덱 성적표 (AI 미사용 — lib/deckReport 가 서버에서 메타 덱으로 묶어 계산).
@@ -53,13 +53,20 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
         판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱에서 차이가 판수 오차보다 클 때만 — 판수가 적으면 운의 영향이 큽니다.
       </p>
       {report.meta ? (
-        <p className="mt-1 text-[11px] text-subtle">
-          메타 평균: {metaSnapshotLabel(report.meta)} —{' '}
-          <Link href="/meta" className="underline hover:text-ink">
-            메타 랭킹
-          </Link>
-          과 같은 데이터
-        </p>
+        snapshotFailed(report.meta) ? (
+          // 스냅샷 생성 실패(DB 집계 오류) — 같은 데이터라고 말하지 않고 이 카드의 갱신 시각만 보인다
+          <p className="mt-1 text-[11px] text-subtle">
+            메타 평균: {metaSnapshotLabel(report.meta)} · DB 집계를 불러오지 못해 래더 표본으로 비교했습니다
+          </p>
+        ) : (
+          <p className="mt-1 text-[11px] text-subtle">
+            메타 평균: {metaSnapshotLabel(report.meta)} —{' '}
+            <Link href="/meta" className="underline hover:text-ink">
+              메타 랭킹
+            </Link>
+            과 같은 데이터
+          </p>
+        )
       ) : null}
     </div>
   )

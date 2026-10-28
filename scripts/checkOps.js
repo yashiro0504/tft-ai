@@ -18,13 +18,22 @@
  *  - DeepSeek 잔액: 마지막 LLM 오류가 402(잔액 부족)면 미충족.
  *    DEEPSEEK_API_KEY 가 있으면 /user/balance 로 잔액을 직접 보고 DEEPSEEK_MIN_BALANCE(USD 기준, 기본 3) 미만이면 미충족.
  *
+ *  - 메타 덱 스냅샷(/api/tft/meta decksMeta — 메타 화면·덱 성적표 공용): DB 집계가 아니거나(스냅샷 생성 실패)
+ *    마지막 갱신이 SNAPSHOT_MAX_AGE_H(덱 클러스터 주기 8시간 + 실패 허용 6시간 = 14시간)를 넘으면 미충족
+ *
  * --strict: 하나라도 미충족이면 exit 1 (배포 전 게이트로 사용)
+ * --snapshot-only: 메타 덱 스냅샷만 본다 (.github/workflows/meta-snapshot-check.yml 이 2시간마다 — 실패하면 GitHub 가 알림 메일)
  */
 const rawUrl =
   process.argv.find((arg) => arg.startsWith('http')) || process.env.OPS_URL || 'https://www.tftlab.kr'
 const BASE = rawUrl.replace(/\/+$/, '')
 const STRICT = process.argv.includes('--strict')
 const DB = process.argv.includes('--db')
+const SNAPSHOT_ONLY = process.argv.includes('--snapshot-only')
+/** 덱 클러스터(stat_comp)는 DECK_REFRESH_HOURS(8)마다 다시 만든다 — 그 주기 + 6시간 넘게 그대로면 생성이 실패하고 있는 것 */
+const DECK_REFRESH_HOURS = 8
+const SNAPSHOT_FAIL_GRACE_H = 6
+const SNAPSHOT_MAX_AGE_H = DECK_REFRESH_HOURS + SNAPSHOT_FAIL_GRACE_H
 const HOUR = 60 * 60 * 1000
 
 const failures = []
@@ -43,8 +52,60 @@ async function fetchText(path, init) {
   return { status: res.status, text: await res.text() }
 }
 
+/**
+ * 메타 덱 스냅샷 상태 (순수 함수 — testOps). decksMeta = /api/tft/meta 응답의 decksMeta.
+ * ok: DB 집계이고 SNAPSHOT_MAX_AGE_H 안에 갱신됨. 아니면 reason 에 사유.
+ */
+function snapshotHealth(decksMeta, now = Date.now(), maxAgeH = SNAPSHOT_MAX_AGE_H) {
+  if (!decksMeta) return { ok: false, ageH: Infinity, reason: '응답에 decksMeta 없음 (메타 화면이 스냅샷을 읽지 않음)' }
+  const t = Date.parse(decksMeta.updatedAt || '')
+  const ageH = Number.isFinite(t) ? (now - t) / HOUR : Infinity
+  // 새 패치 직후 판 수가 적어 일부러 래더 표본을 쓰는 경우(small_sample)는 실패가 아니다 — 매시간 수집으로 곧 넘어간다
+  if (decksMeta.source !== 'db' && decksMeta.fallbackReason === 'small_sample') return { ok: true, ageH, reason: '새 패치 표본 부족 — 래더 표본 사용 중' }
+  if (decksMeta.source !== 'db') {
+    return { ok: false, ageH, reason: `DB 집계가 아닌 래더 표본 (${decksMeta.fallbackReason || 'json'}) — 스냅샷 생성 실패` }
+  }
+  if (!(ageH <= maxAgeH)) return { ok: false, ageH, reason: `마지막 갱신 ${Number.isFinite(ageH) ? Math.floor(ageH) : '?'}시간 전 (${maxAgeH}시간 초과)` }
+  return { ok: true, ageH, reason: '' }
+}
+
+async function checkMetaSnapshot() {
+  try {
+    const res = await fetchText('/api/tft/meta')
+    if (res.status !== 200) throw new Error(`status ${res.status}`)
+    const meta = JSON.parse(res.text).decksMeta
+    const h = snapshotHealth(meta)
+    console.log(`meta snapshot: source=${meta?.source} · updatedAt=${meta?.updatedAt} · matches=${meta?.matches} · ${Number.isFinite(h.ageH) ? h.ageH.toFixed(1) : '?'}시간 전`)
+    if (h.ok) pass(`메타 덱 스냅샷 DB 집계 · ${SNAPSHOT_MAX_AGE_H}시간 이내 갱신`)
+    else {
+      fail(`메타 덱 스냅샷: ${h.reason}`)
+      notes.push('collect-db 워크플로(덱 클러스터 · DECK_REFRESH_HOURS) 실행 로그와 RIOT_API_KEY 만료 여부 확인 → npm run collect:db:rollup 으로 수동 갱신')
+    }
+  } catch (err) {
+    fail(`메타 덱 스냅샷 확인 실패: ${err.message}`)
+  }
+}
+
+function finish() {
+  if (notes.length > 0) {
+    console.log('\n다음 조치:')
+    notes.forEach((note) => console.log(`  - ${note}`))
+  }
+  if (failures.length > 0) {
+    console.error(`\n${STRICT ? '❌' : '⚠️'} 미충족 ${failures.length}건${STRICT ? ' (strict 실패)' : ''}`)
+    if (STRICT) process.exit(1)
+  } else {
+    console.log('\n✅ 운영 점검 통과')
+  }
+}
+
 async function main() {
-  console.log(`\nTFT LAB 운영 점검 — ${BASE}${STRICT ? ' (strict)' : ''}\n`)
+  console.log(`\nTFT LAB 운영 점검 — ${BASE}${STRICT ? ' (strict)' : ''}${SNAPSHOT_ONLY ? ' · 메타 스냅샷만' : ''}\n`)
+  if (SNAPSHOT_ONLY) {
+    await checkMetaSnapshot()
+    finish()
+    return
+  }
 
   let health
   try {
@@ -125,6 +186,7 @@ async function main() {
     notes.push('DeepSeek 콘솔(platform.deepseek.com)에서 충전 → 5분 안에 자동으로 AI 코칭 재개')
   }
   await checkDeepSeekBalance()
+  await checkMetaSnapshot()
 
   if (DB) {
     // 테이블마다 따로 — 한쪽 확인이 throw 해도 다른 쪽은 본다
@@ -145,17 +207,7 @@ async function main() {
     health.warnings.forEach((warning) => console.log(`  - ${warning}`))
   }
 
-  if (notes.length > 0) {
-    console.log('\n다음 조치:')
-    notes.forEach((note) => console.log(`  - ${note}`))
-  }
-
-  if (failures.length > 0) {
-    console.error(`\n${STRICT ? '❌' : '⚠️'} 미충족 ${failures.length}건${STRICT ? ' (strict 실패)' : ''}`)
-    if (STRICT) process.exit(1)
-  } else {
-    console.log('\n✅ 운영 점검 통과')
-  }
+  finish()
 }
 
 /** CNY 잔액을 USD 기준 한도와 비교할 때 쓰는 대략적인 환율 */
@@ -297,4 +349,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { comparePatchDesc, latestPatchFreshness, freshnessLevel }
+module.exports = { comparePatchDesc, latestPatchFreshness, freshnessLevel, snapshotHealth, SNAPSHOT_MAX_AGE_H }

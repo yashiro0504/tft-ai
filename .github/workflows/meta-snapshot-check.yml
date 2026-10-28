@@ -1,0 +1,55 @@
+name: Meta Snapshot Check
+
+# 메타 화면(/meta · 홈 메타 탭)과 덱 성적표가 같이 읽는 덱 스냅샷이 DB 집계이고 14시간(덱 클러스터 주기 8시간 + 6시간) 안에
+# 갱신됐는지 2시간마다 본다. 실패하면 이 워크플로가 빨간색이 되고 GitHub 가 알림 메일을 보낸다 (scripts/checkOps.js --snapshot-only).
+# 2026-10-28: 홈 메타 탭이 09:29 래더 JSON 에 멈춰 있는 걸 사용자가 먼저 발견했다.
+
+on:
+  schedule:
+    - cron: '40 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: '점검 대상 URL'
+        default: 'https://www.tftlab.kr'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meta-snapshot-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Meta deck snapshot freshness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Snapshot check (strict)
+        env:
+          OPS_URL: ${{ github.event.inputs.url || 'https://www.tftlab.kr' }}
+        run: |
+          set -o pipefail
+          node scripts/checkOps.js "$OPS_URL" --snapshot-only --strict 2>&1 | tee snapshot.log
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Meta snapshot check"
+            echo
+            echo '```'
+            cat snapshot.log 2>/dev/null || echo "no output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

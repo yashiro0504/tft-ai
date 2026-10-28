@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buildMetaPayload } from '@/lib/metaPayload'
 import { toDecksOnly } from '@/lib/metaSlim'
-import { getMetaDeckSnapshot, getMetaFilters } from '@/lib/tftStats'
-import { deckReportMeta } from '@/lib/deckReport'
-import { metaMatchesLabel, metaScopeLabel, metaSnapshotLabel } from '@/lib/deckReportShared'
+import { getMetaFilters } from '@/lib/tftStats'
+import { withDeckSnapshot } from '@/lib/metaSnapshot'
+import { metaMatchesLabel, metaScopeLabel, metaSnapshotLabel, snapshotFailed } from '@/lib/deckReportShared'
 import { MetaRanking } from '@/app/components/MetaRanking'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
@@ -34,14 +34,12 @@ export const metadata: Metadata = {
 }
 
 export default async function MetaPage() {
-  const data = buildMetaPayload()
   const filters = await getMetaFilters()
-  // 덱 탭 = 내 덱 성적표와 같은 스냅샷 (DB 집계 또는 폴백 JSON 어느 쪽이든 두 화면이 같은 값)
-  const snapshot = await getMetaDeckSnapshot()
-  const fromDb = snapshot.source === 'db' && filters.source === 'db'
-  data.decks = snapshot.decks
-  if (fromDb) data.patch = snapshot.filter?.patch ?? data.patch
-  const snapshotMeta = deckReportMeta(snapshot)
+  // 덱 탭 = 내 덱 성적표와 같은 스냅샷 — 홈 메타 탭(/api/tft/meta)과 같은 함수(lib/metaSnapshot)로 채운다
+  const data = await withDeckSnapshot(buildMetaPayload())
+  const snapshotMeta = data.decksMeta ?? { source: 'json' as const }
+  const fromDb = snapshotMeta.source === 'db' && filters.source === 'db'
+  if (fromDb && snapshotMeta.patch) data.patch = snapshotMeta.patch
   const snapshotLabel = metaSnapshotLabel(snapshotMeta)
   // 상단 배지: 수집 랭크 구간 + 전체 경기 수 (메타 페이지만 보고도 데이터 범위·규모를 알 수 있게)
   const scopeBadge = metaScopeLabel(snapshotMeta)
@@ -66,6 +64,7 @@ export default async function MetaPage() {
           </div>
           <p className="mt-1 text-xs text-muted">
             {snapshotLabel}
+            {snapshotFailed(snapshotMeta) ? ' · DB 집계를 불러오지 못해 래더 표본을 보여 줍니다' : ''}
             {!data.hasMeta && !fromDb ? ' · 표본 수집 전(샘플)' : ''}
           </p>
         </div>
@@ -75,8 +74,6 @@ export default async function MetaPage() {
           deferSections
           filters={filters}
           initialDecksSource={fromDb ? 'db' : 'json'}
-          decksUpdatedAt={snapshot.updatedAt}
-          decksScope={{ scope: scopeBadge, matches: matchesBadge }}
           syncUrl
         />
 

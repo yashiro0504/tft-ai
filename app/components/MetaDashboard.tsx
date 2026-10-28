@@ -37,7 +37,7 @@ import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount 
 import { ShareButton } from './ShareButton'
 import { MetaUrlSync } from './MetaUrlSync'
 import { track } from '@/lib/analytics'
-import { JSON_LADDER_SCOPE_DETAIL, metaMatchesLabel, metaScopeLabel, snapshotTime } from '@/lib/deckReportShared'
+import { JSON_LADDER_SCOPE_DETAIL, metaMatchesLabel, metaScopeLabel, snapshotFailed, snapshotTime } from '@/lib/deckReportShared'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -170,8 +170,6 @@ export function MetaDashboard({
   deferSections = false,
   filters,
   initialDecksSource,
-  decksUpdatedAt,
-  decksScope,
   syncUrl = false,
 }: {
   onOpenCoach?: () => void
@@ -182,10 +180,6 @@ export function MetaDashboard({
   filters?: MetaFiltersResponse
   /** initialData.decks 가 DB 덱(기본 필터)인가 */
   initialDecksSource?: 'db' | 'json'
-  /** 덱 스냅샷 갱신 시각 — 덱 탭의 '수집' 칩은 덱 성적표와 같은 시각을 보인다 */
-  decksUpdatedAt?: string
-  /** 덱 스냅샷 수집 범위·표본 수 (lib/deckReportShared metaScopeLabel — 메타 페이지 배지·덱 성적표와 같은 문구) */
-  decksScope?: { scope: string; matches: string | null }
   /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
   syncUrl?: boolean
 }) {
@@ -454,11 +448,13 @@ export function MetaDashboard({
   const appliedPatch = filter.patch ?? filters?.defaults.patch ?? null
   const fellBack = dbMode && (tab === 'decks' ? served.decks === 'json' : served.stats === 'json')
   const tierMatches = dbMode ? filters?.patches.find((p) => p.patch === appliedPatch)?.matches[filter.tier] : undefined
+  /** 덱 스냅샷 출처 (/meta SSR · /api/tft/meta 모두 lib/metaSnapshot — 덱 성적표 출처 줄과 같은 값) */
+  const snapMeta = data?.decksMeta
   /** 덱 탭이 아직 서버 스냅샷(기본 필터)을 보여 주는 중 — 수집 범위 칩을 배지·덱 성적표와 같은 문구로 */
   const showingSnapshot =
     tab === 'decks' &&
-    !!decksScope &&
-    served.decks === initialDecksSource &&
+    !!snapMeta &&
+    (served.decks === undefined || served.decks === snapMeta.source) &&
     (!dbMode || (filter.patch ?? filters?.defaults.patch ?? null) === (filters?.defaults.patch ?? null) && filter.tier === (filters?.defaults.tier ?? 'master'))
 
   const colClass = tab === 'comps' ? 'cols-bis' : tab === 'champions' ? 'cols-champ' : 'cols-stat'
@@ -485,17 +481,16 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              {showingSnapshot && decksScope ? (
+              {showingSnapshot && snapMeta ? (
                 <>
-                  <EvidenceChip title={`${initialDecksSource === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수 (덱 성적표의 메타 평균과 같은 스냅샷)`}>
-                    {[decksScope.scope, decksScope.matches].filter(Boolean).join(' · ')}
+                  <EvidenceChip
+                    title={`${snapMeta.source === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수${snapshotFailed(snapMeta) ? ' — DB 집계를 불러오지 못해 래더 표본을 보여 줍니다' : ' (덱 성적표의 메타 평균과 같은 스냅샷)'}`}
+                  >
+                    {[metaScopeLabel(snapMeta), metaMatchesLabel(snapMeta)].filter(Boolean).join(' · ')}
                   </EvidenceChip>
-                  {dbMode ? (
-                    <EvidenceChip>{appliedPatch ? `패치 ${appliedPatch}` : '패치 정보 없음'}</EvidenceChip>
-                  ) : (
-                    <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
-                  )}
-                  {snapshotTime(decksUpdatedAt) ? <EvidenceChip>{snapshotTime(decksUpdatedAt)} 갱신</EvidenceChip> : null}
+                  {snapMeta.patch && /^\d/.test(snapMeta.patch) ? <EvidenceChip>패치 {snapMeta.patch}</EvidenceChip> : null}
+                  {snapshotTime(snapMeta.updatedAt) ? <EvidenceChip>{snapshotTime(snapMeta.updatedAt)} 갱신</EvidenceChip> : null}
+                  {snapshotFailed(snapMeta) ? <EvidenceChip title="덱 성적표도 이 상태에서는 각자 갱신 시각만 보여 줍니다">DB 집계 실패 · 래더 표본</EvidenceChip> : null}
                 </>
               ) : dbMode && !fellBack ? (
                 <>
@@ -514,9 +509,7 @@ export function MetaDashboard({
                     {[metaScopeLabel({ source: 'json' }), metaMatchesLabel({ matches: data?.deckMeta?.matchCount })].filter(Boolean).join(' · ')}
                   </EvidenceChip>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
-                  {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (
-                    <EvidenceChip>수집 {fmtDate(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt)}</EvidenceChip>
-                  ) : null}
+                  {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
                   {fellBack ? (
                     <EvidenceChip title="DB 집계를 불러오지 못해 빌드 시점 스냅샷을 보여 줍니다">필터 미적용 스냅샷</EvidenceChip>
                   ) : null}
