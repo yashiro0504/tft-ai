@@ -15,6 +15,7 @@
  *  - PLAYERS(기본 160)               : 표본 선수 수 (상위 LP 순, 챌린저 → 그마 → 마스터)
  *  - MATCHES_PER_PLAYER(기본 15)     : 선수당 최근 판 수
  *  - RIOT_MIN_INTERVAL_MS(기본 1250) : 요청 간격 (개발 키 2분 100회 한도 대응)
+ *  - MAX_MINUTES(기본 0 = 제한 없음)  : 판 수집 시간 상한 — 다음 DB 수집(매시 17분, 같은 Riot 키) 전에 끝내려고 워크플로가 정한다
  */
 const fs = require('fs')
 const path = require('path')
@@ -30,6 +31,7 @@ const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
 const MAX_MATCHES = Number(process.env.MAX_MATCHES || 1500)
 const PLAYERS = Number(process.env.PLAYERS || 160)
 const PER_PLAYER = Number(process.env.MATCHES_PER_PLAYER || 15)
+const MAX_MINUTES = Number(process.env.MAX_MINUTES || 0)
 const SET_NUMBER = 18
 const RANKED_QUEUE = 1100
 
@@ -100,11 +102,13 @@ async function main() {
     return
   }
 
-  // 2) 판 수집
+  // 2) 판 수집 (MAX_MINUTES 가 지나면 모은 데까지 저장하고 멈춘다)
+  const deadline = MAX_MINUTES > 0 ? Date.now() + MAX_MINUTES * 60_000 : Infinity
+  const timeUp = () => Date.now() >= deadline
   let added = 0
   let skipped = 0
   let failed = 0
-  for (let i = 0; i < puuids.length && added < MAX_MATCHES; i++) {
+  for (let i = 0; i < puuids.length && added < MAX_MATCHES && !timeUp(); i++) {
     let ids = []
     try {
       ids = await riotGet(
@@ -119,7 +123,7 @@ async function main() {
       continue
     }
     for (const id of ids) {
-      if (added >= MAX_MATCHES) break
+      if (added >= MAX_MATCHES || timeUp()) break
       if (have.has(id)) continue
       have.add(id)
       try {
@@ -152,6 +156,7 @@ async function main() {
   }
 
   save(data)
+  if (timeUp()) console.log(`  시간 상한 ${MAX_MINUTES}분에 도달해 멈춤`)
   console.log(`\n✅ 저장 → ${OUT}`)
   console.log(`   새로 ${added}판 · 제외(다른 세트/큐) ${skipped} · 실패 ${failed} · 누적 ${data.matches.length}판 (보드 ${data.matches.length * 8}개)`)
 }
