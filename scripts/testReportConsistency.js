@@ -67,6 +67,36 @@ console.log('3. 아이템 조합법')
   check('AI 프롬프트에 조합법 데이터 줄 삽입 · 응답 검증 연결 (lib/llm)', /recipeFactsFor\(/.test(llmSrc) && /\$\{recipeFacts\}/.test(llmSrc) && /validateAdviceAndCounts\(rawTexts/.test(llmSrc))
 }
 
+console.log('P2-7 로비 비교 수치 (등수 · 시너지 인원/단계 · 단계 합 · 레벨)')
+{
+  const { validateLobbyClaims } = require('../lib/semanticGrounding')
+  const T = (name, count, tier) => ({ name, count, tier })
+  const P = (placement, level, traits, isUser = false) => ({ placement, gameName: `p${placement}`, level, lastRound: '6-1', damageToPlayers: 0, traits, units: [], isUser })
+  // 1등 단계 합 = 4+2+3+1+2 = 12 · 3등 협곡야수 7명 3단계
+  const lobby = [
+    P(1, 9, [T('나무정령', 9, 4), T('적응가', 3, 2), T('악의 여단', 5, 3), T('화신', 1, 1), T('사냥꾼', 3, 2), T('약탈자', 1, 0)]),
+    P(2, 9, [T('협곡야수', 5, 2)]),
+    P(3, 8, [T('협곡야수', 7, 3), T('사냥꾼', 2, 1)]),
+    P(5, 8, [T('적응가', 2, 1)], true),
+  ]
+  const m = { matchId: 'L', placement: 5, level: 8, units: [], traits: [T('적응가', 2, 1)], lobbyParticipants: lobby }
+  const ok = validateLobbyClaims(['같은 로비 1등은 시너지 단계 합 12였습니다.', '3등 협곡야수는 7명으로 3단계를 켰습니다.', '2등은 Lv.9까지 올렸습니다.'], m)
+  check('맞는 로비 비교는 통과 (단계 합 12 · 협곡야수 7명 3단계 · Lv.9)', ok.errors.length === 0 && ok.checked === 3, JSON.stringify(ok))
+  const bad = ['같은 로비 1등은 시너지 단계 합 10이었습니다.', '3등 협곡야수는 6명으로 2단계를 켰습니다.', '2등은 8레벨에 멈췄습니다.']
+  const wrong = validateLobbyClaims(bad, m)
+  check('틀린 로비 수치 3개 모두 잡힘', wrong.errors.length === 3 && wrong.errors.every((e) => e.type === 'lobby_mismatch'), JSON.stringify(wrong.errors))
+  const fixed = repairEntityErrors({ actions: bad }, wrong.errors)
+  check(
+    '로비 수치는 데이터 값으로 고침',
+    fixed.actions[0] === '같은 로비 1등은 시너지 단계 합 12이었습니다.' && fixed.actions[1] === '3등 협곡야수는 7명으로 3단계를 켰습니다.' && fixed.actions[2] === '2등은 9레벨에 멈췄습니다.',
+    JSON.stringify(fixed.actions)
+  )
+  const mine = validateLobbyClaims(['1등보다 내 시너지 단계 합 7이 낮았습니다.', '나는 Lv.8, 1등은 Lv.9였습니다.'], m)
+  check('내 보드 수치는 로비 등수 수치로 보지 않음', mine.errors.length === 0, JSON.stringify(mine.errors))
+  const viaAdvice = validateAdviceAndCounts(['같은 로비 1등은 시너지 단계 합 10이었습니다.'], [m])
+  check('리포트 검증(validateAdviceAndCounts)에 로비 대조 연결', viaAdvice.errors.some((e) => e.type === 'lobby_mismatch') && viaAdvice.checkedLobby === 1, JSON.stringify(viaAdvice))
+}
+
 console.log('4. 조언·수치 모순')
 const U = (id, name, tier, items, rarity = 3) => ({ id, name, tier, rarity, items })
 // 102#2600 26분 29초 7등: 코그모 3템, 시너지 적응가·개화·싸움꾼·부식
