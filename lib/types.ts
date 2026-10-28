@@ -164,7 +164,9 @@ export interface AugmentAnalysis {
 export interface SlimMatchData {
   matchId: string
   setNumber?: number
+  /** 경기 시각 (Riot game_datetime, ms). 경과 시간은 화면에서 이 값으로 계산한다 (lib/timeAgo) */
   gameDatetime: number
+  /** @deprecated 예전 캐시에 남은 문자열 — 읽을 때 지운다 (lib/boardUnits normalizeSlimMatch) */
   timeAgo?: string
   gameLengthStr?: string
   /** 게임 길이(초) — 초반 종료 표본 판정용 */

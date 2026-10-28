@@ -44,7 +44,7 @@
     "test:rollup": "node scripts/testRollup.js",
     "test:ops": "node scripts/testOps.js",
     "test:gate": "node scripts/testBotGate.js",
-    "test:ai": "node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js",
+    "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js",
     "test:gamedata": "node scripts/testGameData.js",
     "test:tiers": "node scripts/testMetaTiers.js && node scripts/testBisSets.js",
     "inspect:match": "node scripts/inspectMatch.js",

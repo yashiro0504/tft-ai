@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { SlimMatchData, SlimMatchUnit, LobbyParticipant, MetaCoachFeedback, TftMatchAnalysisResponse } from '@/lib/types'
 import { FeedbackReport } from './FeedbackReport'
+import { TimeAgo } from './TimeAgo'
 import { track } from '@/lib/analytics'
 import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 import { TurnstileWidget } from './TurnstileWidget'
@@ -414,7 +415,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               <span className="text-xl font-bold text-ink">#{match.placement}</span>
               <span className={`text-sm font-semibold ${placementLabelColor}`}>{placementLabel}</span>
               <span className="text-sm text-subtle">
-                {match.queueType || '랭크 게임'} · {match.timeAgo || '최근'}
+                {match.queueType || '랭크 게임'} · <TimeAgo timestamp={match.gameDatetime} />
               </span>
               {previousSeason ? (
                 <span

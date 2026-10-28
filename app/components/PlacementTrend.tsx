@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { SlimMatchData } from '@/lib/types'
+import { formatTimeAgo } from '@/lib/timeAgo'
 
 /**
  * 최근 경기 등수 흐름 (단일 시리즈 꺾은선).
@@ -128,7 +129,7 @@ export function PlacementTrend({ matches }: { matches: SlimMatchData[] }) {
         >
           <p className="font-bold text-ink">{h.placement}등</p>
           <p className="text-muted">
-            {h.timeAgo || '최근'} · Lv.{h.level}
+            {formatTimeAgo(h.gameDatetime)} · Lv.{h.level}
           </p>
           <p className="text-subtle">{h.lastRound} 라운드</p>
         </div>

@@ -1,5 +1,5 @@
 import { metaExecution, mostSimilarDeck, META_EXECUTION_MARGIN, type DeckFact } from './comparisonFacts'
-import { isEarlyGame } from './quality'
+import { isEarlyGame, sampleIssue } from './quality'
 import { getDecks } from './tftStats'
 import { DEFAULT_FILTER, PLACEMENT_SD, TIER_FILTER_OPTIONS, type DecksResponse } from './statsShared'
 import { logEvent, errorFields } from './observability'
@@ -15,7 +15,8 @@ export { DECK_REPORT_MIN_GAMES, DECK_REPORT_MIN_SAMPLE, type DeckReport, type De
  * "이 덱은 나한테 맞는다/안 맞는다"는 판수가 적으면 운이 크니, DECK_REPORT_MIN_GAMES 판 이상이고
  * 차이가 판수 오차(deckVerdictMargin)보다 클 때만 판정한다.
  * 덱 데이터(약 660KB)는 서버에서만 읽는다 — 결과만 화면에 내려 보낸다. 화면은 lib/deckReportShared 의 타입만 쓴다.
- * 판수 합계: 덱별 판수 + 다른 조합 + 초반 종료 = 분석 경기 수 (초반 종료 판을 조용히 빼면 10판 중 9판만 보였다).
+ * 판수 합계: 덱별 판수 + 다른 조합 + 초반 종료 + 보드 데이터 불완전 = 분석 경기 수 (제외 판을 조용히 빼면 10판 중 9판만 보였다).
+ * 초반 종료는 탈락 라운드로만 판정한다 — 6-2 2등 판이 기물 3개로 잡혀 '초반 종료'로 빠지던 문제 (lib/quality).
  */
 
 /** 판정 기준 차이: 1등 이상이면서 내 평균의 오차(2.29/√판수)보다 커야 한다 (4판이면 1.15등) */
@@ -62,7 +63,8 @@ export function buildDeckReport(matches: SlimMatchData[], decks: DeckFact[], met
   return {
     rows,
     unmatched: { games: unmatched.length, avgPlacement: unmatched.length ? round2(avg(unmatched)) : null },
-    early: all.length - sample.length,
+    early: all.filter((m) => !sample.includes(m) && sampleIssue(m) !== 'incomplete').length,
+    incomplete: all.filter((m) => !sample.includes(m) && sampleIssue(m) === 'incomplete').length,
     total: all.length,
     meta,
   }

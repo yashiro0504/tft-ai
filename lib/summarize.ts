@@ -4,6 +4,7 @@ import { analyzeContest } from './contest'
 import { analyzeAugments } from './meta'
 import { isEarlyGame, lowSampleReason } from './quality'
 import { queueLabel } from './queue'
+import { cleanBoardUnits } from './boardUnits'
 
 export function formatTftRound(lastRoundInt: number): string {
   if (!lastRoundInt || lastRoundInt <= 0) return '1-1'
@@ -26,15 +27,7 @@ export function cleanName(id: string): string {
     .trim()
 }
 
-export function formatTimeAgo(timestamp: number): string {
-  const diffMs = Date.now() - timestamp
-  const diffMins = Math.floor(diffMs / (1000 * 60))
-  if (diffMins < 60) return `${Math.max(diffMins, 1)}분 전`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}시간 전`
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}일 전`
-}
+export { formatTimeAgo } from './timeAgo'
 
 export function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return '31분 20초'
@@ -43,8 +36,8 @@ export function formatDuration(seconds: number): string {
   return `${mins}분 ${String(secs).padStart(2, '0')}초`
 }
 
-function processParticipantUnits(units: any[]): SlimMatchUnit[] {
-  return (units || [])
+function processParticipantUnits(units: any[], board: { setNumber?: number; level?: number } = {}): SlimMatchUnit[] {
+  const slim: SlimMatchUnit[] = (units || [])
     .sort((a, b) => b.tier - a.tier || (b.itemNames?.length || 0) - (a.itemNames?.length || 0))
     .map((u) => {
       const champ = translateChampion(u.character_id)
@@ -59,6 +52,8 @@ function processParticipantUnits(units: any[]): SlimMatchUnit[] {
         itemIcons: translatedItems.map((i) => i.iconUrl),
       }
     })
+  // 소환·복제 기물은 보드 집계(유닛 수·2성+·덱 판정)에서 뺀다 — lib/boardUnits
+  return cleanBoardUnits(slim, board).units
 }
 
 function processParticipantTraits(traits: any[]): SlimMatchTrait[] {
@@ -86,7 +81,8 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
   }
 
   const activeTraits = processParticipantTraits(participant.traits)
-  const units = processParticipantUnits(participant.units)
+  const setNumber = rawMatch.info?.tft_set_number
+  const units = processParticipantUnits(participant.units, { setNumber, level: participant.level })
   const augments = (participant.augments || []).map(cleanName)
   const augmentAnalysis = analyzeAugments(augments)
 
@@ -102,7 +98,7 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
       lastRound: formatTftRound(p.last_round),
       damageToPlayers: p.total_damage_to_players || 0,
       traits: processParticipantTraits(p.traits),
-      units: processParticipantUnits(p.units),
+      units: processParticipantUnits(p.units, { setNumber, level: p.level }),
       isUser: p.puuid === userPuuid,
     }))
 
@@ -120,7 +116,6 @@ export function extractSlimMatchData(rawMatch: RawTFTMatch, userPuuid: string): 
     matchId: rawMatch.metadata.match_id,
     setNumber: rawMatch.info.tft_set_number,
     gameDatetime: rawMatch.info.game_datetime,
-    timeAgo: formatTimeAgo(rawMatch.info.game_datetime),
     gameLengthStr: formatDuration(participant.time_eliminated || rawMatch.info.game_length),
     gameLengthSec: participant.time_eliminated || rawMatch.info.game_length || 0,
     queueId,
@@ -215,7 +210,7 @@ export function serializeMatchesForLLM(
               .join(' | ')}\n- 로비 평균 레벨: Lv.${Math.round(avgLevel * 10) / 10} (내 Lv.${m.level})`
           : ''
       const sampleLine = isEarlyGame(m)
-        ? `\n- ⚠️ 표본 품질: 초반 종료 (${lowSampleReason(m)} · ${m.gameLengthStr ?? '?'}) — 이 판은 등급/강의 근거로 쓰지 말고 "표본 부족"을 명시하라`
+        ? `\n- ⚠️ 표본 품질: ${lowSampleReason(m)} · ${m.gameLengthStr ?? '?'} — 이 판은 등급/강의 근거로 쓰지 말고 "표본 부족"을 명시하라`
         : ''
 
       return `[매치 ${idx + 1} - ${setStr}]

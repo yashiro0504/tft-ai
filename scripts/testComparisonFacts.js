@@ -392,7 +392,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     check('덱 성적표: 메타 덱과 다른 조합은 따로', r.unmatched.games === 1 && r.unmatched.avgPlacement === 5, JSON.stringify(r.unmatched))
     check(
       '덱 성적표: 덱별 판수 + 다른 조합 + 초반 종료 = 분석 경기 수 (8 = 4 + 2 + 1 + 1)',
-      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early === r.total,
+      r.early === 1 && r.total === 8 && r.rows.reduce((s, x) => s + x.games, 0) + r.unmatched.games + r.early + r.incomplete === r.total,
       JSON.stringify({ early: r.early, total: r.total })
     )
     check('덱 성적표: 메타 표본을 행에 남김 (참고용 표시)', A.metaSample === 200 && B.metaSample === 10, JSON.stringify([A.metaSample, B.metaSample]))

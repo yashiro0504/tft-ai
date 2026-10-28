@@ -8,7 +8,7 @@ import type {
   DeckTypeInfo,
   SlimMatchData,
 } from './types'
-import { expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
+import { excludedSummary, expectedLevel, isEarlyGame, lowSampleReason, scoringSample, stageOfRound } from './quality'
 import { AXIS_CONFIG, SCORING_VERSION } from './axisConfig'
 import { DECK_TYPE_LABEL, boardCarry, boardCarryKey, detectDeckType, summarizeDeckInfos } from './deckType'
 import { boardValue } from './boardValue'
@@ -519,9 +519,9 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
   }
 
   const sampleWarning = lowSample
-    ? `표본 부족: 초반 종료 경기만 있어 강의·점수 해석에 주의가 필요합니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+    ? `표본 부족: 초반 종료·보드 불완전 경기만 있어 강의·점수 해석에 주의가 필요합니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
     : excludedMatches
-      ? `초반 종료 ${excludedMatches}경기는 강의·점수에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+      ? `${excludedSummary(valid.filter(isEarlyGame))}는 강의·점수에서 제외했습니다${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
       : undefined
 
   // 덱 유형을 주제 선택에 반영한다: 리롤형에서 템포가 초점이면 '레벨업'이 아니라 '리롤 성과' 강의.

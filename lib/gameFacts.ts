@@ -40,6 +40,11 @@ const TRAIT_LOOSE = buildIndex(TRAITS, looseKeys)
 /** 현재 세트 기물 상세 페이지 슬러그 */
 export const CURRENT_CHAMPION_SLUGS = new Set(CHAMPIONS.map((c) => c.slug))
 
+/** 현재 세트 상점 기물인가 (소환수·복제체처럼 기물 목록에 없는 id 는 false) */
+export function isKnownChampion(id: string | null | undefined): boolean {
+  return Boolean(lookup(CHAMP_INDEX, CHAMP_LOOSE, id, normChamp))
+}
+
 /** 기물이 차지하는 보드 칸 (장로 드래곤 2, 모르면 1) */
 export function championSlots(id: string | null | undefined): number {
   return lookup(CHAMP_INDEX, CHAMP_LOOSE, id, normChamp)?.slots ?? 1

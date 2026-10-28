@@ -51,7 +51,8 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
       </ul>
       <p className="mt-1.5 text-[11px] leading-relaxed text-subtle">
         {report.unmatched.games ? `메타 덱과 다른 조합 ${report.unmatched.games}판 (평균 ${report.unmatched.avgPlacement}등) · ` : ''}
-        {report.early ? `초반 종료 ${report.early}판 (기물이 적어 덱 판정 제외) · ` : ''}
+        {report.early ? `초반 종료 ${report.early}판 (3스테이지 전 탈락 · 덱 판정 제외) · ` : ''}
+        {report.incomplete ? `보드 데이터 불완전 ${report.incomplete}판 (기물이 일부만 잡혀 덱 판정 제외) · ` : ''}
         판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱에서 차이가 판수 오차보다 클 때만 — 판수가 적으면 운의 영향이 큽니다.
       </p>
       {report.meta ? (

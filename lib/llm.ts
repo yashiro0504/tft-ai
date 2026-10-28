@@ -12,7 +12,7 @@ import { validateFeedbackGrounding } from './grounding'
 import { feedbackTexts, repairEntityErrors, validateBoardNames, validateEntityFacts } from './semanticGrounding'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
-import { isEarlyGame, lowSampleReason } from './quality'
+import { excludedSummary, isEarlyGame, lowSampleReason } from './quality'
 import { errorFields, incrMetric, logEvent } from './observability'
 import { addLlmSpendUsd, getLlmBudgetStatus } from './llmBudget'
 import {
@@ -891,10 +891,10 @@ export async function generateMetaCoachFeedback(
     ...(plan.lowSample
       ? [
           `- ${plan.sampleWarning ?? '표본 부족'}`,
-          '※ 초반 종료 표본뿐이다. 점수/등급을 단정하지 말고 리포트 첫 문장에 "표본 부족"을 명시하라.',
+          '※ 초반 종료·보드 데이터 불완전 표본뿐이다. 점수/등급을 단정하지 말고 리포트 첫 문장에 "표본 부족"을 명시하라.',
         ]
       : [
-          `- 집계 경기 ${plan.matchCount}건${plan.excludedMatches ? ` (초반 종료 ${plan.excludedMatches}건 제외)` : ''}`,
+          `- 집계 경기 ${plan.matchCount}건${plan.excludedMatches ? ` (${excludedSummary(matches.filter(isEarlyGame), '건')} 제외)` : ''}`,
         ]),
   ].join('\n')
 

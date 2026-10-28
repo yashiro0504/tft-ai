@@ -5,6 +5,8 @@ import { extractSlimMatchData } from './summarize'
 import { getDemoMatches } from './demo'
 import { RiotAccount, SlimMatchData, TftRankInfo } from './types'
 import { analyzableMatches, isAnalyzableMatch, isCurrentSetMatch } from './queue'
+import { normalizeSlimMatch } from './boardUnits'
+import { sortByRecent } from './timeAgo'
 
 /** 한 번에 로드 가능한 최대 매치 수 */
 export const MAX_MATCH_LIMIT = 20
@@ -152,7 +154,8 @@ export async function loadSummonerData(
       const cachedMatch = await cacheGet<SlimMatchData>(matchKey)
       if (cachedMatch) {
         incrMetric('riot.cache_hit.match_detail')
-        return cachedMatch
+        // 예전 캐시(경과 시간 문자열·소환/복제 기물 포함)를 현재 규칙으로 맞춘다
+        return normalizeSlimMatch(cachedMatch)
       }
 
       try {
@@ -196,7 +199,8 @@ export async function loadSummonerData(
       logEvent('warn', 'match_backfill_failed', errorFields(err))
     }
   }
-  const matches = [...loaded, ...older]
+  // 경기 시각 최신순 (경과 시간이 위에서 아래로 늘어나게)
+  const matches = sortByRecent([...loaded, ...older])
 
   return {
     gameName: acct.gameName,
