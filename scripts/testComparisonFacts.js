@@ -270,7 +270,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       opp(5, [U('TFT18_Azir', '아지르', 3, 2)]),
       opp(7, [U('TFT18_Azir', '아지르', 3, 1, ['수은'])]),
       opp(8, [U('TFT18_Azir', '아지르', 3, 1)]), // 1성 무템 = 칸 채우기, 세지 않는다
-      opp(1, [U('TFT18_KhaZix', '카직스', 3, 3, ['정의의 손길']), U('TFT18_KhaZix', '카직스', 3, 3)]),
+      // 덱 이름의 시너지(처형자)가 켜진 보드만 그 덱으로 묶는다 (2026-10-28) — 상대 보드에도 시너지를 준다
+      { ...opp(1, [U('TFT18_KhaZix', '카직스', 3, 3, ['정의의 손길']), U('TFT18_KhaZix', '카직스', 3, 3)]), traits: [{ name: '처형자', count: 2, tier: 1 }] },
     ]
     const km = carryContestMoment(me, decks)
     check('경합 캐리: 아지르 코어 상대 3명(1성 무템 제외) · 등수·성급', km?.title === '캐리 아지르 경합 3명' && /3명\(2등 3성·5등 2성·7등 1성\)/.test(km.fact), JSON.stringify(km))

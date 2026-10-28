@@ -34,6 +34,9 @@ const TRAITS = (lite as unknown as { traits: LiteTrait[] }).traits
 
 const CHAMP_INDEX = buildIndex(CHAMPIONS, exactKeys)
 const CHAMP_LOOSE = buildIndex(CHAMPIONS, looseKeys)
+/** 현재 세트 시너지 한글명 (덱 이름 앞의 시너지를 떼어 낼 때 — 긴 이름 먼저) */
+export const TRAIT_NAMES: string[] = TRAITS.map((t) => t.name).sort((a, b) => b.length - a.length)
+
 const TRAIT_INDEX = buildIndex(TRAITS, exactKeys)
 const TRAIT_LOOSE = buildIndex(TRAITS, looseKeys)
 

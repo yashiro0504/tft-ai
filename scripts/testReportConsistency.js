@@ -97,6 +97,55 @@ console.log('P2-7 로비 비교 수치 (등수 · 시너지 인원/단계 · 단
   check('리포트 검증(validateAdviceAndCounts)에 로비 대조 연결', viaAdvice.errors.some((e) => e.type === 'lobby_mismatch') && viaAdvice.checkedLobby === 1, JSON.stringify(viaAdvice))
 }
 
+console.log('P1 덱 이름: 시너지는 보드에서 켜진 것만 · 기물은 보드에 있는 것만 (16시 재확인)')
+{
+  const { mostSimilarDeck, deckNameParts } = require('../lib/comparisonFacts')
+  const { buildDeckReport } = require('../lib/deckReport')
+  const { traitNameOf } = require('../lib/gameFacts')
+  const { entitySlug } = require('../lib/entitySlug')
+  const keys = ['DA_18_Alune', 'DA_18_Lux_Moonbeam', 'DA_Taric18', 'DA_18_Morgana', 'DA_18_Sentry', 'DA_Sentinel18', 'DA_18_Rakan']
+  const deckUnits = keys.map((k) => ({ key: k, name: k === 'DA_18_Alune' ? '알룬' : k === 'DA_18_Lux_Moonbeam' ? '럭스' : k }))
+  const coven = { name: '악의 여단 알룬', avgPlacement: 4.2, sampleSize: 120, carryKey: 'DA_18_Alune', units: deckUnits }
+  const lunar = { name: '달빛 럭스', avgPlacement: 4.4, sampleSize: 90, carryKey: 'DA_18_Lux_Moonbeam', units: deckUnits }
+  // 클레스메이트#KR1 35:29 1등 (Lv.9): 선봉대 4 · 검은 가시 2 · 기원자 2 · 달빛 2 · 주문술사 2 — 악의 여단 없음
+  const traits = [['선봉대', 4, 2], ['검은 가시', 2, 1], ['기원자', 2, 1], ['달빛', 2, 1], ['주문술사', 2, 1], ['악의 여단', 1, 0]].map(([name, count, tier]) => ({ name, count, tier }))
+  const board = { matchId: 'K', placement: 1, level: 9, lastRound: '6-5', traits, units: keys.map((id) => ({ id, name: id, tier: 2, rarity: 3, items: [] })) }
+  check('악의 여단이 꺼진 보드는 "악의 여단 알룬"이 아님 (켜진 달빛 → 달빛 럭스)', mostSimilarDeck(board, [coven, lunar])?.deck.name === '달빛 럭스', mostSimilarDeck(board, [coven, lunar])?.deck.name)
+  check('맞는 메타 덱이 없으면 "메타 덱과 다른 조합"', mostSimilarDeck(board, [coven]) === null)
+  const rep = buildDeckReport([board], [coven])
+  check('덱 성적표: 다른 조합으로 세고 합계 = 분석 경기 수', rep.rows.length === 0 && rep.unmatched.games === 1 && rep.total === 1, JSON.stringify(rep))
+  check('시너지가 켜져 있으면 그 덱으로 묶음', mostSimilarDeck({ ...board, traits: [...traits.slice(0, 5), { name: '악의 여단', count: 3, tier: 1 }] }, [coven])?.deck.name === '악의 여단 알룬')
+  // 픽스처·골든셋 실제 보드 전체: 분류된 덱 이름의 시너지는 켜져 있고, 이름의 기물은 보드에 있다
+  const { buildMetaPayload } = require('../lib/metaPayload')
+  const decks = buildMetaPayload().decks
+  const fs = require('fs')
+  const path = require('path')
+  function* walk(o) {
+    if (Array.isArray(o)) for (const v of o) yield* walk(v)
+    else if (o && typeof o === 'object') {
+      if (Array.isArray(o.units) && Array.isArray(o.traits) && typeof o.placement === 'number') yield o
+      for (const v of Object.values(o)) yield* walk(v)
+    }
+  }
+  let classified = 0
+  const wrong = []
+  for (const f of ['evalMatches.json', 'goldenLabels.json']) {
+    const file = path.join(__dirname, '..', 'data', f)
+    if (!fs.existsSync(file)) continue
+    for (const b of walk(JSON.parse(fs.readFileSync(file, 'utf8')))) {
+      const hit = mostSimilarDeck(b, decks)
+      if (!hit) continue
+      classified++
+      const { trait, unit } = deckNameParts(hit.deck.name)
+      const active = new Set(b.traits.filter((t) => (t.tier ?? 0) > 0).map((t) => traitNameOf(t.name) ?? t.name))
+      const named = hit.deck.units.find((u) => u.name === unit)
+      const onBoard = !named || b.units.some((u) => entitySlug('champion', u.id) === entitySlug('champion', named.key))
+      if ((trait && !active.has(trait)) || !onBoard) wrong.push(hit.deck.name)
+    }
+  }
+  check(`실제 보드 ${classified}개 분류: 덱 이름 시너지 켜짐 · 이름 기물 보드에 있음`, classified > 0 && wrong.length === 0, wrong.slice(0, 5).join(', '))
+}
+
 console.log('4. 조언·수치 모순')
 const U = (id, name, tier, items, rarity = 3) => ({ id, name, tier, rarity, items })
 // 102#2600 26분 29초 7등: 코그모 3템, 시너지 적응가·개화·싸움꾼·부식
