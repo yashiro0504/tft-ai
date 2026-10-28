@@ -14,7 +14,7 @@ export interface DeckReportRow {
   delta: number | null
   /** 판정: 판수가 적거나 메타 표본이 적으면 null */
   verdict: 'good' | 'even' | 'bad' | null
-  /** 메타 덱 표본 (판) — DECK_REPORT_MIN_SAMPLE 미만이면 메타 평균은 참고용 */
+  /** 메타 덱 표본 (판) — DECK_REPORT_MIN_SAMPLE 미만이면 메타 랭킹 티어에 안 들어가므로 '메타 표본 없음'으로 보여 주고 비교하지 않는다 */
   metaSample: number
 }
 
@@ -43,7 +43,7 @@ export interface DeckReport {
   meta?: DeckReportMeta
 }
 
-/** 메타 덱 표본이 이보다 적으면 판정하지 않고 메타 평균을 '참고용'으로 표시한다 (comparisonFacts DECK_REFERENCE_SAMPLE 과 같은 값) */
+/** 메타 덱 표본이 이보다 적으면 (메타 랭킹 덱 티어 MIN_SAMPLE.deck 미만) 메타 평균을 쓰지 않고 '메타 표본 없음'으로 표시한다 (comparisonFacts DECK_REFERENCE_SAMPLE 과 같은 값) */
 export const DECK_REPORT_MIN_SAMPLE = 30
 
 /**
@@ -71,15 +71,26 @@ export function snapshotTime(iso?: string): string {
 }
 
 /**
- * 메타 덱 스냅샷 출처 한 줄 — 메타 랭킹 페이지 머리말과 덱 성적표가 같은 함수로 그린다
- * (예: "KR 랭크 마스터+ 집계 · 패치 16.21 · 10.28 09:29 갱신")
+ * 수집 범위 · 표본 수 — 메타 페이지 배지·덱 탭 칩·덱 성적표가 모두 이 함수 하나로 그린다 (2026-10-28: 'KR 챌린저 래더 · 292판' 과 'KR 랭크 마스터+ 집계' 가 갈렸다)
+ * 예: "KR 랭크 마스터+" · "12,345판"
  */
-export function metaSnapshotLabel(meta: DeckReportMeta, { withMatches = false }: { withMatches?: boolean } = {}): string {
-  const base = meta.source === 'db' ? (meta.tier ? `KR 랭크 ${meta.tier} 집계` : 'KR 랭크 집계') : 'KR 챌린저 래더 표본'
+export function metaScopeLabel(meta: Pick<DeckReportMeta, 'source' | 'tier'>): string {
+  return meta.source === 'db' ? `KR 랭크 ${meta.tier ?? '전체'}` : 'KR 챌린저 래더'
+}
+
+export function metaMatchesLabel(meta: Pick<DeckReportMeta, 'matches'>): string {
+  return meta.matches ? `${meta.matches.toLocaleString('ko-KR')}판` : ''
+}
+
+/**
+ * 메타 덱 스냅샷 출처 한 줄 — 메타 랭킹 페이지 머리말과 덱 성적표가 같은 함수로 그린다
+ * (예: "KR 랭크 마스터+ · 12,345판 · 패치 16.21 · 10.28 09:29 갱신")
+ */
+export function metaSnapshotLabel(meta: DeckReportMeta): string {
   const updated = snapshotTime(meta.updatedAt)
   return [
-    base,
-    withMatches && meta.matches ? `${meta.matches.toLocaleString('ko-KR')}판` : '',
+    metaScopeLabel(meta),
+    metaMatchesLabel(meta),
     meta.patch && /^\d/.test(meta.patch) ? `패치 ${meta.patch}` : '',
     updated ? `${updated} 갱신` : '',
   ]

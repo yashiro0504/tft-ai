@@ -139,9 +139,40 @@ console.log('5. 메타 평균 스냅샷')
   const { metaSnapshotLabel } = require('../lib/deckReportShared')
   const label = metaSnapshotLabel({ source: 'json', patch: 'set18', updatedAt: '2026-10-28T00:29:04.802Z' })
   check('갱신 시각은 KST 분 단위 (두 화면 같은 함수)', label.includes('10.28 09:29 갱신'), label)
-  const scoped = metaSnapshotLabel({ source: 'db', tier: '마스터+', patch: '16.21', matches: 12345, updatedAt: '2026-10-28T00:29:04.802Z' }, { withMatches: true })
-  check('10. 메타 머리말에 수집 랭크 구간·전체 경기 수', scoped.startsWith('KR 랭크 마스터+ 집계 · 12,345판'), scoped)
-  check('10. 메타 페이지 상단 배지(랭크 구간·경기 수)', /scopeBadge/.test(read('app/meta/page.tsx')) && /matchesBadge/.test(read('app/meta/page.tsx')))
+  const scoped = metaSnapshotLabel({ source: 'db', tier: '마스터+', patch: '16.21', matches: 12345, updatedAt: '2026-10-28T00:29:04.802Z' })
+  check('10. 메타 머리말에 수집 랭크 구간·전체 판 수', scoped.startsWith('KR 랭크 마스터+ · 12,345판'), scoped)
+  check('10. 메타 페이지 상단 배지(랭크 구간·판 수)', /scopeBadge/.test(read('app/meta/page.tsx')) && /matchesBadge/.test(read('app/meta/page.tsx')))
+  // P1-2 (머지 후 재평가): 메타 페이지가 정적/ISR 이면 빌드 때 그린 다른 스냅샷이 남는다 — 요청마다 같은 스냅샷을 읽는다
+  const metaPage = read('app/meta/page.tsx')
+  check('P1-2 메타 페이지는 요청마다 스냅샷을 읽음 (정적 ISR 아님)', /dynamic = 'force-dynamic'/.test(metaPage) && !/export const revalidate/.test(metaPage))
+  // P1-3: 범위·표본 문구는 한 함수에서 — 메타 배지·덱 탭 칩·덱 성적표
+  const { metaScopeLabel, metaMatchesLabel } = require('../lib/deckReportShared')
+  const dbMeta = { source: 'db', tier: '마스터+', matches: 292 }
+  const jsonMeta = { source: 'json', matches: 292 }
+  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (db)', metaSnapshotLabel(dbMeta).startsWith(`${metaScopeLabel(dbMeta)} · ${metaMatchesLabel(dbMeta)}`), metaSnapshotLabel(dbMeta))
+  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (json)', metaSnapshotLabel(jsonMeta).startsWith('KR 챌린저 래더 · 292판'), metaSnapshotLabel(jsonMeta))
+  check('P1-3 메타 페이지 배지·덱 탭 칩이 같은 함수', /metaScopeLabel\(snapshotMeta\)/.test(metaPage) && /decksScope=/.test(metaPage) && /decksScope\.scope/.test(read('app/components/MetaDashboard.tsx')))
+  check('P1-3 성적표 출처 줄도 같은 함수', /metaSnapshotLabel\(report\.meta\)/.test(read('app/components/DeckReportCard.tsx')))
+  // 메타 표본 없는 덱: 성적표가 메타 평균을 비교하지 않는다 (30판 미만은 메타 랭킹 티어 밖)
+  const { buildDeckReport } = require('../lib/deckReport')
+  const ladder = require('../lib/decksData.json')
+    .decks.slice(0, 2)
+    .map((d) => ({ ...d, units: d.units.map((u) => ({ key: `TFT18_${u.matchedKey}`, name: u.name, cost: u.cost, star: u.star })), carryKey: `TFT18_${d.carryKey}` }))
+  const deckFacts = [
+    { ...ladder[0], name: '메타덱', avgPlacement: 4.0, sampleSize: 200 },
+    { ...ladder[1], name: '희귀덱', avgPlacement: 3.0, sampleSize: 8 },
+  ]
+  const mk = (deck, placement) => ({ placement, level: 8, lastRound: 32, units: deck.units.map((u) => ({ id: u.key, name: u.name, tier: 2, rarity: u.cost, items: [] })), traits: [] })
+  try {
+    const rep = buildDeckReport([mk(deckFacts[1], 2), mk(deckFacts[0], 3)], deckFacts, { source: 'db', tier: '마스터+' })
+    const rare = rep.rows.find((r) => r.name === '희귀덱')
+    const main = rep.rows.find((r) => r.name === '메타덱')
+    check('P1-2 메타 표본 30판 미만 덱 → 메타 평균 없음(메타 표본 없음)', !!rare && (rare.metaAvg == null && rare.delta == null && rare.verdict == null), JSON.stringify(rare))
+    check('P1-2 메타 평균은 스냅샷 값 그대로', !!main && main.metaAvg === 4.0, JSON.stringify(main))
+  } catch (e) {
+    check('P1-2 성적표 계산', false, e.message)
+  }
+  check('P1-2 화면: 메타 평균 없으면 "메타 표본 없음"', /메타 표본 없음/.test(read('app/components/DeckReportCard.tsx')))
 }
 
 if (failures) {

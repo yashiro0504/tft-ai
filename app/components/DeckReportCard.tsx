@@ -31,10 +31,14 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
                 <>
                   {' '}
                   (메타 {r.metaAvg}등
-                  {r.delta != null ? <>, {r.delta > 0 ? `+${r.delta}` : r.delta}</> : null}
-                  {r.metaSample < DECK_REPORT_MIN_SAMPLE ? <> · 메타 표본 {r.metaSample}판 참고용</> : null})
+                  {r.delta != null ? <>, {r.delta > 0 ? `+${r.delta}` : r.delta}</> : null})
                 </>
-              ) : null}
+              ) : (
+                <span title={`메타 랭킹 덱 티어는 ${DECK_REPORT_MIN_SAMPLE}판 이상 덱만 매깁니다 — 이 덱은 ${r.metaSample}판이라 비교하지 않습니다`}>
+                  {' '}
+                  (메타 표본 없음{r.metaSample ? ` · ${r.metaSample}판` : ''})
+                </span>
+              )}
             </span>
             {r.verdict ? (
               <span className={`rounded-chip border px-1.5 py-0.5 text-[11px] font-bold ${VERDICT[r.verdict].tone}`}>{VERDICT[r.verdict].label}</span>

@@ -37,6 +37,7 @@ import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount 
 import { ShareButton } from './ShareButton'
 import { MetaUrlSync } from './MetaUrlSync'
 import { track } from '@/lib/analytics'
+import { snapshotTime } from '@/lib/deckReportShared'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -170,6 +171,7 @@ export function MetaDashboard({
   filters,
   initialDecksSource,
   decksUpdatedAt,
+  decksScope,
   syncUrl = false,
 }: {
   onOpenCoach?: () => void
@@ -182,6 +184,8 @@ export function MetaDashboard({
   initialDecksSource?: 'db' | 'json'
   /** 덱 스냅샷 갱신 시각 — 덱 탭의 '수집' 칩은 덱 성적표와 같은 시각을 보인다 */
   decksUpdatedAt?: string
+  /** 덱 스냅샷 수집 범위·표본 수 (lib/deckReportShared metaScopeLabel — 메타 페이지 배지·덱 성적표와 같은 문구) */
+  decksScope?: { scope: string; matches: string | null }
   /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
   syncUrl?: boolean
 }) {
@@ -450,6 +454,12 @@ export function MetaDashboard({
   const appliedPatch = filter.patch ?? filters?.defaults.patch ?? null
   const fellBack = dbMode && (tab === 'decks' ? served.decks === 'json' : served.stats === 'json')
   const tierMatches = dbMode ? filters?.patches.find((p) => p.patch === appliedPatch)?.matches[filter.tier] : undefined
+  /** 덱 탭이 아직 서버 스냅샷(기본 필터)을 보여 주는 중 — 수집 범위 칩을 배지·덱 성적표와 같은 문구로 */
+  const showingSnapshot =
+    tab === 'decks' &&
+    !!decksScope &&
+    served.decks === initialDecksSource &&
+    (!dbMode || (filter.patch ?? filters?.defaults.patch ?? null) === (filters?.defaults.patch ?? null) && filter.tier === (filters?.defaults.tier ?? 'master'))
 
   const colClass = tab === 'comps' ? 'cols-bis' : tab === 'champions' ? 'cols-champ' : 'cols-stat'
 
@@ -475,7 +485,19 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              {dbMode && !fellBack ? (
+              {showingSnapshot && decksScope ? (
+                <>
+                  <EvidenceChip title="수집 범위 · 덱 표에 들어간 판 수 (덱 성적표의 메타 평균과 같은 스냅샷)">
+                    {[decksScope.scope, decksScope.matches].filter(Boolean).join(' · ')}
+                  </EvidenceChip>
+                  {dbMode ? (
+                    <EvidenceChip>{appliedPatch ? `패치 ${appliedPatch}` : '패치 정보 없음'}</EvidenceChip>
+                  ) : (
+                    <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
+                  )}
+                  {snapshotTime(decksUpdatedAt) ? <EvidenceChip>{snapshotTime(decksUpdatedAt)} 갱신</EvidenceChip> : null}
+                </>
+              ) : dbMode && !fellBack ? (
                 <>
                   <EvidenceChip title="수집 범위: KR 랭크 판 누적 집계 (매시간 수집 · 덱은 하루 몇 번 다시 묶음)">
                     KR · {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
