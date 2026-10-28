@@ -2,8 +2,9 @@ name: Collect Ladder Meta
 
 on:
   schedule:
-    # 매일 21:00 UTC = 06:00 KST
+    # 매일 21:00 UTC = 06:00 KST · 09:00 UTC = 18:00 KST (하루 2회 — 상위 덱 300판+ · 픽률 상위 5덱 100판+ 목표, 2026-10-28)
     - cron: '0 21 * * *'
+    - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
       players:
@@ -17,6 +18,14 @@ on:
       max_matches:
         description: '총 수집 매치 상한'
         default: '400'
+        required: false
+      board_matches:
+        description: '덱 보드 수집 판 수 상한 (상위 덱 300판+ 목표)'
+        default: '1500'
+        required: false
+      board_players:
+        description: '덱 보드 표본 선수 수 (챌린저 → 그마 → 마스터 LP 순)'
+        default: '160'
         required: false
       dry_run:
         description: 'true 이면 커밋/푸시를 하지 않습니다'
@@ -34,7 +43,8 @@ jobs:
   collect:
     name: 래더 표본 수집 → lib/metaStats.json
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # 보드 1500판 × 1.25초(개발 키 한도) ≈ 32분 + 래더 표본 — 여유 있게
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -87,9 +97,10 @@ jobs:
           RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
           RIOT_REGION: asia
           RIOT_PLATFORM: kr
-          PLAYERS: ${{ github.event.inputs.players || '60' }}
-          MATCHES_PER_PLAYER: ${{ github.event.inputs.matches_per_player || '8' }}
-          MAX_MATCHES: ${{ github.event.inputs.max_matches || '400' }}
+          # 예전엔 래더 표본과 같은 400판 상한이라 덱 표본이 292판(상위 덱 155판)에 그쳤다 — 보드 수집 기본값(160명 × 15판, 1500판)을 쓴다
+          PLAYERS: ${{ github.event.inputs.board_players || '160' }}
+          MATCHES_PER_PLAYER: '15'
+          MAX_MATCHES: ${{ github.event.inputs.board_matches || '1500' }}
         run: npm run collect:boards
 
       # 공식 패치 노트(키 불필요). 덱 빌드의 패치 분리가 이 파일을 쓰므로 덱 빌드 전에 받는다. 실패해도 계속

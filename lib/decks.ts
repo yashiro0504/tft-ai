@@ -125,7 +125,7 @@ export interface DeckMetaInfo {
   patch: string | null
   deckCount: number
   unitMatchRate: number
-  /** 덱을 묶은 래더 판 수 (KR 챌린저 래더) */
+  /** 덱을 묶은 래더 판 수 (KR 마스터+ 래더 — 챌린저·그마·마스터 상위 선수) */
   matchCount?: number
 }
 

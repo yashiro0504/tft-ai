@@ -87,24 +87,52 @@ const flatS = new Set(champs.filter((_, i) => flatTiers[i] === 'S').map((c) => c
 check('코스트별 티어: S티어에 1~5코가 모두', [1, 2, 3, 4, 5].every((c) => sCosts.has(c)), [...sCosts].join(','))
 console.log(`  (참고: 한 줄로 매기면 S티어 코스트 = ${[...flatS].join(',')})`)
 
-console.log('덱 티어: 오차 범위가 겹치는 이웃은 같은 티어 (2026-10-28)')
+console.log('덱 티어: 기준 덱 비교 · 3~5개 · 한 티어 50% 이하 (2026-10-28 머지 후 재평가)')
 {
-  // 처형자 이즈리얼 3.84±0.40(32판) · 적응가 니달리 4.16±0.41(31판) 이 S·A 로 갈렸다
-  const rows = decksData.decks.filter((d) => d.sampleSize >= MIN_SAMPLE.deck).map((d) => ({ avg: d.avgPlacement, sample: d.sampleSize }))
+  const { PLACEMENT_SD } = require('../lib/statsShared')
+  const named = decksData.decks.filter((d) => d.sampleSize >= MIN_SAMPLE.deck)
+  const rows = named.map((d) => ({ avg: d.avgPlacement, sample: d.sampleSize }))
   const tiers = assignSampleTiers(rows, MIN_SAMPLE.deck, { separated: true })
-  const est = shrinkPlacements(rows)
-  const sds = shrunkPlacementSds(rows)
-  const order = rows.map((_, i) => i).sort((a, b) => est[a] - est[b])
-  const split = order.slice(0, -1).filter((i, k) => {
-    const j = order[k + 1]
-    return tiers[i] !== tiers[j] && est[j] - est[i] < sds[i] + sds[j]
+  const m = rows.map((r) => PLACEMENT_SD / Math.sqrt(r.sample))
+  const kinds = new Set(tiers)
+  const counts = [...kinds].map((t) => tiers.filter((x) => x === t).length)
+  console.log(`  (저장소 덱 ${rows.length}개: ${['S', 'A', 'B', 'C', 'D'].map((t) => `${t}${tiers.filter((x) => x === t).length}`).join(' ')})`)
+  check('저장소 덱 데이터: 티어 3개 이상 5개 이하', kinds.size >= 3 && kinds.size <= 5, `${kinds.size}개`)
+  check('저장소 덱 데이터: 한 티어가 전체의 50% 이하', Math.max(...counts) <= rows.length / 2, counts.join(','))
+  const far = []
+  rows.forEach((a, i) => rows.forEach((b, j) => i < j && tiers[i] === tiers[j] && Math.abs(a.avg - b.avg) >= 1 && far.push(`${named[i].name}·${named[j].name}`)))
+  check('평균등수 1등 이상 차이 나는 덱은 같은 티어 아님 (3.84 vs 6.06)', far.length === 0, far.join(', '))
+  const order = rows.map((_, i) => i).sort((a, b) => rows[a].avg - rows[b].avg)
+  check('티어는 평균등수 순서를 거스르지 않음', order.every((i, k) => !k || tierRank(tiers[order[k - 1]]) <= tierRank(tiers[i])))
+  const firstOf = new Map()
+  order.forEach((i) => firstOf.has(tiers[i]) || firstOf.set(tiers[i], i))
+  const ov = (i, j) => Math.abs(rows[i].avg - rows[j].avg) <= m[i] + m[j]
+  const notAnchored = order.filter((i) => !ov(i, firstOf.get(tiers[i])))
+  check('모든 덱이 자기 티어 기준 덱(첫 덱)과 구간이 겹침', notAnchored.length === 0, notAnchored.map((i) => named[i].name).join(','))
+  // 새 티어가 앞 티어 기준 덱과 겹치는데도 시작됐다면, 앞 티어에 넣었을 때 50% 를 넘는 경우(재분할)뿐이다
+  const stray = [...firstOf.entries()].filter(([t, i]) => {
+    const prev = [...firstOf.entries()].find(([u]) => tierRank(u) === tierRank(t) - 1)
+    if (!prev || !ov(i, prev[1])) return false
+    const from = order.indexOf(prev[1])
+    let k = from
+    while (k < order.length && ov(order[k], prev[1])) k++
+    return k - from <= rows.length / 2
   })
-  check('저장소 덱 데이터: 오차 구간이 겹치는 이웃이 다른 티어로 갈린 곳 0', rows.length > 1 && split.length === 0, `${split.length}곳`)
-  check('티어는 추정 평균등수 순서를 거스르지 않음', order.every((i, k) => !k || tierRank(tiers[order[k - 1]]) <= tierRank(tiers[i])))
+  check('기준 덱과 겹치는 덱은 50% 재분할 말고는 다음 티어로 안 밀림', stray.length === 0, stray.map(([, i]) => named[i].name).join(','))
   const sep = assignSeparatedTiers([3.5, 3.6, 4.5, 4.6, 5.8], [0.1, 0.1, 0.1, 0.1, 0.1])
   check('구간이 떨어진 곳에서는 끊음 (3.5·3.6 | 4.5·4.6 | 5.8)', sep[0] === sep[1] && sep[2] === sep[3] && sep[1] !== sep[2] && sep[3] !== sep[4] && sep[0] === 'S', JSON.stringify(sep))
-  const one = assignSeparatedTiers([3.84, 4.16], [0.4, 0.41])
-  check('이즈리얼 3.84±0.40 · 니달리 4.16±0.41 → 같은 티어', one[0] === one[1], JSON.stringify(one))
+  const one = assignSeparatedTiers([3.84, 4.16, 4.6, 5.0, 5.4], [0.4, 0.41, 0.1, 0.1, 0.1])
+  check('이즈리얼 3.84±0.40 · 니달리 4.16±0.41 → 같은 티어 (기준 덱과 겹침)', one[0] === one[1], JSON.stringify(one))
+  // 연쇄 비교면 3.5→3.9→4.3→4.7 이 줄줄이 이어져 한 티어가 된다. 기준 덱 비교는 3.5 와 안 겹치는 4.3 에서 끊는다
+  const chain = assignSeparatedTiers([3.5, 3.9, 4.3, 4.7, 5.1, 5.5], [0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
+  check('연쇄 비교 안 함: 3.5 와 4.3 은 다른 티어', chain[0] !== chain[2], JSON.stringify(chain))
+  const crowd = assignSeparatedTiers([4, 4.05, 4.1, 4.15, 4.2, 4.25, 4.3, 4.35, 6, 7], new Array(10).fill(0.4))
+  const crowdMax = Math.max(...['S', 'A', 'B', 'C', 'D'].map((t) => crowd.filter((x) => x === t).length))
+  check('한 티어에 50% 넘게 몰리면 다시 나눔', crowdMax <= 5, JSON.stringify(crowd))
+  const many = assignSeparatedTiers([1, 2, 3, 4, 5, 6, 7, 8], new Array(8).fill(0.1))
+  check('티어는 최대 5개', new Set(many).size === 5, JSON.stringify(many))
+  const dash = require('fs').readFileSync(require('path').join(__dirname, '..', 'app', 'components', 'MetaDashboard.tsx'), 'utf8')
+  check('화면 설명 문구 = 계산 규칙 상수 (DECK_TIER_RULE)', /DECK_TIER_RULE_SHORT/.test(dash) && /\$\{DECK_TIER_RULE\}/.test(dash) && !/오차가 겹치면 같은 티어 ·/.test(dash))
 }
 
 console.log(failures.length ? `\n❌ 실패 ${failures.length}건` : '\n✅ 메타 티어 테스트 통과')

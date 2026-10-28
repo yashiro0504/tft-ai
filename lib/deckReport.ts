@@ -44,9 +44,11 @@ export function buildDeckReport(matches: SlimMatchData[], decks: DeckFact[], met
   }
   const rows: DeckReportRow[] = [...groups.values()].map(({ deck, placements }) => {
     const mine = round2(avg(placements))
-    const metaAvg = deck.avgPlacement != null && Number.isFinite(deck.avgPlacement) ? round2(deck.avgPlacement) : null
+    // 메타 랭킹에서 티어가 안 매겨지는 표본(30판 미만)의 평균은 비교에 쓰지 않는다 — 화면엔 '메타 표본 없음'
+    const metaAvg =
+      deck.avgPlacement != null && Number.isFinite(deck.avgPlacement) && deck.sampleSize >= DECK_REPORT_MIN_SAMPLE ? round2(deck.avgPlacement) : null
     const delta = metaAvg == null ? null : round2(mine - metaAvg)
-    const judged = delta != null && placements.length >= DECK_REPORT_MIN_GAMES && deck.sampleSize >= DECK_REPORT_MIN_SAMPLE
+    const judged = delta != null && placements.length >= DECK_REPORT_MIN_GAMES
     const margin = deckVerdictMargin(placements.length)
     return {
       name: deck.name,

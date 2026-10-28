@@ -34,7 +34,67 @@ console.log('3. 아이템 조합법')
   check('프롬프트 조합법 줄은 게임 데이터에서', facts.includes('보석 건틀릿 = 연습용 장갑 + 쓸데없이 큰 지팡이') && facts.includes('쇼진의 창 ='), facts)
   const { errors } = validateAdviceAndCounts([`${bad} 다음 판도 같은 방향입니다.`], [])
   const fixed = repairEntityErrors({ actions: [bad, '다른 조언'] }, errors)
-  check('불일치 문장은 리포트에서 지움', fixed.actions.length === 1 && fixed.actions[0] === '다른 조언', JSON.stringify(fixed))
+  check('불일치 조합법은 데이터의 재료로 고침', fixed.actions.length === 2 && fixed.actions[0] === '코그모에게 보석 건틀릿 재료(연습용 장갑 + 쓸데없이 큰 지팡이)를 먼저 모으세요.' && fixed.actions[1] === '다른 조언', JSON.stringify(fixed))
+}
+{
+  // P2-6 (머지 후 재평가): 백승민#agent 36:05 같은 판 — 보드의 조합 아이템 조합법이 프롬프트에 데이터로 들어가고, 리포트 문장과 전부 일치해야 한다
+  const { componentsOf } = require('../lib/itemRecipes')
+  const boardItems = ['보석 건틀릿', '쇼진의 창', '정의의 손', '무한의 대검', '최후의 속삭임', '거인 학살자', '워모그의 갑옷', '가고일 돌갑옷']
+  const craftable = boardItems.filter((n) => componentsOf(n)?.length === 2)
+  check('36:05 판 조합 아이템이 데이터에 있음', craftable.length >= 6, craftable.join(','))
+  const facts = recipeFactsFor(`최종 보드: ${boardItems.join(', ')}`)
+  check('프롬프트 조합법 줄 = 게임 데이터 (아이템마다 한 줄)', craftable.every((n) => facts.includes(`- ${n} = ${componentsOf(n).join(' + ')}`)), facts)
+  const report = {
+    overview: '이번 판은 캐리 아이템이 잘 맞았습니다.',
+    actions: craftable.map((n) => `${n}은(는) ${componentsOf(n).join(' + ')} 조합입니다.`),
+  }
+  const all = validateAdviceAndCounts(report.actions, [])
+  const allRecipes = validateItemRecipes(report.actions)
+  check('36:05 판: 모든 조합법 문장이 데이터와 일치 (오류 0 · 전부 대조)', all.errors.length === 0 && allRecipes.checked === craftable.length, JSON.stringify({ errors: all.errors, checked: allRecipes.checked }))
+  check('일치하면 리포트는 그대로', JSON.stringify(repairEntityErrors(report, all.errors)) === JSON.stringify(report))
+  // 일부러 틀린 조합법을 하나 넣으면 그 문장만 고쳐지고 나머지는 그대로
+  const target = craftable[0]
+  const right = componentsOf(target)
+  const wrongParts = ['곡궁', '쓸데없이 큰 지팡이', 'B.F. 대검', '쇠사슬 조끼'].filter((c) => !right.includes(c)).slice(0, 2)
+  const wrongSentence = `${target}은(는) ${wrongParts.join(' + ')} 조합입니다.`
+  const tampered = { ...report, actions: [wrongSentence, ...report.actions.slice(1)] }
+  const errs = validateAdviceAndCounts(tampered.actions, []).errors
+  const repaired = repairEntityErrors(tampered, errs)
+  check('틀린 조합법 1개만 잡힘', errs.length === 1 && errs[0].type === 'item_recipe', JSON.stringify(errs))
+  check('틀린 조합법은 데이터 재료로 고쳐지고 나머지 문장은 그대로', repaired.actions[0] === report.actions[0] && JSON.stringify(repaired.actions.slice(1)) === JSON.stringify(report.actions.slice(1)), JSON.stringify(repaired.actions[0]))
+  check('고친 뒤 다시 대조하면 오류 0', validateItemRecipes(repaired.actions).errors.length === 0)
+  const llmSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'lib', 'llm.ts'), 'utf8')
+  check('AI 프롬프트에 조합법 데이터 줄 삽입 · 응답 검증 연결 (lib/llm)', /recipeFactsFor\(/.test(llmSrc) && /\$\{recipeFacts\}/.test(llmSrc) && /validateAdviceAndCounts\(rawTexts/.test(llmSrc))
+}
+
+console.log('P2-7 로비 비교 수치 (등수 · 시너지 인원/단계 · 단계 합 · 레벨)')
+{
+  const { validateLobbyClaims } = require('../lib/semanticGrounding')
+  const T = (name, count, tier) => ({ name, count, tier })
+  const P = (placement, level, traits, isUser = false) => ({ placement, gameName: `p${placement}`, level, lastRound: '6-1', damageToPlayers: 0, traits, units: [], isUser })
+  // 1등 단계 합 = 4+2+3+1+2 = 12 · 3등 협곡야수 7명 3단계
+  const lobby = [
+    P(1, 9, [T('나무정령', 9, 4), T('적응가', 3, 2), T('악의 여단', 5, 3), T('화신', 1, 1), T('사냥꾼', 3, 2), T('약탈자', 1, 0)]),
+    P(2, 9, [T('협곡야수', 5, 2)]),
+    P(3, 8, [T('협곡야수', 7, 3), T('사냥꾼', 2, 1)]),
+    P(5, 8, [T('적응가', 2, 1)], true),
+  ]
+  const m = { matchId: 'L', placement: 5, level: 8, units: [], traits: [T('적응가', 2, 1)], lobbyParticipants: lobby }
+  const ok = validateLobbyClaims(['같은 로비 1등은 시너지 단계 합 12였습니다.', '3등 협곡야수는 7명으로 3단계를 켰습니다.', '2등은 Lv.9까지 올렸습니다.'], m)
+  check('맞는 로비 비교는 통과 (단계 합 12 · 협곡야수 7명 3단계 · Lv.9)', ok.errors.length === 0 && ok.checked === 3, JSON.stringify(ok))
+  const bad = ['같은 로비 1등은 시너지 단계 합 10이었습니다.', '3등 협곡야수는 6명으로 2단계를 켰습니다.', '2등은 8레벨에 멈췄습니다.']
+  const wrong = validateLobbyClaims(bad, m)
+  check('틀린 로비 수치 3개 모두 잡힘', wrong.errors.length === 3 && wrong.errors.every((e) => e.type === 'lobby_mismatch'), JSON.stringify(wrong.errors))
+  const fixed = repairEntityErrors({ actions: bad }, wrong.errors)
+  check(
+    '로비 수치는 데이터 값으로 고침',
+    fixed.actions[0] === '같은 로비 1등은 시너지 단계 합 12이었습니다.' && fixed.actions[1] === '3등 협곡야수는 7명으로 3단계를 켰습니다.' && fixed.actions[2] === '2등은 9레벨에 멈췄습니다.',
+    JSON.stringify(fixed.actions)
+  )
+  const mine = validateLobbyClaims(['1등보다 내 시너지 단계 합 7이 낮았습니다.', '나는 Lv.8, 1등은 Lv.9였습니다.'], m)
+  check('내 보드 수치는 로비 등수 수치로 보지 않음', mine.errors.length === 0, JSON.stringify(mine.errors))
+  const viaAdvice = validateAdviceAndCounts(['같은 로비 1등은 시너지 단계 합 10이었습니다.'], [m])
+  check('리포트 검증(validateAdviceAndCounts)에 로비 대조 연결', viaAdvice.errors.some((e) => e.type === 'lobby_mismatch') && viaAdvice.checkedLobby === 1, JSON.stringify(viaAdvice))
 }
 
 console.log('4. 조언·수치 모순')
@@ -139,9 +199,43 @@ console.log('5. 메타 평균 스냅샷')
   const { metaSnapshotLabel } = require('../lib/deckReportShared')
   const label = metaSnapshotLabel({ source: 'json', patch: 'set18', updatedAt: '2026-10-28T00:29:04.802Z' })
   check('갱신 시각은 KST 분 단위 (두 화면 같은 함수)', label.includes('10.28 09:29 갱신'), label)
-  const scoped = metaSnapshotLabel({ source: 'db', tier: '마스터+', patch: '16.21', matches: 12345, updatedAt: '2026-10-28T00:29:04.802Z' }, { withMatches: true })
-  check('10. 메타 머리말에 수집 랭크 구간·전체 경기 수', scoped.startsWith('KR 랭크 마스터+ 집계 · 12,345판'), scoped)
-  check('10. 메타 페이지 상단 배지(랭크 구간·경기 수)', /scopeBadge/.test(read('app/meta/page.tsx')) && /matchesBadge/.test(read('app/meta/page.tsx')))
+  const scoped = metaSnapshotLabel({ source: 'db', tier: '마스터+', patch: '16.21', matches: 12345, updatedAt: '2026-10-28T00:29:04.802Z' })
+  check('10. 메타 머리말에 수집 랭크 구간·전체 판 수', scoped.startsWith('KR 랭크 마스터+ · 12,345판'), scoped)
+  check('10. 메타 페이지 상단 배지(랭크 구간·판 수)', /scopeBadge/.test(read('app/meta/page.tsx')) && /matchesBadge/.test(read('app/meta/page.tsx')))
+  // P1-2 (머지 후 재평가): 메타 페이지가 정적/ISR 이면 빌드 때 그린 다른 스냅샷이 남는다 — 요청마다 같은 스냅샷을 읽는다
+  const metaPage = read('app/meta/page.tsx')
+  check('P1-2 메타 페이지는 요청마다 스냅샷을 읽음 (정적 ISR 아님)', /dynamic = 'force-dynamic'/.test(metaPage) && !/export const revalidate/.test(metaPage))
+  // P1-3: 범위·표본 문구는 한 함수에서 — 메타 배지·덱 탭 칩·덱 성적표
+  const { metaScopeLabel, metaMatchesLabel } = require('../lib/deckReportShared')
+  const dbMeta = { source: 'db', tier: '마스터+', matches: 292 }
+  const jsonMeta = { source: 'json', matches: 292 }
+  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (db)', metaSnapshotLabel(dbMeta).startsWith(`${metaScopeLabel(dbMeta)} · ${metaMatchesLabel(dbMeta)}`), metaSnapshotLabel(dbMeta))
+  check('P1-3 범위 문구 = 성적표 출처 줄 앞부분 (json)', metaSnapshotLabel(jsonMeta).startsWith('KR 마스터+ 래더 · 292판'), metaSnapshotLabel(jsonMeta))
+  check('P1-3 메타 페이지 배지·덱 탭 칩이 같은 함수', /metaScopeLabel\(snapshotMeta\)/.test(metaPage) && /decksScope=/.test(metaPage) && /decksScope\.scope/.test(read('app/components/MetaDashboard.tsx')))
+  check('P2-5 덱 탭 JSON 칩도 같은 범위 함수 (챌린저 래더 하드코딩 없음)', !/KR 챌린저 래더/.test(read('app/components/MetaDashboard.tsx')))
+  const ladderWf = read('.github/workflows/collect-ladder.yml')
+  check('P2-5 덱 보드 수집 1500판 · 하루 2회', /board_matches \|\| '1500'/.test(ladderWf) && (ladderWf.match(/- cron:/g) || []).length >= 2)
+  check('P1-3 성적표 출처 줄도 같은 함수', /metaSnapshotLabel\(report\.meta\)/.test(read('app/components/DeckReportCard.tsx')))
+  // 메타 표본 없는 덱: 성적표가 메타 평균을 비교하지 않는다 (30판 미만은 메타 랭킹 티어 밖)
+  const { buildDeckReport } = require('../lib/deckReport')
+  const ladder = require('../lib/decksData.json')
+    .decks.slice(0, 2)
+    .map((d) => ({ ...d, units: d.units.map((u) => ({ key: `TFT18_${u.matchedKey}`, name: u.name, cost: u.cost, star: u.star })), carryKey: `TFT18_${d.carryKey}` }))
+  const deckFacts = [
+    { ...ladder[0], name: '메타덱', avgPlacement: 4.0, sampleSize: 200 },
+    { ...ladder[1], name: '희귀덱', avgPlacement: 3.0, sampleSize: 8 },
+  ]
+  const mk = (deck, placement) => ({ placement, level: 8, lastRound: 32, units: deck.units.map((u) => ({ id: u.key, name: u.name, tier: 2, rarity: u.cost, items: [] })), traits: [] })
+  try {
+    const rep = buildDeckReport([mk(deckFacts[1], 2), mk(deckFacts[0], 3)], deckFacts, { source: 'db', tier: '마스터+' })
+    const rare = rep.rows.find((r) => r.name === '희귀덱')
+    const main = rep.rows.find((r) => r.name === '메타덱')
+    check('P1-2 메타 표본 30판 미만 덱 → 메타 평균 없음(메타 표본 없음)', !!rare && (rare.metaAvg == null && rare.delta == null && rare.verdict == null), JSON.stringify(rare))
+    check('P1-2 메타 평균은 스냅샷 값 그대로', !!main && main.metaAvg === 4.0, JSON.stringify(main))
+  } catch (e) {
+    check('P1-2 성적표 계산', false, e.message)
+  }
+  check('P1-2 화면: 메타 평균 없으면 "메타 표본 없음"', /메타 표본 없음/.test(read('app/components/DeckReportCard.tsx')))
 }
 
 if (failures) {

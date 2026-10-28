@@ -4,6 +4,7 @@ import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
 import { validateItemRecipes } from './itemRecipes'
 import { boardCounts } from './boardStats'
 import { boardCarry, detectDeckType } from './deckType'
+import { traitNameOf } from './gameFacts'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -51,7 +52,8 @@ function findNames(text: string, names: string[]): Span[] {
 /** 문장 분리 (마침표·물음표·느낌표·줄바꿈). 숫자 소수점은 자르지 않는다 */
 function sentences(text: string): string[] {
   return text
-    .split(/(?<=[^\d][.!?。])\s+|\n+/)
+    // 'B.F. 대검' 의 마침표는 문장 끝이 아니다 (대문자 한 글자 + 마침표)
+    .split(/(?<=[^\dA-Z][.!?。])\s+|\n+/)
     .map((s) => s.trim())
     .filter(Boolean)
 }
@@ -271,16 +273,21 @@ const CARRY_ITEM_COUNT_RE = /캐리\s*(?:아이템|템)\s*(\d)\s*개(?!\s*(?:이
 
 /**
  * 리포트 문장을 경기 데이터와 대조한다 (근거 검증 단계).
- * - item_recipe: "아이템 + 조합 재료"가 아이템 데이터(lib/gameData)와 다름 → 문장 삭제
+ * - item_recipe: "아이템 + 조합 재료"가 아이템 데이터(lib/gameData)와 다름 → 재료를 데이터 값으로 교체 (못 바꾸면 삭제)
  * - advice_conflict: 이미 아이템 3개를 든 기물(또는 캐리)에 아이템을 더 채우라는 조언 → 문장 삭제
  * - count_mismatch: "활성 시너지 N개"·"캐리 아이템 N개"가 카드 값(lib/boardStats)과 다름 → 값 교체 (단일 경기만)
- * checkedRecipes = 대조한 조합법 주장 수 (근거 검증 분모에 더한다)
+ * - lobby_mismatch: 로비 다른 등수의 레벨·시너지 인원/단계·시너지 단계 합이 로비 데이터와 다름 → 값 교체 (단일 경기 · validateLobbyClaims)
+ * checkedRecipes = 대조한 조합법 주장 수 (근거 검증 분모에 더한다) · checkedLobby = 대조한 로비 수치 수
  */
-export function validateAdviceAndCounts(texts: string[], matches: SlimMatchData[]): { errors: EntityFactError[]; checkedRecipes: number } {
+export function validateAdviceAndCounts(
+  texts: string[],
+  matches: SlimMatchData[]
+): { errors: EntityFactError[]; checkedRecipes: number; checkedLobby?: number } {
   const errors: EntityFactError[] = []
   const all = texts.flatMap(sentences)
   const recipes = validateItemRecipes(all)
-  for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.expected, actual: r.actual })
+  // 잘못된 재료 구간을 데이터의 재료로 바꾼다 (예: '곡궁+주문력' → '연습용 장갑 + 쓸데없이 큰 지팡이')
+  for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.right, actual: r.wrong })
   if (!matches.length) return { errors, checkedRecipes: recipes.checked }
 
   // 기물별 아이템 수 — 여러 판이면 모든 판에서 3개 이상일 때만 '가득 참'
@@ -337,7 +344,70 @@ export function validateAdviceAndCounts(texts: string[], matches: SlimMatchData[
       }
     }
   }
+  if (single?.lobbyParticipants?.length) {
+    const lobby = validateLobbyClaims(all, single)
+    errors.push(...lobby.errors)
+    return { errors, checkedRecipes: recipes.checked, checkedLobby: lobby.checked }
+  }
   return { errors, checkedRecipes: recipes.checked }
+}
+
+/** "같은 로비 1등은", "3등 협곡야수는" — 로비 등수 언급 */
+const LOBBY_PLACE_RE = /(?:같은\s*)?(?:로비\s*)?([1-8])등(?:은|는|이|의|도|과|와)?/g
+/** 등수 언급 뒤에서 이 표현이 나오면 그 등수 이야기가 끝난다 (내 보드 · 비교 대상 전환) */
+const LOBBY_CLAUSE_END_RE = /(?:^|[\s,(])(?:나|내|저|제|본인)(?:는|가|의|\s)|\bvs\b|보다|반면|[;。]/
+const LOBBY_TIER_SUM_RE = /시너지\s*단계\s*(?:합|총합)(?:은|는|이|가|도)?\s*(\d{1,2})/g
+const LOBBY_TRAIT_RE = /([가-힣A-Za-z]{2,})(?:은|는|이|가|도)?\s*(\d{1,2})\s*명(?:으로|이고|에)?(?:\s*(\d)\s*단계)?/g
+const LOBBY_LEVEL_RE = /(?:Lv\.?\s*|레벨\s*)(\d{1,2})|(\d{1,2})\s*레벨/g
+/** 시너지 이름 끝에 붙은 조사 */
+const stripParticle = (s: string) => s.replace(/(?:은|는|이|가|도|의)$/, '')
+
+/**
+ * 로비 비교 수치 검증 (2026-10-28 머지 후 재평가 P2-7) — "같은 로비 1등은 시너지 단계 합 12", "3등 협곡야수는 7명으로 3단계",
+ * "2등은 Lv.9" 처럼 다른 등수 보드의 수치를 로비 데이터(lobbyParticipants)와 대조한다. 틀리면 데이터 값으로 바꾼다.
+ * 등수 언급 뒤 같은 절(내 보드 이야기·'보다'·'vs' 전까지, 40자 안)의 수치만 그 등수 것으로 본다.
+ * 시너지 단계 합 = 켠 시너지 단계(tier>0)의 합 — 비교 사실(lib/comparisonFacts)·6축 진단과 같은 정의.
+ */
+export function validateLobbyClaims(texts: string[], m: SlimMatchData): { errors: EntityFactError[]; checked: number } {
+  const errors: EntityFactError[] = []
+  let checked = 0
+  const lobby = m.lobbyParticipants || []
+  for (const s of texts) {
+    const places = [...s.matchAll(LOBBY_PLACE_RE)]
+    places.forEach((pm, i) => {
+      const p = lobby.find((x) => x.placement === Number(pm[1]))
+      if (!p) return
+      const from = (pm.index ?? 0) + pm[0].length
+      let clause = s.slice(from, Math.min(places[i + 1]?.index ?? s.length, from + 40))
+      const cut = LOBBY_CLAUSE_END_RE.exec(clause)
+      if (cut) clause = clause.slice(0, cut.index)
+      const traits = (p.traits || []).filter((t) => (t.tier ?? 0) > 0)
+      for (const x of clause.matchAll(LOBBY_TIER_SUM_RE)) {
+        checked++
+        const sum = traits.reduce((a, t) => a + (t.tier || 0), 0)
+        if (Number(x[1]) !== sum) errors.push({ type: 'lobby_mismatch', text: s, expected: x[0].replace(/\d{1,2}$/, String(sum)), actual: x[0] })
+      }
+      for (const x of clause.matchAll(LOBBY_TRAIT_RE)) {
+        const name = traitNameOf(stripParticle(x[1]))
+        if (!name) continue
+        checked++
+        const t = (p.traits || []).find((tr) => traitNameOf(tr.name) === name)
+        const count = t?.count ?? 0
+        const tier = t?.tier ?? 0
+        const countOk = Number(x[2]) === count
+        const tierOk = x[3] == null || Number(x[3]) === tier
+        if (countOk && tierOk) continue
+        const fixed = x[0].replace(/(\d{1,2})(\s*명)/, `${count}$2`).replace(/(\d)(\s*단계)$/, `${tier}$2`)
+        errors.push({ type: 'lobby_mismatch', text: s, expected: fixed, actual: x[0] })
+      }
+      for (const x of clause.matchAll(LOBBY_LEVEL_RE)) {
+        checked++
+        const said = Number(x[1] ?? x[2])
+        if (said !== p.level) errors.push({ type: 'lobby_mismatch', text: s, expected: x[0].replace(String(said), String(p.level)), actual: x[0] })
+      }
+    })
+  }
+  return { errors, checked }
 }
 
 /**
@@ -354,7 +424,7 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
     const fixable =
-      !['item_owner', 'unit_absent', 'item_absent', 'item_recipe', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
+      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
 

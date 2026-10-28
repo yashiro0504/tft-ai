@@ -31,10 +31,14 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
                 <>
                   {' '}
                   (메타 {r.metaAvg}등
-                  {r.delta != null ? <>, {r.delta > 0 ? `+${r.delta}` : r.delta}</> : null}
-                  {r.metaSample < DECK_REPORT_MIN_SAMPLE ? <> · 메타 표본 {r.metaSample}판 참고용</> : null})
+                  {r.delta != null ? <>, {r.delta > 0 ? `+${r.delta}` : r.delta}</> : null})
                 </>
-              ) : null}
+              ) : (
+                <span title={`메타 랭킹 덱 티어는 ${DECK_REPORT_MIN_SAMPLE}판 이상 덱만 매깁니다 — 이 덱은 ${r.metaSample}판이라 비교하지 않습니다`}>
+                  {' '}
+                  (메타 표본 없음{r.metaSample ? ` · ${r.metaSample}판` : ''})
+                </span>
+              )}
             </span>
             {r.verdict ? (
               <span className={`rounded-chip border px-1.5 py-0.5 text-[11px] font-bold ${VERDICT[r.verdict].tone}`}>{VERDICT[r.verdict].label}</span>
@@ -45,7 +49,7 @@ export function DeckReportCard({ report }: { report: DeckReport }) {
       <p className="mt-1.5 text-[11px] leading-relaxed text-subtle">
         {report.unmatched.games ? `메타 덱과 다른 조합 ${report.unmatched.games}판 (평균 ${report.unmatched.avgPlacement}등) · ` : ''}
         {report.early ? `초반 종료 ${report.early}판 (3스테이지 전 탈락 · 덱 판정 제외) · ` : ''}
-        {report.incomplete ? `보드 데이터 불완전 ${report.incomplete}판 (기물이 일부만 잡혀 덱 판정 제외) · ` : ''}
+        {report.incomplete ? `보드 데이터 불완전 ${report.incomplete}판 (늦게 끝났는데 기물·시너지가 비정상으로 잡혀 덱 판정 제외) · ` : ''}
         판정은 {DECK_REPORT_MIN_GAMES}판 이상 탄 덱에서 차이가 판수 오차보다 클 때만 — 판수가 적으면 운의 영향이 큽니다.
       </p>
       {report.meta ? (

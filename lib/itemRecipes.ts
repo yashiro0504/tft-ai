@@ -113,6 +113,10 @@ export interface RecipeMismatch {
   expected: string
   /** 리포트가 쓴 재료 */
   actual: string
+  /** 문장 안 잘못된 재료 구간 (예: "곡궁+주문력") — 이 구간을 right 로 바꾸면 고쳐진다 */
+  wrong: string
+  /** 데이터의 재료 (예: "연습용 장갑 + 쓸데없이 큰 지팡이") */
+  right: string
 }
 
 /**
@@ -152,7 +156,14 @@ export function validateItemRecipes(sentences: string[]): { errors: RecipeMismat
       const want = [...RECIPES[sp.name]].sort().join('+')
       const got = parts.map((p) => p.name).sort().join('+')
       if (want !== got) {
-        errors.push({ text: s, item: sp.name, expected: `${sp.name} = ${RECIPES[sp.name].join(' + ')}`, actual: `${sp.name} = ${parts.map((p) => p.name).join(' + ')}` })
+        errors.push({
+          text: s,
+          item: sp.name,
+          expected: `${sp.name} = ${RECIPES[sp.name].join(' + ')}`,
+          actual: `${sp.name} = ${parts.map((p) => p.name).join(' + ')}`,
+          wrong: s.slice(parts[0].start, parts[1].end),
+          right: RECIPES[sp.name].join(' + '),
+        })
       }
     })
   }

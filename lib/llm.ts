@@ -434,17 +434,22 @@ export function shopOddsFacts(matches: SlimMatchData[], mode: 'single' | 'multi'
 
 /** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
 /** 조합법 대조 결과를 근거 검증 점수에 더한다: 대조한 조합법 주장은 분모, 맞은 것만 분자 (불일치가 있으면 100% 가 아니다) */
-function withRecipeClaims(g: GroundingReport, check: { errors: EntityFactError[]; checkedRecipes: number }): GroundingReport {
-  const wrong = check.errors.filter((e) => e.type === 'item_recipe')
-  if (!check.checkedRecipes) return g
-  const total = g.total + check.checkedRecipes
-  const supported = g.supported + check.checkedRecipes - wrong.length
+function withRecipeClaims(g: GroundingReport, check: { errors: EntityFactError[]; checkedRecipes: number; checkedLobby?: number }): GroundingReport {
+  // 조합법·로비 비교 수치 주장도 근거 검증 분모에 넣는다 (틀린 것은 고쳐 보내도 점수엔 남긴다)
+  const wrong = check.errors.filter((e) => e.type === 'item_recipe' || e.type === 'lobby_mismatch')
+  const checked = check.checkedRecipes + (check.checkedLobby ?? 0)
+  if (!checked) return g
+  const total = g.total + checked
+  const supported = g.supported + checked - wrong.length
   return {
     ...g,
     total,
     supported,
     score: total ? Math.round((supported / total) * 100) : 100,
-    unsupported: [...g.unsupported, ...wrong.map((e) => `조합법 불일치: ${e.actual} (데이터: ${e.expected})`)],
+    unsupported: [
+      ...g.unsupported,
+      ...wrong.map((e) => `${e.type === 'item_recipe' ? '조합법' : '로비 비교 수치'} 불일치: ${e.actual} (데이터: ${e.expected})`),
+    ],
   }
 }
 

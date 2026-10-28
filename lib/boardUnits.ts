@@ -10,13 +10,14 @@ import type { SlimMatchData, SlimMatchUnit } from './types'
  *   그래서 같은 기물·성급이 3장 이상(3성은 2장 이상)이면 복제로 보고 아이템이 가장 많은 1장만 남긴다.
  *   2장까지는 실제로 1성 두 장을 올린 보드일 수 있어 그대로 둔다 (keyMoments duplicateCopies).
  * - 칸 상한: 그래도 차지한 칸이 레벨 + BOARD_SLOT_ALLOWANCE 를 넘으면, 같은 기물이 두 장 이상인 것 중
- *   아이템·성급이 낮은 복사본부터 뺀다. 서로 다른 기물은 빼지 않는다 (팀 규모 증강일 수 있다).
+ *   아이템·성급이 낮은 복사본부터 뺀다. 그래도 넘으면 (협곡야수 바위 게·덩굴정령처럼 상점 기물과 같은 id 로 소환된 기물)
+ *   아이템·성급·코스트가 가장 낮은 기물부터 빼서 기물 수가 레벨 + 1 을 넘지 않게 한다 (팀 규모 증강 1칸은 허용).
  */
 export const BOARD_SLOT_ALLOWANCE = 1
 
-type BoardUnit = { id?: string | null; tier?: number; items?: unknown[] }
+type BoardUnit = { id?: string | null; tier?: number; rarity?: number; items?: unknown[] }
 
-const unitWeight = (u: BoardUnit) => (u.items?.length ?? 0) * 10 + (u.tier ?? 1)
+const unitWeight = (u: BoardUnit) => (u.items?.length ?? 0) * 100 + (u.tier ?? 1) * 10 + (u.rarity ?? 0)
 
 export function cleanBoardUnits<T extends BoardUnit>(
   units: T[],
@@ -49,7 +50,8 @@ export function cleanBoardUnits<T extends BoardUnit>(
     while (slots(out) > cap) {
       const count = new Map<string, number>()
       for (const u of out) count.set(u.id ?? '', (count.get(u.id ?? '') ?? 0) + 1)
-      const extras = out.filter((u) => (count.get(u.id ?? '') ?? 0) > 1)
+      const dupes = out.filter((u) => (count.get(u.id ?? '') ?? 0) > 1)
+      const extras = dupes.length ? dupes : out
       if (!extras.length) break
       const drop = extras.reduce((worst, u) => (unitWeight(u) <= unitWeight(worst) ? u : worst), extras[0])
       out = out.filter((u) => u !== drop)

@@ -37,6 +37,7 @@ import { EvidenceChip, PlacementStrip, TraitHex, UnitHover, traitLevelFromCount 
 import { ShareButton } from './ShareButton'
 import { MetaUrlSync } from './MetaUrlSync'
 import { track } from '@/lib/analytics'
+import { JSON_LADDER_SCOPE_DETAIL, metaMatchesLabel, metaScopeLabel, snapshotTime } from '@/lib/deckReportShared'
 import {
   ITEM_CLASSES,
   ITEM_CLASS_LABEL,
@@ -45,6 +46,8 @@ import {
   type ModalTarget,
   type Tier,
   assignSampleTiers,
+  DECK_TIER_RULE,
+  DECK_TIER_RULE_SHORT,
   tierClass,
   tierRank,
 } from './metaShared'
@@ -168,6 +171,7 @@ export function MetaDashboard({
   filters,
   initialDecksSource,
   decksUpdatedAt,
+  decksScope,
   syncUrl = false,
 }: {
   onOpenCoach?: () => void
@@ -180,6 +184,8 @@ export function MetaDashboard({
   initialDecksSource?: 'db' | 'json'
   /** 덱 스냅샷 갱신 시각 — 덱 탭의 '수집' 칩은 덱 성적표와 같은 시각을 보인다 */
   decksUpdatedAt?: string
+  /** 덱 스냅샷 수집 범위·표본 수 (lib/deckReportShared metaScopeLabel — 메타 페이지 배지·덱 성적표와 같은 문구) */
+  decksScope?: { scope: string; matches: string | null }
   /** 필터·탭을 URL 쿼리와 동기화 (/meta 전용 — 홈의 ?tab=meta 와 겹치지 않게 다른 화면은 끈다) */
   syncUrl?: boolean
 }) {
@@ -328,7 +334,7 @@ export function MetaDashboard({
     if (!data) return []
     const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      // 덱 티어는 오차 범위가 겹치는 이웃을 같은 티어로 (metaShared.assignSeparatedTiers)
+      // 덱 티어는 기준 덱과 비교 (metaShared.assignSeparatedTiers · 설명 DECK_TIER_RULE)
       const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min, false, true)
       return data.decks.map((d, i) => ({
         key: d.id,
@@ -448,6 +454,12 @@ export function MetaDashboard({
   const appliedPatch = filter.patch ?? filters?.defaults.patch ?? null
   const fellBack = dbMode && (tab === 'decks' ? served.decks === 'json' : served.stats === 'json')
   const tierMatches = dbMode ? filters?.patches.find((p) => p.patch === appliedPatch)?.matches[filter.tier] : undefined
+  /** 덱 탭이 아직 서버 스냅샷(기본 필터)을 보여 주는 중 — 수집 범위 칩을 배지·덱 성적표와 같은 문구로 */
+  const showingSnapshot =
+    tab === 'decks' &&
+    !!decksScope &&
+    served.decks === initialDecksSource &&
+    (!dbMode || (filter.patch ?? filters?.defaults.patch ?? null) === (filters?.defaults.patch ?? null) && filter.tier === (filters?.defaults.tier ?? 'master'))
 
   const colClass = tab === 'comps' ? 'cols-bis' : tab === 'champions' ? 'cols-champ' : 'cols-stat'
 
@@ -473,7 +485,19 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              {dbMode && !fellBack ? (
+              {showingSnapshot && decksScope ? (
+                <>
+                  <EvidenceChip title={`${initialDecksSource === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수 (덱 성적표의 메타 평균과 같은 스냅샷)`}>
+                    {[decksScope.scope, decksScope.matches].filter(Boolean).join(' · ')}
+                  </EvidenceChip>
+                  {dbMode ? (
+                    <EvidenceChip>{appliedPatch ? `패치 ${appliedPatch}` : '패치 정보 없음'}</EvidenceChip>
+                  ) : (
+                    <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
+                  )}
+                  {snapshotTime(decksUpdatedAt) ? <EvidenceChip>{snapshotTime(decksUpdatedAt)} 갱신</EvidenceChip> : null}
+                </>
+              ) : dbMode && !fellBack ? (
                 <>
                   <EvidenceChip title="수집 범위: KR 랭크 판 누적 집계 (매시간 수집 · 덱은 하루 몇 번 다시 묶음)">
                     KR · {filterLabel(tab === 'decks' ? { ...filter, patch: appliedPatch, days: 0 } : { ...filter, patch: appliedPatch })}
@@ -486,8 +510,8 @@ export function MetaDashboard({
                 </>
               ) : (
                 <>
-                  <EvidenceChip title="수집 범위: KR 챌린저 래더 상위 플레이어의 최근 랭크 판 (하루 1회)">
-                    KR 챌린저 래더{data?.deckMeta?.matchCount ? ` · ${data.deckMeta.matchCount.toLocaleString()}판` : ''}
+                  <EvidenceChip title={`수집 범위: ${JSON_LADDER_SCOPE_DETAIL}`}>
+                    {[metaScopeLabel({ source: 'json' }), metaMatchesLabel({ matches: data?.deckMeta?.matchCount })].filter(Boolean).join(' · ')}
                   </EvidenceChip>
                   <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
                   {(tab === 'decks' ? decksUpdatedAt ?? data?.generatedAt : data?.generatedAt) ? (
@@ -502,10 +526,8 @@ export function MetaDashboard({
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
               {tab === 'decks' ? (
-                <EvidenceChip
-                  title={`표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값 순으로 늘어놓고, 이웃한 두 덱의 추정값 ± 표준오차 구간이 겹치지 않는 곳에서만 티어를 끊습니다. 오차 범위가 겹치는 이웃 덱은 같은 티어라, 표본이 적으면 티어 수가 줄고 표본이 늘면 다시 나뉩니다. ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}
-                >
-                  티어 = 오차가 겹치면 같은 티어 · {DECK_RELIABLE_SAMPLE}판 미만 참고용
+                <EvidenceChip title={`${DECK_TIER_RULE} ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}>
+                  {DECK_TIER_RULE_SHORT} · {DECK_RELIABLE_SAMPLE}판 미만 참고용
                 </EvidenceChip>
               ) : (
                 <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">

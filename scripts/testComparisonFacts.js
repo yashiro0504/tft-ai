@@ -354,7 +354,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const { goalFromMoment, evaluateGoal, goalText } = require('../lib/goals')
     const U = (id, name, rarity, tier, items = []) => ({ id, name, rarity, tier, items })
     const board = (t, weakItems, extra = {}) => ({
-      ...standard, matchId: `G${t}`, gameDatetime: t, placement: 5, level: 8, lastRound: '5-5', traits: [], lobbyParticipants: [],
+      ...standard, matchId: `G${t}`, gameDatetime: t, placement: 5, level: 7, lastRound: '5-5', traits: [{ name: 'T', count: 2, tier: 1 }], lobbyParticipants: [],
       units: [U('DA_18_Ezreal', '이즈리얼', 4, 2, ['무한의 대검']), U('DA_18_Kennen', '케넨', 5, 2), U('DA_18_Sett', '세트', 4, 2), U('DA_Vi18', '바이', 3, 1, Array.from({ length: weakItems }, (_, i) => `아이템${i}`))],
       ...extra,
     })
@@ -377,7 +377,8 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
     const U = (id, name) => ({ id, name, rarity: 4, tier: 2, items: [] })
     const deckA = { name: '테스트 A', avgPlacement: 4, sampleSize: 200, units: ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
     const deckB = { name: '테스트 B', avgPlacement: 4.5, sampleSize: 10, units: ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern'].map((k) => ({ key: `TFT18_${k}`, name: k })) }
-    const game = (id, placement, keys) => ({ ...standard, matchId: id, placement, level: 8, lastRound: '5-5', units: keys.map((k) => U(`DA_18_${k}`, k)) })
+    // 레벨 7: 기물 4~5개 테스트 보드가 '고유 기물 < 레벨−3'(보드 데이터 불완전)에 걸리지 않게
+    const game = (id, placement, keys) => ({ ...standard, matchId: id, placement, level: 7, lastRound: '5-5', units: keys.map((k) => U(`DA_18_${k}`, k)) })
     const aKeys = ['Ahri', 'Sett', 'Morgana', 'Diana', 'Sentinel']
     const bKeys = ['Kennen', 'Draven', 'Maokai', 'Taric', 'Ivern']
     const r = buildDeckReport(

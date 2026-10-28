@@ -234,7 +234,7 @@ export interface GroundingReport {
 
 export interface EntityFactError {
   /** unit_absent · item_absent: 내 최종 보드에 없는 기물·아이템을 내 보드 이야기처럼 쓴 문장 (지운다) */
-  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch'
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch' | 'lobby_mismatch'
   /** 오류가 있는 문장 */
   text: string
   /** 데이터 값 */
