@@ -45,6 +45,8 @@ import {
   type ModalTarget,
   type Tier,
   assignSampleTiers,
+  DECK_TIER_RULE,
+  DECK_TIER_RULE_SHORT,
   tierClass,
   tierRank,
 } from './metaShared'
@@ -328,7 +330,7 @@ export function MetaDashboard({
     if (!data) return []
     const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      // 덱 티어는 오차 범위가 겹치는 이웃을 같은 티어로 (metaShared.assignSeparatedTiers)
+      // 덱 티어는 기준 덱과 비교 (metaShared.assignSeparatedTiers · 설명 DECK_TIER_RULE)
       const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min, false, true)
       return data.decks.map((d, i) => ({
         key: d.id,
@@ -502,10 +504,8 @@ export function MetaDashboard({
                 덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
               </EvidenceChip>
               {tab === 'decks' ? (
-                <EvidenceChip
-                  title={`표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값 순으로 늘어놓고, 이웃한 두 덱의 추정값 ± 표준오차 구간이 겹치지 않는 곳에서만 티어를 끊습니다. 오차 범위가 겹치는 이웃 덱은 같은 티어라, 표본이 적으면 티어 수가 줄고 표본이 늘면 다시 나뉩니다. ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}
-                >
-                  티어 = 오차가 겹치면 같은 티어 · {DECK_RELIABLE_SAMPLE}판 미만 참고용
+                <EvidenceChip title={`${DECK_TIER_RULE} ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}>
+                  {DECK_TIER_RULE_SHORT} · {DECK_RELIABLE_SAMPLE}판 미만 참고용
                 </EvidenceChip>
               ) : (
                 <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
