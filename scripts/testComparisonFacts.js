@@ -59,6 +59,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   console.log('덱 유형 판정')
   const { detectDeckType, summarizeDeckTypes } = require('../lib/deckType')
   // 기준 샘플: 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리 베이가 3성 (베이가·카시오페아 캐리템 3개 동률 → 성급 높은 베이가, 알리스타는 탱커템만)
+  // 리롤 핵심 기물은 카시오페아 3코 2성 (캐리템 동률이면 코스트 먼저 — 7렙 3코 리롤의 완성은 3코 3성, 2026-10-29 백승민#agent)
   const info = detectDeckType(sample)
   check(
     '기준 샘플 = 리롤형 (3성 5개, 1·2코)',
@@ -67,7 +68,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   )
   check(
     '비교 사실에 덱 유형 줄',
-    block.includes('- 덱 유형: 리롤형 — 3성 5개(1·1·1·2·2코) · Lv.7 · 캐리 베이가 3성'),
+    block.includes('- 덱 유형: 리롤형 — 3성 5개(1·1·1·2·2코) · Lv.7 · 핵심 카시오페아(3코) 2성 — 3성 미완성'),
     block
   )
   const standard = {
@@ -78,7 +79,26 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('3성 없으면 표준형', detectDeckType(standard).type === 'standard', JSON.stringify(detectDeckType(standard)))
   const few = { ...sample, units: sample.units.slice(0, 3) }
   check('기물 3개면 판정 불가', detectDeckType(few).type === 'unknown', JSON.stringify(detectDeckType(few)))
-  check('캐리 = 캐리템 동률이면 성급 높은 쪽 (베이가 3성, 카시오페아 2성 아님)', info.carryThreeStar === true && info.reason.endsWith('캐리 베이가 3성'), JSON.stringify(info))
+  const { boardCarry, rerollCore } = require('../lib/deckType')
+  check('캐리 = 캐리템 동률이면 성급 높은 쪽 (베이가 3성, 카시오페아 2성 아님)', boardCarry(sample.units).name === '베이가', boardCarry(sample.units).name)
+  check(
+    '리롤 핵심 기물 = 캐리템 동률이면 코스트 높은 쪽 (카시오페아 3코 2성) → 3성 미완성',
+    rerollCore(sample.units).name === '카시오페아' && info.carryThreeStar === false && info.core?.name === '카시오페아' && info.core?.tier === 2,
+    JSON.stringify(info)
+  )
+  // 1코 3성 없이 핵심 3코 3성 하나뿐인 7렙 보드도 리롤형 (예전엔 3성 2개 미만이라 표준형 → "레벨이 낮다")
+  const oneThree = { ...sample, units: sample.units.map((u) => ({ ...u, tier: u.name === '카시오페아' ? 3 : Math.min(u.tier || 1, 2) })) }
+  check('핵심 3코 3성 하나뿐인 7렙 보드 = 리롤형 (핵심 3성 완성)', detectDeckType(oneThree).type === 'reroll' && detectDeckType(oneThree).carryThreeStar === true, JSON.stringify(detectDeckType(oneThree)))
+  // 3성을 하나도 못 만든 리롤 판 (핵심 3코 2성 · Lv.7 · 6스테이지 탈락) = 리롤형(미완성) — 표준형으로 읽으면 "레벨이 낮다"가 처방이 된다
+  const noThree = { ...sample, units: sample.units.map((u) => ({ ...u, tier: Math.min(u.tier || 1, 2) })) }
+  const noThreeInfo = detectDeckType(noThree)
+  check('3성 0개 · 핵심 3코 2성 · Lv.7 · 6스테이지 탈락 = 리롤형(미완성)', noThreeInfo.type === 'reroll' && noThreeInfo.incomplete === true && noThreeInfo.reason.includes('핵심 카시오페아(3코) 2성 — 3성 미완성'), JSON.stringify(noThreeInfo))
+  check('같은 보드라도 Lv.8 이면 미완성 리롤로 보지 않음 (표준형)', detectDeckType({ ...noThree, level: 8 }).type === 'standard')
+  check('같은 보드라도 4스테이지 탈락이면 미완성 리롤로 보지 않음', detectDeckType({ ...noThree, lastRound: '4-5' }).type === 'standard')
+  check(
+    '4코에 딜템이 몰렸으면 미완성 리롤 아님',
+    detectDeckType({ ...noThree, units: [...noThree.units, { id: 'TFT18_X', name: '사코', rarity: 4, tier: 2, items: ['보석 건틀릿', '쇼진의 창'] }] }).type === 'standard'
+  )
   // 탱커템 3개(알리스타)는 캐리템 0개 — 캐리템 2개 든 2성이 캐리
   const tankItems = {
     ...sample,
@@ -88,8 +108,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       ...sample.units.slice(2, 5).map((u) => ({ ...u, items: [] })),
     ],
   }
-  check('탱커·하이브리드 템은 캐리 판별에서 제외', detectDeckType(tankItems).reason.endsWith('캐리 딜러 2성'), detectDeckType(tankItems).reason)
-  const { boardCarry } = require('../lib/deckType')
+  check('탱커·하이브리드 템은 캐리 판별에서 제외', detectDeckType(tankItems).reason.endsWith('핵심 딜러(3코) 2성 — 3성 미완성') && boardCarry(tankItems.units).name === '딜러', detectDeckType(tankItems).reason)
   check('메타 덱 carryKey 가 보드에 있으면 우선', boardCarry(sample.units, 'Cassiopeia').name === '카시오페아')
   const mixed = summarizeDeckTypes([sample, standard])
   check(
@@ -105,7 +124,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
       { id: 'TANK', name: '탱커', rarity: 4, tier: 1, items: [] },
     ],
   }
-  check('캐리 = 아이템 최다 기물 (4코 무템 탱커 아님)', detectDeckType(tankBoard).carryThreeStar === true, JSON.stringify(detectDeckType(tankBoard)))
+  check('캐리 = 아이템 최다 기물 (4코 무템 탱커 아님)', boardCarry(tankBoard.units).name === '베이가', boardCarry(tankBoard.units).name)
   // 8레벨 + 4코 캐리 3성 + 3코 3성 → 저코스트 3성 0개, 캐리도 리롤 코스트가 아니므로 표준형
   const fast8 = {
     ...sample,
@@ -120,13 +139,33 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('리롤형 판정이 강의 계획에 반영', plan.deckType === 'reroll' && plan.deckTypeLabel === '리롤형', JSON.stringify(plan.deckType))
   const tempo = plan.axes.find((a) => a.key === 'tempo')
   check(
-    '리롤 템포 = 100 − 3성 부족 0 − 캐리(베이가) 3성 미완성 0 − 로비 레벨·탈락 시점(v13) (표준형과 같은 100점 척도)',
-    tempo.score === Math.round(100 + tempo.effects.filter((e) => e.key === 'lobbyLevelGap' || e.key === 'exitStage').reduce((s, e) => s + e.points, 0)) &&
+    '리롤 템포 = 100 − 3성 부족 0 − 핵심 기물(카시오페아) 3성 미완성 20 − 로비 레벨·탈락 시점(v13) (표준형과 같은 100점 척도)',
+    tempo.score === Math.round(100 - 20 + tempo.effects.filter((e) => e.key === 'lobbyLevelGap' || e.key === 'exitStage').reduce((s, e) => s + e.points, 0)) &&
       tempo.effects.some((e) => e.key === 'missingThreeStars' && e.points === 0) &&
-      tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === 0),
+      tempo.effects.some((e) => e.key === 'carryNotThreeStar' && e.points === -20) &&
+      tempo.detail.includes('핵심 카시오페아(3코) 2성 — 3성 미완성'),
     JSON.stringify(tempo)
   )
   check('리롤형 템포 강의 문장', tempo.lesson.includes('리롤형은 레벨을 올리는 덱이 아니다'), tempo.lesson)
+  // 핵심 장면 '리롤 핵심 기물 3성 미완성'이 맨 앞 → 강의 초점 = 리롤 템포 (예전엔 장면이 없어 유연성 강의 + "9렙을 못 갔다")
+  {
+    const { keyMoments: km0 } = require('../lib/keyMoments')
+    const { focusOnMoment } = require('../lib/llm')
+    const { goalFromMoment, goalText, measureGoal } = require('../lib/goals')
+    const moments = km0(sample)
+    check(
+      '핵심 장면 1번 = 리롤 핵심 기물 3성 미완성 (카시오페아 2성 · Lv.7 상점 3코 40% · 3코 최다 레벨 Lv.7 · 로비 장수)',
+      moments[0]?.kind === 'rerollCore' &&
+        /카시오페아\(3코스트\) 2성으로 끝남 · 최종 Lv\.7 상점 3코 \d+% · 3코스트가 가장 많이 나오는 레벨 Lv\.\d+\(\d+%\) · 로비 상대 최종 보드의 카시오페아 \d+장\(\d+명\)/.test(moments[0].fact),
+      JSON.stringify(moments)
+    )
+    const focused = focusOnMoment(plan, moments, 'single')
+    check('리롤 장면이면 강의 초점 = 템포(리롤 성과), 레벨업 강의 아님', focused.focus === 'tempo' && focused.drillTemplate.includes('핵심 기물 3성') && !focused.topic.includes('레벨업'), JSON.stringify(focused.topic))
+    const goal = goalFromMoment(moments[0], [sample])
+    check('연습 목표 = 리롤 핵심 기물 3성 (이번 판 미완성 1)', goal?.kind === 'rerollCore' && goal.baseline === 1 && goalText(goal).includes('핵심 기물 3성'), JSON.stringify(goal))
+    check('핵심 기물 3성이면 목표 측정 0', measureGoal('rerollCore', oneThree) === 0)
+    check('표준형 판에는 리롤 장면 없음', !km0(standard).some((x) => x.kind === 'rerollCore'))
+  }
   const economyAxis = plan.axes.find((a) => a.key === 'economy')
   // 기준치는 실측 기준선(lib/gameBaselines.json)이라 매일 바뀐다 — 값 대신 공식을 확인한다: (75 / 기준치 − 1) × 80, 비율은 [0.5, 1.25]
   const expectedValue = economyAxis.metrics.find((x) => x.key === 'expectedBoardValue')?.value

@@ -39,6 +39,16 @@ export function oddsWindow(cost: number, level: number, min = CARRY_STAR_ODDS_MI
   return from ? { from, to } : null
 }
 
+/** 그 코스트가 상점에 가장 많이 나오는 레벨 (Lv.10 까지, 같으면 낮은 레벨) — 리롤 덱이 멈춰서 리롤하는 레벨. 표가 없으면 null */
+export function peakOddsLevel(cost: number): { level: number; odds: number } | null {
+  let best: { level: number; odds: number } | null = null
+  for (let l = 1; l <= Math.min(maxLevel(), 10); l++) {
+    const odds = costOdds(l, cost)
+    if (odds > 0 && (!best || odds > best.odds)) best = { level: l, odds }
+  }
+  return best
+}
+
 /** "Lv.8~9" / "Lv.8" */
 export const levelRange = (w: { from: number; to: number }) => (w.from === w.to ? `Lv.${w.from}` : `Lv.${w.from}~${w.to}`)
 

@@ -31,6 +31,9 @@ export interface AxisConfig {
     carryMaxRarity: number
     /** 이 레벨 이하에서만 리롤형으로 본다 */
     maxLevel: number
+    /** 3성 없는 '리롤 미완성' 판정: 이 레벨 이하 · 이 스테이지 이후 탈락 (핵심 기물 2성 · 4·5코에 딜템 없음) */
+    incompleteMaxLevel: number
+    incompleteMinStage: number
   }
   axes: {
     economy: {

@@ -65,7 +65,7 @@ export interface PerMatchMetrics {
   three: number
   /** 3성 기물의 코스트 (오름차순) */
   threeStarCosts: number[]
-  /** 아이템을 가장 많이 든 캐리가 3성인가 */
+  /** 3성 기준 기물이 3성인가 — 리롤형은 리롤 핵심 기물(lib/deckType rerollCore), 그 외는 캐리 */
   carryThreeStar: boolean
   /** 최종 보드 기준 덱 유형 (리롤형/표준형/판정 불가) */
   deckType: Exclude<DeckType, 'mixed'>
@@ -157,7 +157,7 @@ const EFFECT_LABEL: Record<string, string> = {
   topCostItems: '최고 코스트 기물 아이템',
   boardItems: '보드 전체 아이템',
   missingThreeStars: '3성 부족',
-  carryNotThreeStar: '캐리 3성 미완성',
+  carryNotThreeStar: '핵심 기물 3성 미완성',
   unknownStage: '탈락 라운드 불명(중립값)',
   boardFill: '보드 충원',
   twoPlus: '2성 이상 비율',
@@ -354,8 +354,8 @@ const LESSON: Record<
     byDeck: {
       reroll: {
         lesson:
-          '리롤형은 레벨을 올리는 덱이 아니다. 정해진 라운드 안에 코어 3성을 얼마나 완성했는가가 승패를 가른다.',
-        topic: '리롤 성과 강의 — 3성 완성과 캐리 3성',
+          '리롤형은 레벨을 올리는 덱이 아니다. 리롤 레벨에 멈춰 핵심 기물 3성을 완성해야 보드가 완성되고, 그 전에 레벨에 쓰는 골드는 3성을 늦춘다.',
+        topic: '리롤 성과 강의 — 핵심 기물 3성 완성',
       },
       mixed: {
         lesson:
@@ -369,6 +369,13 @@ const LESSON: Record<
     lesson:
       '2성 8개 보드가 1성 9개 보드보다 강하다. 넓히기 전에 코어를 단단히 굳혀라.',
     topic: '2성작 우선순위 강의 — 넓히기와 굳히기의 순서',
+    byDeck: {
+      reroll: {
+        lesson:
+          '리롤형 보드의 완성은 칸 수가 아니라 핵심 기물 3성이다. 남는 칸은 핵심 기물의 시너지를 받치는 기물로 채운다.',
+        topic: '리롤 보드 완성 강의 — 핵심 기물 3성과 받쳐 주는 기물',
+      },
+    },
   },
   synergy: {
     label: '시너지 설계',
@@ -424,7 +431,7 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
       // 리롤형은 3성 완성·캐리 3성, 표준형은 레벨 격차, 혼합은 둘 다 보여 준다 (점수는 경기별 유형으로 매긴다).
       const reroll: AxisMetric[] = [
         { key: 'threeStars', label: '3성', value: mean((m) => m.three), unit: '개' },
-        { key: 'carryThreeStar', label: '캐리 3성', value: mean((m) => (m.carryThreeStar ? 1 : 0)), unit: '/1' },
+        { key: 'carryThreeStar', label: '핵심 기물 3성', value: mean((m) => (m.carryThreeStar ? 1 : 0)), unit: '/1' },
       ]
       if (deckType === 'reroll') return [...reroll, { key: 'level', label: '최종 레벨', value: mean((m) => m.level) }]
       const withLobby = metrics.filter((m) => m.lobbyLevel != null)
@@ -461,6 +468,13 @@ function axisMetrics(key: CoachingAxisKey, metrics: PerMatchMetrics[], deckType:
 /** 덱 유형에 맞는 강의 문장·주제 (리롤형/혼합이면 템포 강의가 바뀐다) */
 function lessonFor(key: CoachingAxisKey, deckType: DeckType): { lesson: string; topic: string } {
   return LESSON[key].byDeck?.[deckType] ?? LESSON[key]
+}
+
+/** "핵심 카시오페아(3코) 2성 — 3성 미완성" (리롤 핵심 기물이 없으면 캐리 기준) */
+function coreLine(info: DeckTypeInfo): string {
+  if (!info.core) return info.carryThreeStar ? '캐리 3성 완성' : '캐리 3성 미완성'
+  const c = info.core
+  return `핵심 ${c.name}(${c.cost}코) ${c.tier}성${c.tier >= 3 ? ' 완성' : ' — 3성 미완성'}`
 }
 
 /** 6축 진단 + 이번 강의 주제 결정 */
@@ -502,10 +516,8 @@ export function buildCoachingPlan(matches: SlimMatchData[]): CoachingPlan {
             deck.type === 'mixed' ? ` (리롤 ${deck.reroll}/${base.length})` : ''
           } · 3성 ${round1(avg(metrics.map((m) => m.three)))}개 · ${
             base.length === 1
-              ? metrics[0].carryThreeStar
-                ? '캐리 3성 완성'
-                : '캐리 3성 미완성'
-              : `캐리 3성 ${metrics.filter((m) => m.carryThreeStar).length}/${base.length}판`
+              ? coreLine(deckInfos[0])
+              : `핵심 기물 3성 ${metrics.filter((m) => m.carryThreeStar).length}/${base.length}판`
           } · ${exitLine}`
         : `${basis} 레벨 ${round1(avg(metrics.map((m) => m.level)))} · ${exitLine}`,
     completion: `${basis} 2성+ ${round1(avg(metrics.map((m) => m.twoPlus)))}개 · 3성 ${metrics.reduce(

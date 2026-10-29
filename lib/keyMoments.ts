@@ -1,11 +1,11 @@
 import { traitBreakpointMap } from './gameFacts'
 import { entitySlug } from './entitySlug'
-import { boardCarry } from './deckType'
+import { boardCarry, detectDeckType } from './deckType'
 import { mostSimilarOpponent } from './similarOpponent'
 import { isCoreUnit } from './contest'
 import { slotsUsed } from './boardSlots'
 import { traitAnchors, unitTraitCounts } from './traitAnchors'
-import { CARRY_STAR_ODDS_MIN, levelRange, oddsWindow } from './shopOdds'
+import { CARRY_STAR_ODDS_MIN, costOdds, levelRange, oddsWindow, peakOddsLevel } from './shopOdds'
 import type { SlimMatchData, SlimMatchUnit } from './types'
 
 /**
@@ -14,7 +14,7 @@ import type { SlimMatchData, SlimMatchUnit } from './types'
  * 모두 최종 보드 기준 사실이다 — 라운드 타이밍(언제 레벨업/리롤)은 데이터에 없으니 만들지 않는다.
  */
 export interface KeyMoment {
-  kind: 'carryContest' | 'sameComp' | 'duplicateCopies' | 'itemsOnWeak' | 'carryOneStar' | 'emptySlots' | 'nearBreakpoint'
+  kind: 'carryContest' | 'rerollCore' | 'sameComp' | 'duplicateCopies' | 'itemsOnWeak' | 'carryOneStar' | 'emptySlots' | 'nearBreakpoint'
   /** 짧은 제목 (예: "같은 구성 2등과의 성급 차이") */
   title: string
   /** 수치를 담은 사실 한 줄 — 프롬프트·화면에 그대로 쓴다 */
@@ -78,6 +78,16 @@ export function oneStarCarry(m: SlimMatchData): SlimMatchUnit | null {
   const carry = boardCarry(m.units)
   if (!carry || (carry.tier || 1) !== 1 || (carry.items?.length || 0) < 2) return null
   return oddsWindow(carry.rarity || 1, m.level) ? carry : null
+}
+
+/**
+ * 리롤형 판의 핵심 기물(lib/deckType rerollCore)이 3성이 아니면 그 기물. 리롤형이 아니거나 3성이면 null.
+ * 7렙 3코 리롤은 3코 3성이 보드의 완성이다 — 이 판의 처방은 레벨이 아니라 이 기물이다.
+ */
+export function unfinishedRerollCore(m: SlimMatchData): SlimMatchUnit | null {
+  const info = detectDeckType(m)
+  if (info.type !== 'reroll' || !info.core || info.core.tier >= 3) return null
+  return m.units.find((u) => u.name === info.core!.name && (u.tier || 1) === info.core!.tier) ?? null
 }
 
 /** 레벨만큼의 칸 중 비운 칸 (장로 드래곤처럼 2칸 차지하는 기물 반영 — lib/boardSlots) */
@@ -167,6 +177,38 @@ export function contestedCarry(m: SlimMatchData): { carry: SlimMatchUnit; holder
   return holders.length >= CONTESTED_CARRY_MIN ? { carry, holders } : null
 }
 
+
+/** 로비 상대 최종 보드에 있는 그 기물 (보유 상대 수 · 장수 — 1성 1장 · 2성 3장 · 3성 9장, 대기석 제외) */
+export function lobbyCopies(m: SlimMatchData, unit: SlimMatchUnit): { holders: number; copies: number } {
+  const key = slug(unit)
+  let holders = 0
+  let copies = 0
+  for (const p of (m.lobbyParticipants || []).filter((p) => !p.isUser)) {
+    const own = (p.units || []).filter((u) => slug(u) === key)
+    if (!own.length) continue
+    holders++
+    copies += own.reduce((s, u) => s + 3 ** ((u.tier || 1) - 1), 0)
+  }
+  return { holders, copies }
+}
+
+function rerollCoreMoment(m: SlimMatchData): KeyMoment | null {
+  const core = unfinishedRerollCore(m)
+  if (!core) return null
+  const cost = core.rarity || 1
+  const peak = peakOddsLevel(cost)
+  const odds = costOdds(m.level, cost)
+  const lobby = m.lobbyParticipants?.length ? lobbyCopies(m, core) : null
+  const done = m.units.filter((u) => (u.tier || 1) >= 3).map((u) => u.name)
+  return {
+    kind: 'rerollCore',
+    title: '리롤 핵심 기물 3성 미완성',
+    // 상점 확률은 lib/shopOdds 표 그대로 (프롬프트 [상점 확률] 블록과 같은 값). 장수는 최종 보드 기준 — 대기석은 데이터에 없다
+    fact: `리롤 핵심 기물 ${core.name}(${cost}코스트) ${core.tier || 1}성으로 끝남 · 최종 Lv.${m.level} 상점 ${cost}코 ${odds}%${
+      peak && peak.level >= 4 ? ` · ${cost}코스트가 가장 많이 나오는 레벨 Lv.${peak.level}(${peak.odds}%)` : ''
+    }${lobby ? ` · 로비 상대 최종 보드의 ${core.name} ${lobby.copies}장(${lobby.holders}명)` : ''}${done.length ? ` · 3성 완성: ${done.join(', ')}` : ' · 3성 0개'}`,
+  }
+}
 
 function sameComp(m: SlimMatchData): KeyMoment | null {
   const g = sameCompGap(m)
@@ -272,7 +314,7 @@ export function winFactors(m: SlimMatchData): string[] {
 /** 해당하는 장면 전부 (우선순위 순, 개수 제한 없음) — 규칙 검증(scripts/checkSceneRules)용 */
 export function allKeyMoments(m: SlimMatchData): KeyMoment[] {
   if (!m?.units?.length) return []
-  return [sameComp, duplicateCopies, itemsOnWeak, carryOneStar, emptySlots]
+  return [rerollCoreMoment, sameComp, duplicateCopies, itemsOnWeak, carryOneStar, emptySlots]
     .map((f) => f(m))
     .filter((x): x is KeyMoment => Boolean(x))
 }

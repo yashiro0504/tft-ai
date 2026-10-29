@@ -3,7 +3,7 @@ import { costOdds } from './shopOdds'
 import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
 import { validateItemRecipes } from './itemRecipes'
 import { boardCounts } from './boardStats'
-import { boardCarry, detectDeckType } from './deckType'
+import { boardCarry, detectDeckType, isTankItem } from './deckType'
 import { traitNameOf } from './gameFacts'
 
 /**
@@ -300,11 +300,17 @@ export function validateAdviceAndCounts(
   const single = matches.length === 1 ? matches[0] : null
   const counts = single ? boardCounts(single) : null
   const carry = single ? carries[0] : undefined
-  // 리롤형 판에서 캐리가 아닌 4~5코스트 기물 (아이템을 몰아줄 대상이 아니다 — v13 아이템 축과 같은 기준)
+  // 리롤형 판에서 캐리가 아닌 4~5코스트 기물 (아이템을 몰아줄 대상이 아니다 — v13 아이템 축과 같은 기준).
+  // 탱커 아이템을 든 기물은 앞라인이라 뺀다 — 리롤 보드의 4코 탱커에게 탱템을 더 주는 조언은 정상이다
   const rerollNonCarryHigh = new Set<string>()
+  // 리롤 판인데 핵심 기물이 3성이 아니면 레벨 처방은 핀트가 틀린 조언이다 (한 판 리포트만 — 어느 판 이야기인지 알 수 있을 때)
+  const singleDeck = single ? detectDeckType(single) : null
+  const unfinishedCore = singleDeck?.type === 'reroll' && singleDeck.core && singleDeck.core.tier < 3 ? singleDeck.core : null
   matches.forEach((m, i) => {
     if (detectDeckType(m).type !== 'reroll') return
-    for (const u of m.units) if ((u.rarity ?? 1) >= 4 && u.name !== carries[i]?.name) rerollNonCarryHigh.add(u.name)
+    for (const u of m.units) {
+      if ((u.rarity ?? 1) >= 4 && u.name !== carries[i]?.name && !(u.items || []).some(isTankItem)) rerollNonCarryHigh.add(u.name)
+    }
   })
 
   for (const s of all) {
@@ -330,6 +336,15 @@ export function validateAdviceAndCounts(
           actual: '아이템 추가 조언',
         })
       }
+    }
+    if (unfinishedCore && single && isRerollLevelAdvice(s, single.level)) {
+      errors.push({
+        type: 'advice_conflict',
+        text: s,
+        expected: `리롤형 — 핵심 ${unfinishedCore.name}(${unfinishedCore.cost}코) ${unfinishedCore.tier}성: 처방은 레벨이 아니라 3성`,
+        actual: '핵심 기물 3성 전 레벨 처방',
+      })
+      continue
     }
     if (!counts || OPPONENT_RE.test(s) || PRESCRIPTIVE_RE.test(s)) continue
     for (const m of s.matchAll(TRAIT_COUNT_RE)) {
@@ -532,6 +547,19 @@ const PIVOT_TIMING_RE =
 /** "Lv.8 … 4코스트 … 30%" / "8레벨 4코 확률 30%" — 레벨·코스트·확률이 한 구절에 있는 상점 확률 인용 */
 const SHOP_ODDS_CLAIM_RE = /(?:Lv\.?\s*(\d{1,2})|(\d{1,2})\s*레벨)[^.!?\n]{0,15}?([1-5])\s*코(?:스트)?[^.!?\n%]{0,12}?(\d{1,3})\s*%/g
 
+/** "Lv.9 도달", "9레벨까지", "레벨 8 이상" — 이번 판보다 높은 레벨을 목표로 거는 표현 */
+const LEVEL_TARGET_RE = /(?:Lv\.?\s*|레벨\s*)(\d{1,2})\s*(?:이상|까지|에?\s*도달|을?\s*찍|으로\s*올|에\s*가|을?\s*가|에서\s*(?:보드|완성|마무리))|(\d{1,2})\s*(?:레벨|렙)\s*(?:이상|까지|에?\s*도달|을?\s*찍|으로\s*올|에\s*가|을?\s*가|을?\s*못\s*가|을?\s*안\s*가)/g
+
+/**
+ * 리롤형 판(핵심 기물 3성 전)에 레벨을 탓하거나 더 높은 레벨을 처방하는 문장인가.
+ * "리롤형이라 레벨이 낮은 건 문제가 아니다" 같은 정상 해설(REROLL_EXCUSE_RE)은 아니다.
+ */
+export function isRerollLevelAdvice(s: string, level: number): boolean {
+  if (REROLL_EXCUSE_RE.test(s)) return false
+  if (REROLL_LEVEL_BLAME_RE.test(s)) return true
+  return [...s.matchAll(LEVEL_TARGET_RE)].some((x) => Number(x[1] ?? x[2]) > level)
+}
+
 /** 문장 속 상점 확률 인용 중 게임 데이터 표(lib/shopOdds)와 다른 것 */
 function shopOddsMismatches(s: string): string[] {
   const out: string[] = []
@@ -589,6 +617,15 @@ const TWO_STAR_TARGET_RE = /2성(?:\s*이상)?\s*(?:기물\s*)?(\d{1,2})\s*(?:�
  * 달성하지 않은 기준이면 null (그대로 둔다).
  */
 export function fixDrillTarget(drill: string, m: SlimMatchData, bodyTexts: string[], fallback: string): string | null {
+  // 리롤형 판의 핵심 기물이 3성이 아니면 목표는 레벨이 아니라 그 기물 3성이다 — 레벨 목표는 핵심 기물로 바꾼다
+  // (2026-10-29 백승민#agent 7렙 카시오페아 2성 판에 "최종 레벨 9"가 목표로 붙던 문제)
+  const deck = detectDeckType(m)
+  if (deck.type === 'reroll' && deck.core && deck.core.tier < 3) {
+    const coreGoal = `다음 3판은 리롤 판에서 ${deck.core.name}(${deck.core.cost}코) 3성까지 완성하고 끝내기 (이번 판 ${deck.core.tier}성)`
+    const mentionsLevel = [...drill.matchAll(LEVEL_MENTION_RE)].length > 0
+    if (mentionsLevel || !drill.includes(deck.core.name)) return coreGoal === drill ? null : coreGoal
+    return null
+  }
   const levels = [...drill.matchAll(LEVEL_MENTION_RE)].map((x) => Number(x[1])).filter((n) => n >= 3 && n <= 10)
   const levelDone = levels.some((n) => n <= m.level)
   const twoStars = m.units.filter((u) => (u.tier || 1) >= 2).length
