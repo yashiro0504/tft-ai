@@ -20,7 +20,7 @@ const COST_BORDER: Record<number, string> = {
 
 /**
  * 첫 화면의 "지금 메타 상위 덱" (티어 → 평균 등수 순 4개, 표본 부족 덱 제외).
- * 메타 랭킹과 같은 /api/tft/meta 응답과 같은 상대 티어 계산(표본 수 반영)을 쓴다.
+ * 메타 랭킹과 같은 /api/tft/meta 응답과 같은 덱 티어(보정 평균등수 고정 구간, 50판 미만 제외)를 쓴다.
  */
 export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
   const [decks, setDecks] = useState<(MetaDeckRanking & { tier: Tier | '-' })[] | null>(null)
@@ -34,7 +34,7 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
         const tiers = assignSampleTiers(
           data.decks.map((d) => ({ avg: d.avgPlacement ?? 9, sample: d.sampleSize })),
           MIN_SAMPLE.deck,
-          { separated: true }
+          { deck: true }
         )
         const ranked = data.decks
           .map((d, i) => ({ ...d, tier: tiers[i] }))

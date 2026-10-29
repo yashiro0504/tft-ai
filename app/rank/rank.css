@@ -244,6 +244,7 @@
 .rk-bar > i { display: block; height: 100%; background: var(--rk-accent); }
 
 .rk-empty { padding: 40px 28px; color: var(--rk-muted); font-size: 13px; }
+.rk-group-label { padding: 10px 16px 6px; font-size: 12px; font-weight: 600; color: var(--rk-muted); border-top: 1px solid var(--rk-line, rgba(127,127,127,.25)); }
 .rk-error {
   display: flex;
   align-items: center;

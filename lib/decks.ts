@@ -1,6 +1,6 @@
 import decksData from './decksData.json'
 import metaStatsData from './metaStats.json'
-import { tierFromAvgPlacement } from './meta'
+import { deckTier } from './deckTier'
 import { championPortraitUrl } from './constants'
 import type { DeckGuide } from './types'
 
@@ -200,7 +200,8 @@ function computeDeck(deck: RawDeck, jsonUnitStats = true): DeckView {
     top4Rate,
     coverage,
     sampleSize: measured ? (deck.games as number) : sampleSize,
-    tier: avgPlacement != null ? tierFromAvgPlacement(avgPlacement) : '-',
+    // 메타 덱 탭과 같은 티어 (보정 평균등수 고정 구간, 50판 미만 '-')
+    tier: avgPlacement != null ? deckTier(avgPlacement, measured ? (deck.games as number) : sampleSize) : '-',
     carryKey: measured && deck.carryKey ? deck.carryKey : carry ? carry.matchedKey ?? carry.lolchessKey : null,
     level: deck.level,
     games: deck.games,
