@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import {
   MatchAnalysisError,
+  analysisCacheKey,
   runMatchAnalysis,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
 import {
-  quotaGuard,
-  refundQuota,
+  quotaCheck,
+  quotaStatus,
+  chargeQuotaOnce,
   rateLimitGuard,
   readJson,
   normalizeGameNameTagLine,
@@ -25,7 +27,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/tft/match
  * 특정 경기(matchId) 1개를 정밀 AI 분석한다. (동기 JSON 응답)
  *
- * - 매치 데이터는 불변 → matchId 기준으로 결과를 캐시하여 재분석은 즉시 응답.
+ * - 매치 데이터는 불변 → matchId 기준으로 결과를 캐시하여 재분석은 즉시 응답 (횟수 차감 없음).
  * - 실데이터: puuid(권장, 검색 응답에서 획득) 또는 gameName/tagLine 으로 계정 조회.
  * - 진행 상황이 필요하면 `POST /api/tft/match/stream` (SSE) 을 쓴다.
  */
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
       passedByTurnstile = true
     }
 
-    const daily = await quotaGuard(
+    const daily = await quotaCheck(
       req,
       'analysis',
       dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 3),
@@ -78,8 +80,9 @@ export async function POST(req: NextRequest) {
     }
 
     const outcome = await runMatchAnalysis(params)
-    // AI 를 못 쓴 규칙 기반 폴백은 이용 횟수에서 빼 준다 (DeepSeek 잔액 소진·예산 초과 등)
-    if (outcome.response.feedback?.isFallback) await refundQuota(req, 'ai_fallback')
+    // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (캐시 적중·AI 미사용 폴백·실패는 차감 없음, 같은 경기는 멱등 키로 한 번)
+    const quota =
+      !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisCacheKey(params)) : quotaStatus(req)
 
     logEvent('info', 'api_match', {
       ms: elapsedMs(startedAt),
@@ -88,7 +91,7 @@ export async function POST(req: NextRequest) {
       mode: params.mode,
       isDemo: params.isDemo,
     })
-    const res = NextResponse.json(outcome.response)
+    const res = NextResponse.json({ ...outcome.response, ...(quota ? { quota } : {}) })
     return passedByTurnstile ? issueBotGate(res, req) : res
   } catch (err) {
     if (err instanceof MatchAnalysisError) {

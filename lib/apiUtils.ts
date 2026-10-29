@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from './rateLimit'
-import { consumeDailyQuota, refundDailyQuota, type QuotaResult } from './quota'
-import { consumeUserQuota, refundUserQuota } from './userQuota'
+import { chargeDailyQuotaOnce, consumeDailyQuota, peekDailyQuota, refundDailyQuota, type QuotaResult } from './quota'
+import { chargeUserQuotaOnce, consumeUserQuota, peekUserQuota, refundUserQuota } from './userQuota'
 import { isQuotaExempt } from './quotaExempt'
 import { hasOwnerCookie } from './ownerKey'
 import { getAuthUser } from './supabase/server'
@@ -123,6 +123,97 @@ export async function quotaGuard(
       headers: { 'Retry-After': String(result.retryAfterSec) },
     }
   )
+}
+
+
+/** 응답에 실어 화면 카운터를 서버 값과 맞추는 쿼터 상태 (차감 여부 포함) */
+export interface QuotaInfo {
+  bucket: string
+  charged: boolean
+  used: number
+  limit: number
+  remaining: number
+}
+
+interface QuotaPlan {
+  bucket: string
+  limit: number
+  proLimit: number
+  scope: 'user' | 'ip'
+  identity: string
+  userId?: string
+  peek: QuotaResult
+}
+
+/** quotaCheck 가 확인한 이 요청의 쿼터 (chargeQuotaOnce 가 같은 곳에 차감한다) */
+const planned = new WeakMap<NextRequest, QuotaPlan>()
+
+function quotaExceeded(bucket: string, scope: 'user' | 'ip', result: QuotaResult): NextResponse {
+  incrMetric(`quota.blocked_response.${bucket}`)
+  logEvent('warn', 'quota_blocked', { bucket, scope, limit: result.limit, used: result.used, resetInSec: result.retryAfterSec })
+  return NextResponse.json(
+    {
+      success: false,
+      error: `오늘 이용 한도(${result.limit}회)를 초과했습니다. 약 ${humanizeRetry(result.retryAfterSec)} 후(한국 시간 자정) 다시 이용할 수 있습니다.`,
+      quota: { bucket, limit: result.limit, used: result.used, remaining: 0, resetInSec: result.retryAfterSec },
+    },
+    { status: 429, headers: { 'Retry-After': String(result.retryAfterSec) } }
+  )
+}
+
+/**
+ * AI 분석용 쿼터 확인 — 남은 횟수만 보고 **차감하지 않는다** (2026-10-29 지시문 2).
+ * 차감은 새 리포트 생성이 성공해 저장된 뒤 chargeQuotaOnce 로만 한다. 캐시 적중·실패·타임아웃은 차감 없음.
+ * 한도를 다 썼으면 429, 아니면 null.
+ */
+export async function quotaCheck(
+  req: NextRequest,
+  bucket: string,
+  limit: number,
+  userId?: string,
+  proLimit?: number
+): Promise<NextResponse | null> {
+  if (limit <= 0 && !proLimit) return null
+  if (hasOwnerCookie(req) || (userId && isQuotaExempt(await getAuthUser()))) {
+    incrMetric(`quota.exempt.${bucket}`)
+    return null
+  }
+  const pro = proLimit ?? Math.max(0, limit)
+  let plan: QuotaPlan | null = null
+  if (userId) {
+    const peek = await peekUserQuota(userId, bucket, Math.max(0, limit), pro)
+    if (peek) plan = { bucket, limit: Math.max(0, limit), proLimit: pro, scope: 'user', identity: userId, userId, peek }
+  }
+  if (!plan) {
+    if (limit <= 0) return null
+    const ip = getClientIp(req.headers)
+    plan = { bucket, limit, proLimit: pro, scope: 'ip', identity: ip, peek: await peekDailyQuota(bucket, ip, limit) }
+  }
+  planned.set(req, plan)
+  return plan.peek.allowed ? null : quotaExceeded(bucket, plan.scope, plan.peek)
+}
+
+/** 차감 없이 지금 쿼터 상태 (캐시 적중 응답용). quotaCheck 를 안 거쳤거나 면제면 null */
+export function quotaStatus(req: NextRequest): QuotaInfo | null {
+  const p = planned.get(req)
+  if (!p) return null
+  return { bucket: p.bucket, charged: false, used: p.peek.used, limit: p.peek.limit, remaining: p.peek.remaining }
+}
+
+/**
+ * 새 리포트를 만들어 저장한 뒤 1회 차감한다. 멱등 키(idemKey)가 같으면 한 번만 — 더블클릭·재시도 대비.
+ * quotaCheck 를 안 거쳤거나 면제면 아무것도 안 하고 null.
+ */
+export async function chargeQuotaOnce(req: NextRequest, idemKey: string): Promise<QuotaInfo | null> {
+  const p = planned.get(req)
+  if (!p) return null
+  planned.delete(req)
+  let r: (QuotaResult & { charged: boolean }) | null = null
+  if (p.scope === 'user' && p.userId) r = await chargeUserQuotaOnce(p.userId, p.bucket, p.limit, p.proLimit, idemKey)
+  if (!r) r = await chargeDailyQuotaOnce(p.bucket, p.identity, p.limit, idemKey)
+  incrMetric(r.charged ? `quota.charged.${p.bucket}` : `quota.idem_skip.${p.bucket}`)
+  logEvent('info', 'quota_charged', { bucket: p.bucket, scope: p.scope, charged: r.charged, used: r.used })
+  return { bucket: p.bucket, charged: r.charged, used: r.used, limit: r.limit, remaining: r.remaining }
 }
 
 /**

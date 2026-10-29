@@ -468,6 +468,8 @@ export interface TFTAnalysisResponse {
   summonerProfile?: SummonerProfile
   isDemo?: boolean
   error?: string
+  cached?: boolean
+  quota?: AnalysisQuotaInfo
 }
 
 // ── Phase 1: 아이디 검색 → 경기별 분석 API 응답 타입 ──
@@ -500,6 +502,16 @@ export interface TftMatchAnalysisResponse {
   feedback?: MetaCoachFeedback
   cached?: boolean
   error?: string
+  /** 서버 쿼터 상태 — charged 가 true 일 때만 이번 요청에서 1회 차감했다 (면제·무제한이면 없음) */
+  quota?: AnalysisQuotaInfo
+}
+
+export interface AnalysisQuotaInfo {
+  bucket: string
+  charged: boolean
+  used: number
+  limit: number
+  remaining: number
 }
 
 /** POST /api/tft/overview 응답: 로드된 여러 경기 종합 AI 분석 */

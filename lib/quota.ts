@@ -10,7 +10,7 @@
  */
 import { kstDayWindow, secondsUntilReset } from './dayWindow'
 import { incrMetric } from './observability'
-import { redisConfigured, redisExpire, redisIncrBy } from './redisRest'
+import { redisConfigured, redisExpire, redisGet, redisIncrBy, redisSetNx } from './redisRest'
 
 export interface QuotaResult {
   allowed: boolean
@@ -94,4 +94,48 @@ export async function refundDailyQuota(bucket: string, identity: string): Promis
   }
   const entry = memory.get(key)
   if (entry && entry.used > 0) entry.used -= 1
+}
+
+/** 오늘 사용량만 읽는다 (소모하지 않음). 분석 시작 전 한도 확인용 */
+export async function peekDailyQuota(bucket: string, identity: string, limit: number): Promise<QuotaResult> {
+  const retryAfterSec = secondsUntilReset()
+  if (limit <= 0) return { allowed: true, limit: 0, used: 0, remaining: 0, retryAfterSec }
+  const { key: day } = kstDayWindow()
+  const key = `quota:${day}:${bucket}:${identity}`
+  let used = 0
+  const fromRedis = redisConfigured() ? await redisGet(key) : null
+  if (fromRedis !== null) used = Number(fromRedis) || 0
+  else {
+    const entry = memory.get(key)
+    used = entry && entry.resetAt > Date.now() ? entry.used : 0
+  }
+  return { allowed: used < limit, limit, used, remaining: Math.max(0, limit - used), retryAfterSec }
+}
+
+/** 멱등 키별로 한 번만 소모했는지 (Redis 미설정·장애 시 인스턴스 메모리) */
+const chargedOnce = new Map<string, number>()
+
+/**
+ * 멱등 키(idemKey)당 한 번만 1회를 소모한다 — 더블클릭·재시도·같은 경기 재분석으로 두 번 차감되지 않게.
+ * charged=false 면 이미 같은 키로 차감한 적이 있어 이번엔 차감하지 않은 것.
+ */
+export async function chargeDailyQuotaOnce(
+  bucket: string,
+  identity: string,
+  limit: number,
+  idemKey: string
+): Promise<QuotaResult & { charged: boolean }> {
+  const { key: day, resetAt } = kstDayWindow()
+  const ttl = secondsUntilReset()
+  const onceKey = `quota-idem:${day}:${bucket}:${identity}:${idemKey}`
+  let fresh: boolean | null = redisConfigured() ? await redisSetNx(onceKey, '1', ttl) : null
+  if (fresh === null) {
+    const now = Date.now()
+    for (const [k, exp] of chargedOnce) if (exp <= now) chargedOnce.delete(k)
+    fresh = !chargedOnce.has(onceKey)
+    if (fresh) chargedOnce.set(onceKey, resetAt)
+  }
+  if (!fresh) return { ...(await peekDailyQuota(bucket, identity, limit)), charged: false }
+  const r = await consumeDailyQuota(bucket, identity, limit)
+  return { ...r, charged: true }
 }

@@ -48,11 +48,20 @@ export interface MatchAnalysisOutcome {
   cached: boolean
 }
 
-/** 캐시 키 (프롬프트·점수 공식 버전 포함 → 둘 중 하나가 바뀌면 자동 무효화) */
+/**
+ * 리포트 버전 = 프롬프트·점수 공식 버전. 메타 스냅샷은 넣지 않는다 — 스냅샷이 바뀌어도 이미 만든 리포트를
+ * 무효화하지 않는다 (2026-10-29 지시문 2: 같은 경기 재분석이 새 생성·차감으로 이어지지 않게).
+ */
+export const REPORT_VERSION = `${COACH_PROMPT_VERSION}:${SCORING_VERSION}`
+
+/** 캐시 키 = match_id + puuid(없으면 닉네임) + 모드 + 리포트 버전. 횟수 차감의 멱등 키로도 쓴다 */
 export function analysisCacheKey(params: MatchAnalysisParams): string {
   const subject = params.puuid || params.gameName?.toLowerCase() || 'anon'
-  return `analysis:${params.matchId}:${subject}:${params.mode}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}`
+  return `analysis:${params.matchId}:${subject}:${params.mode}:${REPORT_VERSION}`
 }
+
+/** 같은 캐시 키로 동시에 들어온 분석(더블클릭·재시도)은 LLM 을 한 번만 부르고 결과를 나눠 쓴다 */
+const inFlight = new Map<string, Promise<MatchAnalysisOutcome>>()
 
 /**
  * 캐시된 분석 결과만 조회한다. (없으면 null)
@@ -84,6 +93,23 @@ export interface MatchAnalysisCallbacks {
 export async function runMatchAnalysis(
   params: MatchAnalysisParams,
   callbacks: MatchAnalysisCallbacks = {}
+): Promise<MatchAnalysisOutcome> {
+  const key = analysisCacheKey(params)
+  const pending = inFlight.get(key)
+  // 진행 중인 같은 분석에 합류 — 결과는 새로 만든 쪽 것이라 cached 로 표시한다 (차감은 멱등 키로 한 번만)
+  if (pending) return pending.then((o) => ({ response: { ...o.response, cached: true }, cached: true }))
+  const run = runMatchAnalysisOnce(params, callbacks)
+  inFlight.set(key, run)
+  try {
+    return await run
+  } finally {
+    inFlight.delete(key)
+  }
+}
+
+async function runMatchAnalysisOnce(
+  params: MatchAnalysisParams,
+  callbacks: MatchAnalysisCallbacks
 ): Promise<MatchAnalysisOutcome> {
   const { onStage, onMatch } = callbacks
   const { matchId, mode } = params
