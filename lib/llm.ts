@@ -10,8 +10,8 @@ import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
-import { validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts } from './semanticGrounding'
+import { fixPlacementWording, repairUnsupportedClaims, validateFeedbackGrounding } from './grounding'
+import { feedbackTexts, fixDrillTarget, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts } from './semanticGrounding'
 import { recipeFactsFor } from './itemRecipes'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
@@ -31,7 +31,7 @@ import { boardCarry } from './deckType'
 import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-29.1'
+export const COACH_PROMPT_VERSION = '2026-10-29.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -232,6 +232,8 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
    - 종합 분석이면 장면은 "여러 판에 반복된 습관"이다. why 는 반복 횟수·평균 수치로, fix 는 다음 판들에서 지킬 규칙으로 쓴다.
 3) drill: 다음 3판 동안 지킬 목표 1개 — 최종 보드로 확인할 수 있는 숫자 목표로 (예: 기물 성급·2성 수·아이템 위치).
    라운드·레벨 도달 시점은 데이터에 없으니 넣지 마라.
+   이번 판에 이미 달성한 기준(최종 Lv.8 인데 "레벨 8 이상", 이미 2성 5개인데 "2성 5개")은 목표가 아니다.
+   본문(moments fix·alternative)에서 권한 기준과 같은 기준을 써라 (본문이 Lv.9 를 권하면 목표도 "최종 레벨 9").
 4) checklist: 실전 체크리스트 3개 (짧은 명령문, moments 의 fix 를 그대로 복사하지 마라)
 
 [진단 6축]
@@ -251,6 +253,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 ★★★ 이름/코스트 환각 금지 ★★★
 - 제공된 사실 데이터에 등장한 기물·시너지·아이템·증강 이름만 쓴다. 다른 세트의 시너지명(예: 결투가)이나 존재하지 않는 이름을 만들지 마라.
 - 기물 코스트는 1~5만 존재한다. "6코스트" 같은 표현을 쓰지 마라.
+- 로비 등수: 1등은 탈락하지 않는다. "탈락한 1등"이라고 쓰지 말고 1등은 "1등 플레이어", 나머지는 "N등(탈락)"으로 쓴다.
 - 경합이 없는 경우(경합 없음/0/100)는 실패가 아니라 유리한 조건이다. "빈집 활용 실패"처럼 실패로 단정하지 마라.
 - 로비 경합은 경기 데이터의 '경합 등급 ○○ (강도 N/100)'의 등급 이름(빈집·보통·경합·심각)으로만 말한다 — 경기 카드에 보이는 이름과 같아야 한다.
   등급이 빈집이 아니면 그 판을 '빈집'이라 부르지 마라. '리롤 캐리 겹침 0명'은 캐리 하나의 겹침이지 경합 등급이 아니다.
@@ -434,9 +437,44 @@ export function shopOddsFacts(matches: SlimMatchData[], mode: 'single' | 'multi'
 }
 
 /** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
+/** 리포트 서술 문자열만 바꾼다 (점수·코드 값은 그대로) */
+function mapFeedbackStrings(fb: MetaCoachFeedback, change: (s: string) => string): MetaCoachFeedback {
+  // 이전 형식 응답·캐시엔 필드가 비어 있을 수 있다 — 문자열만 바꾼다
+  const fn = <T,>(v: T): T => (typeof v === 'string' ? (change(v) as T) : v)
+  const str = fn
+  const list = (v: string[] | undefined) => v?.map((x) => fn(x))
+  const l = fb.lecture
+  return {
+    ...fb,
+    overview: fn(fb.overview),
+    playstyle: fn(fb.playstyle),
+    contestAnalysis: str(fb.contestAnalysis),
+    itemAnalysis: str(fb.itemAnalysis),
+    synergyAnalysis: str(fb.synergyAnalysis),
+    economyAnalysis: str(fb.economyAnalysis),
+    actions: list(fb.actions),
+    improvements: list(fb.improvements),
+    actionPlan: list(fb.actionPlan),
+    ...(l
+      ? {
+          lecture: {
+            ...l,
+            concept: fn(l.concept),
+            why: fn(l.why),
+            evidence: fn(l.evidence),
+            alternative: fn(l.alternative),
+            drill: fn(l.drill),
+            checklist: (l.checklist || []).map((x) => fn(x)),
+            ...(l.moments ? { moments: l.moments.map((x) => ({ ...x, why: fn(x.why), fix: fn(x.fix) })) } : {}),
+          },
+        }
+      : {}),
+  }
+}
+
 /** 조합법 대조 결과를 근거 검증 점수에 더한다: 대조한 조합법 주장은 분모, 맞은 것만 분자 (불일치가 있으면 100% 가 아니다) */
 function withRecipeClaims(g: GroundingReport, check: { errors: EntityFactError[]; checkedRecipes: number; checkedLobby?: number }): GroundingReport {
-  // 조합법·로비 비교 수치 주장도 근거 검증 분모에 넣는다 (틀린 것은 고쳐 보내도 점수엔 남긴다)
+  // 조합법·로비 비교 수치 주장도 근거 검증 분모에 넣는다 (수리한 뒤의 리포트로 센다 — 고친 기록은 repair · entityErrors 에)
   const wrong = check.errors.filter((e) => e.type === 'item_recipe' || e.type === 'lobby_mismatch')
   const checked = check.checkedRecipes + (check.checkedLobby ?? 0)
   if (!checked) return g
@@ -992,14 +1030,34 @@ ${recipeFacts}
       axes: plan.axes.map((a) => ({ ...a, verdict: verdicts?.[a.key] })),
     })
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
-    const rawLecture = normalizeLecture(rawFb.lecture, withVerdicts(rawAxisVerdicts), rawFb, moments)
+    const repair = { fixed: 0, deleted: 0 }
+    const verdictPlan = withVerdicts(rawAxisVerdicts)
+    const drillFallback = `다음 3판은 ${plan.focusLabel} 하나만 의식하세요. ${plan.drillTemplate}`
+    const normalized = normalizeLecture(rawFb.lecture, verdictPlan, rawFb, moments)
     // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
-    const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : rawLecture.checklist.slice(0, 3)
+    const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : normalized.checklist.slice(0, 3)
+    // 다음 3게임 목표: 이번 판에 이미 달성한 기준이면 본문 조언과 같은 기준으로 바꾼다 (한 판 리포트만)
+    let rawLecture = normalized
+    if (mode === 'single' && matches.length === 1) {
+      const body = [
+        normalized.concept,
+        normalized.why,
+        normalized.alternative,
+        ...normalized.checklist,
+        ...(normalized.moments || []).flatMap((x) => [x.why, x.fix]),
+        ...rawActions,
+      ]
+      const drill = fixDrillTarget(normalized.drill, matches[0], body, drillFallback)
+      if (drill) {
+        rawLecture = { ...normalized, drill }
+        repair.fixed++
+      }
+    }
     // 정규화된 강의(코드가 채운 부분 포함)·축 한 줄까지 최종 보드와 대조하고,
     // 잡힌 문장은 보내기 전에 고치거나 지운다 (entityErrors 는 검출 기록으로 남긴다)
     // 보드에 없는 기물·아이템을 맥락 없이 쓴 문장(validateBoardNames)도 같이 지운다
     const rawTexts = feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts)
-    // 조합법·조언-데이터 모순·보드 수치(카드와 같은 값)도 대조한다 — 조합법 불일치는 근거 검증 점수에도 반영한다
+    // 조합법·조언-데이터 모순·보드 수치(카드와 같은 값)도 대조한다
     const adviceCheck = validateAdviceAndCounts(rawTexts, matches)
     const entityErrors = [
       ...validateEntityFacts(rawTexts, matches),
@@ -1007,15 +1065,47 @@ ${recipeFacts}
       ...adviceCheck.errors,
     ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
-    const { fb: repairedFb, lecture, actions, axisVerdicts } = repairEntityErrors(
+    // 수리 전 검사한 수치 (단위 수치·소수 + 조합법 + 로비 비교)
+    const checked =
+      validateFeedbackGrounding({ ...rawFb, lecture: rawLecture, actions: rawActions, ...(deckComparison ? { deckComparison } : {}) }, prompt).total +
+      adviceCheck.checkedRecipes +
+      (adviceCheck.checkedLobby ?? 0)
+    const repaired = repairEntityErrors(
       { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
-      entityErrors
+      entityErrors,
+      { dropEmpty: true, stats: repair }
     )
+    // 근거를 확인 못 한 수치가 든 문장은 숫자를 빼거나 지운다 → 보이는 리포트는 항상 100%
     // "이 덱의 정석과 비교"는 코드가 비교표에서 만든 문장 — 근거 검증 대상에 넣어 플레이북 수치도 프롬프트 사실과 대조한다
-    const fb = deckComparison ? { ...repairedFb, deckComparison } : repairedFb
-    const namesChecked = validateBoardNames(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches, prompt).checked
+    const axisVerdicts = repaired.axisVerdicts
+    const pruned = repairUnsupportedClaims(
+      { ...repaired.fb, lecture: repaired.lecture, actions: repaired.actions, ...(deckComparison ? { deckComparison } : {}) },
+      prompt,
+      repair,
+      { dropEmpty: true }
+    )
+    // 문장을 지워 빈 칸이 된 강의 필드·총평은 코드 문장으로 채우고, 채운 문장도 한 번 더 대조한다 (이번엔 숫자만 뺀다)
+    const filledFb = pruned.overview?.trim() ? pruned : { ...pruned, overview: generateFallbackMetaFeedback(gameName, matches, mode).overview }
+    const grounded = repairUnsupportedClaims(
+      { ...filledFb, lecture: normalizeLecture(pruned.lecture, withVerdicts(axisVerdicts), filledFb, moments) },
+      prompt,
+      repair
+    )
+    // '탈락한 1등' → '1등 플레이어', '탈락한 N등' → 'N등(탈락)'
+    const fb = mapFeedbackStrings(grounded, (t) => {
+      const out = fixPlacementWording(t)
+      if (out !== t) repair.fixed++
+      return out
+    })
+    const lecture = fb.lecture!
+    const actions = fb.actions
+    const finalTexts = feedbackTexts(fb, axisVerdicts)
+    const namesChecked = validateBoardNames(finalTexts, matches, prompt).checked
+    const postAdvice = validateAdviceAndCounts(finalTexts, matches)
     return {
       ...fb,
+      // LLM 원문은 고치기 전 문장이라 응답에 싣지 않는다 (보이는 리포트 = 수리한 문장만)
+      fullMarkdown: undefined,
       actions,
       mode,
       metaScore: scoring ? scoring.total : fb.metaScore,
@@ -1026,9 +1116,10 @@ ${recipeFacts}
       plan: withVerdicts(axisVerdicts),
       lecture,
       grounding: {
-        ...withRecipeClaims(validateFeedbackGrounding(fb, prompt), adviceCheck),
+        ...withRecipeClaims(validateFeedbackGrounding(fb, prompt), postAdvice),
         entityErrors,
         namesChecked,
+        repair: { checked, ...repair },
       },
       dataQuality: {
         lowSample: Boolean(plan.lowSample),

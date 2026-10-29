@@ -120,17 +120,14 @@ export function extractClaims(text: string): string[] {
   })
 }
 
-/**
- * LLM 리포트의 수치 주장을 제공된 사실(프롬프트)과 대조한다.
- * - 단위 수치(등/명/%/G/라운드/성/코)와 소수(3.44)만 검증 대상
- * - 사실 텍스트에 없는 수치는 unsupported 로 기록 (TFT 규칙 상수는 예외)
- */
-export function validateFeedbackGrounding(
-  feedback: MetaCoachFeedback,
-  facts: string
-): GroundingReport {
-  const factNumbers = collectFactNumbers(facts)
-  const text = [
+function isSupportedClaim(claim: string, factNumbers: Set<string>): boolean {
+  const numRaw = claim.match(/\d+(?:\.\d+)?/)?.[0] || ''
+  return Boolean(numRaw && factNumbers.has(norm(numRaw))) || isRuleConstant(claim)
+}
+
+/** 근거 검증 대상 서술 문자열 (validateFeedbackGrounding · repairUnsupportedClaims 가 같은 범위를 본다) */
+function groundedTexts(feedback: MetaCoachFeedback): Array<string | undefined> {
+  return [
     feedback.overview,
     feedback.contestAnalysis,
     feedback.itemAnalysis,
@@ -151,6 +148,141 @@ export function validateFeedbackGrounding(
     ...(feedback.improvements || []),
     ...(feedback.actionPlan || []),
   ]
+}
+
+/** 리포트 수리 기록 — 화면 '근거 검증' 상세에 그대로 보인다 */
+export interface RepairStats {
+  fixed: number
+  deleted: number
+}
+
+/**
+ * 근거를 확인하지 못한 수치가 든 문장을 보내기 전에 고친다 (사용자에게 보이는 리포트는 항상 100%).
+ *  1) 미확인 수치가 괄호 안에만 있으면 괄호를 뺀다 → 고침
+ *  2) 아니면 문장을 지운다 → 삭제 (배열 항목이 비면 항목을 뺀다)
+ *  3) 단일 필드가 통째로 비게 되면: dropEmpty 면 비운다(호출부가 코드 문장으로 채운다) → 삭제,
+ *     아니면 미확인 수치만 빼서 남긴다 → 고침
+ * 원본은 바꾸지 않는다.
+ */
+export function repairUnsupportedClaims(
+  feedback: MetaCoachFeedback,
+  facts: string,
+  stats: RepairStats,
+  { dropEmpty = false }: { dropEmpty?: boolean } = {}
+): MetaCoachFeedback {
+  const factNumbers = collectFactNumbers(facts)
+  const bad = (text: string) => extractClaims(text).filter((c) => !isSupportedClaim(c, factNumbers))
+
+  const fixText = (str: string | undefined, inArray: boolean): string | undefined => {
+    if (!str || !bad(str).length) return str
+    // 문장 경계(마침표·물음표·느낌표 뒤 공백, 줄바꿈)를 남겨 둔 채 문장 단위로 본다. "3.44"·"Lv.8" 의 점은 경계가 아니다
+    const parts = str.split(/((?<=[.!?])\s+|\n+)/)
+    let fixed = 0
+    let deleted = 0
+    const out: string[] = []
+    for (let i = 0; i < parts.length; i += 2) {
+      let sentence = parts[i]
+      const sep = parts[i + 1] ?? ''
+      if (bad(sentence).length) {
+        const trimmed = sentence
+          .replace(/\s*[(（][^()（）]*[)）]/g, (m) => (bad(m).length ? '' : m))
+          .replace(/[ \t]{2,}/g, ' ')
+        if (trimmed.trim() && !bad(trimmed).length) {
+          sentence = trimmed
+          fixed++
+        } else {
+          deleted++
+          continue
+        }
+      }
+      if (sentence.trim()) out.push(sentence, sep)
+    }
+    const joined = out.join('').trim()
+    if (joined) {
+      stats.fixed += fixed
+      stats.deleted += deleted
+      return joined
+    }
+    if (inArray || dropEmpty) {
+      stats.deleted += deleted
+      return inArray ? undefined : ''
+    }
+    // 단일 필드: 빈 섹션 대신 미확인 수치만 뺀다
+    let stripped = str
+    for (const claim of bad(str)) {
+      const m = claim.match(/^(\d+(?:\.\d+)?)(.*)$/)
+      if (!m) continue
+      // 수치 뒤 조사까지 뺀다 ("87%로 강합니다" → "강합니다")
+      stripped = stripped.replace(new RegExp(`(?<![\\d.])${escapeRegExp(m[1])}\\s*${escapeRegExp(m[2])}(?:으로|로|의|은|는|이|가|에)?`, 'g'), '')
+    }
+    stats.fixed++
+    return stripped.replace(/\s*[(（]\s*[)）]/g, '').replace(/[ \t]{2,}/g, ' ').trim()
+  }
+  const fixList = (list: string[] | undefined) =>
+    list ? list.map((x) => fixText(x, true)).filter((x): x is string => Boolean(x)) : list
+
+  const l = feedback.lecture
+  const dc = feedback.deckComparison
+  return {
+    ...feedback,
+    overview: fixText(feedback.overview, false) ?? feedback.overview,
+    contestAnalysis: fixText(feedback.contestAnalysis, false),
+    itemAnalysis: fixText(feedback.itemAnalysis, false),
+    synergyAnalysis: fixText(feedback.synergyAnalysis, false),
+    economyAnalysis: fixText(feedback.economyAnalysis, false),
+    ...(l
+      ? {
+          lecture: {
+            ...l,
+            concept: fixText(l.concept, false) ?? l.concept,
+            why: fixText(l.why, false) ?? l.why,
+            evidence: fixText(l.evidence, false) ?? l.evidence,
+            alternative: fixText(l.alternative, false) ?? l.alternative,
+            drill: fixText(l.drill, false) ?? l.drill,
+            checklist: fixList(l.checklist) ?? [],
+            ...(l.moments ? { moments: l.moments.map((x) => ({ ...x, why: fixText(x.why, false) ?? '', fix: fixText(x.fix, false) ?? '' })) } : {}),
+          },
+        }
+      : {}),
+    ...(feedback.actions ? { actions: fixList(feedback.actions) } : {}),
+    // 코드가 만든 비교 문장 — 사실과 안 맞으면 항목을 뺀다
+    ...(dc
+      ? {
+          deckComparison: {
+            ...dc,
+            items: dc.items.filter((r) => {
+              if (!bad(r.text).length) return true
+              stats.deleted++
+              return false
+            }),
+          },
+        }
+      : {}),
+    ...(feedback.improvements ? { improvements: fixList(feedback.improvements) } : {}),
+    ...(feedback.actionPlan ? { actionPlan: fixList(feedback.actionPlan) } : {}),
+  }
+}
+
+/**
+ * 로비 등수 표현 정리: 1등은 탈락하지 않으므로 '탈락한 1등'은 '1등 플레이어', 나머지는 'N등(탈락)'.
+ */
+export function fixPlacementWording(text: string): string {
+  return text
+    .replace(/탈락한\s*1\s*등(?:\s*(?:플레이어|유저))?/g, '1등 플레이어')
+    .replace(/탈락한\s*([2-8])\s*등(?!\s*\()/g, '$1등(탈락)')
+}
+
+/**
+ * LLM 리포트의 수치 주장을 제공된 사실(프롬프트)과 대조한다.
+ * - 단위 수치(등/명/%/G/라운드/성/코)와 소수(3.44)만 검증 대상
+ * - 사실 텍스트에 없는 수치는 unsupported 로 기록 (TFT 규칙 상수는 예외)
+ */
+export function validateFeedbackGrounding(
+  feedback: MetaCoachFeedback,
+  facts: string
+): GroundingReport {
+  const factNumbers = collectFactNumbers(facts)
+  const text = groundedTexts(feedback)
     .filter(Boolean)
     .join('\n')
 
@@ -159,8 +291,7 @@ export function validateFeedbackGrounding(
   let supported = 0
 
   for (const claim of claims) {
-    const numRaw = claim.match(/\d+(?:\.\d+)?/)?.[0] || ''
-    if ((numRaw && factNumbers.has(norm(numRaw))) || isRuleConstant(claim)) supported++
+    if (isSupportedClaim(claim, factNumbers)) supported++
     else unsupported.push(claim)
   }
 

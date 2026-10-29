@@ -368,7 +368,15 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
                 수치 {feedback.grounding.supported}/{feedback.grounding.total}
                 {feedback.grounding.namesChecked != null ? ` · 이름 ${feedback.grounding.namesChecked}개` : ''} 확인
               </span>
-              {feedback.grounding.entityErrors?.length ? (
+              {feedback.grounding.repair ? (
+                <span
+                  className="mt-0.5 block text-xs text-subtle"
+                  title={feedback.grounding.entityErrors?.map((e) => `${e.actual} → ${e.expected}`).join(' / ') || undefined}
+                >
+                  검사한 수치 {feedback.grounding.repair.checked}개 · 고친 문장 {feedback.grounding.repair.fixed}개 · 삭제한 문장{' '}
+                  {feedback.grounding.repair.deleted}개
+                </span>
+              ) : feedback.grounding.entityErrors?.length ? (
                 <span
                   className="mt-0.5 block text-xs text-gold"
                   title={feedback.grounding.entityErrors.map((e) => `${e.actual} → ${e.expected}`).join(' / ')}
@@ -439,6 +447,12 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
                 {feedback.grounding.score}%
               </span>
             ) : null}
+            {feedback.grounding?.repair ? (
+              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">
+                검사한 수치 {feedback.grounding.repair.checked} · 고친 문장 {feedback.grounding.repair.fixed} · 삭제한 문장{' '}
+                {feedback.grounding.repair.deleted}
+              </span>
+            ) : null}
             {feedback.isFallback && (
               <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-bold text-muted">
                 규칙 기반 분석 (AI 미사용)
@@ -484,8 +498,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             </details>
           )}
           <p className="mt-2 text-xs leading-relaxed text-subtle">
-            ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 낮을수록
-            창작(환각) 가능성이 큽니다.
+            ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 확인하지 못한 수치가 든 문장은
+            숫자를 빼고 고치거나 삭제한 뒤 보여 드립니다.
           </p>
         </div>
       )}

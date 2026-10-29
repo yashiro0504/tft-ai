@@ -232,6 +232,9 @@ export interface GroundingReport {
   entityErrors?: EntityFactError[]
   /** 리포트에 나온 기물·아이템 이름 중 내 보드(또는 메타·상대 맥락의 사실)로 확인한 수 — 확인 못 한 문장은 지운 뒤 센다 */
   namesChecked?: number
+  /** 보내기 전 수리 기록 — 검사한 수치(조합법·로비 비교 포함, 수리 전) · 고친 문장 · 삭제한 문장.
+   * score 는 수리 뒤 리포트 기준이라 항상 100% 이고, 무엇을 고쳤는지는 여기와 entityErrors 에 남는다 */
+  repair?: { checked: number; fixed: number; deleted: number }
 }
 
 export interface EntityFactError {

@@ -45,7 +45,7 @@
     "test:ops": "node scripts/testOps.js",
     "test:gate": "node scripts/testBotGate.js",
     "test:quota": "node scripts/testQuotaCharge.js",
-    "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testReportConsistency.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js && node scripts/testPlaybook.js",
+    "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testReportConsistency.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js && node scripts/testPlaybook.js && node scripts/testReportRepair.js",
     "test:gamedata": "node scripts/testGameData.js",
     "test:tiers": "node scripts/testMetaTiers.js && node scripts/testBisSets.js",
     "inspect:match": "node scripts/inspectMatch.js",
