@@ -160,7 +160,21 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </span>
         </nav>
 
-        <SummonerSummary profile={stats} matches={data.matches} olderScanned={data.olderScanned} deckReport={deckReport} as="h1">
+        <SummonerSummary
+          profile={stats}
+          matches={data.matches}
+          olderScanned={data.olderScanned}
+          olderAdded={data.olderAdded}
+          failedMatches={data.failedMatches}
+          scannedMatches={data.scannedMatches}
+          retry={
+            <a href={sharePath} className="font-bold text-accent underline">
+              다시 시도
+            </a>
+          }
+          deckReport={deckReport}
+          as="h1"
+        >
           <ShareButton path={sharePath} />
           {data.isDemo ? (
             <span className="rounded-control border border-accent/50 bg-accent-bg px-2.5 py-1.5 text-xs font-bold text-accent">

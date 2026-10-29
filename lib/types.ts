@@ -484,6 +484,12 @@ export interface TftSearchResponse {
   matches: SlimMatchData[]
   /** 랭크 판이 모자라 최근 N판 이전에서 더 훑은 판 수 (lib/tftService 분석 판 보충) */
   olderScanned?: number
+  /** 그중 덧붙인 랭크 판 수 */
+  olderAdded?: number
+  /** 재시도 후에도 상세 조회에 실패한 판 수 */
+  failedMatches?: number
+  /** 훑은 판 수 (최근 N판 + 이전 판) */
+  scannedMatches?: number
   isDemo?: boolean
   /** Riot 에서 이 전적을 받아온 시각 (epoch ms). 캐시 응답이면 원래 받아온 시각 */
   fetchedAt?: number

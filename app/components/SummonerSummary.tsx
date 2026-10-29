@@ -143,6 +143,10 @@ export function SummonerSummary({
   profile,
   matches: allMatches,
   olderScanned = 0,
+  olderAdded,
+  failedMatches = 0,
+  scannedMatches,
+  retry,
   as: Heading = 'h2',
   deckReport,
   children,
@@ -152,6 +156,14 @@ export function SummonerSummary({
   matches: SlimMatchData[]
   /** 랭크 판이 모자라 더 이전에서 훑은 판 수 (덧붙인 건 그중 랭크 판만) */
   olderScanned?: number
+  /** 그중 덧붙인 랭크 판 수 */
+  olderAdded?: number
+  /** 재시도 후에도 상세 조회에 실패한 판 수 (0이면 안내 없음) */
+  failedMatches?: number
+  /** 훑은 판 수 (최근 N판 + 이전 판) */
+  scannedMatches?: number
+  /** 실패가 있을 때 '다시 시도' 자리 (버튼·링크) */
+  retry?: ReactNode
   /** 페이지의 첫 제목이면 h1 */
   as?: 'h1' | 'h2'
   /** 내 덱 성적표 (서버 계산, 없으면 카드 숨김) */
@@ -238,6 +250,14 @@ export function SummonerSummary({
 
       {/* 오른쪽: 최근 경기 분석 */}
       <div className="flex min-w-0 flex-col gap-5 rounded-card border border-line bg-panel p-5 shadow-card">
+        {failedMatches > 0 ? (
+          <p className="flex flex-wrap items-center gap-x-2 rounded-control border border-bad/40 bg-sunken px-3 py-2 text-xs text-muted" role="status">
+            <span>
+              {scannedMatches ?? failedMatches}판 중 {(scannedMatches ?? failedMatches) - failedMatches}판 불러옴 · <b className="text-bad">{failedMatches}판 실패</b>
+            </span>
+            {retry}
+          </p>
+        ) : null}
         {n === 0 ? (
           <div>
             <h3 className="text-base font-bold text-ink">이번 시즌 랭크 경기가 없어 진단할 수 없습니다</h3>
@@ -258,7 +278,10 @@ export function SummonerSummary({
             </h3>
             {excluded ? <p className="mt-0.5 text-xs text-subtle">불러온 {breakdown.total}판 중 {excluded}은 분석에서 뺐습니다</p> : null}
             {olderScanned ? (
-              <p className="mt-0.5 text-xs text-subtle">최근 판에 랭크 게임이 적어 그 이전 {olderScanned}판에서 랭크 게임을 더 불러왔습니다</p>
+              <p className="mt-0.5 text-xs text-subtle">
+                최근 판에 랭크 게임이 적어 그 이전 {olderScanned}판을 확인했습니다
+                {olderAdded != null ? ` · 랭크 ${olderAdded}판 추가` : ''}
+              </p>
             ) : null}
             <ol className="mt-2 flex flex-wrap gap-1.5" aria-label="최근 경기 등수 (최근 경기부터)">
               {placements.map((p, i) => (

@@ -12,12 +12,19 @@ import { sortByRecent } from './timeAgo'
 export const MAX_MATCH_LIMIT = 20
 export const DEFAULT_MATCH_LIMIT = 10
 /**
- * 분석 판 보충: 최근 N판에 현재 세트 랭크 판이 N판보다 적으면 그 이전 판을 이만큼까지 더 훑는다.
+ * 분석 판 보충: 최근 N판에 현재 세트 랭크 판이 N판보다 적으면 그 이전 판을 페이지(20판)씩 더 훑는다.
  * Riot 매치 ID 목록은 큐로 거를 수 없어서, 일반 게임만 10판 한 챌린저(1693 LP)가 "진단할 수 없습니다"였다 (2026-10-27).
- * 개발 키 한도(2분 100회)를 생각해 한 검색에 상세 조회를 최대 이만큼만 더 한다 (매치 상세는 장기 캐시라 재검색은 거의 0회).
+ * 2026-10-29 지시문 3: 한 페이지(20판)에서 멈추고 실패한 7판이 조용히 빠져 랭크 판이 7 → 3판으로 줄었다.
+ * 이제 랭크 판이 N판에 닿거나 상한(최근 BACKFILL_SCAN_CAP판 · BACKFILL_MAX_AGE_DAYS일 · 이전 시즌)에 닿을 때까지 페이지를 넘긴다.
+ * 매치 상세는 장기 캐시라 재검색은 거의 0회.
  */
-export const BACKFILL_SCAN_MAX = 20
+export const BACKFILL_SCAN_CAP = 100
+export const BACKFILL_MAX_AGE_DAYS = 30
+export const BACKFILL_PAGE = 20
 const BACKFILL_BATCH = 10
+/** 매치 상세 개별 재시도 (riotFetch 의 짧은 재시도 뒤에도 실패한 경우) — 지수 백오프 */
+export const DETAIL_RETRIES = 2
+const DETAIL_RETRY_BASE_MS = Number(process.env.RIOT_DETAIL_RETRY_BASE_MS) >= 0 ? Number(process.env.RIOT_DETAIL_RETRY_BASE_MS) : 800
 
 const REGION = process.env.RIOT_REGION || 'asia'
 const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
@@ -44,6 +51,12 @@ export interface LoadedSummonerData {
   matches: SlimMatchData[]
   /** 랭크 판이 모자라 최근 N판 이전에서 더 훑은 판 수 (덧붙인 건 그중 현재 세트 랭크 판만) */
   olderScanned?: number
+  /** 그중 덧붙인 랭크 판 수 */
+  olderAdded?: number
+  /** 재시도 후에도 상세 조회에 실패한 판 수 (최근 N판 + 이전 판) — 화면에 '실패 · 다시 시도' */
+  failedMatches?: number
+  /** 훑은 판 수 (최근 N판 + 이전 판) — '20판 중 13판 불러옴' 의 앞 숫자 */
+  scannedMatches?: number
   isDemo: boolean
 }
 
@@ -147,6 +160,28 @@ export async function loadSummonerData(
 
   // 4. 매치 세부 데이터 — 불변 데이터이므로 (matchId + puuid) 기준 장기 캐시.
   //    캐시 히트 시 Riot 호출이 0회가 되어, 웜 상태 검색은 사실상 account/summoner/matchIds 만 소모한다.
+  //    실패(429·5xx·네트워크)는 지수 백오프로 다시 받고, 그래도 실패한 판은 숫자로 돌려준다 (조용히 빼지 않는다).
+  const failed: { matchId: string; status: number | null }[] = []
+  const fetchDetail = async (id: string): Promise<SlimMatchData | null> => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const rawMatch = await getTftMatchDetail(id, REGION)
+        return extractSlimMatchData(rawMatch, acct.puuid)
+      } catch (err) {
+        const status = err instanceof RiotApiError ? err.statusCode : null
+        const retryable = status === null || status === 429 || status >= 500
+        if (retryable && attempt < DETAIL_RETRIES) {
+          incrMetric('riot.match_detail_retry')
+          await new Promise((r) => setTimeout(r, DETAIL_RETRY_BASE_MS * 2 ** attempt))
+          continue
+        }
+        incrMetric('riot.match_detail_failed')
+        failed.push({ matchId: id, status })
+        logEvent('warn', 'match_detail_failed', { matchId: id, status, attempts: attempt + 1, ...errorFields(err) })
+        return null
+      }
+    }
+  }
   const loadDetails = (ids: string[]) => Promise.all(
     ids.map(async (id) => {
       // match2: queueId 추가 (2026-10-23) — 예전 캐시는 이벤트 판도 '랭크 게임'으로 저장돼 있어 다시 받는다
@@ -157,17 +192,9 @@ export async function loadSummonerData(
         // 예전 캐시(경과 시간 문자열·소환/복제 기물 포함)를 현재 규칙으로 맞춘다
         return normalizeSlimMatch(cachedMatch)
       }
-
-      try {
-        const rawMatch = await getTftMatchDetail(id, REGION)
-        const slim = extractSlimMatchData(rawMatch, acct.puuid)
-        await cacheSet(matchKey, slim, CACHE_TTL.IMMUTABLE)
-        return slim
-      } catch (err) {
-        incrMetric('riot.match_detail_failed')
-        logEvent('warn', 'match_detail_failed', { matchId: id, ...errorFields(err) })
-        return null
-      }
+      const slim = await fetchDetail(id)
+      if (slim) await cacheSet(matchKey, slim, CACHE_TTL.IMMUTABLE)
+      return slim
     })
   )
   const loaded = (await loadDetails(matchIds)).filter((m): m is SlimMatchData => m !== null)
@@ -175,24 +202,36 @@ export async function loadSummonerData(
     throw new RiotApiError('TFT 매치 세부 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 502)
   }
 
-  // 5. 분석 판 보충 — 랭크 판이 모자라면 이전 판을 더 훑어 현재 세트 랭크 판만 덧붙인다 (일반·이벤트 판은 목록에 늘리지 않는다).
-  //    이전 시즌 판이 보이면 그보다 오래된 판도 이전 시즌이라 멈춘다. 실패해도 검색은 그대로 돌려준다.
+  // 5. 분석 판 보충 — 랭크 판이 모자라면 이전 판을 페이지씩 더 훑어 현재 세트 랭크 판만 덧붙인다 (일반·이벤트 판은 목록에 늘리지 않는다).
+  //    이전 시즌 판이나 BACKFILL_MAX_AGE_DAYS일보다 오래된 판이 보이면 그보다 오래된 판도 마찬가지라 멈춘다.
+  //    ID 목록 조회가 실패해도 검색은 그대로 돌려준다.
   const need = normalizedLimit - analyzableMatches(loaded).length
   let olderScanned = 0
   const older: SlimMatchData[] = []
   if (need > 0 && matchIds.length >= normalizedLimit && loaded.every(isCurrentSetMatch)) {
+    const oldest = Date.now() - BACKFILL_MAX_AGE_DAYS * 86_400_000
     try {
-      const olderKey = `matchids:${REGION}:${acct.puuid}:${normalizedLimit}+${BACKFILL_SCAN_MAX}`
-      const cachedOlder = fresh ? null : await cacheGet<string[]>(olderKey)
-      const olderIds = cachedOlder ?? (await getTftMatchIds(acct.puuid, BACKFILL_SCAN_MAX, REGION, normalizedLimit))
-      if (!cachedOlder && olderIds.length) await cacheSet(olderKey, olderIds, CACHE_TTL.MATCH_IDS)
-      scan: for (let i = 0; i < olderIds.length && older.length < need; i += BACKFILL_BATCH) {
-        const batch = (await loadDetails(olderIds.slice(i, i + BACKFILL_BATCH))).filter((m): m is SlimMatchData => m !== null)
-        for (const m of batch) {
-          olderScanned++
-          if (!isCurrentSetMatch(m)) break scan
-          if (isAnalyzableMatch(m) && older.length < need) older.push(m)
+      let start = matchIds.length
+      scan: while (older.length < need && start < BACKFILL_SCAN_CAP) {
+        const count = Math.min(BACKFILL_PAGE, BACKFILL_SCAN_CAP - start)
+        const pageKey = `matchids:${REGION}:${acct.puuid}:${start}+${count}`
+        const cachedPage = fresh ? null : await cacheGet<string[]>(pageKey)
+        const ids = cachedPage ?? (await getTftMatchIds(acct.puuid, count, REGION, start))
+        if (!cachedPage && ids.length) await cacheSet(pageKey, ids, CACHE_TTL.MATCH_IDS)
+        if (!ids.length) break
+        for (let i = 0; i < ids.length; i += BACKFILL_BATCH) {
+          const batchIds = ids.slice(i, i + BACKFILL_BATCH)
+          const batch = await loadDetails(batchIds)
+          olderScanned += batchIds.length
+          for (const m of batch) {
+            if (!m) continue
+            if (!isCurrentSetMatch(m) || (m.gameDatetime && m.gameDatetime < oldest)) break scan
+            if (isAnalyzableMatch(m) && older.length < need) older.push(m)
+          }
+          if (older.length >= need) break scan
         }
+        if (ids.length < count) break
+        start += ids.length
       }
       incrMetric('riot.backfill', older.length)
     } catch (err) {
@@ -211,6 +250,9 @@ export async function loadSummonerData(
     rank,
     matches,
     olderScanned,
+    olderAdded: older.length,
+    failedMatches: failed.length,
+    scannedMatches: matchIds.length + olderScanned,
     isDemo: false,
   }
 }

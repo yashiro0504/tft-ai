@@ -353,7 +353,20 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} matches={search.matches} olderScanned={search.olderScanned} deckReport={search.deckReport}>
+              <SummonerSummary
+                profile={search.summonerProfile}
+                matches={search.matches}
+                olderScanned={search.olderScanned}
+                olderAdded={search.olderAdded}
+                failedMatches={search.failedMatches}
+                scannedMatches={search.scannedMatches}
+                retry={
+                  <button type="button" className="font-bold text-accent underline" onClick={() => handleSearch(search.gameName, search.tagLine)} disabled={isLoading}>
+                    다시 시도
+                  </button>
+                }
+                deckReport={search.deckReport}
+              >
                 {search.isDemo ? null : (
                   <>
                     <RefreshMatchesButton

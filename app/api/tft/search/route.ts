@@ -97,12 +97,16 @@ export async function POST(req: NextRequest) {
       summonerProfile,
       matches: data.matches,
       olderScanned: data.olderScanned,
+      olderAdded: data.olderAdded,
+      failedMatches: data.failedMatches,
+      scannedMatches: data.scannedMatches,
       isDemo: data.isDemo,
       fetchedAt,
     }
 
+    // 상세 조회에 실패한 판이 있으면 검색 결과를 캐시하지 않는다 — '다시 시도'가 실패한 판만 Riot 에서 다시 받게
     await Promise.all([
-      cacheSet(cacheKey, response, CACHE_TTL.SEARCH),
+      data.failedMatches ? Promise.resolve() : cacheSet(cacheKey, response, CACHE_TTL.SEARCH),
       cacheSet(cooldownKey, fetchedAt, REFRESH_COOLDOWN_MS),
     ])
     logEvent('info', 'api_search', {
@@ -110,6 +114,7 @@ export async function POST(req: NextRequest) {
       cacheSource: 'miss',
       isDemo: data.isDemo,
       matches: data.matches.length,
+      failedMatches: data.failedMatches ?? 0,
       refresh,
     })
     const deckReport = await loadDeckReport(response.matches)
