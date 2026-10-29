@@ -348,7 +348,12 @@ export interface DeckTypeInfo {
   threeStars: number
   threeStarCosts: number[]
   lowCostThreeStars: number
+  /** 3성 기준 기물이 3성인가 — 리롤형은 리롤 핵심 기물(core), 그 외는 캐리(boardCarry) */
   carryThreeStar: boolean
+  /** 리롤형의 핵심 기물 (딜템 최다 1~3코, 같으면 높은 코스트 — lib/deckType rerollCore). 리롤형이 아니면 없음 */
+  core?: { name: string; cost: number; tier: number }
+  /** 3성을 못 만든 리롤 판 (핵심 기물 2성 · 저레벨 · 늦은 탈락) */
+  incomplete?: boolean
   reason: string
 }
 

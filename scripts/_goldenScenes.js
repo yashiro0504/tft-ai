@@ -27,6 +27,7 @@ const WIN_KINDS = [
 ]
 
 const SCENE_TITLE = {
+  rerollCore: '리롤 핵심 기물 3성 미완성',
   sameComp: '같은 구성 상위 등수와 성급 차이',
   duplicateCopies: '같은 기물 1성 여러 장',
   itemsOnWeak: '아이템이 1성 저코스트에',

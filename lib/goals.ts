@@ -1,5 +1,5 @@
 import { isEarlyGame } from './quality'
-import { duplicateGroups, emptySlotCount, oneStarCarry, sameCompGap, weakItems, ITEMS_ON_WEAK_MIN, type KeyMoment } from './keyMoments'
+import { duplicateGroups, emptySlotCount, oneStarCarry, sameCompGap, unfinishedRerollCore, weakItems, ITEMS_ON_WEAK_MIN, type KeyMoment } from './keyMoments'
 import type { SlimMatchData } from './types'
 
 /**
@@ -7,7 +7,7 @@ import type { SlimMatchData } from './types'
  * AI 의 연습 과제(drill) 문장은 자유 서술이라 채점할 수 없어서, 목표는 장면 종류에서 코드가 만든다.
  * 설정 시점(since) 이후에 끝난 경기만 센다 (초반 종료 판 제외).
  */
-export type GoalKind = 'itemsOnWeak' | 'duplicateCopies' | 'carryOneStar' | 'emptySlots' | 'twoPlus'
+export type GoalKind = 'rerollCore' | 'itemsOnWeak' | 'duplicateCopies' | 'carryOneStar' | 'emptySlots' | 'twoPlus'
 
 export interface PracticeGoal {
   kind: GoalKind
@@ -51,6 +51,9 @@ const twoPlus = (m: SlimMatchData) => m.units.filter((u) => (u.tier || 1) >= 2).
 /** 목표 종류별 경기 측정값 */
 export function measureGoal(kind: GoalKind, m: SlimMatchData): number {
   switch (kind) {
+    case 'rerollCore':
+      // 리롤형이 아닌 판(레벨업 덱으로 바꾼 판)은 미완성으로 세지 않는다 — 핵심 기물이 3성이 아닌 리롤 판만 1
+      return unfinishedRerollCore(m) ? 1 : 0
     case 'itemsOnWeak':
       return weakItems(m).count
     case 'duplicateCopies':
@@ -75,6 +78,8 @@ export function goalFromMoment(moment: Pick<KeyMoment, 'kind' | 'title'>, matche
   const base = { since, games: GOAL_GAMES, source: moment.title }
   const baselineOf = (kind: GoalKind) => round1(avg(source.map((m) => measureGoal(kind, m))))
   switch (moment.kind) {
+    case 'rerollCore':
+      return { ...base, kind: 'rerollCore', label: '3성 못 만든 리롤 핵심 기물', dir: 'max', target: 0, unit: '판', baseline: baselineOf('rerollCore') }
     case 'itemsOnWeak':
       return { ...base, kind: 'itemsOnWeak', label: '1성 1~3코스트 기물에 든 아이템', dir: 'max', target: ITEMS_ON_WEAK_MIN - 1, unit: '개', baseline: baselineOf('itemsOnWeak') }
     case 'duplicateCopies':
@@ -99,6 +104,7 @@ export function goalFromMoment(moment: Pick<KeyMoment, 'kind' | 'title'>, matche
 /** "1성 기물에 든 아이템 2개 이하" */
 export function goalText(g: PracticeGoal): string {
   if (g.kind === 'carryOneStar') return '캐리를 1성으로 끝내지 않기'
+  if (g.kind === 'rerollCore') return '리롤 판은 핵심 기물 3성까지 완성하기'
   if (g.target === 0 && g.dir === 'max') return `${g.label} 0${g.unit}`
   return `${g.label} ${g.target}${g.unit} ${g.dir === 'max' ? '이하' : '이상'}`
 }

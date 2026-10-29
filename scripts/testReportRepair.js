@@ -28,6 +28,8 @@ const fixture = require('../data/evalMatches.json')
 // 기준 샘플: 최종 Lv.7 · 베이가·알리스타·오른·렉사이·르블랑 3성, 카시오페아 2성, 피들스틱 1성
 const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 6-1').matches
 const m = sample[0]
+// 표준형 샘플: 백승민#agent Lv.9 4등 (세트·아리·알룬·애쉬 2성) — 레벨 목표 수리 규칙은 표준형에만 적용된다
+const std = fixture.cases.find((c) => c.name === '백승민#agent 3경기').matches.find((x) => x.level === 9)
 
 ;(async () => {
   console.log('6-1. 근거 미확인 수치 수리')
@@ -65,6 +67,7 @@ const m = sample[0]
 
   console.log('6-2. 다음 3게임 목표')
   {
+    const m = std
     const fallback = '다음 3판은 템포 하나만 의식하세요.'
     const body = [`레벨 ${m.level + 1}에서 보드를 완성하세요.`]
     const done = fixDrillTarget(`다음 3판 최종 레벨 ${m.level} 이상 도달하기`, m, body, fallback)
@@ -75,6 +78,24 @@ const m = sample[0]
     const twoStars = m.units.filter((u) => u.tier >= 2).length
     check(`이미 2성 ${twoStars}개 → "2성 ${twoStars}개" 목표는 바꾼다`, fixDrillTarget(`2성 이상 ${twoStars}개 만들기`, m, body, fallback) !== null)
     check(`"2성 ${twoStars + 1}개" 목표는 그대로`, fixDrillTarget(`2성 이상 ${twoStars + 1}개 만들기`, m, body, fallback) === null)
+  }
+
+  console.log('6-2b. 리롤 판 목표 — 레벨이 아니라 핵심 기물 3성 (2026-10-29 백승민#agent 7렙 카시오페아 2성 판)')
+  {
+    const fallback = '다음 3판은 템포 하나만 의식하세요.'
+    const goal = fixDrillTarget('다음 3판 최종 레벨 9 이상 도달하기', m, ['레벨 9까지 올리세요.'], fallback)
+    check('리롤 판 레벨 9 목표 → 카시오페아 3성 목표', Boolean(goal) && goal.includes('카시오페아(3코) 3성') && !/레벨\s*9|Lv\.?9/.test(goal), goal)
+    check('핵심 기물 3성 목표는 그대로 (null)', fixDrillTarget('다음 3판은 카시오페아 3성을 최종 보드에 올리기', m, [], fallback) === null)
+    const advice = validateAdviceAndCounts(
+      ['로비 1등처럼 9레벨까지 올려야 합니다.', '레벨이 낮아 보드가 약했습니다.', '리롤형이라 레벨이 낮은 건 문제가 아닙니다.', 'Lv.7에서 카시오페아 3성까지 리롤하세요.'],
+      [m]
+    ).errors.filter((e) => e.type === 'advice_conflict')
+    check(
+      '리롤 판 레벨 처방 2문장만 advice_conflict (리롤 해설·핵심 기물 처방은 통과)',
+      advice.length === 2 && advice.every((e) => /9레벨|레벨이 낮아/.test(e.text)),
+      JSON.stringify(advice)
+    )
+    check('표준형 판 레벨 처방은 advice_conflict 아님', !validateAdviceAndCounts(['10레벨까지 올려야 합니다.'], [std]).errors.some((e) => e.type === 'advice_conflict'))
   }
 
   console.log('6-3. 로비 등수 표현')
@@ -139,7 +160,9 @@ const m = sample[0]
     check('틀린 조합법(대검 + 장갑)은 고치거나 지움', !all.includes('대검 + 장갑'), JSON.stringify(fb.actions))
     check('조합법 불일치는 entityErrors 에 기록', grounding.entityErrors.some((e) => e.type === 'item_recipe'), JSON.stringify(grounding.entityErrors))
     check("'탈락한 1등' 표현 없음", !all.includes('탈락한 1등') && all.includes('1등 플레이어'))
-    check(`이미 달성한 Lv.${lvl} 목표 → 본문 기준 레벨 ${lvl + 1}`, fb.lecture.drill.includes(`레벨 ${lvl + 1}`), fb.lecture.drill)
+    // 리롤 판(카시오페아 2성): 레벨 목표·레벨 탓 문장 대신 핵심 기물 3성
+    check('리롤 판 목표 → 카시오페아 3성 (레벨 목표 아님)', fb.lecture.drill.includes('카시오페아(3코) 3성') && !fb.lecture.drill.includes(`레벨 ${lvl + 1}`), fb.lecture.drill)
+    check('리롤 판 레벨 탓·레벨 처방 문장은 지움', !all.includes('레벨이 낮았습니다') && !all.includes(`레벨 ${lvl + 1}에서 보드를 완성하세요`), all)
     const r = grounding.repair
     check('grounding.repair: 검사한 수치 수 · 고친 문장 수 · 삭제한 문장 수', r && r.checked >= 3 && r.fixed >= 3 && r.deleted >= 1, JSON.stringify(r))
   }

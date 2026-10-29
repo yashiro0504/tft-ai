@@ -6,6 +6,7 @@ import {
   nearBreakpoints,
   oneStarCarry,
   sameCompGap,
+  unfinishedRerollCore,
   weakItems,
   type KeyMoment,
 } from './keyMoments'
@@ -69,6 +70,18 @@ interface Detector {
 }
 
 const DETECTORS: Detector[] = [
+  {
+    kind: 'rerollCore',
+    title: '리롤 핵심 기물 3성 미완성',
+    measure: unfinishedRerollCore,
+    describe: (hits) =>
+      `리롤 판에서 핵심 기물을 3성으로 못 만들고 끝남 (${tally(
+        hits.map((h) => {
+          const u = h.v as NonNullable<ReturnType<typeof unfinishedRerollCore>>
+          return `${u.name}(${u.rarity || 1}코)`
+        })
+      )})`,
+  },
   {
     kind: 'sameComp',
     title: '같은 구성 상위 상대보다 낮은 성급',
