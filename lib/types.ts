@@ -455,6 +455,36 @@ export interface MetaCoachFeedback {
     excludedMatches?: number
   }
   fullMarkdown?: string
+  /** "이 덱의 정석과 비교" — 같은 스냅샷 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook) */
+  deckComparison?: DeckComparison
+}
+
+/** 덱 플레이북 비교표 한 행 (코드 산출 문장 — 수치는 플레이북 값 그대로) */
+export interface DeckComparisonRow {
+  /** 근거 플레이북 필드 (core_units · carry_bis · level_profile · elim_profile · flex_units · contested) */
+  id: string
+  text: string
+  /** 클수록 먼저 보여 준다 (0 = 정석대로) */
+  severity: number
+}
+
+export interface DeckComparison {
+  deckName: string
+  /** 플레이북(덱) 표본 판수 */
+  sample: number
+  patch?: string
+  snapshotId?: string
+  /** 이전 패치 플레이북을 쓸 때 "이전 패치(16.21) 기준" */
+  label?: string
+  /** 리포트에 보여 줄 항목 (최대 3개) */
+  items: DeckComparisonRow[]
+  /** 비교표 전체 (프롬프트·검증용) */
+  rows?: DeckComparisonRow[]
+  /** 근거 검증을 통과한 플레이북 팁 */
+  tips?: string[]
+  externalLinks?: { source: string; url: string }[]
+  /** 덱 표본 100판 미만 → "표본 부족으로 덱 기준 비교 생략" */
+  skipped?: string
 }
 
 export interface TFTAnalysisResponse {

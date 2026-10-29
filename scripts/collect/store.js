@@ -227,7 +227,7 @@ function createSupabaseStore({ url, serviceRoleKey }) {
         const rows = must(
           await db
             .from('tft_boards')
-            .select('match_id, placement, level, units, traits, tft_matches!inner(tier_bucket, patch)')
+            .select('match_id, placement, level, last_round, units, traits, tft_matches!inner(tier_bucket, patch)')
             .eq('tft_matches.patch', patch)
             .order('match_id', { ascending: true })
             .order('placement', { ascending: true })
@@ -236,7 +236,7 @@ function createSupabaseStore({ url, serviceRoleKey }) {
         )
         for (const r of rows) {
           const m = Array.isArray(r.tft_matches) ? r.tft_matches[0] : r.tft_matches
-          out.push({ match_id: r.match_id, placement: r.placement, level: r.level, units: r.units, traits: r.traits, tier_bucket: m?.tier_bucket })
+          out.push({ match_id: r.match_id, placement: r.placement, level: r.level, last_round: r.last_round, units: r.units, traits: r.traits, tier_bucket: m?.tier_bucket })
         }
         if (rows.length < 1000) break
       }
@@ -249,6 +249,19 @@ function createSupabaseStore({ url, serviceRoleKey }) {
 
     async replaceBuilds(patch, tierMin, rows) {
       return must(await db.rpc('tft_replace_builds', { p_patch: patch, p_tier_min: tierMin, p_rows: rows }), '기물 빌드 저장')
+    },
+
+    /** 방금 저장한 덱 클러스터(패치 × 티어)의 updated_at — 플레이북 snapshot_id */
+    async compsSnapshotAt(patch, tierMin) {
+      const rows = must(
+        await db.from('stat_comp').select('updated_at').eq('patch', patch).eq('tier_min', tierMin).order('updated_at', { ascending: false }).limit(1),
+        '덱 스냅샷 시각'
+      )
+      return rows[0]?.updated_at ?? null
+    },
+
+    async replacePlaybooks(patch, tierMin, rows) {
+      return must(await db.rpc('tft_replace_playbooks', { p_patch: patch, p_tier_min: tierMin, p_rows: rows }), '덱 플레이북 저장')
     },
   }
 }
@@ -265,10 +278,11 @@ function createMemoryStore() {
   const rollups = new Map() // comboKey → rollupBoards 결과 (stat_*_daily 대신)
   const comps = new Map() // `${patch}|${tierMin}` → { rows, updatedAt }
   const builds = new Map() // `${patch}|${tierMin}` → { rows, updatedAt } (stat_unit_build 대신)
+  const playbooks = new Map() // `${patch}|${tierMin}` → rows (deck_playbook 대신)
 
   return {
     kind: 'memory',
-    _state: { dict, seeds, matches, boards, failures, runs, patches, rollups, comps, builds },
+    _state: { dict, seeds, matches, boards, failures, runs, patches, rollups, comps, builds, playbooks },
 
     async loadDict() {
       return dict.size
@@ -421,6 +435,13 @@ function createMemoryStore() {
     },
     async replaceBuilds(patch, tierMin, rows) {
       builds.set(`${patch}|${tierMin}`, { rows, updatedAt: Date.now() })
+      return rows.length
+    },
+    async compsSnapshotAt(patch, tierMin) {
+      return comps.get(`${patch}|${tierMin}`)?.updatedAt ?? null
+    },
+    async replacePlaybooks(patch, tierMin, rows) {
+      playbooks.set(`${patch}|${tierMin}`, rows)
       return rows.length
     },
   }

@@ -3,8 +3,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, CoachingAxisKey, CoachingPlan, LectureMoment, EntityFactError, GroundingReport } from './types'
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
-import { getDecks, getStats } from './tftStats'
-import { buildComparisonFacts, carryContestMoment, type ComboFact } from './comparisonFacts'
+import { getDecks, getPlaybookRows, getStats } from './tftStats'
+import { buildComparisonFacts, carryContestMoment, metaExecution, mostSimilarDeck, type ComboFact } from './comparisonFacts'
+import { buildDeckComparison, choosePlaybook, deckComparisonFacts, sameDeckCompetitors, snapshotIdOf, type DeckPlaybook } from './playbook'
 import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
@@ -30,7 +31,7 @@ import { boardCarry } from './deckType'
 import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
 
 /** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-27.2'
+export const COACH_PROMPT_VERSION = '2026-10-29.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -828,6 +829,8 @@ export async function generateMetaCoachFeedback(
     combos: comboStats.rows.filter((r): r is StatRow & ComboFact => 'champKey' in r),
     decks: deckStats.decks,
   })
+  const deckComparison = mode === 'single' && matches[0] ? await loadDeckComparison(matches[0], deckStats) : null
+  const playbookFacts = deckComparisonFacts(deckComparison)
   const scoring = computeScoreBreakdown(matches)
   const scoreFacts = scoring
     ? [
@@ -954,6 +957,8 @@ ${metaNote}
 ${metaFacts}
 ${comparisonFacts ? `
 ${comparisonFacts}
+` : ''}${playbookFacts ? `
+${playbookFacts}
 ` : ''}
 ${winFacts ? `${winFacts}
 
@@ -1002,10 +1007,12 @@ ${recipeFacts}
       ...adviceCheck.errors,
     ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
-    const { fb, lecture, actions, axisVerdicts } = repairEntityErrors(
+    const { fb: repairedFb, lecture, actions, axisVerdicts } = repairEntityErrors(
       { fb: rawFb, lecture: rawLecture, actions: rawActions, axisVerdicts: rawAxisVerdicts },
       entityErrors
     )
+    // "이 덱의 정석과 비교"는 코드가 비교표에서 만든 문장 — 근거 검증 대상에 넣어 플레이북 수치도 프롬프트 사실과 대조한다
+    const fb = deckComparison ? { ...repairedFb, deckComparison } : repairedFb
     const namesChecked = validateBoardNames(feedbackTexts({ ...fb, lecture, actions }, axisVerdicts), matches, prompt).checked
     return {
       ...fb,
@@ -1091,6 +1098,30 @@ ${recipeFacts}
   // 3. 지능형 메타 코칭 폴백
   incrMetric('llm.fallback')
   return finalize(generateFallbackMetaFeedback(gameName, matches, mode), true)
+}
+
+/**
+ * "이 덱의 정석과 비교" — 경기 덱 판정(덱 성적표와 같은 규칙) → 같은 스냅샷 플레이북 → 코드 비교표.
+ * DB 스냅샷이 아니면(래더 JSON 폴백) 플레이북 snapshot 을 대조할 수 없어 섹션을 넣지 않는다. 실패해도 리포트는 그대로 만든다.
+ */
+async function loadDeckComparison(
+  match: SlimMatchData,
+  deckStats: Awaited<ReturnType<typeof getDecks>>
+): Promise<MetaCoachFeedback['deckComparison'] | null> {
+  try {
+    const deck = metaExecution(match, deckStats.decks)?.deck ?? mostSimilarDeck(match, deckStats.decks)?.deck
+    if (!deck) return null
+    const meta = deckStats.decks.find((d) => d.name === deck.name)
+    if (!meta) return null
+    if (deckStats.source !== 'db' || !deckStats.filter) return null
+    const current = { snapshotId: snapshotIdOf(deckStats.filter.patch, deckStats.filter.tier, deckStats.updatedAt), patch: deckStats.filter.patch }
+    const rows = (await getPlaybookRows(meta.id, deckStats.filter.tier)) as unknown as DeckPlaybook[]
+    const chosen = choosePlaybook(rows, current)
+    return buildDeckComparison(match, { id: meta.id, name: meta.name, sampleSize: meta.sampleSize }, chosen, sameDeckCompetitors(match, meta.name, deckStats.decks))
+  } catch (err) {
+    logEvent('warn', 'deck_comparison_failed', errorFields(err))
+    return null
+  }
 }
 
 /**

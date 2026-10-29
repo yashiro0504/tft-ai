@@ -144,6 +144,9 @@ export function validateFeedbackGrounding(
     ...(feedback.lecture?.checklist || []),
     ...(feedback.lecture?.moments || []).flatMap((x) => [x.why, x.fix]),
     ...(feedback.actions || []),
+    // 이 덱의 정석과 비교 (코드 산출 — 플레이북 수치가 프롬프트 사실과 같은지 함께 검사)
+    ...(feedback.deckComparison?.items || []).map((r) => r.text),
+    feedback.deckComparison?.skipped,
     // 스키마 v1 필드 (이전 형식 응답)
     ...(feedback.improvements || []),
     ...(feedback.actionPlan || []),

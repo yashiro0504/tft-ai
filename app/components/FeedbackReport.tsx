@@ -238,6 +238,46 @@ function LectureBlock({ feedback, goalSource }: { feedback: MetaCoachFeedback; g
 }
 
 /**
+ * "이 덱의 정석과 비교" — tftlab 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook).
+ * 표본 100판 미만 덱은 섹션 대신 한 줄만.
+ */
+function DeckComparisonSection({ comparison }: { comparison: NonNullable<MetaCoachFeedback['deckComparison']> }) {
+  if (comparison.skipped) {
+    return <p className="text-xs text-subtle">{comparison.skipped}</p>
+  }
+  if (!comparison.items.length) return null
+  const link = comparison.externalLinks?.[0]
+  return (
+    <section aria-label="이 덱의 정석과 비교" className="rounded-control border border-line bg-sunken px-4 py-3">
+      <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-ink">
+        이 덱의 정석과 비교
+        <span className="text-xs font-medium text-subtle">
+          {comparison.deckName} · tftlab {comparison.sample.toLocaleString()}판{comparison.label ? ` · ${comparison.label}` : ''}
+        </span>
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {comparison.items.map((r, i) => (
+          <li key={`${r.id}-${i}`} className="flex gap-2 text-sm leading-relaxed text-ink">
+            <span aria-hidden className={r.severity > 0 ? 'text-gold' : 'text-good'}>
+              {r.severity > 0 ? '•' : '✓'}
+            </span>
+            <span>{r.text}</span>
+          </li>
+        ))}
+      </ul>
+      {link ? (
+        <p className="mt-2 text-xs text-subtle">
+          자세한 운영 가이드:{' '}
+          <a href={link.url} target="_blank" rel="noopener" className="font-semibold text-accent underline">
+            {link.source} ↗
+          </a>
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
+/**
  * AI 코칭 리포트 렌더러 (경기별/종합 공용).
  * 기존 app/page.tsx 의 리포트 마크업을 재사용 가능하도록 분리.
  */
@@ -352,6 +392,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             ))}
           </ol>
         ) : null}
+
+        {feedback.deckComparison ? <DeckComparisonSection comparison={feedback.deckComparison} /> : null}
 
         <div className="flex flex-wrap gap-2">
           <button

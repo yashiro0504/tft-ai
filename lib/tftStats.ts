@@ -641,3 +641,31 @@ export function __resetStatsForTest() {
   failMemo.clear()
   client = undefined
 }
+
+/* ------------------------------------------------------------------ */
+/* 덱 플레이북 (deck_playbook — 0011, 수집기가 덱 클러스터 직후 저장)      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 덱 1개의 플레이북 행 (패치별, 최신 패치 먼저). 마스터+ 스냅샷만 만든다.
+ * DB 미설정·0011 미적용·오류는 [] — AI 리포트는 플레이북 없이 그대로 만든다.
+ */
+export async function getPlaybookRows(deckKey: string, tierMin: TierFilter = DEFAULT_TIER): Promise<Record<string, unknown>[]> {
+  const c = db()
+  if (!c || !deckKey) return []
+  const key = `playbook:${deckKey}:${tierMin}`
+  const hit = memo.get(key)
+  if (hit && hit.expiresAt > Date.now()) return hit.value as Record<string, unknown>[]
+  try {
+    const rows =
+      (await withTimeout<Record<string, unknown>[]>((signal) =>
+        c.from('deck_playbook').select('*').eq('deck_key', deckKey).eq('tier_min', tierArg(tierMin)).abortSignal(signal)
+      )) ?? []
+    rows.sort((a, b) => comparePatchDesc(String(a.patch), String(b.patch)))
+    memo.set(key, { value: rows, expiresAt: Date.now() + MEMO_TTL_MS })
+    return rows
+  } catch (err) {
+    logEvent('warn', 'playbook_db_failed', { deckKey, ...errorFields(err) })
+    return []
+  }
+}
