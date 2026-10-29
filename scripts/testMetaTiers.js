@@ -131,6 +131,17 @@ console.log('덱 티어: 보정 평균등수 고정 구간 (2026-10-29 지시문
   check('티어 칩 개수 집계에 참고용 없음', /countOf\(t\)/.test(dash) && !/TIERS[^\n]*'-'/.test(dash))
 }
 
+console.log('메타 첫 진입 (2026-10-29 지시문 5)')
+{
+  const dash = require('fs').readFileSync(require('path').join(__dirname, '..', 'app', 'components', 'MetaDashboard.tsx'), 'utf8')
+  // 첫 응답 전(data 없음)에는 '패치 정보 없음'·'덱 N개' 칩 대신 스켈레톤 — 칩은 data 가 있는 분기 안에만
+  const head = dash.slice(dash.indexOf('<div className="rk-evidence">'), dash.indexOf('</header>'))
+  check('응답 전 스켈레톤 칩 (!data)', /\{!data \? \(/.test(head) && /rk-skel-chip/.test(head))
+  check("'덱 N개' 칩은 data 가 있을 때만", /\{data \? \(\s*<EvidenceChip>\s*덱 \{data\.decks\.length\}개/.test(head))
+  check("'패치 정보 없음'은 !data 분기 뒤 (응답 받은 뒤에만)", head.indexOf('패치 정보 없음') > head.indexOf('{!data ? ('))
+  check('표 자리도 응답 전엔 스켈레톤 (빈 상태 문구 없음)', /!data \|\| \(loading && !rowsAll\.length\) \? \(\s*<div className="rk-skeleton">/.test(dash))
+}
+
 console.log(failures.length ? `\n❌ 실패 ${failures.length}건` : '\n✅ 메타 티어 테스트 통과')
 if (failures.length) process.exitCode = 1
 

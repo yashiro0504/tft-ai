@@ -486,7 +486,14 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              {showingSnapshot && snapMeta ? (
+              {!data ? (
+                // 첫 응답 전: '패치 정보 없음 · 덱 0개' 대신 스켈레톤 (2026-10-29 지시문 5 — 빈 상태는 성공 응답이 0개일 때만)
+                <span className="contents" role="status" aria-label="메타 데이터를 불러오는 중">
+                  <span className="rk-skel-chip" aria-hidden />
+                  <span className="rk-skel-chip" aria-hidden />
+                  <span className="rk-skel-chip" aria-hidden />
+                </span>
+              ) : showingSnapshot && snapMeta ? (
                 <>
                   <EvidenceChip
                     title={`${snapMeta.source === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수${snapshotFailed(snapMeta) ? ' — DB 집계를 불러오지 못해 래더 표본을 보여 줍니다' : ' (덱 성적표의 메타 평균과 같은 스냅샷)'}`}
@@ -520,10 +527,12 @@ export function MetaDashboard({
                   ) : null}
                 </>
               )}
-              <EvidenceChip>
-                덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
-              </EvidenceChip>
-              {tab === 'decks' ? (
+              {data ? (
+                <EvidenceChip>
+                  덱 {data.decks.length}개 · 기물 {(data.champions ?? []).length}종
+                </EvidenceChip>
+              ) : null}
+              {!data ? null : tab === 'decks' ? (
                 <EvidenceChip title={DECK_TIER_RULE}>{DECK_TIER_RULE_SHORT}</EvidenceChip>
               ) : (
                 <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
@@ -686,7 +695,7 @@ export function MetaDashboard({
             </div>
           ) : null}
 
-          {loading && !rowsAll.length ? (
+          {!data && error ? null : !data || (loading && !rowsAll.length) ? (
             <div className="rk-skeleton">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rk-skel-row" />
@@ -862,7 +871,9 @@ export function MetaDashboard({
                 </button>
                 </Fragment>
               ))}
-              {!rows.length && !loading ? <p className="rk-empty">조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.</p> : null}
+              {!rows.length && !loading ? (
+                <p className="rk-empty">{rowsAll.length ? '조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.' : '이 조건으로 집계된 항목이 아직 없습니다.'}</p>
+              ) : null}
             </>
           )}
         </main>

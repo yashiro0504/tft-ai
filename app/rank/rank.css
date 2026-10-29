@@ -276,6 +276,15 @@
   background-size: 200% 100%;
   animation: rk-shimmer 1.4s linear infinite;
 }
+.rk-skel-chip {
+  display: inline-block;
+  width: 96px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 8%, transparent), transparent);
+  background-size: 200% 100%;
+  animation: rk-shimmer 1.4s linear infinite;
+}
 @keyframes rk-shimmer {
   0% { background-position: 120% 0; }
   100% { background-position: -20% 0; }
