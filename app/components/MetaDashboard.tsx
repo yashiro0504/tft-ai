@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
 import type {
   MetaBuildStat,
@@ -18,7 +18,6 @@ import type {
 import {
   BIS_RELIABLE_SAMPLE,
   DAYS_FILTER_OPTIONS,
-  DECK_RELIABLE_SAMPLE,
   MIN_SAMPLE,
   TIER_FILTER_OPTIONS,
   buildCompSets,
@@ -45,7 +44,10 @@ import {
   type ItemClass,
   type ModalTarget,
   type Tier,
+  adjustedPlacement,
   assignSampleTiers,
+  DECK_TIER_MIN_SAMPLE,
+  DECK_TIER_PRIOR_GAMES,
   DECK_TIER_RULE,
   DECK_TIER_RULE_SHORT,
   tierClass,
@@ -117,8 +119,10 @@ interface Row {
   tier: Tier | '-'
   /** 표본 하한 미만 → 회색 + "표본 부족" */
   low: boolean
-  /** 하한은 넘었지만 덱 참고용 하한(DECK_RELIABLE_SAMPLE) 미만 → '참고용' 배지만 */
+  /** 하한은 넘었지만 덱 티어 하한(DECK_TIER_MIN_SAMPLE=50판) 미만 → 티어 없이 '참고용' 그룹 */
   reference?: boolean
+  /** 덱 보정 평균등수 (티어 기준 — 평균등수 툴팁) */
+  adj?: number
   third?: number
   bis?: MetaCompRanking['items']
   /** BIS 3개를 함께 든 세트 (undefined = 빌드 집계 없음, null = 그 세트가 드묾) */
@@ -144,12 +148,12 @@ function tiersFor(
   rows: { avgPlacement: number; sampleSize: number; cost?: number }[],
   min: number,
   byCost = false,
-  separated = false
+  deck = false
 ): (Tier | '-')[] {
   return assignSampleTiers(
     rows.map((r) => ({ avg: r.avgPlacement, sample: r.sampleSize, group: byCost ? r.cost ?? 0 : undefined })),
     min,
-    { separated }
+    { deck }
   )
 }
 
@@ -328,7 +332,7 @@ export function MetaDashboard({
     if (!data) return []
     const min = TAB_MIN_SAMPLE[tab]
     if (tab === 'decks') {
-      // 덱 티어는 기준 덱과 비교 (metaShared.assignSeparatedTiers · 설명 DECK_TIER_RULE)
+      // 덱 티어는 보정 평균등수 고정 구간 (metaShared.deckTier · 설명 DECK_TIER_RULE) — 50판 미만은 '-' 참고용
       const tiers = tiersFor(data.decks.map((d) => ({ avgPlacement: d.avgPlacement ?? 9, sampleSize: d.sampleSize })), min, false, true)
       return data.decks.map((d, i) => ({
         key: d.id,
@@ -338,7 +342,8 @@ export function MetaDashboard({
         sample: d.sampleSize,
         tier: tiers[i],
         low: d.sampleSize < min,
-        reference: d.sampleSize >= min && d.sampleSize < DECK_RELIABLE_SAMPLE,
+        reference: d.sampleSize >= min && tiers[i] === '-',
+        adj: adjustedPlacement(d.avgPlacement ?? 9, d.sampleSize),
         deck: d,
       }))
     }
@@ -481,7 +486,14 @@ export function MetaDashboard({
           <header className="rk-head">
             {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
             <div className="rk-evidence">
-              {showingSnapshot && snapMeta ? (
+              {!data ? (
+                // 첫 응답 전: '패치 정보 없음 · 덱 0개' 대신 스켈레톤 (2026-10-29 지시문 5 — 빈 상태는 성공 응답이 0개일 때만)
+                <span className="contents" role="status" aria-label="메타 데이터를 불러오는 중">
+                  <span className="rk-skel-chip" aria-hidden />
+                  <span className="rk-skel-chip" aria-hidden />
+                  <span className="rk-skel-chip" aria-hidden />
+                </span>
+              ) : showingSnapshot && snapMeta ? (
                 <>
                   <EvidenceChip
                     title={`${snapMeta.source === 'json' ? `수집 범위: ${JSON_LADDER_SCOPE_DETAIL} · ` : ''}덱 표에 들어간 판 수${snapshotFailed(snapMeta) ? ' — DB 집계를 불러오지 못해 래더 표본을 보여 줍니다' : ' (덱 성적표의 메타 평균과 같은 스냅샷)'}`}
@@ -515,13 +527,13 @@ export function MetaDashboard({
                   ) : null}
                 </>
               )}
-              <EvidenceChip>
-                덱 {(data?.decks ?? []).length}개 · 기물 {(data?.champions ?? []).length}종
-              </EvidenceChip>
-              {tab === 'decks' ? (
-                <EvidenceChip title={`${DECK_TIER_RULE} ${DECK_RELIABLE_SAMPLE}판 미만은 참고용`}>
-                  {DECK_TIER_RULE_SHORT} · {DECK_RELIABLE_SAMPLE}판 미만 참고용
+              {data ? (
+                <EvidenceChip>
+                  덱 {data.decks.length}개 · 기물 {(data.champions ?? []).length}종
                 </EvidenceChip>
+              ) : null}
+              {!data ? null : tab === 'decks' ? (
+                <EvidenceChip title={DECK_TIER_RULE}>{DECK_TIER_RULE_SHORT}</EvidenceChip>
               ) : (
                 <EvidenceChip title="절대 기준이 아니라 표 안 상대 순위 (표본 부족 제외). 표본이 적을수록 평균등수를 4.5등 쪽으로 당긴 추정값으로 매겨, 판수 적은 행이 운으로 위에 오지 않게 합니다. 값이 같거나 경계에서 차이가 오차보다 훨씬 작으면 같은 티어입니다">
                   {isUnitTab(tab) ? '티어 = 같은 코스트 안 상대 순위' : '티어 = 표 안 상대 순위'} · 표본 수 반영
@@ -683,7 +695,7 @@ export function MetaDashboard({
             </div>
           ) : null}
 
-          {loading && !rowsAll.length ? (
+          {!data && error ? null : !data || (loading && !rowsAll.length) ? (
             <div className="rk-skeleton">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="rk-skel-row" />
@@ -721,8 +733,13 @@ export function MetaDashboard({
                 ))}
               </div>
               {rows.map((r, i) => (
+                <Fragment key={r.key}>
+                {tab === 'decks' && sortBy === 'avg' && r.tier === '-' && (i === 0 || rows[i - 1].tier !== '-') ? (
+                  <div className="rk-group-label" role="presentation">
+                    참고용 · {DECK_TIER_MIN_SAMPLE}판 미만 (티어 없음 · 티어별 개수에서 제외)
+                  </div>
+                ) : null}
                 <button
-                  key={r.key}
                   type="button"
                   className={`rk-row ${colClass} ${selected && r.deck && selected.id === r.deck.id ? 'sel' : ''} ${r.low ? 'is-low' : ''}`}
                   title={r.low ? `표본 부족 (${minSample}판 미만) — 수치 변동이 큽니다` : undefined}
@@ -757,7 +774,7 @@ export function MetaDashboard({
                       {r.low || r.reference ? (
                         <span
                           className="rk-cost"
-                          title={r.reference ? `${DECK_RELIABLE_SAMPLE}판 미만 — 오차가 커 참고용입니다` : undefined}
+                          title={r.reference ? `${DECK_TIER_MIN_SAMPLE}판 미만 — 오차가 커 티어 없이 참고용입니다` : undefined}
                         >
                           참고용
                         </span>
@@ -834,7 +851,7 @@ export function MetaDashboard({
                     <span className="rk-num dim">{r.third != null ? `${Math.round(r.third * 100)}%` : '-'}</span>
                   ) : null}
                   <span className="rk-num">
-                    <span>
+                    <span title={r.adj != null ? `보정 평균등수 ${r.adj.toFixed(2)} (티어 기준 · ${DECK_TIER_PRIOR_GAMES}판만큼 4.5등을 섞은 값)` : undefined}>
                       {r.avg ? r.avg.toFixed(2) : '-'}
                       {r.avg && r.sample ? <small className="rk-pm">±{placementMargin(r.sample)?.toFixed(2)}</small> : null}
                     </span>
@@ -852,8 +869,11 @@ export function MetaDashboard({
                     ) : null}
                   </span>
                 </button>
+                </Fragment>
               ))}
-              {!rows.length && !loading ? <p className="rk-empty">조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.</p> : null}
+              {!rows.length && !loading ? (
+                <p className="rk-empty">{rowsAll.length ? '조건에 맞는 항목이 없습니다. 필터를 초기화해 보세요.' : '이 조건으로 집계된 항목이 아직 없습니다.'}</p>
+              ) : null}
             </>
           )}
         </main>

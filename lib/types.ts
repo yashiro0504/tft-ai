@@ -232,6 +232,9 @@ export interface GroundingReport {
   entityErrors?: EntityFactError[]
   /** 리포트에 나온 기물·아이템 이름 중 내 보드(또는 메타·상대 맥락의 사실)로 확인한 수 — 확인 못 한 문장은 지운 뒤 센다 */
   namesChecked?: number
+  /** 보내기 전 수리 기록 — 검사한 수치(조합법·로비 비교 포함, 수리 전) · 고친 문장 · 삭제한 문장.
+   * score 는 수리 뒤 리포트 기준이라 항상 100% 이고, 무엇을 고쳤는지는 여기와 entityErrors 에 남는다 */
+  repair?: { checked: number; fixed: number; deleted: number }
 }
 
 export interface EntityFactError {
@@ -455,6 +458,36 @@ export interface MetaCoachFeedback {
     excludedMatches?: number
   }
   fullMarkdown?: string
+  /** "이 덱의 정석과 비교" — 같은 스냅샷 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook) */
+  deckComparison?: DeckComparison
+}
+
+/** 덱 플레이북 비교표 한 행 (코드 산출 문장 — 수치는 플레이북 값 그대로) */
+export interface DeckComparisonRow {
+  /** 근거 플레이북 필드 (core_units · carry_bis · level_profile · elim_profile · flex_units · contested) */
+  id: string
+  text: string
+  /** 클수록 먼저 보여 준다 (0 = 정석대로) */
+  severity: number
+}
+
+export interface DeckComparison {
+  deckName: string
+  /** 플레이북(덱) 표본 판수 */
+  sample: number
+  patch?: string
+  snapshotId?: string
+  /** 이전 패치 플레이북을 쓸 때 "이전 패치(16.21) 기준" */
+  label?: string
+  /** 리포트에 보여 줄 항목 (최대 3개) */
+  items: DeckComparisonRow[]
+  /** 비교표 전체 (프롬프트·검증용) */
+  rows?: DeckComparisonRow[]
+  /** 근거 검증을 통과한 플레이북 팁 */
+  tips?: string[]
+  externalLinks?: { source: string; url: string }[]
+  /** 덱 표본 100판 미만 → "표본 부족으로 덱 기준 비교 생략" */
+  skipped?: string
 }
 
 export interface TFTAnalysisResponse {
@@ -468,6 +501,8 @@ export interface TFTAnalysisResponse {
   summonerProfile?: SummonerProfile
   isDemo?: boolean
   error?: string
+  cached?: boolean
+  quota?: AnalysisQuotaInfo
 }
 
 // ── Phase 1: 아이디 검색 → 경기별 분석 API 응답 타입 ──
@@ -482,6 +517,12 @@ export interface TftSearchResponse {
   matches: SlimMatchData[]
   /** 랭크 판이 모자라 최근 N판 이전에서 더 훑은 판 수 (lib/tftService 분석 판 보충) */
   olderScanned?: number
+  /** 그중 덧붙인 랭크 판 수 */
+  olderAdded?: number
+  /** 재시도 후에도 상세 조회에 실패한 판 수 */
+  failedMatches?: number
+  /** 훑은 판 수 (최근 N판 + 이전 판) */
+  scannedMatches?: number
   isDemo?: boolean
   /** Riot 에서 이 전적을 받아온 시각 (epoch ms). 캐시 응답이면 원래 받아온 시각 */
   fetchedAt?: number
@@ -500,6 +541,16 @@ export interface TftMatchAnalysisResponse {
   feedback?: MetaCoachFeedback
   cached?: boolean
   error?: string
+  /** 서버 쿼터 상태 — charged 가 true 일 때만 이번 요청에서 1회 차감했다 (면제·무제한이면 없음) */
+  quota?: AnalysisQuotaInfo
+}
+
+export interface AnalysisQuotaInfo {
+  bucket: string
+  charged: boolean
+  used: number
+  limit: number
+  remaining: number
 }
 
 /** POST /api/tft/overview 응답: 로드된 여러 경기 종합 AI 분석 */

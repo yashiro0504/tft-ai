@@ -415,9 +415,15 @@ export function validateLobbyClaims(texts: string[], m: SlimMatchData): { errors
  * - 데이터 값이 하나로 정해지고 문장에 틀린 표현("주문술사 4단계")이 그대로 있으면 맞는 값으로 바꾼다.
  * - 그 밖(여러 판이라 값이 여럿, "A·B 모두 3성" 처럼 표현이 흩어짐, 아이템 소유 오류)은 문장을 지운다.
  * - 문장을 지워 문자열이 비면: 배열 항목은 빼고, 단일 필드는 원문을 둔다(빈 섹션보다 낫다 — 오류는 grounding 에 남는다).
+ *   dropEmpty 면 단일 필드도 비운다 (호출부가 코드 문장으로 채운다 — AI 리포트 finalize).
+ * - stats 를 주면 고친 문장·지운 문장 수를 더한다.
  * 문자열·배열·객체를 깊게 돌며 오류 문장이 들어 있는 문자열만 바꾼다. 원본은 바꾸지 않는다.
  */
-export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
+export function repairEntityErrors<T>(
+  value: T,
+  errors: EntityFactError[],
+  opts: { dropEmpty?: boolean; stats?: { fixed: number; deleted: number } } = {}
+): T {
   if (!errors.length) return value
   // 문장별 교체문 ('' = 지움). 같은 문장에 오류가 여럿이면 하나라도 못 고칠 때 지운다
   const bySentence = new Map<string, string>()
@@ -427,11 +433,13 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
       !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
+  const touched = new Set<string>()
 
   const fixString = (str: string): string => {
     let out = str
     for (const [sentence, fixed] of bySentence) {
       if (!out.includes(sentence)) continue
+      touched.add(sentence)
       out = out.split(sentence).join(fixed)
     }
     return out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
@@ -442,7 +450,7 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
       if (![...bySentence.keys()].some((x) => v.includes(x))) return v
       const out = fixString(v)
       if (out) return out
-      return inArray ? undefined : v
+      return inArray ? undefined : opts.dropEmpty ? '' : v
     }
     if (Array.isArray(v)) return v.map((x) => walk(x, true)).filter((x) => x !== undefined)
     if (v && typeof v === 'object') {
@@ -452,7 +460,14 @@ export function repairEntityErrors<T>(value: T, errors: EntityFactError[]): T {
     }
     return v
   }
-  return walk(value, false) as T
+  const result = walk(value, false) as T
+  if (opts.stats) {
+    for (const sentence of touched) {
+      if (bySentence.get(sentence)) opts.stats.fixed++
+      else opts.stats.deleted++
+    }
+  }
+  return result
 }
 
 /** 리포트에서 검사할 서술 문자열 (점수·등급 등 코드 값 제외) */
@@ -560,4 +575,28 @@ export function validateCoachingRules(
     }
   }
   return out
+}
+
+/* ───────────── 다음 3게임 목표(drill) — 이미 달성한 기준 금지 ───────────── */
+
+const LEVEL_MENTION_RE = /(?:Lv\.?\s*|레벨\s*)(\d{1,2})/g
+const TWO_STAR_TARGET_RE = /2성(?:\s*이상)?\s*(?:기물\s*)?(\d{1,2})\s*(?:개|명)/g
+
+/**
+ * 한 판 리포트의 "다음 3게임 목표"가 이번 판에 이미 달성한 기준(최종 Lv.8 인데 "Lv.8 도달")이면 바꾼다.
+ * - 본문 조언(장면 fix·대안·체크리스트·행동)에 이번 판보다 높은 레벨 목표가 있으면 그 기준으로 다시 쓴다 (본문 Lv.9 ↔ 목표 Lv.9).
+ * - 없으면 fallback(코드 문장)으로 바꾼다.
+ * 달성하지 않은 기준이면 null (그대로 둔다).
+ */
+export function fixDrillTarget(drill: string, m: SlimMatchData, bodyTexts: string[], fallback: string): string | null {
+  const levels = [...drill.matchAll(LEVEL_MENTION_RE)].map((x) => Number(x[1])).filter((n) => n >= 3 && n <= 10)
+  const levelDone = levels.some((n) => n <= m.level)
+  const twoStars = m.units.filter((u) => (u.tier || 1) >= 2).length
+  const starDone = [...drill.matchAll(TWO_STAR_TARGET_RE)].some((x) => Number(x[1]) <= twoStars)
+  if (!levelDone && !starDone) return null
+  const bodyLevel = bodyTexts
+    .flatMap((t) => [...t.matchAll(LEVEL_MENTION_RE)].map((x) => Number(x[1])))
+    .find((n) => n > m.level && n <= 10)
+  if (bodyLevel) return `다음 3판은 최종 레벨 ${bodyLevel} 이상으로 마무리하기 (이번 판 최종 Lv.${m.level})`
+  return fallback === drill ? null : fallback
 }

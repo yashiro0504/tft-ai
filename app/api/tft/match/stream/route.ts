@@ -4,14 +4,16 @@ import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import {
   ANALYSIS_STAGE_MESSAGE,
   MatchAnalysisError,
+  analysisCacheKey,
   runMatchAnalysis,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
 import { RiotApiError } from '@/lib/riot'
 import { generateCoachIntro } from '@/lib/llm'
 import {
-  quotaGuard,
-  refundQuota,
+  quotaCheck,
+  quotaStatus,
+  chargeQuotaOnce,
   rateLimitGuard,
   readJson,
   normalizeGameNameTagLine,
@@ -46,8 +48,8 @@ const HEARTBEAT_MS = 15_000
  *  - `result` TftMatchAnalysisResponse (기존 JSON 라우트와 동일한 형태)
  *  - `error`  { status, error }
  *
- * 쿼터는 **스트림을 열기 전에 1회만** 소모한다. (초과 시 일반 JSON 429 응답)
- * 캐시 히트면 Riot/LLM 호출 없이 곧바로 `result` 가 전송된다.
+ * 쿼터는 스트림을 열기 전에 남은 횟수만 확인하고(초과 시 일반 JSON 429), 새 리포트 생성이 성공한 뒤에만 1회 차감한다.
+ * 캐시 히트면 Riot/LLM 호출 없이 곧바로 `result` 가 전송되고 차감하지 않는다.
  */
 export async function POST(req: NextRequest) {
   const startedAt = Date.now()
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
     passedByTurnstile = true
   }
 
-  const daily = await quotaGuard(
+  const daily = await quotaCheck(
     req,
     'analysis',
     dailyQuotaLimit('QUOTA_ANALYSIS_PER_DAY', 3),
@@ -174,10 +176,11 @@ export async function POST(req: NextRequest) {
             },
           })
 
-          // AI 를 못 쓴 규칙 기반 폴백은 이용 횟수에서 빼 준다 (DeepSeek 잔액 소진·예산 초과 등)
-          if (outcome.response.feedback?.isFallback) await refundQuota(req, 'ai_fallback')
+          // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (캐시 적중·AI 미사용 폴백·실패·끊김은 차감 없음, 같은 경기는 멱등 키로 한 번)
+          const quota =
+            !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisCacheKey(params)) : quotaStatus(req)
           resultSent = true
-          send('result', outcome.response)
+          send('result', { ...outcome.response, ...(quota ? { quota } : {}) })
           logEvent('info', 'api_match_stream', {
             ms: elapsedMs(startedAt),
             cacheSource: outcome.cached ? 'hit' : 'miss',

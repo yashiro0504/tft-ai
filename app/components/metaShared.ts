@@ -1,4 +1,5 @@
 import { PLACEMENT_SD } from '@/lib/statsShared'
+import { deckTier, type Tier } from '@/lib/deckTier'
 
 /** 메타 대시보드/상세 모달 공용 유틸 */
 
@@ -40,7 +41,7 @@ export type ModalTarget =
   | { type: 'item'; key: string }
   | { type: 'trait'; key: string }
 
-export type Tier = 'S' | 'A' | 'B' | 'C' | 'D'
+export type { Tier }
 
 const TIERS: Tier[] = ['S', 'A', 'B', 'C', 'D']
 /**
@@ -82,71 +83,16 @@ export function assignTiers(avgs: number[], sds?: number[]): Tier[] {
   return out
 }
 
-/** 덱 티어 수 범위 · 한 티어에 몰려도 되는 덱 비율 상한 (2026-10-28 재평가: S1·B17 로 뭉쳤다) */
-export const DECK_TIER_MIN = 3
-export const DECK_TIER_MAX = 5
-export const DECK_TIER_MAX_SHARE = 0.5
-
-/**
- * 덱 티어 (화면 설명 DECK_TIER_RULE 과 같은 계산 — 설명만 보고 손으로 셀 수 있게, 2026-10-28 16시 재확인 P2):
- * 1. 평균등수 순(같으면 오차가 작은 = 판 수 많은 덱 먼저)으로 늘어놓고 위에서부터 차례로 본다. 첫 덱이 S티어의 기준 덱.
- * 2. 다음 덱의 '평균 ± 오차' 구간이 지금 티어 기준 덱의 구간과 겹치고, 지금 티어가 한도(덱 N개의 50% = ⌊N/2⌋개)를
- *    아직 안 채웠으면 같은 티어. 아니면 그 덱부터 새 티어이고 그 덱이 새 기준 덱이다 (이웃끼리 줄줄이 잇지 않는다 — 연쇄 비교 X).
- *    예전엔 몰린 티어를 '가운데 절반에서 차이가 가장 큰 곳'에서 다시 나눠, 18개 중 9번째(50%)인 아리가 B로 밀렸다.
- * 3. 티어가 5개를 넘으면 경계 평균등수 차이가 가장 작은 이웃 두 티어를 합친다 (합쳐도 한도 안인 곳 먼저, 같으면 합친 티어가 작은 쪽).
- * 4. 티어가 3개 미만이면 가장 큰 티어를 이웃 평균등수 차이가 가장 큰 곳에서 둘로 나눈다.
- * 위 티어부터 S·A·B·C·D. sds = 화면의 오차(2.29/√n).
- */
-export function assignSeparatedTiers(avgs: number[], sds: number[]): Tier[] {
-  const order = avgs.map((a, i) => ({ a, s: sds[i] ?? 0, i })).sort((x, y) => x.a - y.a || x.s - y.s)
-  const n = order.length
-  if (!n) return []
-  const cap = deckTierCap(n)
-  /** 티어 = order 위치 [시작, 끝) */
-  let groups: [number, number][] = []
-  let start = 0
-  for (let p = 1; p <= n; p++) {
-    const anchor = order[start]
-    if (p === n || p - start >= cap || order[p].a - anchor.a > order[p].s + anchor.s) {
-      groups.push([start, p])
-      start = p
-    }
-  }
-  const gapBefore = (p: number) => order[p].a - order[p - 1].a
-  while (groups.length > DECK_TIER_MAX) {
-    const joins = groups.slice(1).map(([s, e], j) => ({ k: j, d: gapBefore(s), size: e - groups[j][0] }))
-    const pool = joins.some((j) => j.size <= cap) ? joins.filter((j) => j.size <= cap) : joins
-    const { k } = pool.reduce((a, b) => (b.d < a.d || (b.d === a.d && b.size < a.size) ? b : a))
-    groups = [...groups.slice(0, k), [groups[k][0], groups[k + 1][1]], ...groups.slice(k + 2)]
-  }
-  while (groups.length < DECK_TIER_MIN) {
-    const big = groups.reduce((b, g, k) => (g[1] - g[0] > groups[b][1] - groups[b][0] ? k : b), 0)
-    const [from, to] = groups[big]
-    if (to - from < 2) break
-    let at = from + 1
-    for (let p = from + 2; p < to; p++) if (gapBefore(p) > gapBefore(at)) at = p
-    groups = [...groups.slice(0, big), [from, at], [at, to], ...groups.slice(big + 1)]
-  }
-  const out: Tier[] = new Array(avgs.length).fill('D')
-  groups.forEach(([from, to], k) => {
-    for (let p = from; p < to; p++) out[order[p].i] = TIERS[Math.min(k, TIERS.length - 1)]
-  })
-  return out
-}
-
-/** 한 티어에 들어갈 수 있는 덱 수 = 덱 N개의 50% (⌊N/2⌋, 최소 1) — 18개면 9개까지 */
-export function deckTierCap(n: number): number {
-  return Math.max(1, Math.floor(n * DECK_TIER_MAX_SHARE))
-}
-
-/** 덱 탭 화면 설명 — assignSeparatedTiers 와 같은 규칙 (짧은 칩 · 자세한 툴팁) */
-export const DECK_TIER_RULE_SHORT = '티어 = 기준 덱과 오차가 겹치면 같은 티어 · 3~5개 · 한 티어 50% 이하(차면 다음 티어)'
-export const DECK_TIER_RULE = [
-  '평균등수 순으로 늘어놓고 위에서부터 차례로 봅니다. 각 티어의 첫 덱이 기준 덱이고, 다음 덱의 평균 ± 오차(2.29/√n) 구간이 기준 덱 구간과 겹치면 같은 티어입니다.',
-  `겹치지 않거나, 겹쳐도 그 티어가 이미 티어를 매기는 덱 수의 ${DECK_TIER_MAX_SHARE * 100}%(18개면 ${deckTierCap(18)}개)를 채웠으면 그 덱부터 새 티어이고 그 덱이 새 기준 덱입니다.`,
-  `티어가 ${DECK_TIER_MAX}개를 넘으면 경계 평균등수 차이가 가장 작은 이웃 두 티어를 합치고(합쳐도 ${DECK_TIER_MAX_SHARE * 100}% 이하인 곳 먼저), ${DECK_TIER_MIN}개 미만이면 가장 큰 티어를 이웃 평균등수 차이가 가장 큰 곳에서 둘로 나눕니다.`,
-  '위 티어부터 S·A·B·C·D.',
-].join(' ')
+export {
+  DECK_TIER_CUTS,
+  DECK_TIER_MIN_SAMPLE,
+  DECK_TIER_PRIOR_GAMES,
+  DECK_TIER_RULE,
+  DECK_TIER_RULE_SHORT,
+  adjustedPlacement,
+  deckTier,
+  deckTierFromAdjusted,
+} from '@/lib/deckTier'
 
 /** 아무 정보가 없을 때의 평균등수 (8명 평균) */
 const BASE_PLACEMENT = 4.5
@@ -190,13 +136,14 @@ function shrinkStrength(rows: { avg: number; sample: number }[]): number {
  * 표본 충분한 행끼리만 상대 티어를 매긴다 (표본 부족은 '-').
  * 순위는 추정 평균등수(shrinkPlacements) 기준. group 이 있으면 같은 group 안에서만 비교한다 (기물: 코스트별).
  * 같은 값은 같은 티어, 경계에서 위 티어와 오차 안이면 위 티어 (assignTiers).
- * separated: 기준 덱과 오차가 겹치면 같은 티어 · 3~5개 · 한 티어 50% 이하, 차면 다음 티어 (assignSeparatedTiers — 덱 탭, 화면 평균등수 기준)
+ * deck: 덱 탭 — 보정 평균등수 고정 구간 (deckTier). 표 안 상대 순위가 아니고 min 대신 50판 하한을 쓴다.
  */
 export function assignSampleTiers(
   rows: { avg: number; sample: number; group?: string | number }[],
   min: number,
-  { separated = false }: { separated?: boolean } = {}
+  { deck = false }: { deck?: boolean } = {}
 ): (Tier | '-')[] {
+  if (deck) return rows.map((r) => deckTier(r.avg, r.sample))
   const out: (Tier | '-')[] = rows.map(() => '-')
   const okIdx = rows.map((_, i) => i).filter((i) => rows[i].sample >= min)
   // 당기는 세기는 표 전체에서 구하고, 티어만 group 안에서 나눈다 (group 하나는 행이 적어 분산이 흔들린다)
@@ -209,16 +156,10 @@ export function assignSampleTiers(
     groups.set(rows[i].group, g)
   })
   for (const members of groups.values()) {
-    // 덱 탭은 화면에 보이는 평균등수 ± 2.29/√n 그대로 비교한다 (설명 문구와 같은 계산)
-    const tiers = separated
-      ? assignSeparatedTiers(
-          members.map((k) => rows[okIdx[k]].avg),
-          members.map((k) => PLACEMENT_SD / Math.sqrt(rows[okIdx[k]].sample))
-        )
-      : assignTiers(
-          members.map((k) => est[k]),
-          members.map((k) => sds[k])
-        )
+    const tiers = assignTiers(
+      members.map((k) => est[k]),
+      members.map((k) => sds[k])
+    )
     members.forEach((k, j) => {
       out[okIdx[k]] = tiers[j]
     })

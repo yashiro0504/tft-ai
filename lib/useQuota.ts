@@ -90,5 +90,18 @@ export function useQuota() {
   /** 분석 1회 사용 기록 (분석이 성공했을 때 호출) */
   const consume = useCallback(() => write(read() + 1), [])
 
-  return { limit, used, remaining, unlimited, exhausted: !unlimited && remaining === 0, consume }
+  /**
+   * 분석 응답 반영 — 서버가 이번 요청에서 실제로 차감했을 때(quota.charged)만 1회 센다.
+   * 캐시 적중·AI 미사용 폴백·같은 경기 재분석은 서버가 차감하지 않으므로 화면도 그대로 (2026-10-29 지시문 2).
+   * 서버 쿼터 정보가 없으면(면제·무제한·구버전 서버) 새로 만든 AI 리포트일 때만 센다.
+   */
+  const settle = useCallback(
+    (res: { cached?: boolean; feedback?: { isFallback?: boolean } | null; quota?: { charged: boolean } }) => {
+      const charged = res.quota ? res.quota.charged : !res.cached && !res.feedback?.isFallback
+      if (charged) write(read() + 1)
+    },
+    []
+  )
+
+  return { limit, used, remaining, unlimited, exhausted: !unlimited && remaining === 0, consume, settle }
 }

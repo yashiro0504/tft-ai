@@ -89,3 +89,16 @@ export async function redisExpire(key: string, ttlSeconds: number): Promise<void
   await command(`expire/${encodeURIComponent(key)}/${Math.max(1, Math.floor(ttlSeconds))}`)
 }
 
+
+/** 키가 없을 때만 저장 (SET NX EX). 새로 저장했으면 true, 이미 있으면 false, 실패/미설정이면 null. */
+export async function redisSetNx(key: string, value: string, ttlSeconds: number): Promise<boolean | null> {
+  const ex = Math.max(1, Math.floor(ttlSeconds))
+  const result = await command(`set/${encodeURIComponent(key)}?EX=${ex}&NX=true`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: value,
+  })
+  if (result === 'OK') return true
+  // NX 로 거절되면 Upstash 는 result: null 을 준다 — command 도 null 이라 실패와 구분하려고 GET 으로 확인
+  return (await redisGet(key)) !== null ? false : null
+}

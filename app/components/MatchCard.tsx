@@ -361,7 +361,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         })
       } catch (err) {
         // 스트리밍 미지원 배포에서만 기존 JSON 경로로 폴백한다.
-        // (그 외 오류는 쿼터가 이미 소모된 상태이므로 재요청하지 않는다)
+        // (그 외 오류는 재요청하지 않는다 — 실패는 서버가 차감하지 않는다)
         if (err instanceof AnalysisStreamUnavailableError) {
           data = await analyzeMatchJson({ body, signal: controller.signal })
         } else {
@@ -373,8 +373,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
         throw new Error(data.error || '이 경기 분석 중 오류가 발생했습니다.')
       }
       setFeedback(data.feedback)
-      // AI 미사용 폴백은 서버가 쿼터를 되돌려 주므로 화면 카운터도 차감하지 않는다
-      if (!data.feedback.isFallback) quota.consume()
+      // 서버가 이번 요청에서 실제로 차감했을 때만 센다 (캐시 적중·AI 미사용 폴백은 차감 없음)
+      quota.settle(data)
       setWasCached(Boolean(data.cached))
       track('analysis_success', {
         scope: 'match',
@@ -807,7 +807,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
           {wasCached && (
             <div className="mb-3 inline-flex items-center gap-1 text-xs text-accent">
               <Info className="w-3 h-3" />
-              <span>저장된 분석 결과(캐시)입니다.</span>
+              <span>저장된 분석 결과(캐시)입니다 · 횟수 차감 없음</span>
             </div>
           )}
           <FeedbackReport

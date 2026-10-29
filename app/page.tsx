@@ -197,8 +197,8 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
-      // AI 미사용 폴백은 서버가 쿼터를 되돌려 주므로 화면 카운터도 차감하지 않는다
-      if (!data.feedback.isFallback) quota.consume()
+      // 서버가 이번 요청에서 실제로 차감했을 때만 센다 (캐시 적중·AI 미사용 폴백은 차감 없음)
+      quota.settle(data)
       track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
     } catch (err) {
       const message = err instanceof Error ? err.message : '종합 분석 중 오류가 발생했습니다.'
@@ -353,7 +353,20 @@ export default function TFTCoachPage() {
 
             {/* 1. 소환사 요약 */}
             {search.summonerProfile && (
-              <SummonerSummary profile={search.summonerProfile} matches={search.matches} olderScanned={search.olderScanned} deckReport={search.deckReport}>
+              <SummonerSummary
+                profile={search.summonerProfile}
+                matches={search.matches}
+                olderScanned={search.olderScanned}
+                olderAdded={search.olderAdded}
+                failedMatches={search.failedMatches}
+                scannedMatches={search.scannedMatches}
+                retry={
+                  <button type="button" className="font-bold text-accent underline" onClick={() => handleSearch(search.gameName, search.tagLine)} disabled={isLoading}>
+                    다시 시도
+                  </button>
+                }
+                deckReport={search.deckReport}
+              >
                 {search.isDemo ? null : (
                   <>
                     <RefreshMatchesButton

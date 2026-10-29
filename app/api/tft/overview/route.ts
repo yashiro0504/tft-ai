@@ -4,7 +4,7 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { COACH_PROMPT_VERSION } from '@/lib/llm'
 import { SCORING_VERSION } from '@/lib/axisConfig'
-import { quotaGuard, refundQuota, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
+import { quotaCheck, quotaStatus, chargeQuotaOnce, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
 import { getAuthUser } from '@/lib/supabase/server'
 import { getUserPlan } from '@/lib/userPlan'
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (limited) return limited
 
     const userId = (await getAuthUser())?.id
-    const daily = await quotaGuard(
+    const daily = await quotaCheck(
       req,
       'overview',
       dailyQuotaLimit('QUOTA_OVERVIEW_PER_DAY', 3),
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
       if (cached) {
         incrMetric('llm.cache_hit.overview')
-        if (cached.value.feedback?.isFallback) await refundQuota(req, 'ai_fallback')
         logEvent('info', 'api_overview', {
           ms: elapsedMs(startedAt),
           cacheSource: cached.source,
@@ -79,7 +78,9 @@ export async function POST(req: NextRequest) {
           tier,
           matchCount: matches.length,
         })
-        return NextResponse.json(cached.value)
+        // 캐시 적중은 횟수 차감 없음
+        const quota = quotaStatus(req)
+        return NextResponse.json({ ...cached.value, cached: true, ...(quota ? { quota } : {}) })
       }
     }
 
@@ -95,8 +96,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (!nocache) await cacheSet(cacheKey, response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.OVERVIEW)
-    // AI 를 못 쓴 규칙 기반 폴백은 이용 횟수에서 빼 준다 (DeepSeek 잔액 소진·예산 초과 등)
-    if (feedback.isFallback) await refundQuota(req, 'ai_fallback')
+    // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (AI 미사용 폴백·실패는 차감 없음, 같은 요청은 멱등 키로 한 번)
+    const quota = feedback.isFallback ? quotaStatus(req) : await chargeQuotaOnce(req, cacheKey)
     logEvent('info', 'api_overview', {
       ms: elapsedMs(startedAt),
       cacheSource: nocache ? 'bypass' : 'miss',
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
       tier,
       matchCount: matches.length,
     })
-    return NextResponse.json(response)
+    return NextResponse.json({ ...response, ...(quota ? { quota } : {}) })
   } catch (err) {
     logEvent('error', 'api_overview_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'overview')

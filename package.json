@@ -44,7 +44,8 @@
     "test:rollup": "node scripts/testRollup.js",
     "test:ops": "node scripts/testOps.js",
     "test:gate": "node scripts/testBotGate.js",
-    "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testReportConsistency.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js",
+    "test:quota": "node scripts/testQuotaCharge.js",
+    "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testReportConsistency.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js && node scripts/testPlaybook.js && node scripts/testReportRepair.js",
     "test:gamedata": "node scripts/testGameData.js",
     "test:tiers": "node scripts/testMetaTiers.js && node scripts/testBisSets.js",
     "inspect:match": "node scripts/inspectMatch.js",
@@ -53,7 +54,7 @@
     "labels:page": "node scripts/buildLabelPage.js",
     "labels:import": "node scripts/importGoldenLabels.js",
     "test:labels": "node scripts/testGoldenLabels.js",
-    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:baselines && npm run test:collect && npm run test:rollup && npm run test:ops && npm run test:gate && npm run test:ai && npm run test:tiers && npm run test:labels && npm run build",
+    "ci": "npm run lint && npm run typecheck && npm run meta:check && npm run test:axes && npm run test:baselines && npm run test:collect && npm run test:rollup && npm run test:ops && npm run test:gate && npm run test:quota && npm run test:ai && npm run test:tiers && npm run test:labels && npm run build",
     "seeds:pick": "node scripts/pickSeeds.js",
     "tune:contest": "node scripts/tuneContest.js"
   },

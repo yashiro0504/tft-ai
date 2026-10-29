@@ -238,6 +238,46 @@ function LectureBlock({ feedback, goalSource }: { feedback: MetaCoachFeedback; g
 }
 
 /**
+ * "이 덱의 정석과 비교" — tftlab 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook).
+ * 표본 100판 미만 덱은 섹션 대신 한 줄만.
+ */
+function DeckComparisonSection({ comparison }: { comparison: NonNullable<MetaCoachFeedback['deckComparison']> }) {
+  if (comparison.skipped) {
+    return <p className="text-xs text-subtle">{comparison.skipped}</p>
+  }
+  if (!comparison.items.length) return null
+  const link = comparison.externalLinks?.[0]
+  return (
+    <section aria-label="이 덱의 정석과 비교" className="rounded-control border border-line bg-sunken px-4 py-3">
+      <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-ink">
+        이 덱의 정석과 비교
+        <span className="text-xs font-medium text-subtle">
+          {comparison.deckName} · tftlab {comparison.sample.toLocaleString()}판{comparison.label ? ` · ${comparison.label}` : ''}
+        </span>
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {comparison.items.map((r, i) => (
+          <li key={`${r.id}-${i}`} className="flex gap-2 text-sm leading-relaxed text-ink">
+            <span aria-hidden className={r.severity > 0 ? 'text-gold' : 'text-good'}>
+              {r.severity > 0 ? '•' : '✓'}
+            </span>
+            <span>{r.text}</span>
+          </li>
+        ))}
+      </ul>
+      {link ? (
+        <p className="mt-2 text-xs text-subtle">
+          자세한 운영 가이드:{' '}
+          <a href={link.url} target="_blank" rel="noopener" className="font-semibold text-accent underline">
+            {link.source} ↗
+          </a>
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
+/**
  * AI 코칭 리포트 렌더러 (경기별/종합 공용).
  * 기존 app/page.tsx 의 리포트 마크업을 재사용 가능하도록 분리.
  */
@@ -328,7 +368,15 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
                 수치 {feedback.grounding.supported}/{feedback.grounding.total}
                 {feedback.grounding.namesChecked != null ? ` · 이름 ${feedback.grounding.namesChecked}개` : ''} 확인
               </span>
-              {feedback.grounding.entityErrors?.length ? (
+              {feedback.grounding.repair ? (
+                <span
+                  className="mt-0.5 block text-xs text-subtle"
+                  title={feedback.grounding.entityErrors?.map((e) => `${e.actual} → ${e.expected}`).join(' / ') || undefined}
+                >
+                  검사한 수치 {feedback.grounding.repair.checked}개 · 고친 문장 {feedback.grounding.repair.fixed}개 · 삭제한 문장{' '}
+                  {feedback.grounding.repair.deleted}개
+                </span>
+              ) : feedback.grounding.entityErrors?.length ? (
                 <span
                   className="mt-0.5 block text-xs text-gold"
                   title={feedback.grounding.entityErrors.map((e) => `${e.actual} → ${e.expected}`).join(' / ')}
@@ -352,6 +400,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             ))}
           </ol>
         ) : null}
+
+        {feedback.deckComparison ? <DeckComparisonSection comparison={feedback.deckComparison} /> : null}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -395,6 +445,12 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
               >
                 근거 검증 {feedback.grounding.supported}/{feedback.grounding.total} ·{' '}
                 {feedback.grounding.score}%
+              </span>
+            ) : null}
+            {feedback.grounding?.repair ? (
+              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">
+                검사한 수치 {feedback.grounding.repair.checked} · 고친 문장 {feedback.grounding.repair.fixed} · 삭제한 문장{' '}
+                {feedback.grounding.repair.deleted}
               </span>
             ) : null}
             {feedback.isFallback && (
@@ -442,8 +498,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             </details>
           )}
           <p className="mt-2 text-xs leading-relaxed text-subtle">
-            ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 낮을수록
-            창작(환각) 가능성이 큽니다.
+            ※ 리포트의 수치가 프롬프트에 제공된 실측 데이터에 존재하는지 코드가 대조합니다. 확인하지 못한 수치가 든 문장은
+            숫자를 빼고 고치거나 삭제한 뒤 보여 드립니다.
           </p>
         </div>
       )}

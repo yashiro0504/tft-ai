@@ -228,11 +228,13 @@ function newCluster(label) {
     carryItemBoards: new Map(), // 캐리 아이템 → 든 보드 수 (같은 아이템 2개도 1번)
     carryThree: 0, // 캐리 3성 보드 수
     patchCounts: new Map(), // 패치 → 보드 수 (board.patch 가 있을 때만)
+    members: [], // 이 덱으로 묶인 보드 원본 (덱 플레이북 — scripts/collect/playbook.js)
   }
 }
 
 function addBoard(c, board, label) {
   c.boards++
+  c.members.push(board)
   if (board.patch) c.patchCounts.set(board.patch, (c.patchCounts.get(board.patch) || 0) + 1)
   c.placements[board.placement - 1]++
   c.levels.push(board.level || 0)
@@ -328,6 +330,7 @@ function mergeInto(a, b) {
     a.unitItems.set(k, target)
   }
   a.carryStars.push(...b.carryStars)
+  for (const m of b.members) a.members.push(m)
   a.carryThree += b.carryThree
   a.sizes.push(...b.sizes)
   a.levels.push(...b.levels)
@@ -537,7 +540,7 @@ function buildDecks(boards, { minGames = MIN_GAMES, maxDecks = MAX_DECKS } = {})
   const decks = capByGames(
     merged
       .filter((c) => c.boards >= minGames)
-      .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements })),
+      .map((c) => ({ deck: toDeck(c, boards.length), core: coreUnits(c), placements: c.placements, members: c.members })),
     maxDecks,
     (d) => d.deck.games,
     (d) => d.deck.avgPlacement
@@ -671,4 +674,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { labelBoard, damageScore, itemRole, buildDecks, choosePatchDecks, capByGames }
+module.exports = { labelBoard, damageScore, itemRole, buildDecks, choosePatchDecks, capByGames, norm, statKey, champInfo, itemInfo, traitInfo, isRealUnit, isCompletedItem }
