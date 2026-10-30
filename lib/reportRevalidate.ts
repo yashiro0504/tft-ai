@@ -1,8 +1,11 @@
 import type { CoachingAxisKey, MetaCoachFeedback, SlimMatchData } from './types'
 import { fixEnglishTerms, fixPlacementWording, validateFeedbackGrounding } from './grounding'
-import { mapFeedbackStrings } from './llm'
+import { deckComparisonFor, mapFeedbackStrings } from './llm'
+import { validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice } from './adviceCheck'
 import {
+  HELD_ITEM_NAMES,
   REVALIDATOR_VERSION,
+  numericDrill,
   feedbackTexts,
   repairEntityErrors,
   validateAdviceAndCounts,
@@ -25,7 +28,12 @@ export function revalidateReport(fb: MetaCoachFeedback, matches: SlimMatchData[]
   const texts = feedbackTexts(fb, verdicts)
   const advice = validateAdviceAndCounts(texts, matches)
   const relation = validateTraitRelations(texts, matches, { coreUnits: fb.deckComparison?.coreUnits })
-  const errors = [...validateEntityFacts(texts, matches), ...advice.errors, ...relation.errors]
+  // 구조화된 조언(있으면)·상징 칸 아이템 조언·BIS 일치 수·파생 수치·본인 레벨 (2026-10-30 2차 지시문 2·3·6)
+  const single = fb.mode !== 'multi' && matches.length === 1 ? matches[0] : null
+  const structured = validateStructuredAdvice(fb.advice, texts, single, { bis: fb.deckComparison?.bis })
+  const emblem = validateEmblemItemAdvice(texts, single, HELD_ITEM_NAMES)
+  const derived = validateDerivedClaims(texts, single, fb.deckComparison?.bis)
+  const errors = [...validateEntityFacts(texts, matches), ...advice.errors, ...relation.errors, ...structured.errors, ...emblem.errors, ...derived.errors]
   const stats = { fixed: 0, deleted: 0 }
   const repaired = repairEntityErrors({ fb, verdicts }, errors, { dropEmpty: true, stats })
   const worded = mapFeedbackStrings(repaired.fb, (t) => {
@@ -45,10 +53,32 @@ export function revalidateReport(fb: MetaCoachFeedback, matches: SlimMatchData[]
         total: Math.max(0, g.total - removedClaims),
         supported: Math.max(0, g.supported - removedClaims),
         entityErrors: [...(g.entityErrors || []), ...errors],
-        relationsChecked: relation.checked,
+        relationsChecked: relation.checked + structured.checked + emblem.checked,
         repair: g.repair ? { ...g.repair, fixed: g.repair.fixed + stats.fixed, deleted: g.repair.deleted + stats.deleted } : undefined,
         revalidated: REVALIDATOR_VERSION,
       }
     : g
-  return { ...worded, plan, grounding }
+  // 다음 3판 목표에 숫자 기준이 없으면 코드 목표 (2026-10-30 2차 지시문 6-2)
+  const lecture = worded.lecture && !/\d/.test(worded.lecture.drill || '') ? { ...worded.lecture, drill: numericDrill(matches, fb.plan?.focus) } : worded.lecture
+  return { ...worded, lecture, plan, grounding }
+}
+
+/**
+ * 캐시 적중 경로 공용 (경기 분석·종합 분석 1판) — 비교 섹션이 없거나 옛 형식(BIS 세트 대조 없음)이면 코드로 다시 붙이고 (2026-10-30 2차 지시문 5-1),
+ * 현재 검증기로 다시 검사한다. LLM 호출·횟수 차감 없음. 비교 섹션을 못 만들면(DB 오류 등) 원래 리포트대로 검사만 한다.
+ */
+export async function prepareCachedReport(fb: MetaCoachFeedback, matches: SlimMatchData[]): Promise<MetaCoachFeedback> {
+  if (!fb || !matches.length) return fb
+  let out = fb
+  const single = fb.mode !== 'multi' && matches.length === 1
+  const dc = fb.deckComparison
+  if (single && (!dc || (!dc.skipped && !dc.bis))) {
+    try {
+      const fresh = await deckComparisonFor(matches[0])
+      if (fresh) out = { ...fb, deckComparison: fresh, grounding: fb.grounding ? { ...fb.grounding, revalidated: undefined } : fb.grounding }
+    } catch {
+      /* 비교 섹션 없이 검사만 */
+    }
+  }
+  return revalidateReport(out, matches)
 }

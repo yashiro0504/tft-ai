@@ -4,7 +4,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import type { MetaDeckRanking, TftMetaResponse } from '@/lib/types'
+import type { MetaDeckRanking } from '@/lib/types'
+import { fetchMetaDecks } from '@/lib/metaClient'
 import { MIN_SAMPLE } from '@/lib/statsShared'
 import { assignSampleTiers, tierClass, tierRank, type Tier } from './metaShared'
 import { TraitHex, UnitHover, traitLevelFromCount } from './LabUI'
@@ -27,8 +28,8 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/tft/meta?view=decks')
-      .then((res) => res.json() as Promise<TftMetaResponse>)
+    // 메타 탭과 같은 요청을 나눠 쓴다 (한 번 로드에 view=decks 한 번)
+    fetchMetaDecks()
       .then((data) => {
         if (cancelled || !data?.decks?.length) return
         const tiers = assignSampleTiers(

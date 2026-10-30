@@ -12,8 +12,8 @@
  */
 require('./_ts')
 const { clusterDecks } = require('./collect/decks')
-const { buildPlaybookRows, validateTip, generateTips, externalLinks, snapshotIdOf: scriptSnapshotId } = require('./collect/playbook')
-const { choosePlaybook, buildDeckComparison, comparePlaybook, snapshotIdOf, DECK_COMPARISON_SKIPPED } = require('../lib/playbook')
+const { buildPlaybookRows, validateTip, generateTips, externalLinks, snapshotIdOf: scriptSnapshotId, stratifiedDelta, tipFacts, PLAYBOOK_VERSION } = require('./collect/playbook')
+const { choosePlaybook, buildDeckComparison, comparePlaybook, snapshotIdOf, groundedTips, DECK_COMPARISON_SKIPPED } = require('../lib/playbook')
 const { validateFeedbackGrounding, collectFactNumbers } = require('../lib/grounding')
 
 let failures = 0
@@ -106,14 +106,17 @@ for (let m = 0; left.A > 0 || left.B > 0; m++) {
   console.log('팁 근거 검증')
   const lv = pbA.level_profile
   const st = pbA.three_star[0]
+  // 팁 말투는 리포트와 같은 "~하세요" (2026-10-30 2차 지시문 6-4)
   const good = [
-    { text: `TOP4의 ${lv.top4_lv8plus_pct}%가 최종 Lv.8 이상으로 끝냅니다`, evidence: ['level_profile'] },
-    { text: `${st.name} ★3 달성률은 TOP4 ${st.top4_pct}% · 5~8등 ${st.bottom_pct}%입니다`, evidence: ['three_star'] },
-    { text: `경쟁자가 있으면 평균 ${pbA.contested.contested_avg.toFixed(2)}등, 혼자면 ${pbA.contested.solo_avg.toFixed(2)}등입니다`, evidence: ['contested'] },
+    { text: `TOP4의 ${lv.top4_lv8plus_pct}%가 최종 Lv.8 이상으로 끝내니 Lv.8 보드를 목표로 하세요`, evidence: ['level_profile'] },
+    { text: `${st.name} ★3 달성률은 TOP4 ${st.top4_pct}% · 5~8등 ${st.bottom_pct}%이니 ${st.name} ★3을 우선하세요`, evidence: ['three_star'] },
+    { text: `같은 덱 경쟁자가 있을 때 평균 ${pbA.contested.contested_avg.toFixed(2)}등이니 로비를 정찰하세요`, evidence: ['contested'] },
   ]
   check('수치가 evidence 필드에 있으면 통과', good.every((t) => validateTip(t, pbA).ok), JSON.stringify(good.map((t) => validateTip(t, pbA))))
   check('필드에 없는 숫자 → 버림', !validateTip({ text: 'TOP4의 97%가 Lv.10', evidence: ['level_profile'] }, pbA).ok)
   check('숫자가 다른 필드에만 있으면 → 버림 (evidence 불일치)', !validateTip({ text: `TOP4의 ${lv.top4_lv8plus_pct}%가 최종 Lv.8 이상`, evidence: ['contested'] }, pbA).ok || String(lv.top4_lv8plus_pct) === '0')
+  check('"~입니다"로 끝나는 팁 → 버림 (말투 통일)', validateTip({ text: `TOP4의 ${lv.top4_lv8plus_pct}%가 최종 Lv.8 이상입니다`, evidence: ['level_profile'] }, pbA).reason === 'ending')
+  check('"~하라"로 끝나는 팁 → 버림', !validateTip({ text: `TOP4의 ${lv.top4_lv8plus_pct}%가 최종 Lv.8 이상이니 Lv.8을 노려라`, evidence: ['level_profile'] }, pbA).ok)
   check('숫자 없는 팁 → 버림', !validateTip({ text: '코어를 먼저 모으세요', evidence: ['core_units'] }, pbA).ok)
   check('배치 조언 → 버림', !validateTip({ text: `자야를 구석 자리에 두면 TOP4 ${lv.top4_lv8plus_pct}%`, evidence: ['level_profile'] }, pbA).ok)
   check('라운드 타이밍 → 버림', !validateTip({ text: `4-1까지 Lv.8 — TOP4의 ${lv.top4_lv8plus_pct}%`, evidence: ['level_profile'] }, pbA).ok)
@@ -124,6 +127,34 @@ for (let m = 0; left.A > 0 || left.B > 0; m++) {
   check('통과 팁 3개 미만 → tips 비움 (화면은 수치만)', two.tips.length === 0)
   const partial = await generateTips(pbB, { llm: async () => ({ tips: good }), log: {} })
   check('100~299판 덱은 팁을 만들지 않음', partial.tips.length === 0)
+
+  console.log('생존 편향 보정 (2026-10-30 2차 지시문 4)')
+  // 기물 X 가 있는 판은 오래 살아남아(6스테이지) 등수가 좋아 보이지만, 같은 스테이지끼리는 차이가 없다
+  const mk = (placement, last_round) => ({ placement, last_round })
+  const withX = [...Array(40)].map((_, i) => mk(i % 2 ? 2 : 3, 37)).concat([...Array(10)].map(() => mk(7, 22)))
+  const withoutX = [...Array(10)].map((_, i) => mk(i % 2 ? 2 : 3, 37)).concat([...Array(40)].map(() => mk(7, 22)))
+  const raw = withX.reduce((s2, b) => s2 + b.placement, 0) / withX.length - withoutX.reduce((s2, b) => s2 + b.placement, 0) / withoutX.length
+  const adj = stratifiedDelta(withX, withoutX)
+  check('단순 비교는 큰 차이(약 −2.7등)지만 같은 탈락 구간끼리는 0 — adjusted_delta', raw < -2 && adj && adj.adjusted_delta === 0, JSON.stringify({ raw, adj }))
+  check('구간 표본이 한쪽이라도 10판 미만이면 그 구간 제외 (남는 구간 없으면 null)', stratifiedDelta(withX.slice(0, 5), withoutX.slice(0, 5)) === null)
+  const pbAdj = {
+    ...pbA,
+    flex_units: [
+      { key: 'a', name: '케일', usage_pct: 50, with_avg: 5.24, without_avg: 7.33, diff: -2.09, with_n: 200, without_n: 200, adjusted_delta: -0.12, adjusted_se: 0.3, adjusted_n: 400 },
+      { key: 'b', name: '럭스', usage_pct: 40, with_avg: 4.0, without_avg: 4.9, diff: -0.9, with_n: 200, without_n: 200, adjusted_delta: -0.65, adjusted_se: 0.25, adjusted_n: 400 },
+    ],
+  }
+  const tf = tipFacts(pbAdj)
+  check('팁 근거에는 단순 비교값(7.33·5.24)이 없다', !/7\.33|5\.24/.test(JSON.stringify(tf)), JSON.stringify(tf.flex_units))
+  check('보정 후 표준오차 이내(케일 0.12 < 0.3)는 팁 근거에서 빠진다', tf.flex_units.length === 1 && tf.flex_units[0].name === '럭스')
+  check('보정값으로 쓴 팁은 통과', validateTip({ text: '럭스는 같은 스테이지까지 산 판끼리 비교하면 약 0.65등 차이가 나니 넣으세요', evidence: ['flex_units'] }, pbAdj).ok, JSON.stringify(validateTip({ text: '럭스는 같은 스테이지까지 산 판끼리 비교하면 약 0.65등 차이가 나니 넣으세요', evidence: ['flex_units'] }, pbAdj)))
+  check('단순 비교값으로 쓴 팁은 버림 (7.33 은 근거에 없음)', !validateTip({ text: '케일을 넣으면 평균 5.24등이니 넣으세요', evidence: ['flex_units'] }, pbAdj).ok)
+  check('"있으면 X등, 없으면 Y등" 형식은 버림', validateTip({ text: '럭스가 있으면 4.00등, 없으면 4.90등이니 넣으세요', evidence: ['flex_units'] }, pbAdj).reason === 'banned')
+  check('생성된 flex_units 에 adjusted_delta 필드', (pbA.flex_units || []).every((f) => 'adjusted_delta' in f))
+  check('플레이북 버전 2 (옛 팁 무효화)', rows.every((r) => r.version === PLAYBOOK_VERSION && PLAYBOOK_VERSION >= 2))
+  check('옛 버전 플레이북 팁은 리포트에 쓰지 않음', groundedTips({ ...pbA, version: 1, tips: [{ text: `TOP4의 ${lv.top4_lv8plus_pct}%가 Lv.8 이상이니 목표로 하세요`, evidence: ['level_profile'] }] }).length === 0)
+  const flexRow = comparePlaybook({ ...{ units: [{ id: 'TFT18_Lux', name: '럭스', tier: 1, items: [] }] }, placement: 6, level: 7, lastRound: '5-1' }, { ...pbAdj, flex_units: [{ ...pbAdj.flex_units[1], key: 'TFT18_Lux', adjusted_delta: 0.65 }] }).find((r) => r.id === 'flex_units')
+  check('비교 섹션 대체 기물 행은 보정값 문장 ("같은 스테이지까지 산 판끼리")', flexRow && /같은 스테이지까지 산 판끼리/.test(flexRow.text) && !/없을 때/.test(flexRow.text), flexRow?.text)
 
   console.log('외부 링크')
   check('외부 링크는 source·url 만 (매핑 없으면 빈 배열)', rows.every((r) => Array.isArray(r.external_links) && r.external_links.every((l) => Object.keys(l).sort().join() === 'source,url')))

@@ -44,6 +44,8 @@ export default function TFTCoachPage() {
 
   const [isOverviewLoading, setIsOverviewLoading] = useState(false)
   const [overviewFeedback, setOverviewFeedback] = useState<MetaCoachFeedback | null>(null)
+  /** 캐시 종합 리포트가 지금 생성기보다 오래됨 — 그때만 '새 버전으로 다시 분석 (1회 차감)' */
+  const [overviewOutdated, setOverviewOutdated] = useState(false)
   const [overviewError, setOverviewError] = useState<string | null>(null)
   const quota = useQuota()
   const [isLimitOpen, setIsLimitOpen] = useState(false)
@@ -190,6 +192,7 @@ export default function TFTCoachPage() {
           tagLine: search.tagLine,
           matches: search.matches,
           mode: 'multi',
+          ...(overviewFeedback && overviewOutdated ? { regenerate: true } : {}),
         }),
       })
       const data: TftOverviewResponse = await res.json()
@@ -197,6 +200,7 @@ export default function TFTCoachPage() {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
+      setOverviewOutdated(Boolean(data.outdated))
       // 서버가 이번 요청에서 실제로 차감했을 때만 센다 (캐시 적중·AI 미사용 폴백은 차감 없음)
       quota.settle(data)
       track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
@@ -399,6 +403,8 @@ export default function TFTCoachPage() {
                     여러 판을 묶어 플레이스타일·유연성 성향을 진단합니다. (개별 정밀 분석은 아래 경기 카드에서)
                   </p>
                 </div>
+                {/* 결과가 최신 버전이면 다시 분석 버튼을 숨긴다 (누르면 같은 캐시가 다시 열릴 뿐 — 2026-10-30 2차 지시문 5-2) */}
+                {overviewFeedback && !overviewOutdated && !isOverviewLoading ? null : (
                 <div className="flex shrink-0 items-center gap-3">
                 <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
                 <button
@@ -415,11 +421,12 @@ export default function TFTCoachPage() {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>{overviewFeedback ? '종합 다시 분석' : '종합 AI 분석 실행'}</span>
+                      <span>{overviewFeedback ? '새 버전으로 다시 분석 (1회 차감)' : '종합 AI 분석 실행'}</span>
                     </>
                   )}
                 </button>
                 </div>
+                )}
               </div>
 
               {showProNotice && (

@@ -26,7 +26,11 @@ const AUGMENT_MIN = 30
 const TRAIT_TIER_MIN = 20
 const TIPS_MIN = 3
 const TIPS_MAX = 5
-const PLAYBOOK_VERSION = 1
+/** 2: 생존 편향 보정(adjusted_delta) · 팁 말투 '~하세요' (2026-10-30 2차 지시문 4·6-4) — 이전 버전 팁은 앱이 읽지 않는다 (lib/playbook PLAYBOOK_TIPS_MIN_VERSION) */
+const PLAYBOOK_VERSION = 2
+/** 탈락 구간별 비교에서 한쪽 구간 표본 하한 — 이보다 적으면 그 구간은 뺀다 */
+const STRATUM_MIN = 10
+const PLACEMENT_SD = 2.29
 
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
 const avg2 = (sum, n) => (n ? Math.round((sum / n) * 100) / 100 : null)
@@ -43,6 +47,48 @@ function unitMap(board) {
   }
   return m
 }
+
+/** 탈락 구간 (last_round 기준) — 4스테이지 이하 / 5스테이지 / 6스테이지 이상 */
+function stratumOf(b) {
+  const stage = Number(String(formatTftRound(b.last_round || 0)).split('-')[0])
+  if (!Number.isFinite(stage) || stage <= 4) return 'le4'
+  return stage === 5 ? 's5' : 'ge6'
+}
+
+/**
+ * 생존 편향 보정 차이 (2026-10-30 2차 지시문 4) — 오래 산 판일수록 기물·시너지 단계가 많이 모이므로 "있을 때 − 없을 때" 평균등수 차이를
+ * 그대로 쓰면 기물의 효과가 아니라 '일찍 탈락한 판에 없었다'는 사실이 섞인다. 같은 탈락 구간끼리 차이를 내고 판수로 가중 평균한다.
+ * 한쪽이라도 구간 표본이 STRATUM_MIN 미만이면 그 구간은 뺀다. 남는 구간이 없으면 null.
+ * adjusted_delta < 0 = 이 쪽(a)이 같은 스테이지까지 산 판끼리 비교해 평균등수가 낮다(좋다). adjusted_se = 표준오차.
+ */
+function stratifiedDelta(a, b) {
+  const groups = new Map()
+  for (const [side, list] of [['a', a], ['b', b]]) {
+    for (const x of list) {
+      const k = stratumOf(x)
+      const g = groups.get(k) || { a: [], b: [] }
+      g[side].push(x.placement)
+      groups.set(k, g)
+    }
+  }
+  let wSum = 0
+  let dSum = 0
+  let varSum = 0
+  for (const g of groups.values()) {
+    if (g.a.length < STRATUM_MIN || g.b.length < STRATUM_MIN) continue
+    const mean = (xs) => xs.reduce((s, v) => s + v, 0) / xs.length
+    const w = g.a.length + g.b.length
+    wSum += w
+    dSum += w * (mean(g.a) - mean(g.b))
+    varSum += w * w * PLACEMENT_SD * PLACEMENT_SD * (1 / g.a.length + 1 / g.b.length)
+  }
+  if (!wSum) return null
+  const r2 = (x) => Math.round(x * 100) / 100
+  return { adjusted_delta: r2(dSum / wSum), adjusted_se: r2(Math.sqrt(varSum) / wSum), adjusted_n: wSum }
+}
+
+/** 보정 후 차이가 표준오차보다 큰가 (아니면 '효과가 뚜렷하지 않음' — 팁을 만들지 않는다) */
+const isClear = (x) => Boolean(x) && x.adjusted_delta != null && Math.abs(x.adjusted_delta) > x.adjusted_se
 
 /** 메타 덱 snapshot_id — 메타 페이지(lib/tftStats getMetaDeckSnapshot)와 같은 규칙 (lib/playbook snapshotIdOf) */
 function snapshotIdOf(patch, tierMin, updatedAt) {
@@ -100,10 +146,18 @@ function computePlaybook(deck, members, { deckOfBoard = () => null } = {}) {
     .filter((u) => (u.items || []).length)
     .map((u) => {
       const k = u.lolchessKey || norm(u.matchedKey)
+      // 이 기물을 든 판 중 세트를 그대로 든 판 vs 다른 아이템을 든 판 — 탈락 구간별 보정 차이
+      const setKey = (items) => [...(items || [])].filter(Boolean).sort().join(',')
+      const carried = members.map((b, i) => ({ b, key: maps[i].has(k) ? setKey(maps[i].get(k).items) : null })).filter((x) => x.key !== null)
       const sets = builds
         .filter((r) => norm(r.unit) === k)
         .slice(0, 3)
-        .map((r) => ({ items: r.items.map((id) => itemInfo(id).name), games: r.games, avg: avg2(r.placement_sum, r.games) }))
+        .map((r) => {
+          const key = r.items.join(',')
+          const withSet = carried.filter((x) => x.key === key).map((x) => x.b)
+          const others = carried.filter((x) => x.key !== key).map((x) => x.b)
+          return { items: r.items.map((id) => itemInfo(id).name), games: r.games, avg: avg2(r.placement_sum, r.games), ...(stratifiedDelta(withSet, others) || {}) }
+        })
       return { key: u.matchedKey, name: u.name, items: u.items.map((it) => it.name), sets }
     })
 
@@ -145,10 +199,20 @@ function computePlaybook(deck, members, { deckOfBoard = () => null } = {}) {
       if (withB.length < FLEX_SIDE_MIN || without.length < FLEX_SIDE_MIN) return null
       const w = placeAvg(withB)
       const wo = placeAvg(without)
-      return { ...unitInfo(k), usage_pct: pct(c, n), with_avg: w, without_avg: wo, diff: Math.round((w - wo) * 100) / 100, with_n: withB.length, without_n: without.length }
+      // with_avg·without_avg·diff 는 단순 비교(내부 참고용) — 화면·팁·리포트는 adjusted_delta 만 쓴다
+      return {
+        ...unitInfo(k),
+        usage_pct: pct(c, n),
+        with_avg: w,
+        without_avg: wo,
+        diff: Math.round((w - wo) * 100) / 100,
+        with_n: withB.length,
+        without_n: without.length,
+        ...(stratifiedDelta(withB, without) || { adjusted_delta: null, adjusted_se: null, adjusted_n: 0 }),
+      }
     })
     .filter(Boolean)
-    .sort((a, b) => a.diff - b.diff)
+    .sort((a, b) => (a.adjusted_delta ?? 9) - (b.adjusted_delta ?? 9))
 
   // traits: 자주 쓰는 시너지(켜진 보드 수 순 4개) × 인원별 보드 비율 · 평균등수 (20판 이상)
   const traitBoards = new Map()
@@ -170,10 +234,17 @@ function computePlaybook(deck, members, { deckOfBoard = () => null } = {}) {
     .map(({ name, boards, byCount }) => ({
       name,
       active_pct: pct(boards, n),
+      // 인원별 평균(avg)은 단순 집계(내부 참고용) — 바로 아래 인원과의 차이는 탈락 구간별 보정값(adjusted_delta)
       tiers: [...byCount.entries()]
         .filter(([, l]) => l.length >= TRAIT_TIER_MIN)
         .sort((a, b) => a[0] - b[0])
-        .map(([units, l]) => ({ units, pct: pct(l.length, n), avg: placeAvg(l), n: l.length })),
+        .map(([units, l], i, arr) => ({
+          units,
+          pct: pct(l.length, n),
+          avg: placeAvg(l),
+          n: l.length,
+          ...(i > 0 ? { vs_units: arr[i - 1][0], ...(stratifiedDelta(l, arr[i - 1][1]) || { adjusted_delta: null, adjusted_se: null }) } : {}),
+        })),
     }))
 
   // level_profile: TOP4 최종 레벨 분포 + 덱 유형 (리롤: ★3 기물 코스트 / 빌드업: Lv.8 이상 비율)
@@ -234,8 +305,30 @@ function computePlaybook(deck, members, { deckOfBoard = () => null } = {}) {
 /** 팁 프롬프트·근거 검증 대상 필드 (tips·external_links·식별자 제외) */
 const TIP_FIELDS = ['core_units', 'carry_bis', 'three_star', 'flex_units', 'traits', 'level_profile', 'elim_profile', 'contested', 'augments']
 
+/**
+ * 팁 프롬프트·근거 검증에 쓰는 필드 값. 평균등수 비교(flex_units · traits · carry_bis 세트)는 생존 편향 보정값만 남기고,
+ * 보정 후 차이가 표준오차 이내인 항목은 뺀다 — 단순 비교값(7.33 같은)이 팁 근거가 되지 않게 (2026-10-30 2차 지시문 4-2·4-3).
+ * 보정 차이는 크기(adjusted_gap, 양수)로도 준다 — "약 N등 차이" 문장의 숫자를 검증할 수 있게.
+ */
 function tipFacts(pb) {
-  return Object.fromEntries(TIP_FIELDS.filter((k) => pb[k] != null).map((k) => [k, pb[k]]))
+  const gap = (x) => ({ adjusted_delta: x.adjusted_delta, adjusted_gap: Math.abs(x.adjusted_delta), adjusted_se: x.adjusted_se })
+  const view = {
+    ...pb,
+    flex_units: pb.flex_units ? pb.flex_units.filter(isClear).map((f) => ({ name: f.name, usage_pct: f.usage_pct, ...gap(f) })) : null,
+    traits: pb.traits
+      ? pb.traits.map((t) => ({
+          name: t.name,
+          active_pct: t.active_pct,
+          tiers: t.tiers.map((x) => ({ units: x.units, pct: x.pct, n: x.n, ...(x.vs_units != null && isClear(x) ? { vs_units: x.vs_units, ...gap(x) } : {}) })),
+        }))
+      : null,
+    carry_bis: (pb.carry_bis || []).map((c) => ({
+      name: c.name,
+      items: c.items,
+      sets: (c.sets || []).map((x) => ({ items: x.items, games: x.games, ...(isClear(x) ? gap(x) : {}) })),
+    })),
+  }
+  return Object.fromEntries(TIP_FIELDS.filter((k) => view[k] != null).map((k) => [k, view[k]]))
 }
 
 /** 금지: 배치 조언 · 라운드별 운영 타이밍 · 아이템 조합식 (조합식은 아이템 DB 에서 따로 붙인다) */
@@ -243,7 +336,11 @@ const BANNED_TIP_RE = [
   /배치|자리|위치|앞줄|뒷줄|코너|구석|포지션/,
   /\d-\d\s*(?:까지|전에|이전에|부터|에\s*(?:레벨|리롤|올리|올려|사|모아))|타이밍|라운드(?:에|마다|별)/,
   /\+|=|조합식|조합법|재료/,
+  // 생존 편향이 섞인 단순 비교 형식 — "있으면 X등, 없으면 Y등" (2026-10-30 2차 지시문 4-4)
+  /있으면[^!?\n]{0,30}없으면|있을\s*때[^!?\n]{0,30}없을\s*때|넣으면[^!?\n]{0,30}빼면/,
 ]
+/** 팁 말투 — 리포트("~하세요")와 같게 (2026-10-30 2차 지시문 6-4) */
+const TIP_ENDING_RE = /세요[.!]?$/
 
 /**
  * 팁 근거 검증 — 기존 근거 검증기(lib/grounding)로 팁의 숫자를 evidence 필드 값과 대조한다 (반올림 허용).
@@ -253,13 +350,15 @@ function validateTip(tip, pb) {
   if (!tip || typeof tip.text !== 'string' || !Array.isArray(tip.evidence) || !tip.evidence.length) return { ok: false, reason: 'shape' }
   const text = tip.text.trim()
   if (BANNED_TIP_RE.some((re) => re.test(text))) return { ok: false, reason: 'banned' }
-  if (tip.evidence.some((k) => !TIP_FIELDS.includes(k) || pb[k] == null)) return { ok: false, reason: 'evidence_field' }
+  if (!TIP_ENDING_RE.test(text)) return { ok: false, reason: 'ending' }
+  const facts0 = tipFacts(pb)
+  if (tip.evidence.some((k) => !TIP_FIELDS.includes(k) || facts0[k] == null)) return { ok: false, reason: 'evidence_field' }
   // 등수 구간·별·레벨 이름표(TOP4 · 5~8등 · ★3 · Lv.8)는 범주 이름이지 통계 수치가 아니다 — 지우고 남은 숫자만 대조한다
   const stats = text.replace(/TOP\s*4|(?<![\d.])[1-8]\s*~\s*[1-8]\s*등|(?<![\d.])[1-8]등\s*(?:플레이어)?(?=\s|$|[,.·])|★\s*[1-3]|Lv\.?\s*\d{1,2}/gi, ' ')
   const claims = extractClaims(stats)
   const numbers = stats.match(/\d+(?:\.\d+)?/g) || []
   if (!numbers.length) return { ok: false, reason: 'no_number' }
-  const facts = collectFactNumbers(JSON.stringify(tip.evidence.map((k) => pb[k])))
+  const facts = collectFactNumbers(JSON.stringify(tip.evidence.map((k) => facts0[k])))
   const plain = numbers.map((x) => String(Math.round(Number(x) * 100) / 100))
   const missing = [...claims.map((c) => String(Math.round(Number(c.match(/\d+(?:\.\d+)?/)[0]) * 100) / 100)), ...plain].filter((x) => !facts.has(x))
   if (missing.length) return { ok: false, reason: `unsupported:${missing.join(',')}` }
@@ -275,6 +374,9 @@ function tipPrompt(pb) {
 - 팁마다 근거 필드 키 배열 evidence 를 붙여라 (예: ["three_star", "level_profile"]). 인용한 숫자는 모두 evidence 필드 안에 있어야 한다.
 - 배치(자리·위치) 조언, 라운드별 운영 타이밍(몇 라운드까지 레벨 등), 아이템 조합식(A + B)은 쓰지 마라. 라운드별 레벨·골드·배치 기록은 데이터에 없다.
 - 레벨은 최종 레벨(level_profile)과 탈락 라운드(elim_profile)로만 이야기하라.
+- 기물·시너지·아이템 세트의 평균등수 차이는 adjusted_gap(같은 스테이지까지 산 판끼리 비교한 차이)만 써라.
+  형식: "같은 스테이지까지 산 판끼리 비교하면 약 N등 차이". "있으면 X등, 없으면 Y등"처럼 두 평균을 나란히 쓰지 마라.
+- 문장은 "~하세요"로 끝내라 (예: "…을 우선하세요").
 
 출력: {"tips":[{"text":"...","evidence":["..."]}]} JSON 만.
 
@@ -365,4 +467,7 @@ module.exports = {
   externalLinks,
   snapshotIdOf,
   tipPrompt,
+  tipFacts,
+  stratifiedDelta,
+  PLAYBOOK_VERSION,
 }

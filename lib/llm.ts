@@ -11,8 +11,9 @@ import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { fixEnglishTerms, fixPlacementWording, repairUnsupportedClaims, validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, fixDrillTarget, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts, validateTraitRelations, REVALIDATOR_VERSION } from './semanticGrounding'
+import { HELD_ITEM_NAMES, feedbackTexts, fixDrillTarget, numericDrill, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts, validateTraitRelations, REVALIDATOR_VERSION } from './semanticGrounding'
 import { boardTableFacts } from './boardTable'
+import { parseStructuredAdvice, validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice } from './adviceCheck'
 import { recipeFactsFor } from './itemRecipes'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
@@ -40,6 +41,11 @@ export const COACH_PROMPT_VERSION = '2026-10-30.1'
  * 같은 경기 재분석이 새 생성·횟수 차감으로 이어진다. 응답 형식이 깨지는 변경일 때만 올린다.
  */
 export const REPORT_CACHE_VERSION = '2026-10-29.2'
+/**
+ * 리포트 생성기 버전 — 프롬프트·생성 규칙을 바꾸면 올린다 (캐시 키에는 넣지 않는다).
+ * 캐시된 리포트가 이 버전보다 오래됐을 때만 "새 버전으로 다시 분석 (1회 차감)" 버튼을 보여 준다 (2026-10-30 2차 지시문 5-2).
+ */
+export const REPORT_GENERATOR_VERSION = '2026-10-30.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -360,8 +366,16 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
     { "key": "synergy", "verdict": "한 줄 진단" },
     { "key": "contest", "verdict": "한 줄 진단" }
   ],
-  "actions": ["다음 판 행동 1", "다음 판 행동 2", "다음 판 행동 3"]
-}`
+  "actions": ["다음 판 행동 1", "다음 판 행동 2", "다음 판 행동 3"],
+  "advice": [
+    { "quote": "<actions·moments fix·checklist·drill 에 쓴 행동 조언 문장 그대로>", "action": "replace_unit", "remove": "<빼는 기물>", "target_trait": "<올리려는 시너지>", "target_tier": <목표 단계 번호> }
+  ]
+}
+advice 는 actions·lecture(moments fix·alternative·drill·checklist)에 쓴 행동 조언을 하나씩 구조화한 것이다 (코드가 [보드 표]와 대조한다).
+- action: replace_unit(기물 빼기·교체 — remove 필수) · keep_unit(기물 유지 — unit) · add_trait_units(시너지 인원 추가 — target_trait·count, 목표 단계면 target_tier)
+  · change_items(아이템 교체 — unit·remove_item·add_item) · keep_items(아이템 유지 — unit) · level_up(level) · other
+- target_tier 는 몇 번째 단계다 (인원 수가 아니다). 이미 그 단계 이상이면 목표가 아니다.
+- 같은 기물을 한 곳에서 유지(keep_unit), 다른 곳에서 교체(replace_unit)하라고 하지 마라. 상징 아이템은 켜진 시너지를 받치면 빼라고 하지 마라.`
 
 /** 짧은 인트로(핵심 진단) 전용 시스템 지시 — 전체 리포트와 별도 호출 */
 const INTRO_SYSTEM_INSTRUCTION = `너는 TFT 아카데미 코치다. 주어진 사실만 근거로 2~3문장의 "핵심 진단"을 쓴다.
@@ -489,6 +503,17 @@ export function mapFeedbackStrings(fb: MetaCoachFeedback, change: (s: string) =>
             drill: fn(l.drill),
             checklist: (l.checklist || []).map((x) => fn(x)),
             ...(l.moments ? { moments: l.moments.map((x) => ({ ...x, why: fn(x.why), fix: fn(x.fix) })) } : {}),
+          },
+        }
+      : {}),
+    // 비교 섹션 문장·팁도 같은 표기 교정 (캐시된 옛 비교표의 "TOP4 최종 Lv.8 비율" 등)
+    ...(fb.deckComparison
+      ? {
+          deckComparison: {
+            ...fb.deckComparison,
+            items: fb.deckComparison.items.map((r) => ({ ...r, text: fn(r.text) })),
+            ...(fb.deckComparison.rows ? { rows: fb.deckComparison.rows.map((r) => ({ ...r, text: fn(r.text) })) } : {}),
+            ...(fb.deckComparison.tips ? { tips: fb.deckComparison.tips.map((x) => fn(x)) } : {}),
           },
         }
       : {}),
@@ -884,13 +909,15 @@ export async function generateMetaCoachFeedback(
     // 덱 가이드(guide)는 AI 프롬프트에서만 쓴다 — 공개 응답에는 포함하지 않는다
     getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier }, { withGuide: true }),
   ])
+  const deckComparison = mode === 'single' && matches[0] ? await loadDeckComparison(matches[0], deckStats) : null
+  // BIS 일치 수는 비교 섹션(deckComparison.bis)에서 한 번만 계산하고, 비교 사실 줄도 같은 값을 쓴다 (2026-10-30 2차 지시문 3)
   const comparisonFacts = buildComparisonFacts({
     matches,
     mode,
     combos: comboStats.rows.filter((r): r is StatRow & ComboFact => 'champKey' in r),
     decks: deckStats.decks,
+    bis: deckComparison?.bis ?? null,
   })
-  const deckComparison = mode === 'single' && matches[0] ? await loadDeckComparison(matches[0], deckStats) : null
   const playbookFacts = deckComparisonFacts(deckComparison)
   const scoring = computeScoreBreakdown(matches)
   const scoreFacts = scoring
@@ -1059,7 +1086,8 @@ ${recipeFacts}
     const earlyReasons = [...new Set(matches.filter(isEarlyGame).map(lowSampleReason).filter(Boolean))]
     const repair = { fixed: 0, deleted: 0 }
     const verdictPlan = withVerdicts(rawAxisVerdicts)
-    const drillFallback = `다음 3판은 ${plan.focusLabel} 하나만 의식하세요. ${plan.drillTemplate}`
+    // 숫자 없는 목표("시너지 설계 하나만 의식하세요")는 잴 수 없다 — 코드가 최종 보드로 만든 숫자 목표 (2026-10-30 2차 지시문 6-2)
+    const drillFallback = numericDrill(matches, plan.focus)
     const normalized = normalizeLecture(rawFb.lecture, verdictPlan, rawFb, moments)
     // actions 가 빠지면 강의 체크리스트 앞 3개로 채운다 (화면의 "핵심 교정"·"개선 포인트" 자리)
     const rawActions = rawFb.actions?.length ? rawFb.actions.slice(0, 3) : normalized.checklist.slice(0, 3)
@@ -1088,11 +1116,21 @@ ${recipeFacts}
     const adviceCheck = validateAdviceAndCounts(rawTexts, matches)
     // 기물–시너지 관계(보드 표)·덱 핵심 기물 빼기 조언도 대조한다
     const relationCheck = validateTraitRelations(rawTexts, matches, { coreUnits: deckComparison?.coreUnits })
+    // 구조화된 조언(advice JSON)을 보드 표와 대조 + 상징 칸을 건드리는 아이템 조언 (2026-10-30 2차 지시문 2·3)
+    const single = mode === 'single' && matches.length === 1 ? matches[0] : null
+    const structuredCheck = validateStructuredAdvice(rawFb.advice, rawTexts, single, { bis: deckComparison?.bis })
+    const emblemCheck = validateEmblemItemAdvice(rawTexts, single, HELD_ITEM_NAMES)
+    // BIS 일치 수(비교 섹션 값)·"A 대 B … N단계 부족" 차이·본인 레벨과 다른 레벨 (2026-10-30 2차 지시문 3·6)
+    const derivedCheck = validateDerivedClaims(rawTexts, single, deckComparison?.bis)
+    const relationsChecked = relationCheck.checked + structuredCheck.checked + emblemCheck.checked
     const entityErrors = [
       ...validateEntityFacts(rawTexts, matches),
       ...validateBoardNames(rawTexts, matches, prompt).errors,
       ...adviceCheck.errors,
       ...relationCheck.errors,
+      ...structuredCheck.errors,
+      ...emblemCheck.errors,
+      ...derivedCheck.errors,
     ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
     // 수리 전 검사한 수치 (단위 수치·소수 + 조합법 + 로비 비교)
@@ -1130,7 +1168,8 @@ ${recipeFacts}
       if (out !== t) repair.fixed++
       return out
     })
-    const lecture = fb.lecture!
+    // 다음 3판 목표에 숫자 기준이 없으면(LLM 이 안 썼거나 검증에서 지워짐) 코드 목표로 바꾼다
+    const lecture = fb.lecture && !/\d/.test(fb.lecture.drill || '') ? { ...fb.lecture, drill: drillFallback } : fb.lecture!
     const actions = fb.actions
     const finalTexts = feedbackTexts(fb, axisVerdicts)
     const namesChecked = validateBoardNames(finalTexts, matches, prompt).checked
@@ -1144,6 +1183,7 @@ ${recipeFacts}
       metaScore: scoring ? scoring.total : fb.metaScore,
       metaTier: scoring ? scoring.tier : fb.metaTier,
       isFallback,
+      generatorVersion: REPORT_GENERATOR_VERSION,
       provenance,
       scoreBreakdown: scoring ?? undefined,
       plan: withVerdicts(axisVerdicts),
@@ -1152,7 +1192,7 @@ ${recipeFacts}
         ...withRecipeClaims(validateFeedbackGrounding(fb, prompt), postAdvice),
         entityErrors,
         namesChecked,
-        relationsChecked: relationCheck.checked,
+        relationsChecked,
         revalidated: REVALIDATOR_VERSION,
         repair: { checked, ...repair },
       },
@@ -1224,6 +1264,15 @@ ${recipeFacts}
   // 3. 지능형 메타 코칭 폴백
   incrMetric('llm.fallback')
   return finalize(generateFallbackMetaFeedback(gameName, matches, mode), true)
+}
+
+/**
+ * 캐시된 리포트를 보여 줄 때 "이 덱의 정석과 비교" 섹션을 코드로 다시 만든다 (2026-10-30 2차 지시문 5-1) — LLM 호출·횟수 차감 없음.
+ * 판정 결과가 없으면 skipped("메타 덱으로 분류되지 않아 덱 기준 비교 생략")가 든 섹션을 돌려준다.
+ */
+export async function deckComparisonFor(match: SlimMatchData): Promise<MetaCoachFeedback['deckComparison']> {
+  const deckStats = await getDecks({ patch: DEFAULT_FILTER.patch, tier: DEFAULT_FILTER.tier })
+  return loadDeckComparison(match, deckStats)
 }
 
 /**
@@ -1421,6 +1470,7 @@ function parseJsonFeedback(
         // 비면 finalize 가 강의 체크리스트로 채운다
         actions: actions.length ? actions : undefined,
         lecture,
+        advice: parseStructuredAdvice(obj.advice),
         fullMarkdown: rawText,
       }
       return { feedback, axisVerdicts }

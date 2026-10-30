@@ -68,10 +68,13 @@ async function main() {
   const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8')
   for (const p of ['app/api/tft/match/route.ts', 'app/api/tft/match/stream/route.ts']) {
     const src = read(p)
-    check(`${p}: 확인만 하고 새 리포트일 때만 차감`, /quotaCheck\(/.test(src) && !/quotaGuard\(/.test(src) && /!outcome\.cached && !outcome\.response\.feedback\?\.isFallback \? await chargeQuotaOnce\(req, analysisCacheKey\(params\)\)/.test(src))
+    check(`${p}: 확인만 하고 새 리포트일 때만 차감`, /quotaCheck\(/.test(src) && !/quotaGuard\(/.test(src) && /!outcome\.cached && !outcome\.response\.feedback\?\.isFallback \? await chargeQuotaOnce\(req, analysisChargeKey\(params, outcome\.regenerated\)\)/.test(src))
   }
   const ov = read('app/api/tft/overview/route.ts')
-  check('종합 분석도 확인 → 성공 후 차감 (캐시 적중 차감 없음)', /quotaCheck\(/.test(ov) && /chargeQuotaOnce\(req, cacheKey\)/.test(ov) && !/quotaGuard\(/.test(ov))
+  check('종합 분석도 확인 → 성공 후 차감 (캐시 적중 차감 없음)', /quotaCheck\(/.test(ov) && /chargeQuotaOnce\(req, regenerated \? `\$\{cacheKey\}:gen:\$\{REPORT_GENERATOR_VERSION\}` : cacheKey\)/.test(ov) && !/quotaGuard\(/.test(ov))
+  // 다시 분석 (2026-10-30 2차 지시문 5-2): 오래된 캐시일 때만 새로 생성 · 차감 키는 생성기 버전을 붙여 한 번 더 · 최신이면 캐시 그대로
+  check('다시 분석은 오래된 캐시일 때만 새로 생성 (최신이면 캐시)', /if \(cached && !\(params\.regenerate && cached\.response\.outdated\)\) return/.test(read('lib/matchAnalysis.ts')) && /raw\.regenerate === true && isOutdatedReport/.test(ov))
+  check('다시 분석 차감 키 = 첫 생성 키 + 생성기 버전 (같은 버전은 한 번만)', /regenerated \? `\$\{key\}:gen:\$\{REPORT_GENERATOR_VERSION\}` : key/.test(read('lib/matchAnalysis.ts')))
   const ma = read('lib/matchAnalysis.ts')
   check('캐시 키에 메타 스냅샷 없음 (match·puuid·모드·리포트 버전)', /`analysis:\$\{params\.matchId\}:\$\{subject\}:\$\{params\.mode\}:\$\{REPORT_VERSION\}`/.test(ma) && !/snapshot/i.test(ma.match(/analysisCacheKey[\s\S]*?\n}/)[0]))
   check('화면 문구: 저장된 분석 결과(캐시)입니다 · 횟수 차감 없음', read('app/components/MatchCard.tsx').includes('저장된 분석 결과(캐시)입니다 · 횟수 차감 없음'))

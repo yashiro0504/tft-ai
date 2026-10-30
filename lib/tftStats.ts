@@ -479,7 +479,9 @@ export async function getDecks(
           source: 'db',
           filter: { patch, tier: filter.tier },
           totalBoards: rows?.[0]?.total_boards,
-          totalMatches: filters.patches.find((p) => p.patch === patch)?.matches[filter.tier],
+          // 덱 스냅샷을 만든 시점의 판 수 (수집기가 deck.snapshot_matches 로 저장) — 실시간 누적 카운트를 쓰면 덱 수치·갱신 시각은 그대로인데
+          // 판수만 늘어난다 (2026-10-30 2차 지시문 6-1). 그 필드가 없는 옛 스냅샷만 누적 카운트로 대신한다
+          totalMatches: snapshotMatchesOf(rows) ?? filters.patches.find((p) => p.patch === patch)?.matches[filter.tier],
           updatedAt,
           minSample: MIN_SAMPLE.deck,
           decks,
@@ -491,6 +493,11 @@ export async function getDecks(
     },
     fallback
   )
+}
+
+function snapshotMatchesOf(rows: CompRow[] | null | undefined): number | undefined {
+  const n = (rows?.[0]?.deck as { snapshot_matches?: unknown } | undefined)?.snapshot_matches
+  return typeof n === 'number' && n > 0 ? n : undefined
 }
 
 /** 메타 덱 스냅샷 공유 캐시 (Redis L2) — 인스턴스마다 DB·폴백 결과가 달라 두 화면 값이 갈리지 않게 */

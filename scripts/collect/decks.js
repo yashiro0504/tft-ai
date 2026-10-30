@@ -48,6 +48,8 @@ function compRows(boards, opts = {}) {
 /** 덱 묶기 + 저장 행 (플레이북이 같은 묶음의 보드를 쓰도록 decks 도 돌려준다) */
 function clusterDecks(boards, opts = {}) {
   const { decks } = buildDecks(boards, { minGames: opts.minGames ?? COMP_MIN_GAMES, maxDecks: opts.maxDecks ?? COMP_MAX_DECKS })
+  // 스냅샷을 만든 시점의 판 수 — 화면 판수를 실시간 누적 카운트가 아니라 이 값으로 고정한다 (2026-10-30 2차 지시문 6-1)
+  const snapshotMatches = new Set(boards.map((b) => b.match_id).filter(Boolean)).size
   const rows = decks.map(({ deck, core, placements }) => ({
     comp_id: deck.id,
     core_units: core,
@@ -56,7 +58,7 @@ function clusterDecks(boards, opts = {}) {
     top4: placements.slice(0, 4).reduce((s, n) => s + n, 0),
     wins: placements[0],
     total_boards: boards.length,
-    deck,
+    deck: { ...deck, snapshot_matches: snapshotMatches },
   }))
   return { rows, decks }
 }

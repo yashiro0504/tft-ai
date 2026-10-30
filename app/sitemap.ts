@@ -1,18 +1,19 @@
 import type { MetadataRoute } from 'next'
-import { getDeckMetaInfo, getDeckViews } from '@/lib/decks'
+import { getMetaDeckSnapshot } from '@/lib/tftStats'
 import { SITE_URL } from '@/lib/site'
 import { listEntitySlugs } from '@/lib/entityData'
 import { ENTITY_PATH, type EntityKind } from '@/lib/entitySlug'
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date()
-  const deckMeta = getDeckMetaInfo()
-  // 덱 lastmod = 원본 래더 보드 수집 시각 (decksData.json 빌드 시각이 아니다)
-  const deckUpdated = deckMeta.sourceUpdatedAt && !Number.isNaN(Date.parse(deckMeta.sourceUpdatedAt))
-    ? new Date(deckMeta.sourceUpdatedAt)
-    : now
+/** 덱 목록이 메타 스냅샷을 따라가도록 한 시간마다 다시 만든다 (빌드 시점 스냅샷에 고정되지 않게) */
+export const revalidate = 3600
 
-  const deckEntries: MetadataRoute.Sitemap = getDeckViews().map((deck) => ({
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date()
+  // 덱 페이지는 메타 랭킹과 같은 스냅샷의 덱만 열린다 (스냅샷에 없는 id 는 404 — 2026-10-30 2차 지시문 1)
+  const snapshot = await getMetaDeckSnapshot().catch(() => null)
+  const deckUpdated = snapshot?.updatedAt && !Number.isNaN(Date.parse(snapshot.updatedAt)) ? new Date(snapshot.updatedAt) : now
+
+  const deckEntries: MetadataRoute.Sitemap = (snapshot?.decks ?? []).map((deck) => ({
     url: `${SITE_URL}/deck/${deck.id}`,
     lastModified: deckUpdated,
     changeFrequency: 'daily',

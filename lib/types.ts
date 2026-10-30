@@ -244,7 +244,7 @@ export interface GroundingReport {
 export interface EntityFactError {
   /** unit_absent · item_absent: 내 최종 보드에 없는 기물·아이템을 내 보드 이야기처럼 쓴 문장 (지운다) */
   /** trait_relation: 기물–시너지 관계가 보드 표(lib/boardTable)와 다름 — "세트는 핵심 시너지와 무관"(세트를 빼면 개화가 꺼짐) (지운다) */
-  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch' | 'lobby_mismatch' | 'trait_relation'
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch' | 'lobby_mismatch' | 'trait_relation' | 'bis_count' | 'level_mismatch'
   /** 오류가 있는 문장 */
   text: string
   /** 데이터 값 */
@@ -470,6 +470,34 @@ export interface MetaCoachFeedback {
   fullMarkdown?: string
   /** "이 덱의 정석과 비교" — 같은 스냅샷 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook) */
   deckComparison?: DeckComparison
+  /**
+   * 행동 조언의 구조화 출력 (2026-10-30 2차 지시문 2) — LLM 이 개선 포인트·강의 조언과 함께 JSON 으로 낸다.
+   * 코드가 보드 표와 대조해(lib/adviceCheck) 틀린 조언 문장을 지운다. 화면에는 보이지 않는다.
+   */
+  advice?: StructuredAdvice[]
+  /** 리포트를 만든 생성기 버전 (lib/llm REPORT_GENERATOR_VERSION) — 다르면 "새 버전으로 다시 분석" 버튼 */
+  generatorVersion?: string
+}
+
+/** 구조화된 행동 조언 한 개 */
+export interface StructuredAdvice {
+  action: 'replace_unit' | 'keep_unit' | 'add_trait_units' | 'change_items' | 'keep_items' | 'level_up' | 'other'
+  /** 조언 문장 원문 (리포트에 쓴 문장 그대로) */
+  quote?: string
+  /** replace_unit: 빼는 기물 */
+  remove?: string
+  /** keep_unit · change_items · keep_items: 대상 기물 */
+  unit?: string
+  target_trait?: string
+  /** 목표 단계 (몇 번째 단계) */
+  target_tier?: number
+  /** add_trait_units: 더 넣을 인원 */
+  count?: number
+  /** change_items: 빼는 아이템 · 넣는 아이템 */
+  remove_item?: string
+  add_item?: string
+  /** level_up: 목표 레벨 */
+  level?: number
 }
 
 /** 덱 플레이북 비교표 한 행 (코드 산출 문장 — 수치는 플레이북 값 그대로) */
@@ -502,6 +530,27 @@ export interface DeckComparison {
   similarity?: number
   /** 플레이북 core_units 중 등장률 80% 이상 기물 이름 — 이 기물을 빼라는 조언은 근거가 있어야 한다 */
   coreUnits?: string[]
+  /** 캐리 아이템 대조 — BIS 세트 하나 기준, 코드가 한 번 계산한 값 (2026-10-30 2차 지시문 3). 요약·개선 포인트·비교 섹션이 모두 이 값을 쓴다 */
+  bis?: DeckBisCheck
+}
+
+export interface DeckBisCheck {
+  /** 캐리 기물 */
+  unit: string
+  /** 'BIS 세트' (표본 조건 충족) · '자주 쓰는 조합' (미충족) */
+  label: 'BIS 세트' | '자주 쓰는 조합'
+  /** 세트 아이템 (상징 제외) */
+  items: string[]
+  /** 내 캐리 아이템 (상징 제외) 중 세트와 일치한 수 / 비교한 칸 수 */
+  matched: number
+  slots: number
+  /** 상징이라 대조에서 뺀 아이템 */
+  emblems: string[]
+  setAvg: number | null
+  setGames: number
+  deckAvg: number | null
+  /** 세트 표본 50판 이상 + 덱 평균보다 표준오차 이상 좋음 → 아이템 변경을 개선 포인트로 추천해도 된다 */
+  recommend: boolean
 }
 
 export interface TFTAnalysisResponse {
@@ -554,6 +603,8 @@ export interface TftMatchAnalysisResponse {
   match?: SlimMatchData
   feedback?: MetaCoachFeedback
   cached?: boolean
+  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (1회 차감)" 버튼 */
+  outdated?: boolean
   error?: string
   /** 서버 쿼터 상태 — charged 가 true 일 때만 이번 요청에서 1회 차감했다 (면제·무제한이면 없음) */
   quota?: AnalysisQuotaInfo
@@ -579,6 +630,8 @@ export interface TftOverviewResponse {
   summonerProfile?: SummonerProfile
   isDemo?: boolean
   error?: string
+  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (1회 차감)" 버튼 */
+  outdated?: boolean
 }
 
 // ---- Meta Rank (메타 랭킹, Phase 4) ----
