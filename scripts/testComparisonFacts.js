@@ -41,7 +41,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   //        1등 Lv9 · 기물 9 · 3성 0 · 시너지 단계 2+1×8=10 · 아이템 3+3+3+3+1+0+0+3+0=16
   check(
     '로비 1등 비교 = 손계산',
-    block.includes('- 로비 1등과 비교: 레벨 -2 (7 vs 9) · 기물 수 7 vs 9 · 3성 5 vs 0 · 시너지 단계 합 7 vs 10 · 아이템 13 vs 16'),
+    block.includes('- 로비 1등과 비교(나 Lv.7 · 1등 Lv.9): 레벨 -2 (7 vs 9) · 기물 수 7 vs 9 · 3성 5 vs 0 · 시너지 단계 합 7 vs 10 · 아이템 13 vs 16'),
     block
   )
   // 보드 가치 = Σ 코스트 × 장수(1성 1 · 2성 3 · 3성 9)
@@ -54,7 +54,7 @@ const sample = fixture.cases.find((c) => c.name === 'Seed01 contested-bot4 5등 
   check('로비 평균 레벨 = 손계산 (-0.6, 7 vs 7.6)', block.includes('로비 평균(나 제외 7명)과 비교: 레벨 -0.6 (7 vs 7.6)'), block)
   check('블록 머리말 + 인과 아님 명시', block.startsWith('[비교 사실 — 코드 산출, 서술 통계 (원인이 아니다)]'))
   const win = fixture.cases.find((c) => c.name === 'Seed02 win 1등 6-5').matches[0]
-  check('내가 1등이면 로비 2등과 비교', buildComparisonFacts({ matches: [win], mode: 'single', combos: [], decks: [] }).includes('- 로비 2등과 비교:'))
+  check('내가 1등이면 로비 2등과 비교', buildComparisonFacts({ matches: [win], mode: 'single', combos: [], decks: [] }).includes('- 로비 2등과 비교('))
 
   console.log('덱 유형 판정')
   const { detectDeckType, summarizeDeckTypes } = require('../lib/deckType')
@@ -905,7 +905,7 @@ ${mixedFacts}`
   )
   check(
     '로비 1등 비교 줄은 유지 · 같은 구성 줄은 그 다음',
-    vb.indexOf('- 로비 1등과 비교:') >= 0 && vb.indexOf('- 로비 1등과 비교:') < vb.indexOf('- 같은 구성 상대('),
+    vb.indexOf('- 로비 1등과 비교(') >= 0 && vb.indexOf('- 로비 1등과 비교(') < vb.indexOf('- 같은 구성 상대('),
     vb
   )
   check('같은 구성 줄에 인과 표현 없음', !/때문|원인|그래서|졌다/.test(vb.split('\n').find((l) => l.startsWith('- 같은 구성 상대(')) || ''))

@@ -61,10 +61,23 @@ export function traitAnchors(m: SlimMatchData): TraitAnchor[] {
   })
 }
 
-/** 핵심 시너지 단계를 받치지 않는 1성 기물 — 2성 확보용 교체 후보 (2성·3성을 바꿔도 2성 수는 늘지 않는다) */
+/**
+ * 핵심 시너지 단계를 받치지 않는 1성 기물 — 2성 확보용 교체 후보 (2성·3성을 바꿔도 2성 수는 늘지 않는다).
+ * 빼면 켜진 다인원 시너지가 꺼지거나 단계가 내려가는 기물은 첫 단계(개화 3 등)라도 뺀다 — 개화 3을 받치는 세트가
+ * "핵심 시너지와 무관한 1성 기물"로 프롬프트에 들어가 "세트를 빼라"는 리포트가 나왔다 (2026-10-30 지시문 1).
+ */
 export function freeUnits(m: SlimMatchData): SlimMatchUnit[] {
   const anchored = new Set(traitAnchors(m).flatMap((a) => a.units.map((u) => u.name)))
-  return (m.units || []).filter((u) => !anchored.has(u.name) && (u.tier || 1) === 1)
+  const counts = new Map((m.traits || []).map((t) => [traitNameOf(t.name) ?? t.name, t.count || 0]))
+  const stage = (bps: number[], n: number) => bps.filter((b) => b <= n).length
+  const losesTrait = (u: SlimMatchUnit) =>
+    [...unitTraitCounts(u)].some(([trait, n]) => {
+      const bps = traitBreakpointsOf(trait)
+      const count = counts.get(trait)
+      if (count == null || (bps[0] ?? 1) <= 1) return false
+      return stage(bps, count - n) < stage(bps, count)
+    })
+  return (m.units || []).filter((u) => !anchored.has(u.name) && (u.tier || 1) === 1 && !losesTrait(u))
 }
 
 /** 프롬프트 블록 줄 (없으면 빈 배열) */

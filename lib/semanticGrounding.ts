@@ -4,7 +4,8 @@ import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
 import { validateItemRecipes } from './itemRecipes'
 import { boardCounts } from './boardStats'
 import { boardCarry, detectDeckType, isTankItem } from './deckType'
-import { traitNameOf } from './gameFacts'
+import { TRAIT_NAMES, traitNameOf } from './gameFacts'
+import { buildBoardTable, removalLosses, unitHasTrait } from './boardTable'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -261,6 +262,118 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
   return errors
 }
 
+/* ───────────── 기물–시너지 관계 (2026-10-30 지시문 1) ───────────── */
+
+/**
+ * 리포트 검증기 버전 — 검증 규칙을 바꾸면 올린다. 캐시된 리포트는 보여 줄 때 이 버전과 다르면 다시 검사한다 (lib/reportRevalidate).
+ */
+export const REVALIDATOR_VERSION = '2026-10-30.1'
+
+/** "(핵심) 시너지와 무관" — 기물 뒤(세트처럼 핵심 시너지와 무관한) 또는 앞(시너지와 무관한 1성 기물 세트) */
+const UNRELATED_AFTER_RE = /^[^.!?\n]{0,12}?시너지(?:와|과|랑)\s*(?:무관|상관\s*없|관계\s*없|관련\s*없)/
+const UNRELATED_BEFORE_RE = /시너지(?:와|과|랑)\s*(?:무관|상관\s*없|관계\s*없|관련\s*없)한[^.!?\n]{0,15}$/
+/** 기물을 빼는 조언 ("X 대신", "X를 빼고", "X는 빼서", "X 자리에", "X를 교체") */
+const REMOVE_AFTER_RE = /^\s*(?:(?:을|를|은|는|도)\s*)?(?:대신|빼|빼고|빼서|빼면|팔|팔고|교체|바꾸|바꿔|내리|내려|자리에|자리를)/
+/** 시너지를 올리거나 지키는 목적 */
+const RAISE_RE = /올리|올려|올릴|받치|받쳐|받칠|살리|살려|유지|채우|채워|켜|늘리|늘려/
+/** 핵심 기물을 빼라는 조언의 근거 (그 기물이 없을 때 평균등수 등) */
+const REMOVAL_EVIDENCE_RE = /없을\s*때|없는\s*판|빠진\s*판|평균\s*\d|\d\.\d{1,2}\s*등/
+
+/**
+ * 기물–시너지 관계 검사 — 보드 표(lib/boardTable)와 다른 문장을 찾는다. 이름 존재만 보던 검증이 놓친
+ * "세트처럼 핵심 시너지와 무관한 1성 기물은 빼서"(세트 = 개화 + 싸움꾼, 빼면 개화 3 → 2 꺼짐) 같은 조언을 잡는다.
+ * - "X는 (핵심) 시너지와 무관" → X를 빼면 켜진 다인원 시너지가 꺼지거나 내려가면 실패 (한 판 리포트만)
+ * - "X는 Y와 무관" · "X는 Y가 아니다" → X가 Y를 가지면 실패
+ * - "X는 Y 시너지" · "Y 기물 X" → X가 Y를 갖지 않으면 실패
+ * - "X 대신 …"·"X를 빼고 …" + "Y를 올리기/받치기" → X를 빼면 Y가 꺼지거나 내려가면 실패 (한 판 리포트만)
+ * - coreUnits(경기 덱 플레이북의 등장률 80% 이상 기물)를 빼라는 조언은 근거(없을 때 평균등수 등)가 없으면 실패
+ * 실패 문장은 고칠 값이 하나로 정해지지 않으므로 지운다 (repairEntityErrors). checked = 검사한 관계 주장 수.
+ */
+export function validateTraitRelations(
+  texts: string[],
+  matches: SlimMatchData[],
+  opts: { coreUnits?: string[] } = {}
+): { errors: EntityFactError[]; checked: number } {
+  const errors: EntityFactError[] = []
+  let checked = 0
+  if (!matches.length) return { errors, checked }
+  const single = matches.length === 1 ? matches[0] : null
+  const table = single ? buildBoardTable(single) : null
+  const boardNames = new Set(matches.flatMap((m) => m.units.map((u) => u.name)))
+  const unitNames = [...new Set([...boardNames, ...ALL_CHAMP_NAMES])]
+  const core = new Set(opts.coreUnits ?? [])
+  const seen = new Set<string>()
+  const fail = (text: string, expected: string, actual: string) => {
+    const k = `${text}|${expected}`
+    if (seen.has(k)) return
+    seen.add(k)
+    errors.push({ type: 'trait_relation', text, expected, actual })
+  }
+  for (const text of texts) {
+    for (const s of sentences(text)) {
+      if (OPPONENT_RE.test(s)) continue
+      const traitSpans = findNames(s, TRAIT_NAMES)
+      for (const u of findNames(s, unitNames)) {
+        const after = s.slice(u.end)
+        const before = s.slice(0, u.start)
+        const losses = table ? removalLosses(table, u.name) : []
+        const allLosses = table ? removalLosses(table, u.name, { includeUnique: true }) : []
+
+        // 1) 핵심 시너지와 무관
+        if (table && boardNames.has(u.name) && (UNRELATED_AFTER_RE.test(after) || UNRELATED_BEFORE_RE.test(before))) {
+          checked++
+          if (losses.length) fail(s, `${u.name}: 빼면 ${losses.join('·')} 꺼짐/하락 (핵심 시너지를 받침)`, `${u.name}은(는) 시너지와 무관`)
+        }
+
+        // 2) "X는 Y와 무관" · "X는 Y가 아니다" / 3) "X는 Y 시너지"
+        const named = after.match(/^\s*(?:은|는|이|가|도)?\s*([가-힣A-Za-z ]{2,12}?)\s*(?:시너지)?\s*(?:(와|과)\s*(?:무관|상관\s*없|관계\s*없)|(가|이)\s*아니|(?:시너지|기물)(?:입니다|이다|이고|이며|이라|라서|라|를\s*가|을\s*가|로서))/)
+        if (named) {
+          const trait = traitNameOf(named[1].trim())
+          if (trait) {
+            const has = unitHasTrait(table, u.name, trait)
+            if (has != null) {
+              checked++
+              const negative = Boolean(named[2] || named[3])
+              if (negative && has) fail(s, `${u.name}: ${trait} 시너지 기물`, `${u.name}은(는) ${trait}와 무관`)
+              if (!negative && !has) fail(s, `${u.name}: ${trait} 시너지 없음`, `${u.name}은(는) ${trait}`)
+            }
+          }
+        }
+        const label = before.match(/([가-힣A-Za-z]{2,10})\s*(?:시너지\s*)?기물(?:인|이자|로서)?\s*$/)
+        if (label) {
+          const trait = traitNameOf(label[1])
+          const has = trait ? unitHasTrait(table, u.name, trait) : null
+          if (trait && has != null) {
+            checked++
+            if (!has) fail(s, `${u.name}: ${trait} 시너지 없음`, `${trait} 기물 ${u.name}`)
+          }
+        }
+
+        // 4) 빼기·교체 조언
+        if (!REMOVE_AFTER_RE.test(after)) continue
+        if (table && boardNames.has(u.name)) {
+          const raised = RAISE_RE.test(after)
+          const targets = traitSpans.filter((t) => t.start >= u.end).map((t) => t.name)
+          if (raised && targets.length) {
+            for (const t of new Set(targets)) {
+              checked++
+              if (allLosses.includes(t)) fail(s, `${u.name}: 빼면 ${t} 꺼짐/하락`, `${u.name}을(를) 빼고 ${t}를 올리기`)
+            }
+          } else if (raised && /시너지/.test(after)) {
+            checked++
+            if (losses.length) fail(s, `${u.name}: 빼면 ${losses.join('·')} 꺼짐/하락`, `${u.name}을(를) 빼고 시너지 올리기`)
+          }
+        }
+        if (core.has(u.name)) {
+          checked++
+          if (!REMOVAL_EVIDENCE_RE.test(s)) fail(s, `${u.name}: 이 덱 핵심 기물(등장률 80% 이상) — 빼라는 근거 없음`, `${u.name} 빼기`)
+        }
+      }
+    }
+  }
+  return { errors, checked }
+}
+
 /* ───────────── 조합법 · 조언-데이터 모순 · 보드 수치 (2026-10-28) ───────────── */
 
 /** 아이템을 더 주라는 조언 ("무한의 대검을 추가로 맞춰 캐리 아이템 3개를 채우기") */
@@ -445,7 +558,7 @@ export function repairEntityErrors<T>(
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
     const fixable =
-      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
+      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict', 'trait_relation'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
   const touched = new Set<string>()

@@ -239,20 +239,23 @@ function LectureBlock({ feedback, goalSource }: { feedback: MetaCoachFeedback; g
 
 /**
  * "이 덱의 정석과 비교" — tftlab 덱 플레이북과 이 경기의 비교표 (코드 산출, lib/playbook).
- * 표본 100판 미만 덱은 섹션 대신 한 줄만.
+ * 정확히 분류되지 않은 경기는 "가장 가까운 덱: … · 유사도 72%"로 비교하고, 비교할 수 없으면(표본 부족·분류 안 됨) 섹션 대신 한 줄만.
+ * 아래에 근거 검증을 통과한 이 덱 팁 1~2개.
  */
 function DeckComparisonSection({ comparison }: { comparison: NonNullable<MetaCoachFeedback['deckComparison']> }) {
-  if (comparison.skipped) {
-    return <p className="text-xs text-subtle">{comparison.skipped}</p>
+  if (comparison.skipped || !comparison.items.length) {
+    return <p className="text-xs text-subtle">{comparison.skipped || '덱 기준 비교 항목이 없어 생략'}</p>
   }
-  if (!comparison.items.length) return null
   const link = comparison.externalLinks?.[0]
+  const tips = (comparison.tips || []).slice(0, 2)
+  const nearest = comparison.similarity != null
   return (
     <section aria-label="이 덱의 정석과 비교" className="rounded-control border border-line bg-sunken px-4 py-3">
       <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-ink">
-        이 덱의 정석과 비교
+        {nearest ? `가장 가까운 덱: ${comparison.deckName}` : '이 덱의 정석과 비교'}
         <span className="text-xs font-medium text-subtle">
-          {comparison.deckName} · tftlab {comparison.sample.toLocaleString()}판{comparison.label ? ` · ${comparison.label}` : ''}
+          {nearest ? `유사도 ${Math.round((comparison.similarity as number) * 100)}% · ` : `${comparison.deckName} · `}tftlab{' '}
+          {comparison.sample.toLocaleString()}판{comparison.label ? ` · ${comparison.label}` : ''}
         </span>
       </p>
       <ul className="mt-2 space-y-1.5">
@@ -265,6 +268,21 @@ function DeckComparisonSection({ comparison }: { comparison: NonNullable<MetaCoa
           </li>
         ))}
       </ul>
+      {tips.length ? (
+        <div className="mt-3 border-t border-line pt-2">
+          <p className="text-xs font-semibold text-subtle">이 덱 팁 (tftlab {comparison.sample.toLocaleString()}판 기준)</p>
+          <ul className="mt-1 space-y-1">
+            {tips.map((t, i) => (
+              <li key={i} className="flex gap-2 text-sm leading-relaxed text-ink">
+                <span aria-hidden className="text-accent">
+                  ·
+                </span>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {link ? (
         <p className="mt-2 text-xs text-subtle">
           자세한 운영 가이드:{' '}
@@ -275,6 +293,24 @@ function DeckComparisonSection({ comparison }: { comparison: NonNullable<MetaCoa
       ) : null}
     </section>
   )
+}
+
+/**
+ * 근거 검증 한 줄 (2026-10-30 지시문 5-3) — "수치 29개 검사 · 관계 6개 검사 · 문장 1개 수정 · 문장 1개 삭제(수치 2개) → 표시된 수치 27/27 확인".
+ * 검사한 수치(수리 전)에서 지운 문장의 수치를 빼면 표시된 수치가 된다 — 두 숫자를 따로 보여 헷갈리던 것을 한 줄로 잇는다.
+ */
+function groundingSummary(g: NonNullable<MetaCoachFeedback['grounding']>): string {
+  const parts: string[] = []
+  const r = g.repair
+  if (r) parts.push(`수치 ${r.checked}개 검사`)
+  if (g.relationsChecked != null) parts.push(`관계 ${g.relationsChecked}개 검사`)
+  if (r?.fixed) parts.push(`문장 ${r.fixed}개 수정`)
+  if (r?.deleted) {
+    const removed = Math.max(0, r.checked - g.total)
+    parts.push(`문장 ${r.deleted}개 삭제${removed ? `(수치 ${removed}개)` : ''}`)
+  }
+  const shown = `표시된 수치 ${g.supported}/${g.total}${g.namesChecked != null ? ` · 이름 ${g.namesChecked}개` : ''} 확인`
+  return parts.length ? `${parts.join(' · ')} → ${shown}` : shown
 }
 
 /**
@@ -364,19 +400,13 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
             <div className="min-w-[140px] rounded-control bg-sunken px-4 py-3">
               <p className="text-xs text-subtle">근거 검증</p>
               <p className="text-2xl font-bold text-ink">{feedback.grounding.score}%</p>
-              <span className="mt-1 inline-block text-xs text-subtle">
-                수치 {feedback.grounding.supported}/{feedback.grounding.total}
-                {feedback.grounding.namesChecked != null ? ` · 이름 ${feedback.grounding.namesChecked}개` : ''} 확인
+              <span
+                className="mt-1 block text-xs text-subtle"
+                title={feedback.grounding.entityErrors?.map((e) => `${e.actual} → ${e.expected}`).join(' / ') || undefined}
+              >
+                {groundingSummary(feedback.grounding)}
               </span>
-              {feedback.grounding.repair ? (
-                <span
-                  className="mt-0.5 block text-xs text-subtle"
-                  title={feedback.grounding.entityErrors?.map((e) => `${e.actual} → ${e.expected}`).join(' / ') || undefined}
-                >
-                  검사한 수치 {feedback.grounding.repair.checked}개 · 고친 문장 {feedback.grounding.repair.fixed}개 · 삭제한 문장{' '}
-                  {feedback.grounding.repair.deleted}개
-                </span>
-              ) : feedback.grounding.entityErrors?.length ? (
+              {!feedback.grounding.repair && feedback.grounding.entityErrors?.length ? (
                 <span
                   className="mt-0.5 block text-xs text-gold"
                   title={feedback.grounding.entityErrors.map((e) => `${e.actual} → ${e.expected}`).join(' / ')}
@@ -447,11 +477,8 @@ export function FeedbackReport({ feedback, title, matchCount, compact = false, g
                 {feedback.grounding.score}%
               </span>
             ) : null}
-            {feedback.grounding?.repair ? (
-              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">
-                검사한 수치 {feedback.grounding.repair.checked} · 고친 문장 {feedback.grounding.repair.fixed} · 삭제한 문장{' '}
-                {feedback.grounding.repair.deleted}
-              </span>
+            {feedback.grounding?.repair || feedback.grounding?.relationsChecked != null ? (
+              <span className="rounded-chip border border-line bg-panel px-2 py-0.5 text-muted">{groundingSummary(feedback.grounding)}</span>
             ) : null}
             {feedback.isFallback && (
               <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-bold text-muted">

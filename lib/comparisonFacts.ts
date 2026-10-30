@@ -131,7 +131,8 @@ function lobbyLines(m: SlimMatchData): string[] {
   const out: string[] = []
   const targetPlacement = m.placement === 1 ? 2 : 1
   const top = lobby.find((p: LobbyParticipant) => p.placement === targetPlacement)
-  if (top) out.push(`- 로비 ${targetPlacement}등과 비교: ${compareLine(me, boardStats(top))}`)
+  // 내 레벨과 상대 레벨을 줄 머리에 따로 밝힌다 — "1등(137G·Lv.9)과 비교하면 최종 레벨 9에서"처럼 상대 레벨을 내 레벨로 옮겨 쓰던 문제 (2026-10-30 지시문 5-5)
+  if (top) out.push(`- 로비 ${targetPlacement}등과 비교(나 Lv.${me.level} · ${targetPlacement}등 Lv.${top.level}): ${compareLine(me, boardStats(top))}`)
   const stats = lobby.map(boardStats)
   const avg = (k: keyof BoardStats) => stats.reduce((s, x) => s + x[k], 0) / stats.length
   const mean: BoardStats = { level: avg('level'), units: avg('units'), threeStars: avg('threeStars'), traitTierSum: avg('traitTierSum'), items: avg('items'), value: avg('value') }
@@ -209,6 +210,41 @@ export function mostSimilarDeck(
     if (!best || sim > best.similarity) best = { deck: d, similarity: sim }
   }
   return best && best.similarity >= DECK_SIMILARITY_MIN ? best : null
+}
+
+/** AI 분석용 '가장 가까운 덱' 유사도 하한 — 이 미만이면 "메타 덱으로 분류되지 않아 덱 기준 비교 생략" */
+export const CLOSEST_DECK_MIN = 0.55
+
+/**
+ * AI 분석용 가장 가까운 덱 (2026-10-30 지시문 2) — mostSimilarDeck(덱 성적표 분류, Jaccard)에서 빠진 경기에만 쓴다.
+ * 일찍 탈락해 보드가 얇은 판은 Jaccard 합집합이 커져 분류에서 빠지기 쉽다 (102#2600 마스터 이 ★3 · 7기물 판).
+ * 점수 = 캐리 일치 0.35 + 덱 이름 시너지 켜짐 0.25 + 핵심 기물 겹침 비율 0.4.
+ * - 겹침 비율은 경기 보드 기물 수로 나눈다(덱 기물 수가 아니라) — 얇은 보드가 불리하지 않게.
+ * - ★3 기물과 캐리(아이템 최다 기물)는 가중치 2 (둘 다면 3).
+ * 덱 성적표 분류에는 쓰지 않는다 (판수·합계가 바뀌면 안 된다).
+ */
+export function closestDeckForAnalysis(
+  m: { units: SlimMatchUnit[]; traits?: SlimMatchTrait[] },
+  decks: DeckFact[]
+): { deck: DeckFact; similarity: number } | null {
+  if (!m.units.length) return null
+  const carry = boardCarry(m.units)
+  const active = m.traits ? activeTraitNames(m.traits) : new Set<string>()
+  const weight = (u: SlimMatchUnit) => 1 + ((u.tier || 1) >= 3 ? 1 : 0) + (carry && u === carry ? 1 : 0)
+  const total = m.units.reduce((s, u) => s + weight(u), 0)
+  let best: { deck: DeckFact; similarity: number } | null = null
+  for (const d of decks) {
+    const core = d.units.filter((u) => !u.flex)
+    const theirs = slugSet((core.length ? core : d.units).map((u) => u.key))
+    const overlap = m.units.reduce((s, u) => s + (theirs.has(entitySlug('champion', u.id)) ? weight(u) : 0), 0) / total
+    const dCarry = deckCarry(d)
+    const carryHit = dCarry && carry && entitySlug('champion', dCarry.key) === entitySlug('champion', carry.id) ? 1 : 0
+    const { trait } = deckNameParts(d.name)
+    const traitHit = trait ? (active.has(trait) ? 1 : 0) : 0.5
+    const sim = 0.35 * carryHit + 0.25 * traitHit + 0.4 * overlap
+    if (!best || sim > best.similarity || (sim === best.similarity && d.sampleSize > best.deck.sampleSize)) best = { deck: d, similarity: sim }
+  }
+  return best && best.similarity >= CLOSEST_DECK_MIN ? best : null
 }
 
 export type MetaExecutionVerdict = 'better' | 'even' | 'worse'

@@ -232,6 +232,10 @@ export interface GroundingReport {
   entityErrors?: EntityFactError[]
   /** 리포트에 나온 기물·아이템 이름 중 내 보드(또는 메타·상대 맥락의 사실)로 확인한 수 — 확인 못 한 문장은 지운 뒤 센다 */
   namesChecked?: number
+  /** 기물–시너지 관계 주장 중 보드 표(lib/boardTable)와 대조한 수 (수리 전) */
+  relationsChecked?: number
+  /** 캐시된 리포트를 보여 줄 때 다시 검사한 검증기 버전 (lib/reportRevalidate) */
+  revalidated?: string
   /** 보내기 전 수리 기록 — 검사한 수치(조합법·로비 비교 포함, 수리 전) · 고친 문장 · 삭제한 문장.
    * score 는 수리 뒤 리포트 기준이라 항상 100% 이고, 무엇을 고쳤는지는 여기와 entityErrors 에 남는다 */
   repair?: { checked: number; fixed: number; deleted: number }
@@ -239,7 +243,8 @@ export interface GroundingReport {
 
 export interface EntityFactError {
   /** unit_absent · item_absent: 내 최종 보드에 없는 기물·아이템을 내 보드 이야기처럼 쓴 문장 (지운다) */
-  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch' | 'lobby_mismatch'
+  /** trait_relation: 기물–시너지 관계가 보드 표(lib/boardTable)와 다름 — "세트는 핵심 시너지와 무관"(세트를 빼면 개화가 꺼짐) (지운다) */
+  type: 'unit_star' | 'three_star_count' | 'item_owner' | 'trait_tier' | 'unit_absent' | 'item_absent' | 'item_recipe' | 'advice_conflict' | 'count_mismatch' | 'lobby_mismatch' | 'trait_relation'
   /** 오류가 있는 문장 */
   text: string
   /** 데이터 값 */
@@ -491,8 +496,12 @@ export interface DeckComparison {
   /** 근거 검증을 통과한 플레이북 팁 */
   tips?: string[]
   externalLinks?: { source: string; url: string }[]
-  /** 덱 표본 100판 미만 → "표본 부족으로 덱 기준 비교 생략" */
+  /** 덱 표본 100판 미만 → "표본 부족으로 덱 기준 비교 생략" · 메타 덱으로 분류되지 않음 → "메타 덱으로 분류되지 않아 덱 기준 비교 생략" */
   skipped?: string
+  /** 정확히 분류되지 않아 AI 분석용 '가장 가까운 덱'으로 비교했을 때 그 유사도(0~1) — 덱 성적표 분류와는 별개 */
+  similarity?: number
+  /** 플레이북 core_units 중 등장률 80% 이상 기물 이름 — 이 기물을 빼라는 조언은 근거가 있어야 한다 */
+  coreUnits?: string[]
 }
 
 export interface TFTAnalysisResponse {
