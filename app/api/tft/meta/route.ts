@@ -5,6 +5,7 @@ import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observabilit
 import { rateLimitGuard, handleApiError } from '@/lib/apiUtils'
 import type { TftMetaResponse } from '@/lib/types'
 import { withDeckSnapshot } from '@/lib/metaSnapshot'
+import { toDeckSummary, toDecksOnly, withoutLegacyDeckMeta } from '@/lib/metaSlim'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,14 @@ const META_MEMO_TTL_MS = (() => {
 
 const META_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=60',
+} as const
+
+/**
+ * 첫 화면용 부분 응답(view=summary · decks) 캐시 — 덱 스냅샷은 하루 한 번 바뀌고 서버 스냅샷 캐시는 5분이다.
+ * 엣지 5분 + stale 10분: 첫 진입이 매번 원본을 기다리지 않게 (2026-10-30 지시문 3).
+ */
+const META_VIEW_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
 } as const
 
 let metaMemo: { value: TftMetaResponse; expiresAt: number } | null = null
@@ -57,15 +66,19 @@ export async function GET(req: NextRequest) {
     if (limited) return limited
 
     const { value, cacheSource } = await basePayload()
-    const response = await withDeckSnapshot(value)
+    const full = await withDeckSnapshot(value)
+    // ?view=summary: 첫 화면 덱 목록 요약 · ?view=decks: 덱 전체(상세 패널·추천 덱) · 없으면 전체 (기물·아이템·조합 탭)
+    const view = req.nextUrl.searchParams.get('view')
+    const response = view === 'summary' ? toDeckSummary(full) : view === 'decks' ? toDecksOnly(full) : withoutLegacyDeckMeta(full)
     logEvent('info', 'api_meta', {
       ms: elapsedMs(startedAt),
       cacheSource,
       champions: response.champions.length,
       decks: response.decks.length,
       decksSource: response.decksMeta?.source,
+      view: response.view ?? 'full',
     })
-    return NextResponse.json(response, { headers: META_CACHE_HEADERS })
+    return NextResponse.json(response, { headers: response.view ? META_VIEW_CACHE_HEADERS : META_CACHE_HEADERS })
   } catch (err) {
     logEvent('error', 'api_meta_failed', { ms: elapsedMs(startedAt), ...errorFields(err) })
     return handleApiError(err, 'meta')

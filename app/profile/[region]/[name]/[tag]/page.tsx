@@ -70,11 +70,11 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   )
   const hasGames = stats.totalGames > 0
   const title = hasGames
-    ? `${stats.gameName}#${stats.tagLine} 전적 — 평균 ${stats.avgPlacement}위 · TOP4 ${stats.top4Rate}%`
+    ? `${stats.gameName}#${stats.tagLine} 전적 — 평균 ${stats.avgPlacement}등 · TOP4 ${stats.top4Rate}%`
     : `${stats.gameName}#${stats.tagLine} 전적`
   const rankPart = stats.rank ? `${formatRankLabel(stats.rank)} ${formatRankLp(stats.rank)}` : '배치 중'
   const description = hasGames
-    ? `${rankPart} · 최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}위, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
+    ? `${rankPart} · 최근 ${stats.totalGames}경기 기준 평균 ${stats.avgPlacement}등, 순방률 ${stats.top4Rate}%, 1등 ${stats.winRate}%. 경기별 AI 전략 코칭과 6축 진단을 확인하세요.`
     : `${rankPart} · 최근 경기에 이번 시즌 랭크 게임이 없습니다.`
 
   return {

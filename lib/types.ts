@@ -776,8 +776,11 @@ export interface TftMetaResponse {
   comps: MetaCompRanking[]
   /** 메타 덱 (보드 조합, 롤체지지 추천 덱 + 실측 통계) — 덱 성적표와 같은 스냅샷 (lib/tftStats getMetaDeckSnapshot) */
   decks: MetaDeckRanking[]
-  /** decks 의 출처·수집 범위·표본 수·갱신 시각 (덱 성적표 출처 줄과 같은 값). 없으면 래더 JSON(deckMeta) */
+  /** decks 의 출처·수집 범위·표본 수·갱신 시각 (덱 성적표 출처 줄과 같은 값) */
   decksMeta?: DeckReportMeta
+  /** 부분 응답: summary = 덱 목록 요약(아이템 없음) · decks = 덱 전체(기물·아이템 탭 없음). 없으면 전체 */
+  view?: 'summary' | 'decks'
+  /** 서버 내부용 래더 JSON 덱 정보 (withDeckSnapshot 폴백) — API 응답에서는 뺀다 (lib/metaSlim withoutLegacyDeckMeta) */
   deckMeta?: {
     /** decksData.json 빌드 시각 */
     generatedAt: string

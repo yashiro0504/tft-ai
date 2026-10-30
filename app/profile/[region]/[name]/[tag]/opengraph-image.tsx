@@ -52,7 +52,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
 
   const fontText = [
     'TFT LAB', 'SET 18', 'AI COACH', '소환사 전적', '평균 등수', '순방률', 'TOP 4', '1등', '승률',
-    '최근', '경기', '기준', '전적을 불러오지 못했습니다', '위', '%', '#', '·', '—', '-',
+    '최근', '경기', '기준', '전적을 불러오지 못했습니다', '등', '%', '#', '·', '—', '-',
     '아이언', '브론즈', '실버', '골드', '플래티넘', '에메랄드', '다이아몬드', '마스터', '그랜드마스터',
     '챌린저', '배치 중', 'LP', 'I', 'II', 'III', 'IV', rankLabel, rankLp,
     displayName, displayTag, String(avg), String(top4), String(win), String(total),
@@ -144,7 +144,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
             </div>
           </div>
           <div style={{ display: 'flex', marginTop: 10, fontSize: 22, color: '#94a3b8' }}>
-            {!stats ? '전적을 불러오지 못했습니다' : total ? `최근 ${total}경기 기준 · 평균 등수 ${avg}위` : '이번 시즌 랭크 게임이 없습니다'}
+            {!stats ? '전적을 불러오지 못했습니다' : total ? `최근 ${total}경기 기준 · 평균 ${avg}등` : '이번 시즌 랭크 게임이 없습니다'}
           </div>
         </div>
 
