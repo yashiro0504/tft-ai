@@ -165,13 +165,14 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
                   패치 {resolved.patch} · {tierLabel(resolved.tierMin)} 집계
                   <span className="rk-deck-flex-badge" title="Supabase 래더 집계(stat_comp) 덱 — 하루 1회 갱신">DB 집계</span>
                 </>
-              ) : meta.patch ? (
+              ) : meta.patch && /^\d/.test(meta.patch) ? (
+                // 래더 JSON 의 'set18' 같은 세트 표기는 패치가 아니다 — 다른 화면과 같은 '패치 16.21' 형식만 (2026-10-30 지시문 5-1)
                 `패치 ${meta.patch}`
               ) : (
                 '패치 정보 없음'
               )}
               <span className="rk-sep">/</span>
-              평균 <b>{avg(deck.avgPlacement)}</b>위
+              평균 <b>{avg(deck.avgPlacement)}</b>등
               <span className="rk-sep">/</span>
               TOP4 <b>{pct(deck.top4Rate)}</b>
               <span className="rk-sep">/</span>

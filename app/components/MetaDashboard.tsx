@@ -189,7 +189,8 @@ export function MetaDashboard({
 }) {
   const [data, setData] = useState<TftMetaResponse | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
-  const [loadedAll, setLoadedAll] = useState(!deferSections)
+  // 전체(기물·아이템·조합 탭) 응답을 받았는가 — 홈 메타 탭은 덱 요약부터 받고 다른 탭을 열 때 전체를 받는다 (2026-10-30 지시문 3)
+  const [loadedAll, setLoadedAll] = useState(Boolean(initialData) && !deferSections)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<TabId>('decks')
   const [tier, setTier] = useState<'전체' | Tier>('전체')
@@ -275,9 +276,13 @@ export function MetaDashboard({
     setSelectedId(null)
     setDetailOpen(false)
     setModal(null)
-    // /meta 는 덱 데이터만 SSR 되므로, 다른 탭 첫 진입 시 전체 데이터를 지연 로딩한다.
-    if (!dbMode && deferSections && !loadedAll && !loading && next !== 'decks') void load()
   }
+
+  // 덱 탭 밖의 탭(기물·아이템·조합)은 처음 열 때 전체 데이터를 받는다 — /meta 는 덱만 SSR, 홈은 덱 요약부터 받는다
+  useEffect(() => {
+    if (!dbMode && tab !== 'decks' && !loadedAll && !loading) void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbMode, tab, loadedAll, loading])
 
   /** URL(공유 링크 · 새로고침) 에서 읽은 필터·탭 적용 — 데이터 로딩은 아래 effect 가 loadedRef 로 1회만 */
   const applyUrlState = (next: { filter: StatFilter; tab: TabId }) => {
@@ -307,9 +312,38 @@ export function MetaDashboard({
     }
   }
 
+  /**
+   * 첫 화면 (initialData 없음 — 홈 메타 탭): 덱 요약(view=summary)으로 목록을 먼저 그리고, 덱 상세(아이템)는 view=decks 로 이어 받는다.
+   * 전체 응답(약 1.07MB)을 기다리는 동안 "전체 0 · 0개 · 덱을 선택하세요"가 보이던 문제 (2026-10-30 지시문 3).
+   */
+  const loadInitial = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/tft/meta?view=summary')
+      const json: TftMetaResponse = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || '메타 데이터를 불러오지 못했습니다.')
+      setData((prev) => prev ?? json)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '네트워크 오류')
+      setLoading(false)
+      return
+    }
+    setLoading(false)
+    try {
+      const res = await fetch('/api/tft/meta?view=decks')
+      const json: TftMetaResponse = await res.json()
+      if (!res.ok || !json.success) return
+      // 그사이 전체 응답을 받았으면 그대로 둔다
+      setData((prev) => (prev?.view === 'summary' ? { ...prev, decks: json.decks, view: 'decks' } : prev))
+    } catch {
+      /* 상세는 다음 탭 전환·새로고침 때 다시 받는다 */
+    }
+  }
+
   useEffect(() => {
-    if (!initialData) void load()
-    // initialData 는 /meta 정적 페이지에서 주입된다.
+    if (!initialData) void loadInitial()
+    // initialData 는 /meta 페이지에서 주입된다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -455,6 +489,11 @@ export function MetaDashboard({
   const tierMatches = dbMode ? filters?.patches.find((p) => p.patch === appliedPatch)?.matches[filter.tier] : undefined
   /** 덱 스냅샷 출처 (/meta SSR · /api/tft/meta 모두 lib/metaSnapshot — 덱 성적표 출처 줄과 같은 값) */
   const snapMeta = data?.decksMeta
+  /** 패치 표기 — 덱 스냅샷 패치(16.21)를 우선한다. JSON 래더 패치 문자열('set18')을 그대로 보이지 않게 (2026-10-30 지시문 5-1) */
+  const snapPatch = snapMeta?.patch && /^\d/.test(snapMeta.patch) ? snapMeta.patch : null
+  const shownPatch = snapPatch ?? (data?.patch && /^\d/.test(data.patch) ? data.patch : undefined)
+  /** 첫 응답 전(또는 탭 데이터를 받는 중)에는 숫자 0 대신 스켈레톤 — 표 스켈레톤과 같은 조건 */
+  const pending = !data || (loading && !rowsAll.length)
   /** 덱 탭이 아직 서버 스냅샷(기본 필터)을 보여 주는 중 — 수집 범위 칩을 배지·덱 성적표와 같은 문구로 */
   const showingSnapshot =
     tab === 'decks' &&
@@ -518,9 +557,9 @@ export function MetaDashboard({
               ) : (
                 <>
                   <EvidenceChip title={`수집 범위: ${JSON_LADDER_SCOPE_DETAIL}`}>
-                    {[metaScopeLabel({ source: 'json' }), metaMatchesLabel({ matches: data?.deckMeta?.matchCount })].filter(Boolean).join(' · ')}
+                    {[metaScopeLabel({ source: 'json' }), metaMatchesLabel({ matches: snapMeta?.matches })].filter(Boolean).join(' · ')}
                   </EvidenceChip>
-                  <EvidenceChip>{data?.patch ? `패치 ${data.patch}` : '패치 정보 없음'}</EvidenceChip>
+                  <EvidenceChip>{shownPatch ? `패치 ${shownPatch}` : '패치 정보 없음'}</EvidenceChip>
                   {data?.generatedAt ? <EvidenceChip>수집 {fmtDate(data.generatedAt)}</EvidenceChip> : null}
                   {fellBack ? (
                     <EvidenceChip title="DB 집계를 불러오지 못해 빌드 시점 스냅샷을 보여 줍니다">필터 미적용 스냅샷</EvidenceChip>
@@ -529,7 +568,7 @@ export function MetaDashboard({
               )}
               {data ? (
                 <EvidenceChip>
-                  덱 {data.decks.length}개 · 기물 {(data.champions ?? []).length}종
+                  덱 {data.decks.length}개{loadedAll || (data.champions ?? []).length ? ` · 기물 ${(data.champions ?? []).length}종` : ''}
                 </EvidenceChip>
               ) : null}
               {!data ? null : tab === 'decks' ? (
@@ -618,7 +657,7 @@ export function MetaDashboard({
                 </button>
               ))}
             </div>
-            {tab === 'items' ? (
+            {tab === 'items' && !pending ? (
               <div className="rk-chips" role="group" aria-label="아이템 분류">
                 {ITEM_CLASSES.map((c) => {
                   const items = data?.items ?? []
@@ -637,7 +676,7 @@ export function MetaDashboard({
                 })}
               </div>
             ) : null}
-            {isUnitTab(tab) ? (
+            {isUnitTab(tab) && !pending ? (
               <div className="rk-chips" role="group" aria-label="기물 코스트">
                 {(['all', ...COSTS] as CostFilter[]).map((c) => (
                   <button
@@ -653,7 +692,13 @@ export function MetaDashboard({
               </div>
             ) : null}
             <div className="rk-chips" role="group" aria-label="상대 티어">
-              {TIERS.filter((t) => t === '전체' || countOf(t) > 0).map((t) => (
+              {pending ? (
+                <span className="contents" aria-hidden>
+                  <span className="rk-skel-chip" />
+                  <span className="rk-skel-chip" />
+                </span>
+              ) : null}
+              {pending ? null : TIERS.filter((t) => t === '전체' || countOf(t) > 0).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -674,7 +719,7 @@ export function MetaDashboard({
                 aria-label="검색"
               />
             </label>
-            <span className="rk-sorted">{rows.length}개</span>
+            {pending ? <span className="rk-skel-chip" aria-hidden /> : <span className="rk-sorted">{rows.length}개</span>}
             <button
               type="button"
               className="rk-refresh"
@@ -898,11 +943,18 @@ export function MetaDashboard({
               >
                 ×
               </button>
-              {selected ? (
+              {!data || data.view === 'summary' ? (
+                // 덱 상세(아이템)는 view=decks 로 이어 받는다 — 그동안 "덱을 선택하세요" 대신 스켈레톤
+                <div className="rk-skeleton" role="status" aria-label="덱 상세를 불러오는 중">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="rk-skel-row" />
+                  ))}
+                </div>
+              ) : selected ? (
                 <DeckDetail
                   deck={selected}
                   tier={selectedTier ?? selected.tier}
-                  patch={dbMode && !fellBack ? appliedPatch ?? undefined : data?.patch}
+                  patch={dbMode && !fellBack ? appliedPatch ?? undefined : shownPatch}
                   deckQuery={dbMode && !fellBack && appliedPatch ? `?patch=${appliedPatch}&tier=${filter.tier}` : ''}
                 />
               ) : (

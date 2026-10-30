@@ -144,6 +144,8 @@ function groundedTexts(feedback: MetaCoachFeedback): Array<string | undefined> {
     // 이 덱의 정석과 비교 (코드 산출 — 플레이북 수치가 프롬프트 사실과 같은지 함께 검사)
     ...(feedback.deckComparison?.items || []).map((r) => r.text),
     feedback.deckComparison?.skipped,
+    // 비교 섹션 아래 이 덱 팁 (보여 주는 것만)
+    ...(feedback.deckComparison?.tips || []).slice(0, 2),
     // 스키마 v1 필드 (이전 형식 응답)
     ...(feedback.improvements || []),
     ...(feedback.actionPlan || []),
@@ -255,6 +257,8 @@ export function repairUnsupportedClaims(
               stats.deleted++
               return false
             }),
+            // 팁은 근거 검증을 통과한 것만 보여 준다 (화면은 앞 2개)
+            ...(dc.tips ? { tips: dc.tips.filter((t) => !bad(t).length) } : {}),
           },
         }
       : {}),
@@ -270,6 +274,28 @@ export function fixPlacementWording(text: string): string {
   return text
     .replace(/탈락한\s*1\s*등(?:\s*(?:플레이어|유저))?/g, '1등 플레이어')
     .replace(/탈락한\s*([2-8])\s*등(?!\s*\()/g, '$1등(탈락)')
+}
+
+/** 6축 key → 화면 이름 (lib/coaching 축 label 과 같은 말) */
+const AXIS_TERMS: Record<string, string> = {
+  economy: '경제 운영',
+  itemization: '아이템 설계',
+  tempo: '템포',
+  completion: '보드 완성도',
+  synergy: '시너지 설계',
+  contest: '유연성',
+}
+
+/**
+ * 리포트 문장의 영어 축 용어를 한글로 (2026-10-30 지시문 5-4: "itemization 100점" → "아이템 설계 100점").
+ * 프롬프트의 6축 줄이 "itemization(아이템 설계)" 형식이라 모델이 key 를 그대로 옮기는 경우가 있다. "economy(경제 운영)"처럼 key 뒤에
+ * 한글 이름이 괄호로 붙어 있으면 괄호째 정리한다.
+ */
+export function fixEnglishTerms(text: string): string {
+  return text.replace(/\b(economy|itemization|tempo|completion|synergy|contest)\b(?:\s*\(([^)]{1,12})\))?/gi, (_, key: string, paren?: string) => {
+    const label = AXIS_TERMS[key.toLowerCase()]
+    return paren ? paren : label
+  })
 }
 
 /**

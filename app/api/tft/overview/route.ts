@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateMetaCoachFeedback } from '@/lib/llm'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
-import { COACH_PROMPT_VERSION } from '@/lib/llm'
+import { REPORT_CACHE_VERSION } from '@/lib/llm'
+import { revalidateReport } from '@/lib/reportRevalidate'
 import { SCORING_VERSION } from '@/lib/axisConfig'
 import { quotaCheck, quotaStatus, chargeQuotaOnce, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     // Pro 는 추론(thinking) 리포트 — 무료와 캐시를 나눠 서로의 결과를 받지 않게 한다
     const tier = await getUserPlan(userId)
 
-    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${tier}:${COACH_PROMPT_VERSION}:${SCORING_VERSION}:${ids}`
+    const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${tier}:${REPORT_CACHE_VERSION}:${SCORING_VERSION}:${ids}`
     if (!nocache) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
       if (cached) {
@@ -80,7 +81,9 @@ export async function POST(req: NextRequest) {
         })
         // 캐시 적중은 횟수 차감 없음
         const quota = quotaStatus(req)
-        return NextResponse.json({ ...cached.value, cached: true, ...(quota ? { quota } : {}) })
+        // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
+        const value = cached.value.feedback ? { ...cached.value, feedback: revalidateReport(cached.value.feedback, matches) } : cached.value
+        return NextResponse.json({ ...value, cached: true, ...(quota ? { quota } : {}) })
       }
     }
 

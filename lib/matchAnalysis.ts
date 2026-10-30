@@ -9,7 +9,8 @@ import { getTftMatchDetail, getAccountByRiotId } from './riot'
 import { extractSlimMatchData } from './summarize'
 import { isCurrentSetMatch, isRankedMatch } from './queue'
 import { getDemoMatches } from './demo'
-import { generateMetaCoachFeedback, COACH_PROMPT_VERSION } from './llm'
+import { generateMetaCoachFeedback, REPORT_CACHE_VERSION } from './llm'
+import { revalidateReport } from './reportRevalidate'
 import { SCORING_VERSION } from './axisConfig'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 import { incrMetric, logEvent } from './observability'
@@ -49,10 +50,11 @@ export interface MatchAnalysisOutcome {
 }
 
 /**
- * 리포트 버전 = 프롬프트·점수 공식 버전. 메타 스냅샷은 넣지 않는다 — 스냅샷이 바뀌어도 이미 만든 리포트를
+ * 리포트 버전 = 리포트 캐시 버전·점수 공식 버전. 메타 스냅샷은 넣지 않는다 — 스냅샷이 바뀌어도 이미 만든 리포트를
  * 무효화하지 않는다 (2026-10-29 지시문 2: 같은 경기 재분석이 새 생성·차감으로 이어지지 않게).
+ * 프롬프트 버전도 넣지 않는다 — 캐시된 리포트는 보여 줄 때 현재 검증기로 다시 검사한다 (2026-10-30 지시문 1-5, lib/reportRevalidate).
  */
-export const REPORT_VERSION = `${COACH_PROMPT_VERSION}:${SCORING_VERSION}`
+export const REPORT_VERSION = `${REPORT_CACHE_VERSION}:${SCORING_VERSION}`
 
 /** 캐시 키 = match_id + puuid(없으면 닉네임) + 모드 + 리포트 버전. 횟수 차감의 멱등 키로도 쓴다 */
 export function analysisCacheKey(params: MatchAnalysisParams): string {
@@ -73,7 +75,9 @@ export async function getCachedMatchAnalysis(
   const hit = await cacheGetWithSource<TftMatchAnalysisResponse>(analysisCacheKey(params))
   if (!hit) return null
   incrMetric('llm.cache_hit.match_analysis')
-  return { response: { ...hit.value, cached: true }, source: hit.source }
+  // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
+  const value = hit.value.match && hit.value.feedback ? { ...hit.value, feedback: revalidateReport(hit.value.feedback, [hit.value.match]) } : hit.value
+  return { response: { ...value, cached: true }, source: hit.source }
 }
 
 export interface MatchAnalysisCallbacks {

@@ -27,7 +27,7 @@ export function TopDecks({ onOpenMeta }: { onOpenMeta: () => void }) {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/tft/meta')
+    fetch('/api/tft/meta?view=decks')
       .then((res) => res.json() as Promise<TftMetaResponse>)
       .then((data) => {
         if (cancelled || !data?.decks?.length) return

@@ -4,14 +4,15 @@ import { SlimMatchData, MetaCoachFeedback, FeedbackProvenance, CoachLecture, Coa
 import { serializeMatchesForLLM } from './summarize'
 import { getMetaSectionInfo } from './meta'
 import { getDecks, getPlaybookRows, getStats } from './tftStats'
-import { buildComparisonFacts, carryContestMoment, metaExecution, mostSimilarDeck, type ComboFact } from './comparisonFacts'
-import { buildDeckComparison, choosePlaybook, deckComparisonFacts, sameDeckCompetitors, snapshotIdOf, type DeckPlaybook } from './playbook'
+import { buildComparisonFacts, carryContestMoment, closestDeckForAnalysis, mostSimilarDeck, type ComboFact } from './comparisonFacts'
+import { DECK_COMPARISON_NO_DATA, DECK_COMPARISON_UNCLASSIFIED, buildDeckComparison, choosePlaybook, deckComparisonFacts, sameDeckCompetitors, snapshotIdOf, type DeckPlaybook } from './playbook'
 import { keyMoments, winFactors, type KeyMoment } from './keyMoments'
 import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
-import { fixPlacementWording, repairUnsupportedClaims, validateFeedbackGrounding } from './grounding'
-import { feedbackTexts, fixDrillTarget, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts } from './semanticGrounding'
+import { fixEnglishTerms, fixPlacementWording, repairUnsupportedClaims, validateFeedbackGrounding } from './grounding'
+import { feedbackTexts, fixDrillTarget, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts, validateTraitRelations, REVALIDATOR_VERSION } from './semanticGrounding'
+import { boardTableFacts } from './boardTable'
 import { recipeFactsFor } from './itemRecipes'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
@@ -30,8 +31,15 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 import { boardCarry } from './deckType'
 import { CARRY_STAR_ODDS_MIN, SHOP_ODDS_SOURCE, costOddsLine, shopOddsLine } from './shopOdds'
 
-/** 프롬프트/스키마 변경 시 올린다. 분석 캐시 키에 포함되어 자동 무효화된다. */
-export const COACH_PROMPT_VERSION = '2026-10-29.2'
+/** 프롬프트/스키마 변경 시 올린다 (평가 하네스 기록용). */
+export const COACH_PROMPT_VERSION = '2026-10-30.1'
+
+/**
+ * 리포트 캐시 키의 버전 — 프롬프트를 바꿔도 올리지 않는다 (2026-10-30 지시문 1-5).
+ * 캐시된 리포트는 보여 줄 때 현재 검증기로 다시 검사하므로(lib/reportRevalidate), 키를 바꿔 이미 만든 리포트를 버리면
+ * 같은 경기 재분석이 새 생성·횟수 차감으로 이어진다. 응답 형식이 깨지는 변경일 때만 올린다.
+ */
+export const REPORT_CACHE_VERSION = '2026-10-29.2'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -283,6 +291,11 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   벤치(대기석) 기물은 시너지 인원에 들어가지 않는다 — "벤치에 두라"는 조언은 시너지 해결책이 아니다.
 - 시너지 "N단계"는 몇 번째 단계이고 인원 수가 아니다(주문술사 4명 = 2단계, 협곡야수 7명 = 3단계). 인원은 "N명"으로만 쓰고, 인원 수를 단계로 쓰지 마라.
 - 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
+- 기물과 시너지의 관계(어떤 기물이 어떤 시너지인지, 빼면 어떤 시너지가 꺼지거나 내려가는지)는 [보드 표]에 있는 내용만 써라. 기억으로 추측하지 마라.
+  [보드 표]에서 "빼면: ○○ 꺼짐"인 기물을 "핵심 시너지와 무관"이라 하거나, 그 시너지를 올리자며 그 기물을 빼라고 하지 마라.
+- [이 덱의 정석과 비교]의 핵심 기물(이 덱 보드 80% 이상 채용)을 빼라고 하려면 그 기물이 없을 때의 평균등수 같은 근거를 함께 인용하라. 근거가 없으면 빼라고 하지 마라.
+- 로비 1등(또는 다른 등수)과 비교할 때는 내 레벨과 상대 레벨을 둘 다 밝혀라 (예: "1등(Lv.9 · 137G)보다 한 레벨 낮은 Lv.8에서 끝나 보드 가치가 47G 적었고").
+  상대의 레벨을 내 최종 레벨처럼 읽히게 쓰지 마라.
 
 - [비교 사실] 블록(로비 1등·로비 평균·같은 구성 상대·유사 메타 덱·BIS 일치율)은 코드가 계산한 서술 통계다. 수치는 그대로 인용하되
   "그래서 졌다"처럼 원인으로 단정하지 마라. 차이를 근거로 한 개선 제안은 "~를 비교하면"처럼 비교로 표현하라.
@@ -321,6 +334,7 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 
 [문체]
 - 강의하듯 "~입니다/~합니다" 경어체. 비유는 리포트당 1개까지. 이모지 금지.
+- 문장에 영어 용어를 쓰지 마라. 축은 key(economy·itemization 등)가 아니라 한글 이름(경제 운영·아이템 설계·템포·보드 완성도·시너지 설계·유연성)으로 쓴다.
 - 같은 문장 구조 반복 금지. overview는 서로 다른 축 3개를 한 줄씩 요약.
 
 반드시 아래 JSON 형식으로만 응답하라(마크다운 코드블록 허용):
@@ -447,7 +461,7 @@ export function shopOddsFacts(matches: SlimMatchData[], mode: 'single' | 'multi'
 
 /** 인트로 프롬프트에 넣을 압축 사실 + LLM 실패 시 결정론적 문장 */
 /** 리포트 서술 문자열만 바꾼다 (점수·코드 값은 그대로) */
-function mapFeedbackStrings(fb: MetaCoachFeedback, change: (s: string) => string): MetaCoachFeedback {
+export function mapFeedbackStrings(fb: MetaCoachFeedback, change: (s: string) => string): MetaCoachFeedback {
   // 이전 형식 응답·캐시엔 필드가 비어 있을 수 있다 — 문자열만 바꾼다
   const fn = <T,>(v: T): T => (typeof v === 'string' ? (change(v) as T) : v)
   const str = fn
@@ -922,6 +936,8 @@ export async function generateMetaCoachFeedback(
       : '[핵심 장면 = 반복 습관]\n※ 최근 경기에서 반복된 장면이 없다(한두 판에만 나왔다). 습관이라고 단정하지 말고, [6축 진단] 초점 축 지표로 장면 1개를 만들어라.'
   // 시너지 단계를 받치는 기물: "2성 늘려라" 조언이 협곡야수 7 같은 핵심 단계를 깨는 교체를 권하지 않게 (lib/traitAnchors)
   const anchorLines = mode === 'single' && matches[0] && !basePlan.lowSample ? traitAnchorFacts(matches[0]) : []
+  // 기물–시너지 관계 표 (2026-10-30 지시문 1): LLM 이 기물의 시너지를 추측하지 않게 코드가 계산해 넣는다
+  const boardFacts = mode === 'single' && matches[0] ? boardTableFacts(matches[0]) : ''
   const anchorFacts = anchorLines.length
     ? ['[시너지 유지 기물 — 코드 산출, 빼거나 교체하라고 하지 마라]', ...anchorLines].join('\n')
     : ''
@@ -1010,7 +1026,9 @@ ${playbookFacts}
 ${winFacts ? `${winFacts}
 
 ` : ''}${momentFacts}
-${anchorFacts ? `
+${boardFacts ? `
+${boardFacts}
+` : ''}${anchorFacts ? `
 ${anchorFacts}
 ` : ''}${shopFacts ? `
 ${shopFacts}
@@ -1068,10 +1086,13 @@ ${recipeFacts}
     const rawTexts = feedbackTexts({ ...rawFb, lecture: rawLecture, actions: rawActions }, rawAxisVerdicts)
     // 조합법·조언-데이터 모순·보드 수치(카드와 같은 값)도 대조한다
     const adviceCheck = validateAdviceAndCounts(rawTexts, matches)
+    // 기물–시너지 관계(보드 표)·덱 핵심 기물 빼기 조언도 대조한다
+    const relationCheck = validateTraitRelations(rawTexts, matches, { coreUnits: deckComparison?.coreUnits })
     const entityErrors = [
       ...validateEntityFacts(rawTexts, matches),
       ...validateBoardNames(rawTexts, matches, prompt).errors,
       ...adviceCheck.errors,
+      ...relationCheck.errors,
     ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
     // 수리 전 검사한 수치 (단위 수치·소수 + 조합법 + 로비 비교)
@@ -1087,6 +1108,8 @@ ${recipeFacts}
     // 근거를 확인 못 한 수치가 든 문장은 숫자를 빼거나 지운다 → 보이는 리포트는 항상 100%
     // "이 덱의 정석과 비교"는 코드가 비교표에서 만든 문장 — 근거 검증 대상에 넣어 플레이북 수치도 프롬프트 사실과 대조한다
     const axisVerdicts = repaired.axisVerdicts
+      ? (Object.fromEntries(Object.entries(repaired.axisVerdicts).map(([k, v]) => [k, typeof v === 'string' ? fixEnglishTerms(v) : v])) as typeof repaired.axisVerdicts)
+      : undefined
     const pruned = repairUnsupportedClaims(
       { ...repaired.fb, lecture: repaired.lecture, actions: repaired.actions, ...(deckComparison ? { deckComparison } : {}) },
       prompt,
@@ -1101,8 +1124,9 @@ ${recipeFacts}
       repair
     )
     // '탈락한 1등' → '1등 플레이어', '탈락한 N등' → 'N등(탈락)'
+    // 영어 축 용어 → 한글 ("itemization 100점" → "아이템 설계 100점")
     const fb = mapFeedbackStrings(grounded, (t) => {
-      const out = fixPlacementWording(t)
+      const out = fixEnglishTerms(fixPlacementWording(t))
       if (out !== t) repair.fixed++
       return out
     })
@@ -1128,6 +1152,8 @@ ${recipeFacts}
         ...withRecipeClaims(validateFeedbackGrounding(fb, prompt), postAdvice),
         entityErrors,
         namesChecked,
+        relationsChecked: relationCheck.checked,
+        revalidated: REVALIDATOR_VERSION,
         repair: { checked, ...repair },
       },
       dataQuality: {
@@ -1202,25 +1228,35 @@ ${recipeFacts}
 
 /**
  * "이 덱의 정석과 비교" — 경기 덱 판정(덱 성적표와 같은 규칙) → 같은 스냅샷 플레이북 → 코드 비교표.
- * DB 스냅샷이 아니면(래더 JSON 폴백) 플레이북 snapshot 을 대조할 수 없어 섹션을 넣지 않는다. 실패해도 리포트는 그대로 만든다.
+ * 덱 성적표 분류에서 빠진 경기는 AI 분석용 '가장 가까운 덱'(closestDeckForAnalysis)으로 비교한다 (2026-10-30 지시문 2).
+ * 비교 섹션이 아무 안내 없이 빠지는 리포트는 없다 — 비교할 수 없으면 "…덱 기준 비교 생략" 한 줄(skipped)을 넣는다.
  */
 async function loadDeckComparison(
   match: SlimMatchData,
   deckStats: Awaited<ReturnType<typeof getDecks>>
-): Promise<MetaCoachFeedback['deckComparison'] | null> {
+): Promise<MetaCoachFeedback['deckComparison']> {
+  const skip = (skipped: string) => ({ deckName: '', sample: 0, items: [], skipped })
   try {
-    const deck = metaExecution(match, deckStats.decks)?.deck ?? mostSimilarDeck(match, deckStats.decks)?.deck
-    if (!deck) return null
+    const exact = mostSimilarDeck(match, deckStats.decks)
+    const nearest = exact ? null : closestDeckForAnalysis(match, deckStats.decks)
+    const deck = exact?.deck ?? nearest?.deck
+    if (!deck) return skip(DECK_COMPARISON_UNCLASSIFIED)
     const meta = deckStats.decks.find((d) => d.name === deck.name)
-    if (!meta) return null
-    if (deckStats.source !== 'db' || !deckStats.filter) return null
+    if (!meta) return skip(DECK_COMPARISON_UNCLASSIFIED)
+    if (deckStats.source !== 'db' || !deckStats.filter) return skip(DECK_COMPARISON_NO_DATA)
     const current = { snapshotId: snapshotIdOf(deckStats.filter.patch, deckStats.filter.tier, deckStats.updatedAt), patch: deckStats.filter.patch }
     const rows = (await getPlaybookRows(meta.id, deckStats.filter.tier)) as unknown as DeckPlaybook[]
     const chosen = choosePlaybook(rows, current)
-    return buildDeckComparison(match, { id: meta.id, name: meta.name, sampleSize: meta.sampleSize }, chosen, sameDeckCompetitors(match, meta.name, deckStats.decks))
+    return buildDeckComparison(
+      match,
+      { id: meta.id, name: meta.name, sampleSize: meta.sampleSize },
+      chosen,
+      sameDeckCompetitors(match, meta.name, deckStats.decks),
+      nearest ? Math.round(nearest.similarity * 100) / 100 : undefined
+    )
   } catch (err) {
     logEvent('warn', 'deck_comparison_failed', errorFields(err))
-    return null
+    return skip(DECK_COMPARISON_NO_DATA)
   }
 }
 

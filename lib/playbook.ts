@@ -14,6 +14,14 @@ export const PLAYBOOK_FULL_MIN = 300
 export const PLAYBOOK_PARTIAL_MIN = 100
 export const DECK_COMPARISON_MAX = 3
 export const DECK_COMPARISON_SKIPPED = '표본 부족으로 덱 기준 비교 생략'
+/** 메타 덱으로도, 가장 가까운 덱(유사도 CLOSEST_DECK_MIN 이상)으로도 분류되지 않은 경기 */
+export const DECK_COMPARISON_UNCLASSIFIED = '메타 덱으로 분류되지 않아 덱 기준 비교 생략'
+/** 메타 스냅샷이 DB 가 아니라(래더 JSON 폴백) 플레이북을 대조할 수 없을 때 */
+export const DECK_COMPARISON_NO_DATA = '덱 플레이북 데이터가 없어 덱 기준 비교 생략'
+/** 핵심 기물 = 플레이북 core_units 중 이 등장률(%) 이상 — 빼라는 조언은 근거가 있어야 한다 */
+export const CORE_UNIT_USAGE_MIN = 80
+/** 리포트 비교 섹션 아래 팁 최대 개수 */
+export const DECK_TIPS_MAX = 2
 
 export interface PlaybookUnit {
   key: string
@@ -138,13 +146,12 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
     }
   } else if (m.placement <= 4 && pb.level_profile) {
     const lp = pb.level_profile
-    const share = lp.top4_level_pct[String(m.level)] ?? 0
     rows.push({
       id: 'level_profile',
       severity: lp.deck_type === 'buildup' && m.level < 8 && lp.top4_lv8plus_pct >= 50 ? 1 : 0,
       text:
         lp.deck_type === 'reroll'
-          ? `리롤 덱(★3 ${lp.reroll_costs.join('·')}코) — TOP4 최종 Lv.${m.level} 비율 ${share}%`
+          ? `리롤 덱(★3 ${lp.reroll_costs.join('·')}코) — TOP4 최종 레벨: ${levelBands(lp.top4_level_pct)}, 이번 판 Lv.${m.level}`
           : `빌드업 덱 — TOP4의 ${lp.top4_lv8plus_pct}%가 최종 Lv.8 이상, 이번 판 Lv.${m.level}`,
     })
   }
@@ -174,6 +181,42 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
   return rows
 }
 
+/**
+ * TOP4 최종 레벨 구간 — "Lv.7 이하 X% · Lv.8 Y% · Lv.9+ Z%" (2026-10-30 지시문 4-2: "Lv.8 비율 49%"가 Lv.8만인지 이상인지 알 수 없었다).
+ * 구간 비율은 레벨별 비율의 합이다 (반올림 차이로 합이 100%가 아닐 수 있다).
+ */
+export function levelBands(pct: Record<string, number>): string {
+  const sum = (f: (lv: number) => boolean) =>
+    Math.round(Object.entries(pct).reduce((s, [lv, p]) => s + (f(Number(lv)) ? Number(p) || 0 : 0), 0))
+  return `Lv.7 이하 ${sum((lv) => lv <= 7)}% · Lv.8 ${sum((lv) => lv === 8)}% · Lv.9+ ${sum((lv) => lv >= 9)}%`
+}
+
+/** 플레이북의 숫자 (팁 문장 검증용) — 팁 자신의 숫자는 뺀다 */
+function playbookNumbers(pb: DeckPlaybook): Set<string> {
+  const { tips: _tips, ...rest } = pb
+  void _tips
+  const out = new Set<string>()
+  JSON.stringify(rest).replace(/-?\d+(?:\.\d+)?/g, (x) => {
+    const n = Number(x)
+    out.add(String(n))
+    if (!Number.isInteger(n)) out.add(n.toFixed(2))
+    return x
+  })
+  return out
+}
+
+/**
+ * 근거 검증을 통과한 팁 — 문장의 숫자가 모두 플레이북 값에 있는 팁만 (2026-10-30 지시문 4-1).
+ * 팁은 수집기(scripts/collect/playbook.js)가 플레이북 값으로 만든 문장이라 보통 모두 통과한다. 값이 바뀐 옛 팁을 거르는 안전장치다.
+ */
+export function groundedTips(pb: DeckPlaybook): string[] {
+  const nums = playbookNumbers(pb)
+  return (pb.tips || [])
+    .map((t) => t.text)
+    .filter((text) => typeof text === 'string' && text.trim())
+    .filter((text) => (text.match(/\d+(?:\.\d+)?/g) || []).every((x) => nums.has(String(Number(x))) || nums.has(x)))
+}
+
 /** 같은 로비에서 이 덱으로 판정된 상대 수 (덱 판정은 덱 성적표·AI 비교와 같은 mostSimilarDeck) */
 export function sameDeckCompetitors(m: SlimMatchData, deckName: string, decks: DeckFact[]): number {
   return (m.lobbyParticipants || []).filter((p) => !p.isUser && mostSimilarDeck(p, decks)?.deck.name === deckName).length
@@ -187,7 +230,8 @@ export function buildDeckComparison(
   m: SlimMatchData,
   deck: { id?: string; name: string; sampleSize: number },
   chosen: { playbook: DeckPlaybook; label?: string } | null,
-  competitors = 0
+  competitors = 0,
+  similarity?: number
 ): DeckComparison {
   if (!chosen || deck.sampleSize < PLAYBOOK_PARTIAL_MIN) return { deckName: deck.name, sample: deck.sampleSize, items: [], skipped: DECK_COMPARISON_SKIPPED }
   const pb = chosen.playbook
@@ -202,7 +246,9 @@ export function buildDeckComparison(
     label: chosen.label,
     items,
     rows,
-    tips: pb.tips?.map((t) => t.text) ?? [],
+    ...(similarity != null ? { similarity } : {}),
+    coreUnits: (pb.core_units || []).filter((u) => u.usage_pct >= CORE_UNIT_USAGE_MIN).map((u) => u.name),
+    tips: groundedTips(pb),
     externalLinks: (pb.external_links || []).filter((l) => /^https:\/\//.test(l.url)).map((l) => ({ source: l.source, url: l.url })),
   }
 }
@@ -210,10 +256,13 @@ export function buildDeckComparison(
 /** 프롬프트 블록 — 비교표 전체 (코드 산출, 근거 검증 사실에 플레이북 수치가 들어가게) */
 export function deckComparisonFacts(c: DeckComparison | null | undefined): string {
   if (!c) return ''
-  if (c.skipped) return `[이 덱의 정석과 비교 — 코드 산출]\n- ${c.deckName}: ${c.skipped} (덱 표본 ${c.sample}판)`
+  if (c.skipped) return c.deckName ? `[이 덱의 정석과 비교 — 코드 산출]\n- ${c.deckName}: ${c.skipped} (덱 표본 ${c.sample}판)` : `[이 덱의 정석과 비교 — 코드 산출]\n- ${c.skipped}`
+  const nearest = c.similarity != null ? ` · 정확히 분류되지 않아 가장 가까운 덱(유사도 ${Math.round(c.similarity * 100)}%)으로 비교` : ''
   return [
-    `[이 덱의 정석과 비교 — 코드 산출, tftlab ${c.deckName} ${c.sample}판 플레이북${c.label ? ` · ${c.label}` : ''}]`,
+    `[이 덱의 정석과 비교 — 코드 산출, tftlab ${c.deckName} ${c.sample}판 플레이북${c.label ? ` · ${c.label}` : ''}${nearest}]`,
     ...(c.rows ?? c.items).map((r) => `- ${r.text}`),
+    ...(c.coreUnits?.length ? [`- 이 덱 핵심 기물(이 덱 보드 ${CORE_UNIT_USAGE_MIN}% 이상 채용): ${c.coreUnits.join(', ')}`] : []),
+    ...(c.tips?.length ? [`- 이 덱 팁: ${c.tips.slice(0, DECK_TIPS_MAX).join(' / ')}`] : []),
     '※ 이 비교표는 리포트에 코드가 그대로 붙인다. 본문에서 인용할 때도 수치를 바꾸지 말고, 원인으로 단정하지 마라.',
   ].join('\n')
 }
