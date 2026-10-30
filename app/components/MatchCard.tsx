@@ -284,6 +284,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [wasCached, setWasCached] = useState(false)
+  /** 캐시 리포트가 지금 생성기보다 오래됨 — 그때만 '새 버전으로 다시 분석 (1회 차감)' (2026-10-30 2차 지시문 5-2) */
+  const [outdated, setOutdated] = useState(false)
   /** 스트리밍 진행 문구 (예: "AI가 리포트를 작성하는 중...") */
   const [stageMessage, setStageMessage] = useState('')
   /** 인트로 토큰 누적 (핵심 진단 2~3문장) */
@@ -347,7 +349,9 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
     const controller = new AbortController()
     abortRef.current = controller
-    const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo, ...(turnstileToken ? { turnstileToken } : {}) }
+    // 이미 결과가 있고 오래된 버전이면 새로 생성 요청 (서버도 오래된 캐시일 때만 새로 만든다)
+    const regenerate = Boolean(feedback && outdated)
+    const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo, ...(regenerate ? { regenerate: true } : {}), ...(turnstileToken ? { turnstileToken } : {}) }
 
     try {
       let data: TftMatchAnalysisResponse
@@ -376,6 +380,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       // 서버가 이번 요청에서 실제로 차감했을 때만 센다 (캐시 적중·AI 미사용 폴백은 차감 없음)
       quota.settle(data)
       setWasCached(Boolean(data.cached))
+      setOutdated(Boolean(data.outdated))
       track('analysis_success', {
         scope: 'match',
         placement: match.placement,
@@ -649,6 +654,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                 {isRankedMatch(match) ? 'AI 분석은 이번 시즌 경기만 합니다' : 'AI 분석은 랭크 게임만 합니다'}
               </span>
             ) : (
+            // 결과가 최신 버전이면 버튼을 숨긴다 — 누르면 같은 캐시가 다시 열릴 뿐이라 이름과 동작이 달랐다
+            feedback && !outdated && !isAnalyzing ? null : (
             <>
             <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
             <button
@@ -665,11 +672,12 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{feedback ? '이 경기 다시 분석' : '이 경기 AI 분석'}</span>
+                  <span>{feedback ? '새 버전으로 다시 분석 (1회 차감)' : '이 경기 AI 분석'}</span>
                 </>
               )}
             </button>
             </>
+            )
             )}
           </div>
         </div>

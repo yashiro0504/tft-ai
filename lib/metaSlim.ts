@@ -46,9 +46,8 @@ export function withoutLegacyDeckMeta(data: TftMetaResponse): TftMetaResponse {
 }
 
 /**
- * 메타 첫 화면용 덱 요약 (2026-10-30 지시문 3) — 스냅샷 정보 + 덱 목록 표에 필요한 값만.
- * id · 이름 · 티어 · 평균등수 · TOP4 · 표본 · 픽률 · 시너지 · 구성 아이콘. 기물 아이템·덱 가이드·기물별 통계는 뺀다
- * (전체 /api/tft/meta 약 1.07MB → 덱 요약). 덱 상세(아이템)는 `view=decks`, 기물·아이템·조합 탭은 전체 응답을 탭을 열 때 받는다.
+ * 스냅샷 정보만 (2026-10-30 2차 지시문 5-3) — 덱 목록은 view=decks 한 번으로 받는다.
+ * 예전 요약에는 덱 100개가 다시 들어 있어 첫 화면이 같은 덱을 두 번 받았다. 이제 decksMeta(패치·티어·판수·갱신 시각)만 준다.
  */
 export function toDeckSummary(data: TftMetaResponse): TftMetaResponse {
   return {
@@ -59,31 +58,6 @@ export function toDeckSummary(data: TftMetaResponse): TftMetaResponse {
     items: [],
     combos: [],
     comps: [],
-    decks: data.decks.map((deck) => ({
-      id: deck.id,
-      name: deck.name,
-      gold: deck.gold,
-      unitCost: deck.unitCost,
-      traits: deck.traits,
-      units: deck.units.map((unit) => ({
-        key: unit.key,
-        name: unit.name,
-        cost: unit.cost,
-        star: unit.star,
-        index: unit.index,
-        imgUrl: unit.imgUrl,
-        items: [],
-        ...(unit.flex ? { flex: true } : {}),
-      })),
-      avgPlacement: deck.avgPlacement,
-      top4Rate: deck.top4Rate,
-      coverage: deck.coverage,
-      sampleSize: deck.sampleSize,
-      tier: deck.tier,
-      carryKey: deck.carryKey,
-      ...(deck.games != null ? { games: deck.games } : {}),
-      ...(deck.playRate != null ? { playRate: deck.playRate } : {}),
-      ...(deck.level != null ? { level: deck.level } : {}),
-    })),
+    decks: [],
   }
 }

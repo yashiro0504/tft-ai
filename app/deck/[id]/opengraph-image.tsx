@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { getDeckViews } from '@/lib/decks'
+import { resolveDeckPage } from '@/lib/deckPage'
 import { loadKoreanFont } from '@/lib/ogFont'
 
 export const alt = 'TFT LAB 덱 구성 카드'
@@ -17,7 +17,8 @@ const TIER_COLOR: Record<string, { bg: string; border: string; color: string }> 
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const deck = getDeckViews().find((item) => item.id === id)
+  // 덱 페이지 본문·<title> 과 같은 스냅샷 값 (lib/deckPage · 2026-10-30 2차 지시문 1)
+  const deck = (await resolveDeckPage(id))?.deck
 
   if (!deck) {
     const font = await loadKoreanFont('TFT LAB 덱을 찾을 수 없습니다')
@@ -56,9 +57,9 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const traits = deck.traits.slice(0, 4)
 
   const fontText = [
-    'TFT LAB', 'DECK GUIDE', 'SET 18', '패치', '평균', '위', '순방', '표본', '판', '유닛', '코',
+    'TFT LAB', 'DECK GUIDE', 'SET 18', '패치', '평균', '등', 'TOP4', '순방', '표본', '판', '유닛', '코',
     '#', '%', '/', '·', '-',
-    deck.name, tier, avg, top4, String(deck.sampleSize), String(deck.unitCost),
+    deck.name, tier, avg, top4, deck.sampleSize.toLocaleString(), String(deck.unitCost),
     ...units.map((unit) => unit.name),
     ...traits.map((trait) => `${trait.name} ${trait.count}`),
   ].join('')
@@ -141,7 +142,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 54, fontWeight: 700, letterSpacing: -1.5 }}>{deck.name}</div>
             <div style={{ display: 'flex', marginTop: 6, fontSize: 20, color: '#9aa4ae' }}>
-              {`TOP4 ${top4} · 표본 ${deck.sampleSize}판 · ${deck.units.length}유닛 · ${deck.unitCost}코`}
+              {`TOP4 ${top4} · 표본 ${deck.sampleSize.toLocaleString()}판 · ${deck.units.length}유닛 · ${deck.unitCost}코`}
             </div>
           </div>
         </div>
@@ -149,7 +150,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         <div style={{ display: 'flex', gap: 10 }}>
           {units.map((unit) => (
             <div
-              key={`${unit.lolchessKey}-${unit.index ?? 'x'}`}
+              key={`${unit.key}-${unit.index ?? 'x'}`}
               style={{
                 display: 'flex',
                 flexDirection: 'column',

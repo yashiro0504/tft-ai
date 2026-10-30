@@ -9,8 +9,8 @@ import { getTftMatchDetail, getAccountByRiotId } from './riot'
 import { extractSlimMatchData } from './summarize'
 import { isCurrentSetMatch, isRankedMatch } from './queue'
 import { getDemoMatches } from './demo'
-import { generateMetaCoachFeedback, REPORT_CACHE_VERSION } from './llm'
-import { revalidateReport } from './reportRevalidate'
+import { generateMetaCoachFeedback, REPORT_CACHE_VERSION, REPORT_GENERATOR_VERSION } from './llm'
+import { prepareCachedReport } from './reportRevalidate'
 import { SCORING_VERSION } from './axisConfig'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
 import { incrMetric, logEvent } from './observability'
@@ -42,11 +42,15 @@ export interface MatchAnalysisParams {
   tagLine?: string
   isDemo?: boolean
   mode: 'single' | 'multi'
+  /** 캐시 리포트가 오래된 버전일 때만 새로 생성한다 ("새 버전으로 다시 분석" 버튼). 최신 버전이면 캐시를 그대로 준다 */
+  regenerate?: boolean
 }
 
 export interface MatchAnalysisOutcome {
   response: TftMatchAnalysisResponse
   cached: boolean
+  /** 오래된 캐시 리포트를 새 버전으로 다시 만들었다 — 차감 멱등 키가 첫 생성과 달라야 한다 (analysisChargeKey) */
+  regenerated?: boolean
 }
 
 /**
@@ -60,6 +64,17 @@ export const REPORT_VERSION = `${REPORT_CACHE_VERSION}:${SCORING_VERSION}`
 export function analysisCacheKey(params: MatchAnalysisParams): string {
   const subject = params.puuid || params.gameName?.toLowerCase() || 'anon'
   return `analysis:${params.matchId}:${subject}:${params.mode}:${REPORT_VERSION}`
+}
+
+/** 캐시 리포트가 지금 생성기보다 오래됐는가 — 그때만 "새 버전으로 다시 분석 (1회 차감)" 버튼 (2026-10-30 2차 지시문 5-2) */
+export function isOutdatedReport(fb: { generatorVersion?: string; isFallback?: boolean } | null | undefined): boolean {
+  return Boolean(fb) && !fb!.isFallback && fb!.generatorVersion !== REPORT_GENERATOR_VERSION
+}
+
+/** 횟수 차감 멱등 키 — 첫 생성은 캐시 키, 새 버전 재생성은 생성기 버전을 붙여 한 번 더 차감한다 */
+export function analysisChargeKey(params: MatchAnalysisParams, regenerated = false): string {
+  const key = analysisCacheKey(params)
+  return regenerated ? `${key}:gen:${REPORT_GENERATOR_VERSION}` : key
 }
 
 /** 같은 캐시 키로 동시에 들어온 분석(더블클릭·재시도)은 LLM 을 한 번만 부르고 결과를 나눠 쓴다 */
@@ -76,8 +91,9 @@ export async function getCachedMatchAnalysis(
   if (!hit) return null
   incrMetric('llm.cache_hit.match_analysis')
   // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
-  const value = hit.value.match && hit.value.feedback ? { ...hit.value, feedback: revalidateReport(hit.value.feedback, [hit.value.match]) } : hit.value
-  return { response: { ...value, cached: true }, source: hit.source }
+  // 비교 섹션이 없던 캐시 리포트는 코드로 붙인다 (2026-10-30 2차 지시문 5-1)
+  const value = hit.value.match && hit.value.feedback ? { ...hit.value, feedback: await prepareCachedReport(hit.value.feedback, [hit.value.match]) } : hit.value
+  return { response: { ...value, cached: true, outdated: isOutdatedReport(value.feedback) }, source: hit.source }
 }
 
 export interface MatchAnalysisCallbacks {
@@ -120,7 +136,9 @@ async function runMatchAnalysisOnce(
   if (!matchId) throw new MatchAnalysisError('분석할 경기(matchId)가 필요합니다.', 400)
 
   const cached = await getCachedMatchAnalysis(params)
-  if (cached) return { response: cached.response, cached: true }
+  // 다시 분석은 캐시 리포트가 오래된 버전일 때만 새로 만든다 (최신이면 버튼이 숨겨지고, 요청이 와도 캐시를 준다)
+  if (cached && !(params.regenerate && cached.response.outdated)) return { response: cached.response, cached: true }
+  const regenerated = Boolean(cached)
 
   onStage?.('match')
 
@@ -176,6 +194,7 @@ async function runMatchAnalysisOnce(
     match,
     feedback,
     cached: false,
+    outdated: false,
   }
 
   await cacheSet(analysisCacheKey(params), response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.MATCH)
@@ -186,5 +205,5 @@ async function runMatchAnalysisOnce(
     isFallback: Boolean(feedback.isFallback),
   })
 
-  return { response, cached: false }
+  return { response, cached: false, regenerated }
 }

@@ -38,6 +38,8 @@ const META_VIEW_CACHE_HEADERS = {
 } as const
 
 let metaMemo: { value: TftMetaResponse; expiresAt: number } | null = null
+/** 보기별 최종 응답 메모 (인스턴스 메모리) — 스냅샷 TTL(5분) 안에서는 Redis·JSON 재가공 없이 바로 응답 (2026-10-30 2차 지시문 5-3) */
+const viewMemo = new Map<string, { value: TftMetaResponse; expiresAt: number }>()
 
 /** 빌드 타임 JSON 부분 (memo → Redis → 빌드) */
 async function basePayload(): Promise<{ value: TftMetaResponse; cacheSource: string }> {
@@ -65,11 +67,23 @@ export async function GET(req: NextRequest) {
     const limited = rateLimitGuard(req, 'meta', 60, 60_000)
     if (limited) return limited
 
-    const { value, cacheSource } = await basePayload()
-    const full = await withDeckSnapshot(value)
-    // ?view=summary: 첫 화면 덱 목록 요약 · ?view=decks: 덱 전체(상세 패널·추천 덱) · 없으면 전체 (기물·아이템·조합 탭)
+    // ?view=summary: 스냅샷 정보만 · ?view=decks: 덱 목록·상세(메타 첫 화면·추천 덱) · 없으면 전체 (기물·아이템·조합 탭)
     const view = req.nextUrl.searchParams.get('view')
-    const response = view === 'summary' ? toDeckSummary(full) : view === 'decks' ? toDecksOnly(full) : withoutLegacyDeckMeta(full)
+    const memoKey = view === 'summary' || view === 'decks' ? view : 'full'
+    const memoHit = viewMemo.get(memoKey)
+    let cacheSource = 'view_memo'
+    let response: TftMetaResponse
+    if (memoHit && memoHit.expiresAt > Date.now()) {
+      response = memoHit.value
+    } else {
+      const base = await basePayload()
+      cacheSource = base.cacheSource
+      const full = await withDeckSnapshot(base.value)
+      response = view === 'summary' ? toDeckSummary(full) : view === 'decks' ? toDecksOnly(full) : withoutLegacyDeckMeta(full)
+      // 스냅샷을 못 읽은 폴백 응답은 짧게만 둔다 — 복구되면 바로 DB 스냅샷으로
+      const ttl = full.decksMeta?.fallbackReason ? 30_000 : META_MEMO_TTL_MS
+      viewMemo.set(memoKey, { value: response, expiresAt: Date.now() + ttl })
+    }
     logEvent('info', 'api_meta', {
       ms: elapsedMs(startedAt),
       cacheSource,

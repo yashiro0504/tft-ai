@@ -1,4 +1,5 @@
-import type { DeckComparison, DeckComparisonRow, SlimMatchData } from './types'
+import type { DeckBisCheck, DeckComparison, DeckComparisonRow, SlimMatchData, SlimMatchUnit } from './types'
+import { PLACEMENT_SD } from './statsShared'
 import { entitySlug } from './entitySlug'
 import { mostSimilarDeck, type DeckFact } from './comparisonFacts'
 
@@ -38,16 +39,37 @@ export interface DeckPlaybook {
   avg: number | null
   scope: 'full' | 'partial'
   core_units: (PlaybookUnit & { usage_pct: number; star2_pct: number; star3_pct: number; star_avg: number | null })[]
-  carry_bis: { key: string; name: string; items: string[]; sets: { items: string[]; games: number; avg: number | null }[] }[]
+  carry_bis: { key: string; name: string; items: string[]; sets: ({ items: string[]; games: number; avg: number | null } & Partial<AdjustedDelta>)[] }[]
   three_star: (PlaybookUnit & { top4_pct: number; bottom_pct: number; top4_n: number; bottom_n: number })[] | null
-  flex_units: (PlaybookUnit & { usage_pct: number; with_avg: number; without_avg: number; diff: number; with_n: number; without_n: number })[] | null
-  traits: { name: string; active_pct: number; tiers: { units: number; pct: number; avg: number | null; n: number }[] }[] | null
+  /** with_avg·without_avg·diff 는 단순 비교(내부 참고용) — 화면·리포트는 adjusted_delta(탈락 구간별 보정)만 쓴다 */
+  flex_units: (PlaybookUnit & { usage_pct: number; with_avg: number; without_avg: number; diff: number; with_n: number; without_n: number } & Partial<AdjustedDelta>)[] | null
+  traits: { name: string; active_pct: number; tiers: ({ units: number; pct: number; avg: number | null; n: number; vs_units?: number } & Partial<AdjustedDelta>)[] }[] | null
   level_profile: { top4_n: number; top4_level_pct: Record<string, number>; deck_type: 'reroll' | 'buildup'; reroll_costs: number[]; top4_lv8plus_pct: number } | null
   elim_profile: { bottom_n: number; level_pct: Record<string, number>; stages: { stage: string; pct: number; n: number; lv7minus_pct: number }[] } | null
   contested: { solo_n: number; solo_avg: number | null; contested_n: number; contested_avg: number | null } | null
   augments: { name: string; pick_pct: number; avg: number | null; n: number }[] | null
   tips: { text: string; evidence: string[] }[]
   external_links: { source: string; url: string }[]
+  /** 2 = 생존 편향 보정·팁 '~하세요' (scripts/collect/playbook.js PLAYBOOK_VERSION) */
+  version?: number
+}
+
+/**
+ * 생존 편향 보정 차이 (2026-10-30 2차 지시문 4) — 같은 탈락 구간(4스테이지 이하 / 5 / 6 이상)끼리 평균등수 차이를 내고 판수로 가중 평균한 값.
+ * adjusted_delta < 0 이면 이 쪽이 평균등수가 낮다(좋다). 보정 후 차이가 표준오차(adjusted_se) 이내면 '효과가 뚜렷하지 않음'.
+ */
+export interface AdjustedDelta {
+  adjusted_delta: number | null
+  adjusted_se: number | null
+  adjusted_n: number
+}
+
+/** 이 버전 미만 플레이북의 팁은 쓰지 않는다 — 단순 비교값·'~하라' 말투로 만든 옛 팁 (다음 수집에서 다시 생성) */
+export const PLAYBOOK_TIPS_MIN_VERSION = 2
+
+/** 보정 후 차이가 표준오차보다 큰가 */
+export function clearEffect(x: Partial<AdjustedDelta> | null | undefined): boolean {
+  return x?.adjusted_delta != null && x.adjusted_se != null && Math.abs(x.adjusted_delta) > x.adjusted_se
 }
 
 /** 메타 덱 snapshot_id — scripts/collect/playbook.js snapshotIdOf 와 같은 규칙 ('{patch}|{TIER}|{updated_at epoch ms}') */
@@ -118,20 +140,9 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
     }
   }
 
-  // 2) 캐리 아이템 vs BIS (일치 개수 · 그 BIS 세트 평균등수)
-  for (const c of pb.carry_bis || []) {
-    const u = mine.get(slug(c.key))
-    if (!u || !c.items.length) continue
-    const hit = c.items.filter((it) => u.items.includes(it)).length
-    const set = c.sets?.[0]
-    const setText = set ? ` · BIS 세트(${set.items.join('·')}) 평균 ${f2(set.avg)}등 · ${set.games}판` : ''
-    rows.push({
-      id: 'carry_bis',
-      severity: hit >= Math.min(3, c.items.length) ? 0 : 3 - hit,
-      text: `${c.name} 아이템이 이 덱 BIS ${c.items.length}개(${c.items.join('·')}) 중 ${hit}개 일치${setText}`,
-    })
-    break
-  }
+  // 2) 캐리 아이템 vs BIS 세트 (같은 판에 함께 쓴 3개 조합 하나만 기준 · 일치 수는 deckBisCheck 한 번 — 2026-10-30 2차 지시문 3)
+  const bis = deckBisCheck(m, pb)
+  if (bis) rows.push({ id: 'carry_bis', severity: bis.recommend ? bis.slots - bis.matched : 0, text: bisRowText(bis) })
   if (pb.scope !== 'full') return rows
 
   // 3) 최종 레벨·탈락 라운드 vs level_profile·elim_profile
@@ -156,13 +167,16 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
     })
   }
 
-  // 4) 평균등수를 깎는 대체 기물을 썼는지 (있을 때 − 없을 때 평균등수 > 0)
-  const bad = (pb.flex_units || []).filter((f) => f.diff > 0 && mine.has(slug(f.key))).sort((a, b) => b.diff - a.diff)[0]
+  // 4) 평균등수를 깎는 대체 기물을 썼는지 — 탈락 구간별 보정 차이가 표준오차보다 클 때만 (2026-10-30 2차 지시문 4).
+  //    단순 '있을 때 − 없을 때'는 오래 산 판일수록 기물이 많이 모이는 효과가 섞여 쓰지 않는다
+  const bad = (pb.flex_units || [])
+    .filter((f) => clearEffect(f) && (f.adjusted_delta as number) > 0 && mine.has(slug(f.key)))
+    .sort((a, b) => (b.adjusted_delta as number) - (a.adjusted_delta as number))[0]
   if (bad) {
     rows.push({
       id: 'flex_units',
       severity: 2,
-      text: `${bad.name}를 썼습니다 — 이 덱에서 ${bad.name}가 있을 때 평균 ${f2(bad.with_avg)}등(${bad.with_n}판) · 없을 때 ${f2(bad.without_avg)}등(${bad.without_n}판)`,
+      text: `${bad.name}를 썼습니다 — 이 덱에서 같은 스테이지까지 산 판끼리 비교하면 ${bad.name}가 있을 때 평균등수가 약 ${f2(bad.adjusted_delta)}등 높았습니다(${bad.adjusted_n}판)`,
     })
   }
 
@@ -179,6 +193,53 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
     })
   }
   return rows
+}
+
+/** BIS 세트 표본 하한 — 이보다 적으면 "BIS"라고 부르지 않고 "자주 쓰는 조합" (2026-10-30 2차 지시문 3-5) */
+export const BIS_SET_MIN_GAMES = 50
+const EMBLEM_SUFFIX = ' 상징'
+const isEmblem = (it: string) => it.endsWith(EMBLEM_SUFFIX)
+
+/**
+ * 캐리 아이템 대조 — 플레이북 carry_bis 의 첫 세트(같은 판에 함께 쓴 3개, 판수 많은 순) 하나만 기준으로 한다.
+ * 예전에는 요약은 기물×아이템 채용 상위 3개(0/3), 비교 섹션은 메타 덱 카드 아이템(1개 일치), 같은 줄의 'BIS 세트'는 또 다른 구성이었다.
+ * - 상징 아이템은 양쪽에서 뺀다 (상징 칸은 켜진 시너지를 받치는 '유지' 대상)
+ * - 아이템 변경 추천(recommend): 세트 50판 이상 + 세트 평균등수가 덱 평균보다 표준오차(2.29/√n) 이상 좋을 때만
+ */
+export function deckBisCheck(m: Pick<SlimMatchData, 'units'>, pb: Pick<DeckPlaybook, 'carry_bis' | 'avg'>): DeckBisCheck | null {
+  const mine = new Map<string, SlimMatchUnit>((m.units || []).map((u) => [slug(u.id), u]))
+  for (const c of pb.carry_bis || []) {
+    const u = mine.get(slug(c.key))
+    if (!u) continue
+    const set = c.sets?.[0]
+    const items = (set?.items ?? c.items ?? []).filter((it) => !isEmblem(it))
+    if (!items.length) continue
+    const held = (u.items || []).filter((it) => !isEmblem(it))
+    const games = set?.games ?? 0
+    const setAvg = set?.avg ?? null
+    const se = games > 0 ? PLACEMENT_SD / Math.sqrt(games) : Infinity
+    return {
+      unit: c.name,
+      label: games >= BIS_SET_MIN_GAMES ? 'BIS 세트' : '자주 쓰는 조합',
+      items,
+      matched: held.filter((it) => items.includes(it)).length,
+      slots: items.length,
+      emblems: (u.items || []).filter(isEmblem),
+      setAvg,
+      setGames: games,
+      deckAvg: pb.avg ?? null,
+      recommend: games >= BIS_SET_MIN_GAMES && setAvg != null && pb.avg != null && setAvg <= pb.avg - se,
+    }
+  }
+  return null
+}
+
+/** 비교 섹션 문장 — 일치 수는 deckBisCheck 값 그대로 */
+export function bisRowText(b: DeckBisCheck): string {
+  const stat = b.setGames ? ` · ${b.label} 평균 ${f2(b.setAvg)}등 · ${b.setGames}판${b.deckAvg != null ? ` (덱 평균 ${f2(b.deckAvg)}등)` : ''}` : ''
+  const emblem = b.emblems.length ? ` · ${b.emblems.join('·')}은 대조에서 제외` : ''
+  const note = b.recommend ? '' : ' — 덱 평균보다 뚜렷이 좋지 않아 아이템 변경 근거로 쓰지 않음'
+  return `${b.unit} 아이템이 이 덱 ${b.label} ${b.slots}개(${b.items.join('·')}) 중 ${b.matched}개 일치${stat}${emblem}${note}`
 }
 
 /**
@@ -210,10 +271,13 @@ function playbookNumbers(pb: DeckPlaybook): Set<string> {
  * 팁은 수집기(scripts/collect/playbook.js)가 플레이북 값으로 만든 문장이라 보통 모두 통과한다. 값이 바뀐 옛 팁을 거르는 안전장치다.
  */
 export function groundedTips(pb: DeckPlaybook): string[] {
+  // 생존 편향 보정 전에 만든 옛 팁(단순 비교값 · '~하라' 말투)은 쓰지 않는다 — 다음 수집에서 다시 생성된다 (2026-10-30 2차 지시문 4-5·6-4)
+  if ((pb.version ?? 1) < PLAYBOOK_TIPS_MIN_VERSION) return []
   const nums = playbookNumbers(pb)
   return (pb.tips || [])
     .map((t) => t.text)
     .filter((text) => typeof text === 'string' && text.trim())
+    .filter((text) => /세요[.!]?$/.test(text.trim()))
     .filter((text) => (text.match(/\d+(?:\.\d+)?/g) || []).every((x) => nums.has(String(Number(x))) || nums.has(x)))
 }
 
@@ -248,6 +312,10 @@ export function buildDeckComparison(
     rows,
     ...(similarity != null ? { similarity } : {}),
     coreUnits: (pb.core_units || []).filter((u) => u.usage_pct >= CORE_UNIT_USAGE_MIN).map((u) => u.name),
+    ...(() => {
+      const bis = deckBisCheck(m, pb)
+      return bis ? { bis } : {}
+    })(),
     tips: groundedTips(pb),
     externalLinks: (pb.external_links || []).filter((l) => /^https:\/\//.test(l.url)).map((l) => ({ source: l.source, url: l.url })),
   }

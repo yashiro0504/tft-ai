@@ -2,34 +2,21 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
-import { getDeckMetaInfo, getDeckViews, type DeckView } from '@/lib/decks'
+import { deckHeadline, deckSnapshotLabel, resolveDeckPage, type DeckPageData } from '@/lib/deckPage'
 import { SimpleHeader } from '@/app/components/SimpleHeader'
 import { SiteFooter } from '@/app/components/SiteFooter'
 import { ShareButton } from '@/app/components/ShareButton'
 import { DeckViewTracker } from '@/app/components/DeckViewTracker'
 import { SITE_URL } from '@/lib/site'
 import { entityHref } from '@/lib/entitySlug'
-import { getDeckById } from '@/lib/tftStats'
 import { TIER_FILTER_OPTIONS, type TierFilter } from '@/lib/statsShared'
+import type { MetaDeckRanking } from '@/lib/types'
 import '../../rank/rank.css'
 import '../deck.css'
 
 export const revalidate = 300
 
-/** 빌드 타임 덱 목록을 정적 파라미터로 사용 (데이터 갱신 시 재배포/ISR). */
-export function generateStaticParams() {
-  return getDeckViews().map((deck) => ({ id: deck.id }))
-}
-
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
-
-interface ResolvedDeckPage {
-  deck: DeckView
-  source: 'db' | 'json'
-  /** DB 덱일 때만 */
-  patch: string | null
-  tierMin: TierFilter | null
-}
 
 const PATCH_RE = /^\d{1,2}\.\d{1,2}$/
 
@@ -45,28 +32,15 @@ function parseDeckQuery(sp: Record<string, string | string[] | undefined>): { pa
 }
 
 /**
- * 덱 해석 (metadata 와 본문이 요청 안에서 같은 결과를 쓴다).
- * - ?patch=&tier= 가 있으면 DB(stat_comp) 덱 우선 — 메타 대시보드·엔티티 페이지의 DB 덱 링크
- * - 없으면 빌드 타임 JSON 덱 (기존 정적 덱 수치 유지)
- * - JSON 에 없는 id 는 DB 최신 패치 덱 (DB-only 덱이 404 가 되지 않게)
+ * 덱 해석 (metadata 와 본문이 요청 안에서 같은 결과를 쓴다) — lib/deckPage.
+ * 기본은 메타 랭킹과 같은 스냅샷 하나, 스냅샷에 없는 id 는 404 (래더 JSON 폴백 삭제 · 2026-10-30 2차 지시문 1).
  */
-const resolveDeck = cache(async (id: string, patch: string | null, tier: TierFilter | null): Promise<ResolvedDeckPage | null> => {
-  if (patch || tier) {
-    const db = await getDeckById(id, { patch, tier })
-    if (db) return { deck: db.deck, source: 'db', patch: db.patch, tierMin: db.tierMin }
-  }
-  const json = getDeckViews().find((deck) => deck.id === id)
-  if (json) return { deck: json, source: 'json', patch: null, tierMin: null }
-  const db = await getDeckById(id, { patch, tier })
-  return db ? { deck: db.deck, source: 'db', patch: db.patch, tierMin: db.tierMin } : null
-})
+const resolveDeck = cache((id: string, patch: string | null, tier: TierFilter | null) => resolveDeckPage(id, { patch, tier }))
 
-/** DB 덱은 해석된 패치·티어를 쿼리에 실어 공유해도 같은 덱이 열리게 한다 */
-function deckPath(id: string, r: ResolvedDeckPage): string {
-  return r.source === 'db' && r.patch && r.tierMin ? `/deck/${id}?patch=${r.patch}&tier=${r.tierMin}` : `/deck/${id}`
+/** 필터 덱은 해석된 패치·티어를 쿼리에 실어 공유해도 같은 덱이 열리게 한다 */
+function deckPath(id: string, r: DeckPageData): string {
+  return r.query ? `/deck/${id}?patch=${r.query.patch}&tier=${r.query.tier}` : `/deck/${id}`
 }
-
-const tierLabel = (t: TierFilter) => TIER_FILTER_OPTIONS.find((o) => o.id === t)?.label ?? t
 
 function pct(value: number | null | undefined) {
   return typeof value === 'number' ? `${Math.round(value * 100)}%` : '-'
@@ -91,11 +65,11 @@ export async function generateMetadata({
     return { title: '덱을 찾을 수 없습니다', robots: { index: false, follow: false } }
   }
   const { deck } = resolved
-  // 쿼리로 연 DB 덱은 그 패치·티어가 canonical (같은 id 의 JSON 덱과 수치가 다르다)
-  const canonical = `${SITE_URL}${q.patch || q.tier ? deckPath(id, resolved) : `/deck/${id}`}`
+  const canonical = `${SITE_URL}${deckPath(id, resolved)}`
 
-  const title = `${deck.name} 덱 — 평균 ${avg(deck.avgPlacement)}등 · TOP4 ${pct(deck.top4Rate)}`
-  const description = `TFT 시즌 18 ${deck.name} 덱. 평균 ${avg(deck.avgPlacement)}등, 순방률 ${pct(deck.top4Rate)}, 표본 ${deck.sampleSize.toLocaleString()}판. 유닛·아이템·시너지 구성을 확인하세요.`
+  // 본문·OG 이미지와 같은 스냅샷 값 (deckHeadline 하나로 만든다)
+  const title = `${deck.name} 덱 — ${deckHeadline(deck)}`
+  const description = `TFT ${deckSnapshotLabel(resolved)} ${deck.name} 덱. ${deckHeadline(deck)}, 표본 ${deck.sampleSize.toLocaleString()}판. 유닛·아이템·시너지 구성을 확인하세요.`
 
   return {
     title,
@@ -119,9 +93,6 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
   const resolved = await resolveDeck(id, q.patch, q.tier)
   if (!resolved) notFound()
   const { deck } = resolved
-  const fromDb = resolved.source === 'db'
-
-  const meta = getDeckMetaInfo()
   const tier = (deck.tier || 'C').toUpperCase()
   const flexCount = deck.units.filter((unit) => unit.flex).length
 
@@ -131,7 +102,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
     (unit) => typeof unit.index === 'number' && unit.index >= 0 && unit.index < boardSize
   )
   const useIndex = indexed.length >= 4
-  const cells: (DeckView['units'][number] | null)[] = Array.from({ length: boardSize }, () => null)
+  const cells: (MetaDeckRanking['units'][number] | null)[] = Array.from({ length: boardSize }, () => null)
 
   if (useIndex) {
     for (const unit of indexed) cells[unit.index as number] = unit
@@ -160,17 +131,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
               <h1>{deck.name}</h1>
             </div>
             <p className="rk-deck-meta">
-              {fromDb && resolved.patch && resolved.tierMin ? (
-                <>
-                  패치 {resolved.patch} · {tierLabel(resolved.tierMin)} 집계
-                  <span className="rk-deck-flex-badge" title="Supabase 래더 집계(stat_comp) 덱 — 하루 1회 갱신">DB 집계</span>
-                </>
-              ) : meta.patch && /^\d/.test(meta.patch) ? (
-                // 래더 JSON 의 'set18' 같은 세트 표기는 패치가 아니다 — 다른 화면과 같은 '패치 16.21' 형식만 (2026-10-30 지시문 5-1)
-                `패치 ${meta.patch}`
-              ) : (
-                '패치 정보 없음'
-              )}
+              {deckSnapshotLabel(resolved)}
               <span className="rk-sep">/</span>
               평균 <b>{avg(deck.avgPlacement)}</b>등
               <span className="rk-sep">/</span>
@@ -195,7 +156,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
               <div className="rk-deck-board">
                 {cells.map((unit, index) => (
                   <div
-                    key={unit ? `${unit.lolchessKey}-${index}` : `empty-${index}`}
+                    key={unit ? `${unit.key}-${index}` : `empty-${index}`}
                     className={`rk-deck-cell${unit ? ` c${unit.cost ?? 1}${unit.flex ? ' is-flex' : ''}` : ' empty'}`}
                     title={unit?.flex ? '플렉스(선택) — 시너지 최대 단계 초과' : undefined}
                   >
@@ -213,7 +174,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
               <div className="rk-deck-comp">
                 {deck.units.map((unit) => (
                   <div
-                    key={`${unit.lolchessKey}-${unit.index ?? 'x'}`}
+                    key={`${unit.key}-${unit.index ?? 'x'}`}
                     className={`rk-deck-comp-unit${unit.flex ? ' is-flex' : ''}`}
                   >
                     <div className={`rk-deck-comp-icon c${unit.cost ?? 1}`}>
@@ -234,7 +195,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
             <div className="rk-deck-units">
               {deck.units.map((unit) => (
                 <div
-                  key={`${unit.lolchessKey}-${unit.index ?? 'x'}`}
+                  key={`${unit.key}-${unit.index ?? 'x'}`}
                   className={`rk-deck-unit${unit.flex ? ' is-flex' : ''}`}
                 >
                   <div className={`rk-deck-unit-icon c${unit.cost ?? 1}`}>
@@ -244,7 +205,7 @@ export default async function DeckPage({ params, searchParams }: { params: Promi
                   </div>
                   <div className="rk-deck-unit-body">
                     <div className="rk-deck-unit-name">
-                      <Link href={entityHref('champion', unit.matchedKey ?? unit.lolchessKey)} className="rk-deck-unit-link">
+                      <Link href={entityHref('champion', unit.key)} className="rk-deck-unit-link">
                         <b>{unit.name}</b>
                       </Link>
                       <span>{unit.cost != null ? `${unit.cost}코` : '코스트 ?'}</span>

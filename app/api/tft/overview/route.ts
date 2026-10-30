@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateMetaCoachFeedback } from '@/lib/llm'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
-import { REPORT_CACHE_VERSION } from '@/lib/llm'
-import { revalidateReport } from '@/lib/reportRevalidate'
+import { REPORT_CACHE_VERSION, REPORT_GENERATOR_VERSION } from '@/lib/llm'
+import { prepareCachedReport } from '@/lib/reportRevalidate'
+import { isOutdatedReport } from '@/lib/matchAnalysis'
 import { SCORING_VERSION } from '@/lib/axisConfig'
 import { quotaCheck, quotaStatus, chargeQuotaOnce, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
 import { dailyQuotaLimit } from '@/lib/quota'
@@ -68,9 +69,12 @@ export async function POST(req: NextRequest) {
     const tier = await getUserPlan(userId)
 
     const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${tier}:${REPORT_CACHE_VERSION}:${SCORING_VERSION}:${ids}`
+    let regenerated = false
     if (!nocache) {
       const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
-      if (cached) {
+      // 다시 분석은 캐시 리포트가 오래된 버전일 때만 새로 만든다 (2026-10-30 2차 지시문 5-2)
+      if (cached && raw.regenerate === true && isOutdatedReport(cached.value.feedback)) regenerated = true
+      else if (cached) {
         incrMetric('llm.cache_hit.overview')
         logEvent('info', 'api_overview', {
           ms: elapsedMs(startedAt),
@@ -82,8 +86,9 @@ export async function POST(req: NextRequest) {
         // 캐시 적중은 횟수 차감 없음
         const quota = quotaStatus(req)
         // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
-        const value = cached.value.feedback ? { ...cached.value, feedback: revalidateReport(cached.value.feedback, matches) } : cached.value
-        return NextResponse.json({ ...value, cached: true, ...(quota ? { quota } : {}) })
+        // 1판 리포트는 비교 섹션이 없으면 코드로 붙인다 (2026-10-30 2차 지시문 5-1)
+        const value = cached.value.feedback ? { ...cached.value, feedback: await prepareCachedReport(cached.value.feedback, matches) } : cached.value
+        return NextResponse.json({ ...value, cached: true, outdated: isOutdatedReport(value.feedback), ...(quota ? { quota } : {}) })
       }
     }
 
@@ -96,11 +101,12 @@ export async function POST(req: NextRequest) {
       mode,
       matchCount: matches.length,
       feedback,
+      outdated: false,
     }
 
     if (!nocache) await cacheSet(cacheKey, response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.OVERVIEW)
     // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (AI 미사용 폴백·실패는 차감 없음, 같은 요청은 멱등 키로 한 번)
-    const quota = feedback.isFallback ? quotaStatus(req) : await chargeQuotaOnce(req, cacheKey)
+    const quota = feedback.isFallback ? quotaStatus(req) : await chargeQuotaOnce(req, regenerated ? `${cacheKey}:gen:${REPORT_GENERATOR_VERSION}` : cacheKey)
     logEvent('info', 'api_overview', {
       ms: elapsedMs(startedAt),
       cacheSource: nocache ? 'bypass' : 'miss',

@@ -20,14 +20,14 @@ import { buildBoardTable, removalLosses, unitHasTrait } from './boardTable'
  * - 한계: 의미 오류를 "줄이는" 평가 지표다. 모든 오류를 보장하지 않는다.
  */
 
-interface Span {
+export interface Span {
   start: number
   end: number
   name: string
 }
 
 /** 텍스트에서 이름 위치 (긴 이름 우선, 겹치지 않게) */
-function findNames(text: string, names: string[]): Span[] {
+export function findNames(text: string, names: string[]): Span[] {
   const sorted = [...new Set(names.filter((n) => n && n.length >= 2))].sort((a, b) => b.length - a.length)
   const taken: boolean[] = new Array(text.length).fill(false)
   const spans: Span[] = []
@@ -51,7 +51,7 @@ function findNames(text: string, names: string[]): Span[] {
 }
 
 /** 문장 분리 (마침표·물음표·느낌표·줄바꿈). 숫자 소수점은 자르지 않는다 */
-function sentences(text: string): string[] {
+export function sentences(text: string): string[] {
   return text
     // 'B.F. 대검' 의 마침표는 문장 끝이 아니다 (대문자 한 글자 + 마침표)
     .split(/(?<=[^\dA-Z][.!?。])\s+|\n+/)
@@ -60,7 +60,7 @@ function sentences(text: string): string[] {
 }
 
 /** 상대·로비 비교 문장 (사용자 보드 사실이 아님). "2등은 …, 4등도 …" 처럼 다른 순위가 주어인 문장 포함 */
-const OPPONENT_RE = /상대|경쟁자|로비\s*[1-8]등|1등\s*(?:플레이어|유저)|다른\s*플레이어|상위\s*(?:보드|유저|플레이어)|[1-8]등(?:은|는|도|이|의)\s/
+export const OPPONENT_RE = /상대|경쟁자|로비\s*[1-8]등|1등\s*(?:플레이어|유저)|다른\s*플레이어|상위\s*(?:보드|유저|플레이어)|[1-8]등(?:은|는|도|이|의)\s/
 
 /** 처방·목표·가정 문장 (최종 보드에 대한 사실 주장이 아님) */
 const PRESCRIPTIVE_RE = /세요|십시오|하라|해야|했어야|줬어야|합시다|목표|금지|권장|노리세요|만들어야|다면|라면|이면\s|일\s*때|할\s*때|\d-\d\s*까지|(?:확보|달성|완성)\s*[.!]?$/
@@ -95,6 +95,8 @@ const ALL_ITEM_NAMES = new Set(
     .filter((n) => n && n.length >= 3 && !COMPONENTS.has(n))
 )
 const ALL_NAMES = [...ALL_CHAMP_NAMES, ...ALL_ITEM_NAMES]
+/** 기물이 드는 완성 아이템 이름 (lib/adviceCheck 문장 검사용) */
+export const HELD_ITEM_NAMES = [...ALL_ITEM_NAMES]
 
 /**
  * 내 보드가 아닌 대상(메타 덱·통계·로비 상대·빈집·가이드·BIS·계열)을 밝힌 문장, 또는 조합·교체·조건("~가 잡히면") 같은 가정·제안.
@@ -267,13 +269,21 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
 /**
  * 리포트 검증기 버전 — 검증 규칙을 바꾸면 올린다. 캐시된 리포트는 보여 줄 때 이 버전과 다르면 다시 검사한다 (lib/reportRevalidate).
  */
-export const REVALIDATOR_VERSION = '2026-10-30.1'
+export const REVALIDATOR_VERSION = '2026-10-30.2'
 
 /** "(핵심) 시너지와 무관" — 기물 뒤(세트처럼 핵심 시너지와 무관한) 또는 앞(시너지와 무관한 1성 기물 세트) */
 const UNRELATED_AFTER_RE = /^[^.!?\n]{0,12}?시너지(?:와|과|랑)\s*(?:무관|상관\s*없|관계\s*없|관련\s*없)/
 const UNRELATED_BEFORE_RE = /시너지(?:와|과|랑)\s*(?:무관|상관\s*없|관계\s*없|관련\s*없)한[^.!?\n]{0,15}$/
-/** 기물을 빼는 조언 ("X 대신", "X를 빼고", "X는 빼서", "X 자리에", "X를 교체") */
-const REMOVE_AFTER_RE = /^\s*(?:(?:을|를|은|는|도)\s*)?(?:대신|빼|빼고|빼서|빼면|팔|팔고|교체|바꾸|바꿔|내리|내려|자리에|자리를)/
+/**
+ * 기물을 빼는 조언 ("X 대신", "X를 빼고", "X는 빼서", "X 자리에", "X를 교체", "X 1성 자리를 … 바꿔")
+ * 2026-10-30 2차 지시문 2-4: "말파이트 1성 자리를 검은 가시 6명을 받치는 기물로 바꿔"는 기물 뒤에 "1성"이 끼어 놓쳤다.
+ */
+export const REMOVE_AFTER_RE =
+  /^\s*(?:[1-3]\s*성\s*)?(?:(?:을|를|은|는|도|의)\s*)?(?:대신|빼|빼고|빼서|빼면|팔|팔고|교체|바꾸|바꿔|바꿀|내리|내려|내리고|자리에|자리를|자리는|자리)/
+/** 기물을 그대로 두라는 조언 ("워윅·렉사이·다이애나·말파이트는 유지한 채", "X는 건드리지 않고") */
+const KEEP_AFTER_RE = /^[^.!?\n,]{0,6}?(?:은|는|을|를|도)?\s*(?:(?:모두|그대로)\s*)?(?:유지|건드리지|남겨|남기|그대로\s*두)/
+/** 목표 단계 동사 ("검은 가시 2단계를 노린다") */
+const TIER_GOAL_RE = /^\s*(?:을|를|로|까지)?\s*(?:노리|노려|노릴|올리|올려|올릴|만들|열|켜|달성|목표)/
 /** 시너지를 올리거나 지키는 목적 */
 const RAISE_RE = /올리|올려|올릴|받치|받쳐|받칠|살리|살려|유지|채우|채워|켜|늘리|늘려/
 /** 핵심 기물을 빼라는 조언의 근거 (그 기물이 없을 때 평균등수 등) */
@@ -309,11 +319,41 @@ export function validateTraitRelations(
     seen.add(k)
     errors.push({ type: 'trait_relation', text, expected, actual })
   }
+  // 리포트 내부 일관성 (2026-10-30 2차 지시문 2-3): 같은 기물을 한 곳에서는 유지, 다른 곳에서는 교체하라고 하면 교체 문장이 실패
+  const kept = new Set<string>()
+  const replaced: { unit: string; text: string }[] = []
   for (const text of texts) {
     for (const s of sentences(text)) {
       if (OPPONENT_RE.test(s)) continue
       const traitSpans = findNames(s, TRAIT_NAMES)
-      for (const u of findNames(s, unitNames)) {
+      // 목표 단계: 이미 그 단계 이상이면 목표가 아니다 ("검은 가시 2단계를 노린다" — 이미 2단계)
+      if (table) {
+        for (const t of traitSpans) {
+          const m = s.slice(t.end).match(/^\s*\(?\s*([1-9])\s*단계/)
+          if (!m || !TIER_GOAL_RE.test(s.slice(t.end + m[0].length))) continue
+          const cur = table.traits.find((x) => x.name === t.name)
+          if (!cur) continue
+          checked++
+          if (cur.stage >= Number(m[1])) fail(s, `${t.name}: 이미 ${cur.stage}단계(${cur.count}명)`, `${t.name} ${m[1]}단계를 목표로`)
+        }
+      }
+      const unitSpans = findNames(s, unitNames)
+      for (const u of unitSpans) {
+        if (!boardNames.has(u.name)) continue
+        const after = s.slice(u.end)
+        if (REMOVE_AFTER_RE.test(after)) replaced.push({ unit: u.name, text: s })
+        else {
+          // "A·B·C는 유지" — 목록 끝 기물 뒤의 '유지'가 목록 전체에 걸린다
+          let j = unitSpans.indexOf(u)
+          let end = u.end
+          while (j + 1 < unitSpans.length && LIST_SEP_RE.test(s.slice(end, unitSpans[j + 1].start))) {
+            j++
+            end = unitSpans[j].end
+          }
+          if (KEEP_AFTER_RE.test(s.slice(end))) kept.add(u.name)
+        }
+      }
+      for (const u of unitSpans) {
         const after = s.slice(u.end)
         const before = s.slice(0, u.start)
         const losses = table ? removalLosses(table, u.name) : []
@@ -349,9 +389,10 @@ export function validateTraitRelations(
           }
         }
 
-        // 4) 빼기·교체 조언
+        // 4) 빼기·교체 조언 — 보드 기물을 빼는 조언은 모두 관계 검사 1건으로 센다 (교체 조언이 있는데 '관계 0개 검사'가 나오지 않게)
         if (!REMOVE_AFTER_RE.test(after)) continue
         if (table && boardNames.has(u.name)) {
+          checked++
           const raised = RAISE_RE.test(after)
           const targets = traitSpans.filter((t) => t.start >= u.end).map((t) => t.name)
           if (raised && targets.length) {
@@ -370,6 +411,11 @@ export function validateTraitRelations(
         }
       }
     }
+  }
+  for (const r of replaced) {
+    if (!kept.has(r.unit)) continue
+    checked++
+    fail(r.text, `${r.unit}: 같은 리포트에서 유지하라고 함`, `${r.unit} 교체`)
   }
   return { errors, checked }
 }
@@ -558,7 +604,9 @@ export function repairEntityErrors<T>(
   for (const e of errors) {
     const current = bySentence.has(e.text) ? bySentence.get(e.text)! : e.text
     const fixable =
-      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict', 'trait_relation'].includes(e.type) && !e.expected.includes('/') && current.includes(e.actual)
+      !['item_owner', 'unit_absent', 'item_absent', 'advice_conflict', 'trait_relation', 'level_mismatch'].includes(e.type) &&
+      (!e.expected.includes('/') || e.type === 'bis_count') &&
+      current.includes(e.actual)
     bySentence.set(e.text, fixable ? current.split(e.actual).join(e.expected) : '')
   }
   const touched = new Set<string>()
@@ -749,4 +797,33 @@ export function fixDrillTarget(drill: string, m: SlimMatchData, bodyTexts: strin
     .find((n) => n > m.level && n <= 10)
   if (bodyLevel) return `다음 3판은 최종 레벨 ${bodyLevel} 이상으로 마무리하기 (이번 판 최종 Lv.${m.level})`
   return fallback === drill ? null : fallback
+}
+
+/**
+ * 코드로 만든 숫자 목표 (2026-10-30 2차 지시문 6-2) — "다음 3판 목표"는 최종 보드로 잴 수 있는 숫자 기준이어야 한다.
+ * LLM 목표가 숫자 없이 오거나("시너지 설계 하나만 의식하세요") 검증에서 숫자 문장이 지워지면 이 문장으로 바꾼다.
+ * - 리롤 판 핵심 기물이 3성이 아니면 그 기물 3성 · 시너지 축이면 단계 합 +2 · 템포 축(표준형)이면 최종 레벨 +1 · 그 밖은 2성 이상 기물 +1
+ * 여러 판이면 판별 값의 중앙값 기준.
+ */
+export function numericDrill(matches: SlimMatchData[], focus?: string): string {
+  const ms = matches.filter((m) => m?.units?.length)
+  if (!ms.length) return '다음 3판은 최종 보드 2성 이상 기물 5개 이상으로 마무리하기'
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)]
+  const scope = ms.length === 1 ? '이번 판' : `최근 ${ms.length}판 중앙값`
+  if (ms.length === 1) {
+    const deck = detectDeckType(ms[0])
+    if (deck.type === 'reroll' && deck.core && deck.core.tier < 3) {
+      return `다음 3판은 리롤 판에서 ${deck.core.name}(${deck.core.cost}코) 3성까지 완성하고 끝내기 (이번 판 ${deck.core.tier}성)`
+    }
+  }
+  if (focus === 'synergy') {
+    const sum = median(ms.map((m) => buildBoardTable(m).traits.reduce((s, t) => s + t.stage, 0)))
+    return `다음 3판은 최종 보드 시너지 단계 합 ${sum + 2} 이상으로 마무리하기 (${scope} ${sum})`
+  }
+  if (focus === 'tempo' && ms.every((m) => detectDeckType(m).type !== 'reroll')) {
+    const lv = median(ms.map((m) => m.level))
+    if (lv < 10) return `다음 3판은 최종 레벨 ${lv + 1} 이상으로 마무리하기 (${scope} Lv.${lv})`
+  }
+  const two = median(ms.map((m) => m.units.filter((u) => (u.tier || 1) >= 2).length))
+  return `다음 3판은 최종 보드 2성 이상 기물 ${two + 1}개 이상으로 마무리하기 (${scope} ${two}개)`
 }

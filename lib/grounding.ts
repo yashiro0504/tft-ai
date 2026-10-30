@@ -292,10 +292,21 @@ const AXIS_TERMS: Record<string, string> = {
  * 한글 이름이 괄호로 붙어 있으면 괄호째 정리한다.
  */
 export function fixEnglishTerms(text: string): string {
-  return text.replace(/\b(economy|itemization|tempo|completion|synergy|contest)\b(?:\s*\(([^)]{1,12})\))?/gi, (_, key: string, paren?: string) => {
+  return fixTermWording(text).replace(/\b(economy|itemization|tempo|completion|synergy|contest)\b(?:\s*\(([^)]{1,12})\))?/gi, (_, key: string, paren?: string) => {
     const label = AXIS_TERMS[key.toLowerCase()]
     return paren ? paren : label
   })
+}
+
+/**
+ * 표기 교정 (2026-10-30 2차 지시문 5-4·6-5) — 캐시 리포트·옛 비교표 문장에도 적용된다.
+ * - "1코어 리롤" → "1코 리롤" (코스트 표기)
+ * - "TOP4 최종 Lv.8 비율 49%" → "TOP4의 49%가 최종 Lv.8 이상" (Lv.8 만인지 이상인지 알 수 없던 문구)
+ */
+export function fixTermWording(text: string): string {
+  return text
+    .replace(/([1-5])\s*코어\s*리롤/g, '$1코 리롤')
+    .replace(/TOP\s*4\s*최종\s*Lv\.?\s*(\d{1,2})\s*비율\s*(\d{1,3})\s*%/g, 'TOP4의 $2%가 최종 Lv.$1 이상')
 }
 
 /**

@@ -4,7 +4,7 @@ import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import {
   ANALYSIS_STAGE_MESSAGE,
   MatchAnalysisError,
-  analysisCacheKey,
+  analysisChargeKey,
   runMatchAnalysis,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     puuid: typeof raw.puuid === 'string' ? raw.puuid.trim() : '',
     isDemo: raw.isDemo === true,
     mode: raw.mode === 'multi' ? 'multi' : 'single',
+    regenerate: raw.regenerate === true,
   }
 
   if (!params.puuid) {
@@ -178,7 +179,7 @@ export async function POST(req: NextRequest) {
 
           // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (캐시 적중·AI 미사용 폴백·실패·끊김은 차감 없음, 같은 경기는 멱등 키로 한 번)
           const quota =
-            !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisCacheKey(params)) : quotaStatus(req)
+            !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisChargeKey(params, outcome.regenerated)) : quotaStatus(req)
           resultSent = true
           send('result', { ...outcome.response, ...(quota ? { quota } : {}) })
           logEvent('info', 'api_match_stream', {

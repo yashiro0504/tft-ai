@@ -92,3 +92,14 @@ jobs:
           else
             npm run collect:db
           fi
+
+      # 스냅샷(덱 클러스터)을 다시 만든 직후 메타 응답을 미리 채운다 — 서버가 식은 첫 방문자가 메타 API 를 기다리지 않게 (2026-10-30 2차 지시문 5-3).
+      # 엣지 캐시(stale-while-revalidate)가 이 요청으로 새 응답을 받아 둔다. 실패해도 수집 결과에는 영향 없음.
+      - name: Warm meta cache
+        if: ${{ success() && github.event.inputs.dry_run != 'true' }}
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://tftlab.kr' }}
+        run: |
+          for path in "/api/tft/meta?view=decks" "/meta"; do
+            curl -sS -o /dev/null -w "warm $path %{http_code} %{time_total}s\n" "$SITE_URL$path" || true
+          done

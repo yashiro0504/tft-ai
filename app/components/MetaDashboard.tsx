@@ -15,6 +15,7 @@ import type {
   MetaTraitRanking,
   TftMetaResponse,
 } from '@/lib/types'
+import { fetchMetaDecks } from '@/lib/metaClient'
 import {
   BIS_RELIABLE_SAMPLE,
   DAYS_FILTER_OPTIONS,
@@ -313,31 +314,21 @@ export function MetaDashboard({
   }
 
   /**
-   * 첫 화면 (initialData 없음 — 홈 메타 탭): 덱 요약(view=summary)으로 목록을 먼저 그리고, 덱 상세(아이템)는 view=decks 로 이어 받는다.
-   * 전체 응답(약 1.07MB)을 기다리는 동안 "전체 0 · 0개 · 덱을 선택하세요"가 보이던 문제 (2026-10-30 지시문 3).
+   * 첫 화면 (initialData 없음 — 홈 메타 탭): 덱 목록·상세를 view=decks 한 번으로 받는다 (홈 추천 덱과 같은 요청을 나눠 쓴다 — lib/metaClient).
+   * 예전에는 view=summary(덱 100개) → view=decks(덱 100개 다시) 두 번에, 추천 덱이 view=decks 를 또 불러 같은 덱을 세 번 받았다 (2026-10-30 2차 지시문 5-3).
+   * 기물·아이템·조합 탭은 열 때 전체 응답을 받는다. 그동안은 숫자 0 대신 스켈레톤.
    */
   const loadInitial = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/tft/meta?view=summary')
-      const json: TftMetaResponse = await res.json()
-      if (!res.ok || !json.success) throw new Error(json.error || '메타 데이터를 불러오지 못했습니다.')
+      const json = await fetchMetaDecks()
+      // 그사이 전체 응답을 받았으면 그대로 둔다
       setData((prev) => prev ?? json)
     } catch (e) {
       setError(e instanceof Error ? e.message : '네트워크 오류')
+    } finally {
       setLoading(false)
-      return
-    }
-    setLoading(false)
-    try {
-      const res = await fetch('/api/tft/meta?view=decks')
-      const json: TftMetaResponse = await res.json()
-      if (!res.ok || !json.success) return
-      // 그사이 전체 응답을 받았으면 그대로 둔다
-      setData((prev) => (prev?.view === 'summary' ? { ...prev, decks: json.decks, view: 'decks' } : prev))
-    } catch {
-      /* 상세는 다음 탭 전환·새로고침 때 다시 받는다 */
     }
   }
 

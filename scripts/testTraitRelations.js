@@ -129,10 +129,11 @@ console.log('1-3. 캐시된 리포트 다시 검사')
 
   const src = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
   const ma = src('lib/matchAnalysis.ts')
-  check('경기 분석 캐시 적중에 다시 검사 연결 (LLM 호출 없음)', /getCachedMatchAnalysis[\s\S]*?revalidateReport\(hit\.value\.feedback/.test(ma))
+  // 2026-10-30 2차 지시문 5-1: 캐시 적중은 비교 섹션을 붙이고(prepareCachedReport) 다시 검사한다
+  check('경기 분석 캐시 적중에 다시 검사 연결 (LLM 호출 없음)', /getCachedMatchAnalysis[\s\S]*?prepareCachedReport\(hit\.value\.feedback/.test(ma) && /revalidateReport\(out, matches\)/.test(src('lib/reportRevalidate.ts')))
   check('캐시 키는 프롬프트 버전이 아니라 REPORT_CACHE_VERSION (프롬프트를 바꿔도 이미 만든 리포트·차감이 그대로)', /REPORT_VERSION = `\$\{REPORT_CACHE_VERSION\}:\$\{SCORING_VERSION\}`/.test(ma))
   const ov = src('app/api/tft/overview/route.ts')
-  check('종합 분석 캐시 적중에도 다시 검사 연결 · 차감 없음', /revalidateReport\(cached\.value\.feedback, matches\)/.test(ov) && /캐시 적중은 횟수 차감 없음/.test(ov))
+  check('종합 분석 캐시 적중에도 다시 검사 연결 · 차감 없음', /prepareCachedReport\(cached\.value\.feedback, matches\)/.test(ov) && /캐시 적중은 횟수 차감 없음/.test(ov))
   check('영어 용어 수리: 괄호 한글 이름이 있으면 그것으로', fixEnglishTerms('economy(경제 운영) 점수가 낮습니다') === '경제 운영 점수가 낮습니다')
 }
 
@@ -169,13 +170,14 @@ console.log('2. 가장 가까운 덱 (AI 분석용)')
     carry_bis: [], three_star: null, flex_units: null, traits: null,
     level_profile: { top4_n: 600, top4_level_pct: { 6: 2, 7: 30, 8: 49, 9: 17, 10: 2 }, deck_type: 'reroll', reroll_costs: [3], top4_lv8plus_pct: 68 },
     elim_profile: null, contested: null, augments: null,
-    tips: [{ text: '마스터 이 ★3 달성 판 TOP4 80%', evidence: [] }, { text: '근거 없는 팁 99%', evidence: [] }],
+    tips: [{ text: '마스터 이 ★3 달성 판 TOP4 80%이니 3성을 우선하세요', evidence: [] }, { text: '근거 없는 팁 99%이니 따르세요', evidence: [] }],
     external_links: [],
+    version: 2,
   }
   const cmp = buildDeckComparison(m102, { name: yi.name, sampleSize: 1331 }, { playbook: pb }, 0, near.similarity)
   check('비교 항목 1개 이상 · 유사도 표시', cmp.items.length >= 1 && cmp.similarity === near.similarity && !cmp.skipped, JSON.stringify(cmp))
   check('핵심 기물 = 등장률 80% 이상만', JSON.stringify(cmp.coreUnits) === JSON.stringify(['마스터 이', '니달리']), JSON.stringify(cmp.coreUnits))
-  check('팁은 숫자가 플레이북 값에 있는 것만', JSON.stringify(groundedTips(pb)) === JSON.stringify(['마스터 이 ★3 달성 판 TOP4 80%']), JSON.stringify(groundedTips(pb)))
+  check('팁은 숫자가 플레이북 값에 있는 것만', JSON.stringify(groundedTips(pb)) === JSON.stringify(['마스터 이 ★3 달성 판 TOP4 80%이니 3성을 우선하세요']), JSON.stringify(groundedTips(pb)))
 
   console.log('4. 레벨 문구')
   check('구간 표기: Lv.7 이하 32% · Lv.8 49% · Lv.9+ 19%', levelBands(pb.level_profile.top4_level_pct) === 'Lv.7 이하 32% · Lv.8 49% · Lv.9+ 19%', levelBands(pb.level_profile.top4_level_pct))

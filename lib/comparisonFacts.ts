@@ -11,7 +11,7 @@ import { getChampionCost } from './constants'
 import { boardPatchChanges, patchAt, type PatchNote } from './patchNotes'
 import { topPlayerMeta, topPlayerStats, type TopPlayerDeckStats } from './topPlayers'
 export { mostSimilarOpponent, SIMILAR_OPPONENT_MIN, SIMILAR_OPPONENT_MIN_SHARED, type SimilarOpponent } from './similarOpponent'
-import type { DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
+import type { DeckBisCheck, DeckGuide, LobbyParticipant, PatchBasis, SlimMatchData, SlimMatchTrait, SlimMatchUnit } from './types'
 
 /**
  * [비교 사실] 블록 — 모델이 계산하지 않아도 되는 비교 수치를 코드가 만든다 (AI-EVAL A2).
@@ -663,8 +663,10 @@ export function bisMatch(units: SlimMatchUnit[], bis: Map<string, string[]>): Bi
   let carryTier = 0
   for (const u of units) {
     const list = bis.get(entitySlug('champion', u.id))
-    if (!list || !u.items?.length) continue
-    const items = u.items.map((name) => ({ name, ok: list.includes(name) }))
+    // 상징은 대조에서 뺀다 — 켜진 시너지를 받치는 칸이라 아이템 일치 대상이 아니다 (2026-10-30 2차 지시문 3-4)
+    const held = (u.items || []).filter((name) => !name.endsWith(' 상징'))
+    if (!list || !held.length) continue
+    const items = held.map((name) => ({ name, ok: list.includes(name) }))
     const hit = items.filter((x) => x.ok).length
     matched += hit
     slots += items.length
@@ -684,7 +686,18 @@ function bisLine(units: SlimMatchUnit[], bis: Map<string, string[]>, scope: stri
   const carry = withCarry && res.carry
     ? `${res.carry.name} ${res.carry.matched}/${res.carry.items.length} (${res.carry.items.map((x) => `${x.name} ${x.ok ? '✓' : '✗'}`).join(', ')}) · `
     : ''
-  return `- BIS 일치율: ${carry}${scope} ${res.matched}/${res.slots} (${pct}%) — BIS 통계가 있는 기물의 아이템 기준, 기물별 채용 상위 3개(표본 ${BIS_MIN_SAMPLE}판 이상)`
+  // 'BIS'는 덱 플레이북의 BIS 세트(같은 판에 함께 쓴 3개)만 가리킨다 — 기물별 채용 상위 아이템은 이름을 따로 쓴다 (2026-10-30 2차 지시문 3-1)
+  return `- 채용 상위 아이템 일치: ${carry}${scope} ${res.matched}/${res.slots} (${pct}%) — 기물별 채용 상위 3개(표본 ${BIS_MIN_SAMPLE}판 이상, 상징 제외) 기준 · BIS 세트 아님`
+}
+
+/** 덱 플레이북 BIS 세트 대조 줄 — 비교 섹션(deckComparison.bis)과 같은 값 (요약·개선 포인트가 다른 일치 수를 쓰지 않게) */
+function bisSetLine(b: DeckBisCheck): string {
+  const emblem = b.emblems.length ? ` · ${b.emblems.join('·')}은 대조에서 제외(켜진 시너지를 받치는 칸)` : ''
+  const stat = b.setGames ? ` · ${b.label} 평균 ${b.setAvg?.toFixed(2) ?? '-'}등 · ${b.setGames}판${b.deckAvg != null ? ` · 덱 평균 ${b.deckAvg.toFixed(2)}등` : ''}` : ''
+  const rule = b.recommend
+    ? ''
+    : ` — 이 조합은 덱 평균보다 뚜렷이 좋지 않다(표본 50판 미만이거나 차이가 표준오차 이내): 아이템 변경을 개선 포인트로 권하지 마라`
+  return `- BIS 일치: ${b.unit} ${b.matched}/${b.slots} — 이 덱 ${b.label}(${b.items.join('·')}) 기준${stat}${emblem}${rule}`
 }
 
 function multiLines(matches: SlimMatchData[]): string[] {
@@ -704,11 +717,14 @@ export function buildComparisonFacts({
   mode,
   combos,
   decks,
+  bis: bisSet,
 }: {
   matches: SlimMatchData[]
   mode: 'single' | 'multi'
   combos: ComboFact[]
   decks: DeckFact[]
+  /** 덱 플레이북 BIS 세트 대조 (single) — 있으면 채용 상위 아이템 줄 대신 이 값 하나만 쓴다 */
+  bis?: DeckBisCheck | null
 }): string {
   if (!matches.length) return ''
   const bis = bisBySlug(combos)
@@ -728,7 +744,7 @@ export function buildComparisonFacts({
     lines.push(...openDeckLines(m, decks))
     const pl = patchLine(m)
     if (pl) lines.push(pl)
-    const bl = bisLine(m.units, bis, '보드 전체', true)
+    const bl = bisSet ? bisSetLine(bisSet) : bisLine(m.units, bis, '보드 전체', true)
     if (bl) lines.push(bl)
   } else {
     // 강의 계획(buildCoachingPlan)·점수(computeScoreBreakdown)와 같은 표본 — 초반 종료 판 제외 — 으로

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import {
   MatchAnalysisError,
-  analysisCacheKey,
+  analysisChargeKey,
   runMatchAnalysis,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     const outcome = await runMatchAnalysis(params)
     // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (캐시 적중·AI 미사용 폴백·실패는 차감 없음, 같은 경기는 멱등 키로 한 번)
     const quota =
-      !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisCacheKey(params)) : quotaStatus(req)
+      !outcome.cached && !outcome.response.feedback?.isFallback ? await chargeQuotaOnce(req, analysisChargeKey(params, outcome.regenerated)) : quotaStatus(req)
 
     logEvent('info', 'api_match', {
       ms: elapsedMs(startedAt),
