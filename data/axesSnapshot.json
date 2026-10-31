@@ -1,6 +1,6 @@
 {
   "scoringVersion": "v14",
-  "generatedAt": "2026-10-30T01:27:04.462Z",
+  "generatedAt": "2026-10-31T01:14:25.516Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -23,10 +23,10 @@
       }
     },
     "Seed01 최근 5경기": {
-      "focus": "economy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 82,
+        "economy": 86,
         "itemization": 96,
         "tempo": 91,
         "completion": 83,
@@ -66,7 +66,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 95,
+        "economy": 96,
         "itemization": 96,
         "tempo": 97,
         "completion": 90,
@@ -103,10 +103,10 @@
       }
     },
     "Seed01 win 1등 7-1": {
-      "focus": "economy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 80,
+        "economy": 99,
         "itemization": 100,
         "tempo": 100,
         "completion": 85,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 85,
         "itemization": 100,
         "tempo": 73,
         "completion": 92,
@@ -206,7 +206,7 @@
       "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 78,
+        "economy": 76,
         "itemization": 70,
         "tempo": 68,
         "completion": 78,
