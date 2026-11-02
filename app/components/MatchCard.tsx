@@ -8,7 +8,7 @@ import type { SlimMatchData, SlimMatchUnit, LobbyParticipant, MetaCoachFeedback,
 import { FeedbackReport } from './FeedbackReport'
 import { TimeAgo } from './TimeAgo'
 import { track } from '@/lib/analytics'
-import { AnalysisGateError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
+import { AnalysisGateError, AnalysisQuotaError, AnalysisStreamUnavailableError, analyzeMatchJson, analyzeMatchStream } from '@/lib/analysisStream'
 import { TurnstileWidget } from './TurnstileWidget'
 import { useQuota } from '@/lib/useQuota'
 import { LimitModal } from './LimitModal'
@@ -337,7 +337,11 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
   const handleAnalyze = async (turnstileToken?: string) => {
     if (isAnalyzing) return
-    if (quota.exhausted) {
+    // 이미 결과가 있고 오래된 버전이면 새로 생성 요청 (서버도 오래된 캐시일 때만 새로 만든다)
+    const regenerate = Boolean(feedback && outdated)
+    // 횟수가 0이면 새 버전 생성은 막는다 (버튼도 비활성). 첫 열기는 막지 않는다 — 저장된 리포트면 서버가 횟수와 상관없이 준다
+    // (2026-11-02 지시문 1). 저장된 리포트가 없으면 서버가 429 → 한도 안내
+    if (regenerate && quota.exhausted) {
       setIsLimitOpen(true)
       return
     }
@@ -349,8 +353,6 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
 
     const controller = new AbortController()
     abortRef.current = controller
-    // 이미 결과가 있고 오래된 버전이면 새로 생성 요청 (서버도 오래된 캐시일 때만 새로 만든다)
-    const regenerate = Boolean(feedback && outdated)
     const body = { matchId: match.matchId, puuid, gameName, tagLine, isDemo, ...(regenerate ? { regenerate: true } : {}), ...(turnstileToken ? { turnstileToken } : {}) }
 
     try {
@@ -381,6 +383,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       quota.settle(data)
       setWasCached(Boolean(data.cached))
       setOutdated(Boolean(data.outdated))
+      // 새 버전 생성 실패 — 서버가 기존 리포트를 그대로 돌려줬고 차감하지 않았다 (2026-11-02 지시문 1-4)
+      if (data.regenerateFailed) setAnalyzeError('새 버전 분석을 만들지 못해 기존 분석을 그대로 보여 드립니다. 횟수는 차감되지 않았습니다.')
       track('analysis_success', {
         scope: 'match',
         placement: match.placement,
@@ -388,6 +392,11 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
       })
     } catch (err) {
       if (controller.signal.aborted) return
+      // 오늘 횟수를 다 썼고 저장된 리포트도 없음
+      if (err instanceof AnalysisQuotaError) {
+        setIsLimitOpen(true)
+        return
+      }
       // 게이트 거부(쿼터 소모 전): 토큰 없이 막혔고 Turnstile 을 쓸 수 있으면 확인 후 자동 재시도
       if (err instanceof AnalysisGateError && err.code === 'BOT_GATE_REQUIRED' && !turnstileToken && TURNSTILE_SITE_KEY) {
         setNeedsBotCheck(true)
@@ -654,8 +663,8 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
                 {isRankedMatch(match) ? 'AI 분석은 이번 시즌 경기만 합니다' : 'AI 분석은 랭크 게임만 합니다'}
               </span>
             ) : (
-            // 결과가 최신 버전이면 버튼을 숨긴다 — 누르면 같은 캐시가 다시 열릴 뿐이라 이름과 동작이 달랐다
-            feedback && !outdated && !isAnalyzing ? null : (
+            // 결과가 있으면 위쪽 버튼은 숨긴다 — 오래된 버전이면 리포트 위 안내에 '새 버전으로 다시 분석' 버튼이 따로 있다 (2026-11-02 지시문 1-2)
+            feedback && !isAnalyzing ? null : (
             <>
             <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
             <button
@@ -672,7 +681,7 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{feedback ? '새 버전으로 다시 분석 (1회 차감)' : '이 경기 AI 분석'}</span>
+                  <span>이 경기 AI 분석</span>
                 </>
               )}
             </button>
@@ -816,6 +825,26 @@ export function MatchCard({ match, index, puuid, gameName, tagLine, isDemo }: Ma
             <div className="mb-3 inline-flex items-center gap-1 text-xs text-accent">
               <Info className="w-3 h-3" />
               <span>저장된 분석 결과(캐시)입니다 · 횟수 차감 없음</span>
+            </div>
+          )}
+          {/* 옛 버전 리포트: 먼저 그대로 보여 주고, 새로 만들지는 사용자가 고른다 (2026-11-02 지시문 1-2·1-3) */}
+          {outdated && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-control border border-line bg-panel p-3">
+              <p className="min-w-0 flex-1 text-sm text-ink">이전 버전 분석입니다. 새 버전은 덱 비교·검증이 개선됐습니다.</p>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => void handleAnalyze()}
+                  disabled={isAnalyzing || needsBotCheck || quota.exhausted}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed text-on-accent text-sm font-bold transition cursor-pointer"
+                >
+                  {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  <span>{isAnalyzing ? stageMessage || '새 버전으로 분석 중...' : '새 버전으로 다시 분석 (무료 1회 차감)'}</span>
+                </button>
+                <span className="text-xs text-subtle">
+                  {quota.unlimited ? '무제한' : quota.exhausted ? '오늘 무료 분석 횟수를 모두 써서 다시 분석할 수 없습니다 (한국 시간 자정에 초기화)' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}
+                </span>
+              </div>
             </div>
           )}
           <FeedbackReport

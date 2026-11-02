@@ -33,9 +33,21 @@ export class AnalysisGateError extends Error {
   }
 }
 
-/** 403 응답 본문 → 게이트 오류면 AnalysisGateError, 아니면 메시지 */
-function errorFromBody(data: { error?: string; code?: string } | null, fallback: string): Error {
+/**
+ * 오늘 횟수를 다 썼고 저장된 리포트도 없을 때(429). 저장된 리포트가 있으면 서버가 횟수와 상관없이 그대로 준다
+ * (2026-11-02 지시문 1) — 그래서 화면은 횟수가 0이어도 요청을 보내 보고, 이 오류일 때만 한도 안내를 띄운다.
+ */
+export class AnalysisQuotaError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AnalysisQuotaError'
+  }
+}
+
+/** 오류 응답 본문 → 게이트 오류면 AnalysisGateError, 한도(429)면 AnalysisQuotaError, 아니면 메시지 */
+function errorFromBody(data: { error?: string; code?: string } | null, fallback: string, status?: number): Error {
   const message = data?.error || fallback
+  if (status === 429 && (data as { quota?: unknown } | null)?.quota) return new AnalysisQuotaError(message)
   if (data?.code === 'BOT_GATE_REQUIRED' || data?.code === 'TURNSTILE_FAILED') return new AnalysisGateError(message, data.code)
   return new Error(message)
 }
@@ -102,7 +114,7 @@ export async function analyzeMatchStream({
     } catch {
       /* 본문이 JSON 이 아닌 경우 기본 메시지 유지 */
     }
-    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.')
+    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.', res.status)
   }
 
   const reader = res.body.getReader()
@@ -189,7 +201,7 @@ export async function analyzeMatchJson({
 
   const data = (await res.json()) as TftMatchAnalysisResponse & { code?: string }
   if (!res.ok || !data.success || !data.feedback) {
-    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.')
+    throw errorFromBody(data, '이 경기 분석 중 오류가 발생했습니다.', res.status)
   }
   return data
 }

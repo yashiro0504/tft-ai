@@ -234,6 +234,8 @@ export interface GroundingReport {
   namesChecked?: number
   /** 기물–시너지 관계 주장 중 보드 표(lib/boardTable)와 대조한 수 (수리 전) */
   relationsChecked?: number
+  /** 시너지 단계 시뮬레이션으로 확인한 조언 수 — 목표 단계·인원·단계 합 (2026-11-02 지시문 2-5) */
+  tierSimChecked?: number
   /** 캐시된 리포트를 보여 줄 때 다시 검사한 검증기 버전 (lib/reportRevalidate) */
   revalidated?: string
   /** 보내기 전 수리 기록 — 검사한 수치(조합법·로비 비교 포함, 수리 전) · 고친 문장 · 삭제한 문장.
@@ -481,7 +483,7 @@ export interface MetaCoachFeedback {
 
 /** 구조화된 행동 조언 한 개 */
 export interface StructuredAdvice {
-  action: 'replace_unit' | 'keep_unit' | 'add_trait_units' | 'change_items' | 'keep_items' | 'level_up' | 'other'
+  action: 'replace_unit' | 'keep_unit' | 'add_unit' | 'add_trait_units' | 'change_items' | 'keep_items' | 'level_up' | 'other'
   /** 조언 문장 원문 (리포트에 쓴 문장 그대로) */
   quote?: string
   /** replace_unit: 빼는 기물 */
@@ -498,6 +500,8 @@ export interface StructuredAdvice {
   add_item?: string
   /** level_up: 목표 레벨 */
   level?: number
+  /** 조언을 따르면 단계 합이 이 값 이상이 된다는 약속 ("단계 합 8 이상") — 코드가 시뮬레이션해 확인한다 (2026-11-02 지시문 2-3) */
+  target_stage_sum?: number
 }
 
 /** 덱 플레이북 비교표 한 행 (코드 산출 문장 — 수치는 플레이북 값 그대로) */
@@ -603,8 +607,10 @@ export interface TftMatchAnalysisResponse {
   match?: SlimMatchData
   feedback?: MetaCoachFeedback
   cached?: boolean
-  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (1회 차감)" 버튼 */
+  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (무료 1회 차감)" 버튼 */
   outdated?: boolean
+  /** 새 버전 생성이 실패해 기존 리포트를 그대로 돌려줌 (차감 없음 · 2026-11-02 지시문 1-4) */
+  regenerateFailed?: boolean
   error?: string
   /** 서버 쿼터 상태 — charged 가 true 일 때만 이번 요청에서 1회 차감했다 (면제·무제한이면 없음) */
   quota?: AnalysisQuotaInfo
@@ -630,8 +636,10 @@ export interface TftOverviewResponse {
   summonerProfile?: SummonerProfile
   isDemo?: boolean
   error?: string
-  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (1회 차감)" 버튼 */
+  /** 캐시 리포트가 지금 생성기 버전보다 오래됨 → "새 버전으로 다시 분석 (무료 1회 차감)" 버튼 */
   outdated?: boolean
+  /** 새 버전 생성이 실패해 기존 리포트를 그대로 돌려줌 (차감 없음) */
+  regenerateFailed?: boolean
 }
 
 // ---- Meta Rank (메타 랭킹, Phase 4) ----

@@ -11,9 +11,9 @@ import { traitAnchorFacts } from './traitAnchors'
 import { habitPatterns } from './habits'
 import { DEFAULT_FILTER, filterLabel, type StatRow } from './statsShared'
 import { fixEnglishTerms, fixPlacementWording, repairUnsupportedClaims, validateFeedbackGrounding } from './grounding'
-import { HELD_ITEM_NAMES, feedbackTexts, fixDrillTarget, numericDrill, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts, validateTraitRelations, REVALIDATOR_VERSION } from './semanticGrounding'
+import { HELD_ITEM_NAMES, feedbackTexts, fixDrillTarget, hasMeasurableTarget, numericDrill, repairEntityErrors, validateAdviceAndCounts, validateBoardNames, validateEntityFacts, validateTraitRelations, REVALIDATOR_VERSION } from './semanticGrounding'
 import { boardTableFacts } from './boardTable'
-import { parseStructuredAdvice, validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice } from './adviceCheck'
+import { parseStructuredAdvice, validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice, validateTierClaims } from './adviceCheck'
 import { recipeFactsFor } from './itemRecipes'
 import { computeScoreBreakdown, scoreToTier, SCORING_VERSION } from './scoring'
 import { buildCoachingPlan } from './coaching'
@@ -43,9 +43,10 @@ export const COACH_PROMPT_VERSION = '2026-10-30.1'
 export const REPORT_CACHE_VERSION = '2026-10-29.2'
 /**
  * 리포트 생성기 버전 — 프롬프트·생성 규칙을 바꾸면 올린다 (캐시 키에는 넣지 않는다).
- * 캐시된 리포트가 이 버전보다 오래됐을 때만 "새 버전으로 다시 분석 (1회 차감)" 버튼을 보여 준다 (2026-10-30 2차 지시문 5-2).
+ * 캐시된 리포트가 이 버전보다 오래됐을 때만 "새 버전으로 다시 분석 (무료 1회 차감)" 버튼을 보여 준다 (2026-10-30 2차 지시문 5-2).
+ * 버전을 올려도 저장된 리포트는 먼저 그대로 보여 준다 — 새로 만들지는 사용자가 버튼으로 고른다 (2026-11-02 지시문 1).
  */
-export const REPORT_GENERATOR_VERSION = '2026-10-30.2'
+export const REPORT_GENERATOR_VERSION = '2026-11-02.1'
 /** 짧은 인트로 프롬프트/캐시 스키마 버전. 전체 리포트와 별도로 무효화한다. */
 const INTRO_PROMPT_VERSION = '2026-10-19.1'
 
@@ -299,6 +300,12 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
 - 기물의 성급·아이템 소유는 제공된 최종 보드와 정확히 일치해야 한다. 여러 기물을 "A·B·C 모두 N성"처럼 묶어 말할 때도 각 기물의 실제 성급을 확인하라.
 - 기물과 시너지의 관계(어떤 기물이 어떤 시너지인지, 빼면 어떤 시너지가 꺼지거나 내려가는지)는 [보드 표]에 있는 내용만 써라. 기억으로 추측하지 마라.
   [보드 표]에서 "빼면: ○○ 꺼짐"인 기물을 "핵심 시너지와 무관"이라 하거나, 그 시너지를 올리자며 그 기물을 빼라고 하지 마라.
+- 시너지 목표 단계·인원은 [보드 표]의 그 시너지 "단계 목록"에 있는 값만 써라. 최고 단계를 넘는 목표(예: 단계 목록 2/4명인 시너지의 3단계·6명)는 쓰지 마라.
+  "M명 더 넣어 N단계"는 지금 인원 + M 이 N단계 인원 이상일 때만 쓴다. "단계 합 N 이상"을 약속하려면 빼는 기물이 꺼뜨리는 시너지까지 계산해 맞을 때만 쓴다
+  (1명짜리 고유 시너지를 가진 기물을 빼면 그 시너지 1단계가 꺼진다). 코드가 advice 를 시뮬레이션해 틀리면 문장째 지운다.
+- 아이템(상징) 칸과 기물 칸은 다르다. "상징 자리를 기물로 바꿔"처럼 아이템 칸을 기물로 바꾸라고 하지 마라. 상징 1개는 그 시너지 +1명이다.
+- 아이템 재료·상징은 상점에서 팔지 않는다 ("상점에서 재료가 보이면" 금지). 상징 조합식은 [보드 표]의 상징(재료) 그대로 쓰고, 상징마다 다르다.
+- 등수는 숫자가 클수록 나쁘다. "평균등수가 0.25등 높았다/낮았다" 대신 "0.25등 나빴다/좋았다"로 써라. 표기는 "TOP4"(상위4위 금지)·"Lv.8"(8레벨 금지).
 - [이 덱의 정석과 비교]의 핵심 기물(이 덱 보드 80% 이상 채용)을 빼라고 하려면 그 기물이 없을 때의 평균등수 같은 근거를 함께 인용하라. 근거가 없으면 빼라고 하지 마라.
 - 로비 1등(또는 다른 등수)과 비교할 때는 내 레벨과 상대 레벨을 둘 다 밝혀라 (예: "1등(Lv.9 · 137G)보다 한 레벨 낮은 Lv.8에서 끝나 보드 가치가 47G 적었고").
   상대의 레벨을 내 최종 레벨처럼 읽히게 쓰지 마라.
@@ -372,8 +379,11 @@ const SYSTEM_INSTRUCTION = `너는 TFT(롤토체스) 아카데미의 전임 강�
   ]
 }
 advice 는 actions·lecture(moments fix·alternative·drill·checklist)에 쓴 행동 조언을 하나씩 구조화한 것이다 (코드가 [보드 표]와 대조한다).
-- action: replace_unit(기물 빼기·교체 — remove 필수) · keep_unit(기물 유지 — unit) · add_trait_units(시너지 인원 추가 — target_trait·count, 목표 단계면 target_tier)
-  · change_items(아이템 교체 — unit·remove_item·add_item) · keep_items(아이템 유지 — unit) · level_up(level) · other
+- action: replace_unit(기물 빼기·교체 — remove 필수, 넣을 시너지는 target_trait) · keep_unit(기물 유지 — unit) · add_unit(기물 추가 — unit·target_trait)
+  · add_trait_units(시너지 인원 추가 — target_trait·count, 목표 단계면 target_tier) · change_items(아이템 교체 — unit·remove_item·add_item, 상징이면 add_item "X 상징")
+  · keep_items(아이템 유지 — unit) · level_up(level) · other
+- remove·unit 은 기물 이름, remove_item·add_item 은 아이템 이름이다 (아이템 칸 ↔ 기물 칸을 섞지 마라).
+- 조언이 "단계 합 N 이상"을 약속하면 target_stage_sum 에 N 을 적어라.
 - target_tier 는 몇 번째 단계다 (인원 수가 아니다). 이미 그 단계 이상이면 목표가 아니다.
 - 같은 기물을 한 곳에서 유지(keep_unit), 다른 곳에서 교체(replace_unit)하라고 하지 마라. 상징 아이템은 켜진 시너지를 받치면 빼라고 하지 마라.`
 
@@ -1122,7 +1132,10 @@ ${recipeFacts}
     const emblemCheck = validateEmblemItemAdvice(rawTexts, single, HELD_ITEM_NAMES)
     // BIS 일치 수(비교 섹션 값)·"A 대 B … N단계 부족" 차이·본인 레벨과 다른 레벨 (2026-10-30 2차 지시문 3·6)
     const derivedCheck = validateDerivedClaims(rawTexts, single, deckComparison?.bis)
+    // 시너지 단계 시뮬레이션 — 체크리스트·강의 문장의 목표 단계·인원·단계 합 · 아이템 칸 ↔ 기물 칸 (2026-11-02 지시문 2·3)
+    const tierCheck = validateTierClaims(rawTexts, single)
     const relationsChecked = relationCheck.checked + structuredCheck.checked + emblemCheck.checked
+    const tierSimChecked = structuredCheck.tierSim + tierCheck.checked
     const entityErrors = [
       ...validateEntityFacts(rawTexts, matches),
       ...validateBoardNames(rawTexts, matches, prompt).errors,
@@ -1131,6 +1144,7 @@ ${recipeFacts}
       ...structuredCheck.errors,
       ...emblemCheck.errors,
       ...derivedCheck.errors,
+      ...tierCheck.errors,
     ]
     if (entityErrors.length) incrMetric('llm.entity_repaired')
     // 수리 전 검사한 수치 (단위 수치·소수 + 조합법 + 로비 비교)
@@ -1169,7 +1183,7 @@ ${recipeFacts}
       return out
     })
     // 다음 3판 목표에 숫자 기준이 없으면(LLM 이 안 썼거나 검증에서 지워짐) 코드 목표로 바꾼다
-    const lecture = fb.lecture && !/\d/.test(fb.lecture.drill || '') ? { ...fb.lecture, drill: drillFallback } : fb.lecture!
+    const lecture = fb.lecture && !hasMeasurableTarget(fb.lecture.drill) ? { ...fb.lecture, drill: drillFallback } : fb.lecture!
     const actions = fb.actions
     const finalTexts = feedbackTexts(fb, axisVerdicts)
     const namesChecked = validateBoardNames(finalTexts, matches, prompt).checked
@@ -1193,6 +1207,7 @@ ${recipeFacts}
         entityErrors,
         namesChecked,
         relationsChecked,
+        tierSimChecked,
         revalidated: REVALIDATOR_VERSION,
         repair: { checked, ...repair },
       },

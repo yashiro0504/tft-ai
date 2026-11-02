@@ -1,4 +1,5 @@
-import { BASIC_COMPONENT_NAMES, ITEM_RECIPES } from './gameData'
+import { BASIC_COMPONENT_NAMES, GAME_ITEMS, ITEM_RECIPES } from './gameData'
+import { TRAIT_NAMES } from './gameFacts'
 
 /**
  * 아이템 재료 단위 매칭 — 빈집 메타 덱 후보(lib/comparisonFacts)용.
@@ -68,6 +69,9 @@ const COMPONENT_ALIASES: Array<[RegExp, string]> = [
   [/거인의\s*허리띠|허리띠|벨트|체력/g, '거인의 허리띠'],
   [/곡궁|공격\s*속도|공속/g, '곡궁'],
   [/연습용\s*장갑|장갑/g, '연습용 장갑'],
+  // 상징·전략가 아이템 재료 (일반 조합 재료 8종에는 없다 — 상징 조합식 대조용)
+  [/뒤집개/g, '뒤집개'],
+  [/프라이팬/g, '프라이팬'],
 ]
 
 const RECIPE_JOIN_RE = /^\s*(?:\+|＋|와|과|랑|이랑|및|·|,|、)\s*$/
@@ -166,6 +170,91 @@ export function validateItemRecipes(sentences: string[]): { errors: RecipeMismat
         })
       }
     })
+  }
+  return { errors, checked }
+}
+
+/* ───────────── 상징 조합식 · 재료 나열 · 게임 규칙 (2026-11-02 지시문 3-1~3-3) ───────────── */
+
+/** 상징 한글명 → 재료 한글명 2개 (검은 가시 상징 = 뒤집개 + 거인의 허리띠). 조합식이 없는 상징은 뺀다 */
+export const EMBLEM_RECIPES: Record<string, string[]> = (() => {
+  const byId = new Map(GAME_ITEMS.map((i) => [i.apiName, i]))
+  const out: Record<string, string[]> = {}
+  for (const i of GAME_ITEMS) {
+    if (i.kind !== 'emblem' || out[i.name] || i.recipe.length !== 2) continue
+    const parts = i.recipe.map((id) => byId.get(id)?.name)
+    if (parts.every(Boolean)) out[i.name] = parts as string[]
+  }
+  return out
+})()
+
+/** 재료 나열 구분자 (괄호 안 "연습용 장갑·쓸데없이 큰 지팡이" 포함) */
+const LIST_JOIN_RE = /^\s*(?:\+|＋|와|과|랑|이랑|및|·|,|、|\/)\s*$/
+/** 아이템 재료는 상점에서 팔지 않는다 — "상점에서 상징 재료가 보이면" 같은 게임 규칙 오류 */
+export const SHOP_ITEM_RE = /상점(?:에서|에|의)[^.!?\n]{0,25}?(?:재료|아이템|상징|뒤집개|프라이팬|장갑|지팡이|대검|조끼|망토|허리띠|곡궁|눈물)/
+
+export interface ComponentListError {
+  text: string
+  expected: string
+  actual: string
+  /** 'recipe': 조합식 불일치 (wrong → right 로 바꿀 수 있다) · 'rule': 게임 규칙 오류 (문장을 지운다) */
+  kind: 'recipe' | 'rule'
+}
+
+/** 연속된 재료 언급 묶음 (구분자로 이어진 2개 이상) */
+function componentGroups(s: string, mentions: ComponentMention[]): ComponentMention[][] {
+  const groups: ComponentMention[][] = []
+  let cur: ComponentMention[] = []
+  for (const m of mentions) {
+    if (cur.length && LIST_JOIN_RE.test(s.slice(cur[cur.length - 1].end, m.start))) cur.push(m)
+    else {
+      if (cur.length >= 2) groups.push(cur)
+      cur = [m]
+    }
+  }
+  if (cur.length >= 2) groups.push(cur)
+  return groups
+}
+
+const sameSet = (a: string[], b: string[]) => [...a].sort().join('+') === [...b].sort().join('+')
+
+/**
+ * "상징 재료(연습용 장갑·쓸데없이 큰 지팡이)" 처럼 아이템 이름 없이 나열한 재료도 조합식과 대조한다.
+ * - 상징 재료: 문장에 "X 상징"이 있으면 그 상징의 조합식, 없으면 이 보드의 주력 시너지(mainTraits 앞쪽) 상징 조합식과 비교한다.
+ *   어느 상징 조합식과도 같지 않으면 실패 (상징 재료에는 뒤집개·프라이팬이 들어간다).
+ * - 상점 규칙: "상점에서 재료/아이템/상징"은 게임 규칙 오류 — 문장을 지운다.
+ * checked = 대조한 재료 나열 수 + 규칙 검사에 걸린 문장 수
+ */
+export function validateComponentLists(sentences: string[], mainTraits: string[] = []): { errors: ComponentListError[]; checked: number } {
+  const errors: ComponentListError[] = []
+  let checked = 0
+  const itemNames = Object.keys(RECIPES)
+  for (const s of sentences) {
+    if (SHOP_ITEM_RE.test(s)) {
+      checked++
+      errors.push({ text: s, expected: '아이템 재료·상징은 상점에서 팔지 않는다 (전투·전리품으로 얻는다)', actual: (s.match(SHOP_ITEM_RE) as RegExpMatchArray)[0], kind: 'rule' })
+    }
+    if (!/상징/.test(s) || !/재료|조합/.test(s)) continue
+    // 완성템 이름 안의 재료 표현은 빼고, 완성템 바로 뒤 조합식은 validateItemRecipes 가 본다
+    const spans = itemNames.filter((n) => s.includes(n)).map((n) => ({ start: s.indexOf(n), end: s.indexOf(n) + n.length }))
+    const mentions = componentMentions(s).filter((c) => !spans.some((x) => c.start < x.end && c.end > x.start))
+    for (const g of componentGroups(s, mentions)) {
+      const got = g.map((x) => x.name)
+      checked++
+      // 문장의 "X 상징" (그 상징 조합식) → 없으면 주력 시너지 상징
+      const named = TRAIT_NAMES.map((t) => `${t} 상징`).filter((e) => s.includes(e) && EMBLEM_RECIPES[e])
+      const candidates = named.length ? named : mainTraits.map((t) => `${t} 상징`).filter((e) => EMBLEM_RECIPES[e])
+      const ok = named.length ? named.some((e) => sameSet(EMBLEM_RECIPES[e], got)) : Object.values(EMBLEM_RECIPES).some((r) => sameSet(r, got))
+      if (ok) continue
+      const target = candidates[0]
+      const wrong = s.slice(g[0].start, g[g.length - 1].end)
+      errors.push({
+        text: s,
+        expected: target ? EMBLEM_RECIPES[target].join(' + ') : '상징 재료에는 뒤집개 또는 프라이팬이 들어간다',
+        actual: wrong,
+        kind: target ? 'recipe' : 'rule',
+      })
+    }
   }
   return { errors, checked }
 }

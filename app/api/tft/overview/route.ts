@@ -4,6 +4,7 @@ import { cacheGetWithSource, cacheSet, CACHE_TTL } from '@/lib/cache'
 import { elapsedMs, errorFields, incrMetric, logEvent } from '@/lib/observability'
 import { REPORT_CACHE_VERSION, REPORT_GENERATOR_VERSION } from '@/lib/llm'
 import { prepareCachedReport } from '@/lib/reportRevalidate'
+import { loadStoredReport, saveStoredReport } from '@/lib/reportStore'
 import { isOutdatedReport } from '@/lib/matchAnalysis'
 import { SCORING_VERSION } from '@/lib/axisConfig'
 import { quotaCheck, quotaStatus, chargeQuotaOnce, rateLimitGuard, readJson, normalizeGameNameTagLine, isNextResponse, handleApiError } from '@/lib/apiUtils'
@@ -35,7 +36,6 @@ export async function POST(req: NextRequest) {
       userId,
       dailyQuotaLimit('QUOTA_OVERVIEW_PRO_PER_DAY', 10)
     )
-    if (daily) return daily
 
     const raw = await readJson(req)
     if (isNextResponse(raw)) return raw
@@ -70,11 +70,22 @@ export async function POST(req: NextRequest) {
 
     const cacheKey = `overview:${gameName.toLowerCase()}#${tagLine.toUpperCase()}:${mode}:${tier}:${REPORT_CACHE_VERSION}:${SCORING_VERSION}:${ids}`
     let regenerated = false
+    let previous: TftOverviewResponse | null = null
     if (!nocache) {
-      const cached = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
+      // Redis → 영구 저장소 (캐시가 만료돼도 다시 생성·차감하지 않게 — 2026-11-02 지시문 1)
+      let cached: { value: TftOverviewResponse; source: string } | null = await cacheGetWithSource<TftOverviewResponse>(cacheKey)
+      if (!cached) {
+        const stored = await loadStoredReport<TftOverviewResponse>(cacheKey)
+        if (stored?.feedback) {
+          await cacheSet(cacheKey, stored, CACHE_TTL.OVERVIEW)
+          cached = { value: stored, source: 'db' }
+        }
+      }
       // 다시 분석은 캐시 리포트가 오래된 버전일 때만 새로 만든다 (2026-10-30 2차 지시문 5-2)
-      if (cached && raw.regenerate === true && isOutdatedReport(cached.value.feedback)) regenerated = true
-      else if (cached) {
+      if (cached && raw.regenerate === true && isOutdatedReport(cached.value.feedback)) {
+        regenerated = true
+        previous = cached.value
+      } else if (cached) {
         incrMetric('llm.cache_hit.overview')
         logEvent('info', 'api_overview', {
           ms: elapsedMs(startedAt),
@@ -83,7 +94,7 @@ export async function POST(req: NextRequest) {
           tier,
           matchCount: matches.length,
         })
-        // 캐시 적중은 횟수 차감 없음
+        // 캐시 적중은 횟수 차감 없음 (남은 횟수가 0이어도 연다)
         const quota = quotaStatus(req)
         // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
         // 1판 리포트는 비교 섹션이 없으면 코드로 붙인다 (2026-10-30 2차 지시문 5-1)
@@ -91,8 +102,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ...value, cached: true, outdated: isOutdatedReport(value.feedback), ...(quota ? { quota } : {}) })
       }
     }
+    // 새로 만들어야 할 때만 남은 횟수로 막는다
+    if (daily) return daily
 
     const feedback = await generateMetaCoachFeedback(gameName, matches, mode, { tier })
+
+    // 새 버전 생성이 실패(AI 미사용 폴백)하면 기존 리포트를 그대로 두고 차감하지 않는다 (2026-11-02 지시문 1-4)
+    if (previous?.feedback && feedback.isFallback) {
+      logEvent('warn', 'overview_regenerate_failed', { mode, tier, matchCount: matches.length })
+      const value = { ...previous, feedback: await prepareCachedReport(previous.feedback, matches) }
+      const quota = quotaStatus(req)
+      return NextResponse.json({ ...value, cached: true, outdated: true, regenerateFailed: true, ...(quota ? { quota } : {}) })
+    }
 
     const response: TftOverviewResponse = {
       success: true,
@@ -105,6 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!nocache) await cacheSet(cacheKey, response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.OVERVIEW)
+    if (!nocache && !feedback.isFallback) await saveStoredReport(cacheKey, response, { kind: 'overview', generatorVersion: feedback.generatorVersion })
     // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (AI 미사용 폴백·실패는 차감 없음, 같은 요청은 멱등 키로 한 번)
     const quota = feedback.isFallback ? quotaStatus(req) : await chargeQuotaOnce(req, regenerated ? `${cacheKey}:gen:${REPORT_GENERATOR_VERSION}` : cacheKey)
     logEvent('info', 'api_overview', {

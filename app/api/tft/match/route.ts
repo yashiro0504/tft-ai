@@ -3,7 +3,9 @@ import { elapsedMs, errorFields, logEvent } from '@/lib/observability'
 import {
   MatchAnalysisError,
   analysisChargeKey,
+  getCachedMatchAnalysis,
   runMatchAnalysis,
+  servableFromCache,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
 import {
@@ -58,7 +60,6 @@ export async function POST(req: NextRequest) {
       (await getAuthUser())?.id,
       dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10)
     )
-    if (daily) return daily
 
     const matchId = typeof raw.matchId === 'string' ? raw.matchId.trim() : ''
     if (!matchId) {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
       puuid: typeof raw.puuid === 'string' ? raw.puuid.trim() : '',
       isDemo: raw.isDemo === true,
       mode: raw.mode === 'multi' ? 'multi' : 'single',
+      regenerate: raw.regenerate === true,
     }
 
     if (!params.puuid) {
@@ -78,6 +80,9 @@ export async function POST(req: NextRequest) {
       params.gameName = nt.gameName
       params.tagLine = nt.tagLine
     }
+
+    // 남은 횟수가 0이어도 저장된 리포트는 연다 — 새로 만들어야 할 때만 한도로 막는다 (2026-11-02 지시문 1)
+    if (daily && !servableFromCache(await getCachedMatchAnalysis(params), params.regenerate)) return daily
 
     const outcome = await runMatchAnalysis(params)
     // 횟수는 새 AI 리포트를 만들어 저장했을 때만 1회 (캐시 적중·AI 미사용 폴백·실패는 차감 없음, 같은 경기는 멱등 키로 한 번)

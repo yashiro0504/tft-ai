@@ -1,10 +1,11 @@
 import type { CoachingAxisKey, MetaCoachFeedback, SlimMatchData } from './types'
 import { fixEnglishTerms, fixPlacementWording, validateFeedbackGrounding } from './grounding'
 import { deckComparisonFor, mapFeedbackStrings } from './llm'
-import { validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice } from './adviceCheck'
+import { validateDerivedClaims, validateEmblemItemAdvice, validateStructuredAdvice, validateTierClaims } from './adviceCheck'
 import {
   HELD_ITEM_NAMES,
   REVALIDATOR_VERSION,
+  hasMeasurableTarget,
   numericDrill,
   feedbackTexts,
   repairEntityErrors,
@@ -33,7 +34,17 @@ export function revalidateReport(fb: MetaCoachFeedback, matches: SlimMatchData[]
   const structured = validateStructuredAdvice(fb.advice, texts, single, { bis: fb.deckComparison?.bis })
   const emblem = validateEmblemItemAdvice(texts, single, HELD_ITEM_NAMES)
   const derived = validateDerivedClaims(texts, single, fb.deckComparison?.bis)
-  const errors = [...validateEntityFacts(texts, matches), ...advice.errors, ...relation.errors, ...structured.errors, ...emblem.errors, ...derived.errors]
+  // 시너지 단계 시뮬레이션 (2026-11-02 지시문 2·3) — "원시 6명 3단계", "럭스 대신 … 단계 합 8 이상", "상징 자리를 기물로"
+  const tier = validateTierClaims(texts, single)
+  const errors = [
+    ...validateEntityFacts(texts, matches),
+    ...advice.errors,
+    ...relation.errors,
+    ...structured.errors,
+    ...emblem.errors,
+    ...derived.errors,
+    ...tier.errors,
+  ]
   const stats = { fixed: 0, deleted: 0 }
   const repaired = repairEntityErrors({ fb, verdicts }, errors, { dropEmpty: true, stats })
   const worded = mapFeedbackStrings(repaired.fb, (t) => {
@@ -54,12 +65,13 @@ export function revalidateReport(fb: MetaCoachFeedback, matches: SlimMatchData[]
         supported: Math.max(0, g.supported - removedClaims),
         entityErrors: [...(g.entityErrors || []), ...errors],
         relationsChecked: relation.checked + structured.checked + emblem.checked,
+        tierSimChecked: structured.tierSim + tier.checked,
         repair: g.repair ? { ...g.repair, fixed: g.repair.fixed + stats.fixed, deleted: g.repair.deleted + stats.deleted } : undefined,
         revalidated: REVALIDATOR_VERSION,
       }
     : g
   // 다음 3판 목표에 숫자 기준이 없으면 코드 목표 (2026-10-30 2차 지시문 6-2)
-  const lecture = worded.lecture && !/\d/.test(worded.lecture.drill || '') ? { ...worded.lecture, drill: numericDrill(matches, fb.plan?.focus) } : worded.lecture
+  const lecture = worded.lecture && !hasMeasurableTarget(worded.lecture.drill) ? { ...worded.lecture, drill: numericDrill(matches, fb.plan?.focus) } : worded.lecture
   return { ...worded, lecture, plan, grounding }
 }
 
