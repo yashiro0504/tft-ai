@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * 기물·시너지·아이템·BIS 는 빌드 타임 JSON(lib/metaStats.json 등)에서, **덱은 덱 성적표와 같은 스냅샷**(getMetaDeckSnapshot)에서 온다.
  * 2026-10-28: 홈 메타 탭(/?tab=meta)·홈 추천 덱이 이 API 로 래더 JSON(292판 · 09:29)만 읽어, DB 스냅샷(8,776판 · 13:36)을 읽는
  * 덱 성적표와 평균이 갈렸다. 이제 JSON 부분만 캐시하고 덱은 요청마다 공유 스냅샷(Redis 5분)을 덮어쓴다.
- * - s-maxage=60: 엣지 캐시도 스냅샷 TTL 안에서만 (예전 5분 + stale 1시간이면 갱신이 한참 늦었다)
+ * - s-maxage=60 + stale 하루: 만료 뒤 첫 요청도 엣지가 이전 응답을 바로 주고 뒤에서 갱신한다 (2026-11-02 지시문 4)
  * - 인메모리 memo: JSON 부분 재가공 비용 제거
  *
  * 페이지(/meta)도 같은 빌더·같은 스냅샷을 사용한다(lib/metaPayload.ts · lib/tftStats.ts).
@@ -26,15 +26,16 @@ const META_MEMO_TTL_MS = (() => {
 })()
 
 const META_CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=60',
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=86400',
 } as const
 
 /**
- * 첫 화면용 부분 응답(view=summary · decks) 캐시 — 덱 스냅샷은 하루 한 번 바뀌고 서버 스냅샷 캐시는 5분이다.
- * 엣지 5분 + stale 10분: 첫 진입이 매번 원본을 기다리지 않게 (2026-10-30 지시문 3).
+ * 첫 화면용 부분 응답(view=summary · decks) 캐시 — 덱 스냅샷은 수집 때만 바뀌고 서버 스냅샷 캐시는 5분이다.
+ * 엣지 5분 + stale 하루: 만료돼도 엣지가 이전 응답을 바로 주고 뒤에서 새로 받는다 (2026-11-02 지시문 4 — 예전 stale 10분은
+ * 한산한 시간대에 지나 버려 첫 방문자가 원본 계산 3.8초를 기다렸다). 수집 직후 워크플로가 미리 채운다 (collect-db.yml).
  */
 const META_VIEW_CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
 } as const
 
 let metaMemo: { value: TftMetaResponse; expiresAt: number } | null = null

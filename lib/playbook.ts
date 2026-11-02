@@ -1,7 +1,10 @@
+import { fixTermWording } from './grounding'
 import type { DeckBisCheck, DeckComparison, DeckComparisonRow, SlimMatchData, SlimMatchUnit } from './types'
 import { PLACEMENT_SD } from './statsShared'
 import { entitySlug } from './entitySlug'
-import { mostSimilarDeck, type DeckFact } from './comparisonFacts'
+import { bisMatchLabel, mostSimilarDeck, type DeckFact } from './comparisonFacts'
+
+export { bisMatchLabel }
 
 /**
  * 덱 플레이북 (2026-10-29 지시문 4) — 읽기·비교 쪽. 계산·저장은 scripts/collect/playbook.js (수집기 배치).
@@ -176,7 +179,7 @@ export function comparePlaybook(m: SlimMatchData, pb: DeckPlaybook, competitors 
     rows.push({
       id: 'flex_units',
       severity: 2,
-      text: `${bad.name}를 썼습니다 — 이 덱에서 같은 스테이지까지 산 판끼리 비교하면 ${bad.name}가 있을 때 평균등수가 약 ${f2(bad.adjusted_delta)}등 높았습니다(${bad.adjusted_n}판)`,
+      text: `${bad.name}를 썼습니다 — 이 덱에서 같은 스테이지까지 산 판끼리 비교하면 ${bad.name}가 있을 때 평균등수가 약 ${f2(bad.adjusted_delta)}등 나빴습니다(${bad.adjusted_n}판)`,
     })
   }
 
@@ -239,7 +242,7 @@ export function bisRowText(b: DeckBisCheck): string {
   const stat = b.setGames ? ` · ${b.label} 평균 ${f2(b.setAvg)}등 · ${b.setGames}판${b.deckAvg != null ? ` (덱 평균 ${f2(b.deckAvg)}등)` : ''}` : ''
   const emblem = b.emblems.length ? ` · ${b.emblems.join('·')}은 대조에서 제외` : ''
   const note = b.recommend ? '' : ' — 덱 평균보다 뚜렷이 좋지 않아 아이템 변경 근거로 쓰지 않음'
-  return `${b.unit} 아이템이 이 덱 ${b.label} ${b.slots}개(${b.items.join('·')}) 중 ${b.matched}개 일치${stat}${emblem}${note}`
+  return `${b.unit} 아이템이 이 덱 ${b.label} ${b.slots}개(${b.items.join('·')}) 중 ${b.matched}개 일치 (${bisMatchLabel(b)})${stat}${emblem}${note}`
 }
 
 /**
@@ -279,6 +282,8 @@ export function groundedTips(pb: DeckPlaybook): string[] {
     .filter((text) => typeof text === 'string' && text.trim())
     .filter((text) => /세요[.!]?$/.test(text.trim()))
     .filter((text) => (text.match(/\d+(?:\.\d+)?/g) || []).every((x) => nums.has(String(Number(x))) || nums.has(x)))
+    // 다른 화면과 같은 표기 ("상위4위 판" → "TOP4 판", "8레벨" → "Lv.8", "0.25등 높았" → "0.25등 나빴") — 2026-11-02 지시문 5-3·5-4
+    .map((text) => fixTermWording(text))
 }
 
 /** 같은 로비에서 이 덱으로 판정된 상대 수 (덱 판정은 덱 성적표·AI 비교와 같은 mostSimilarDeck) */

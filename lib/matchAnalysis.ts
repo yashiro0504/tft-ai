@@ -13,6 +13,7 @@ import { generateMetaCoachFeedback, REPORT_CACHE_VERSION, REPORT_GENERATOR_VERSI
 import { prepareCachedReport } from './reportRevalidate'
 import { SCORING_VERSION } from './axisConfig'
 import { cacheGetWithSource, cacheSet, CACHE_TTL } from './cache'
+import { loadStoredReport, saveStoredReport } from './reportStore'
 import { incrMetric, logEvent } from './observability'
 import { SlimMatchData, TftMatchAnalysisResponse } from './types'
 
@@ -54,6 +55,14 @@ export interface MatchAnalysisOutcome {
 }
 
 /**
+ * 캐시 리포트만으로 답할 수 있는 요청인가 — 저장된 리포트가 있고, 오래된 버전의 "새 버전으로 다시 분석"이 아니면 그렇다.
+ * 남은 횟수가 0이어도 이런 요청은 막지 않는다 (2026-11-02 지시문 1: 저장된 리포트는 횟수와 상관없이 열린다).
+ */
+export function servableFromCache(cached: { response: TftMatchAnalysisResponse } | null, regenerate?: boolean): boolean {
+  return Boolean(cached) && !(regenerate && cached!.response.outdated)
+}
+
+/**
  * 리포트 버전 = 리포트 캐시 버전·점수 공식 버전. 메타 스냅샷은 넣지 않는다 — 스냅샷이 바뀌어도 이미 만든 리포트를
  * 무효화하지 않는다 (2026-10-29 지시문 2: 같은 경기 재분석이 새 생성·차감으로 이어지지 않게).
  * 프롬프트 버전도 넣지 않는다 — 캐시된 리포트는 보여 줄 때 현재 검증기로 다시 검사한다 (2026-10-30 지시문 1-5, lib/reportRevalidate).
@@ -86,9 +95,16 @@ const inFlight = new Map<string, Promise<MatchAnalysisOutcome>>()
  */
 export async function getCachedMatchAnalysis(
   params: MatchAnalysisParams
-): Promise<{ response: TftMatchAnalysisResponse; source: 'memory' | 'redis' } | null> {
-  const hit = await cacheGetWithSource<TftMatchAnalysisResponse>(analysisCacheKey(params))
-  if (!hit) return null
+): Promise<{ response: TftMatchAnalysisResponse; source: 'memory' | 'redis' | 'db' } | null> {
+  const key = analysisCacheKey(params)
+  let hit: { value: TftMatchAnalysisResponse; source: 'memory' | 'redis' | 'db' } | null = await cacheGetWithSource<TftMatchAnalysisResponse>(key)
+  if (!hit) {
+    // Redis 캐시가 비었으면(TTL 만료) 영구 저장소에서 꺼낸다 — 예전에는 여기서 새로 생성·차감됐다 (2026-11-02 지시문 1)
+    const stored = await loadStoredReport<TftMatchAnalysisResponse>(key)
+    if (!stored?.feedback) return null
+    await cacheSet(key, stored, CACHE_TTL.MATCH)
+    hit = { value: stored, source: 'db' }
+  }
   incrMetric('llm.cache_hit.match_analysis')
   // 저장된 리포트도 현재 검증기로 다시 검사해 보여 준다 (LLM 호출·횟수 차감 없음)
   // 비교 섹션이 없던 캐시 리포트는 코드로 붙인다 (2026-10-30 2차 지시문 5-1)
@@ -137,7 +153,7 @@ async function runMatchAnalysisOnce(
 
   const cached = await getCachedMatchAnalysis(params)
   // 다시 분석은 캐시 리포트가 오래된 버전일 때만 새로 만든다 (최신이면 버튼이 숨겨지고, 요청이 와도 캐시를 준다)
-  if (cached && !(params.regenerate && cached.response.outdated)) return { response: cached.response, cached: true }
+  if (cached && servableFromCache(cached, params.regenerate)) return { response: cached.response, cached: true }
   const regenerated = Boolean(cached)
 
   onStage?.('match')
@@ -188,6 +204,12 @@ async function runMatchAnalysisOnce(
   onStage?.('analyzing')
   const feedback = await generateMetaCoachFeedback(displayName, [match], mode)
 
+  // 새 버전 생성이 실패(AI 미사용 폴백)하면 기존 리포트를 그대로 두고 차감하지 않는다 (2026-11-02 지시문 1-4)
+  if (cached && feedback.isFallback) {
+    logEvent('warn', 'match_analysis_regenerate_failed', { matchId, mode })
+    return { response: { ...cached.response, regenerateFailed: true }, cached: true }
+  }
+
   const response: TftMatchAnalysisResponse = {
     success: true,
     matchId,
@@ -198,6 +220,8 @@ async function runMatchAnalysisOnce(
   }
 
   await cacheSet(analysisCacheKey(params), response, feedback.isFallback ? CACHE_TTL.FALLBACK_REPORT : CACHE_TTL.MATCH)
+  // AI 리포트는 영구 저장 — 캐시가 만료돼도 다시 생성·차감하지 않는다 (폴백은 제공자 복구 후 AI 리포트로 바뀌어야 해서 저장하지 않는다)
+  if (!feedback.isFallback) await saveStoredReport(analysisCacheKey(params), response, { kind: 'match', generatorVersion: feedback.generatorVersion })
   logEvent('info', 'match_analysis_generated', {
     matchId,
     mode,

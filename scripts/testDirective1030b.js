@@ -170,7 +170,7 @@ console.log('6. 표기·숫자 목표·파생 수치')
 {
   const drill = numericDrill([mBack], 'synergy')
   check('숫자 목표: 시너지 축이면 단계 합 기준', /단계 합 \d+ 이상/.test(drill), drill)
-  check('숫자 목표: 기본은 2성 이상 기물 수', /\d+개 이상/.test(numericDrill([mBack], 'economy')))
+  check('숫자 목표: 기본은 2성 이상 기물 수', /\d+개 이상/.test(numericDrill([mBack], 'completion')))
   const gap = validateDerivedClaims(['단계 합은 6 대 10으로 깊이가 두 단계 부족했습니다.'], mBack)
   const gapFixed = repairEntityErrors({ t: ['단계 합은 6 대 10으로 깊이가 두 단계 부족했습니다.'] }, gap.errors).t[0]
   check('"6 대 10 … 두 단계 부족" → 4단계로', gapFixed.includes('4단계 부족'), gapFixed)

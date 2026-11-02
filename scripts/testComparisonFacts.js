@@ -818,7 +818,7 @@ ${mixedFacts}`
   check('상징은 대조에서 제외 (아리 1/2)', withEmblem.matched === 1 && withEmblem.slots === 2, JSON.stringify(withEmblem))
   const setBis = { unit: '아리', label: 'BIS 세트', items: ['X', 'Y', 'W'], matched: 1, slots: 3, emblems: [], setAvg: 4.94, setGames: 31, deckAvg: 4.92, recommend: false }
   const bl2 = buildComparisonFacts({ matches: [{ ...sample, units, lobbyParticipants: [] }], mode: 'single', combos, decks: [], bis: setBis })
-  check('플레이북 BIS 세트가 있으면 그 값 하나만 (채용 상위 줄 없음)', bl2.includes('- BIS 일치: 아리 1/3') && !bl2.includes('채용 상위 아이템 일치'), bl2)
+  check('플레이북 BIS 세트가 있으면 그 값 하나만 (채용 상위 줄 없음)', bl2.includes('- BIS 일치: 아리 BIS 1/3 일치') && !bl2.includes('채용 상위 아이템 일치'), bl2)
   check('추천 조건 미달 세트 → 아이템 변경을 권하지 말라는 줄', /권하지 마라/.test(bl2), bl2)
 
   // KR_8427579901 회귀: 장로 드래곤 무한의 대검·죽음의 검·최후의 속삭임이 0/3 이던 원인 — 평균등수 순 BIS 가

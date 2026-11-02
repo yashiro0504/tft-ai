@@ -303,7 +303,7 @@ function groundingSummary(g: NonNullable<MetaCoachFeedback['grounding']>): strin
   const parts: string[] = []
   const r = g.repair
   if (r) parts.push(`수치 ${r.checked}개 검사`)
-  if (g.relationsChecked != null) parts.push(`관계 ${g.relationsChecked}개 검사`)
+  if (g.relationsChecked != null) parts.push(`관계 ${g.relationsChecked}개${g.tierSimChecked ? ` · 단계 시뮬레이션 ${g.tierSimChecked}개` : ''} 검사`)
   if (r?.fixed) parts.push(`문장 ${r.fixed}개 수정`)
   if (r?.deleted) {
     const removed = Math.max(0, r.checked - g.total)

@@ -5,7 +5,9 @@ import {
   ANALYSIS_STAGE_MESSAGE,
   MatchAnalysisError,
   analysisChargeKey,
+  getCachedMatchAnalysis,
   runMatchAnalysis,
+  servableFromCache,
   type MatchAnalysisParams,
 } from '@/lib/matchAnalysis'
 import { RiotApiError } from '@/lib/riot'
@@ -79,7 +81,6 @@ export async function POST(req: NextRequest) {
     (await getAuthUser())?.id,
     dailyQuotaLimit('QUOTA_ANALYSIS_PRO_PER_DAY', 10)
   )
-  if (daily) return daily
 
   const matchId = typeof raw.matchId === 'string' ? raw.matchId.trim() : ''
   if (!matchId) {
@@ -100,6 +101,9 @@ export async function POST(req: NextRequest) {
     params.gameName = nt.gameName
     params.tagLine = nt.tagLine
   }
+
+  // 남은 횟수가 0이어도 저장된 리포트는 연다 — 새로 만들어야 할 때만 한도로 막는다 (2026-11-02 지시문 1)
+  if (daily && !servableFromCache(await getCachedMatchAnalysis(params), params.regenerate)) return daily
 
   const encoder = new TextEncoder()
   let closed = false

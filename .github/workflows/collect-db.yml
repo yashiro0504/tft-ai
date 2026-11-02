@@ -100,6 +100,15 @@ jobs:
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://tftlab.kr' }}
         run: |
-          for path in "/api/tft/meta?view=decks" "/meta"; do
-            curl -sS -o /dev/null -w "warm $path %{http_code} %{time_total}s\n" "$SITE_URL$path" || true
+          # 첫 화면 2개(view=summary·decks) · 전체 응답(기물·아이템 탭) · 메타 페이지 · 덱 페이지 전부 (2026-11-02 지시문 4-2)
+          for path in "/api/tft/meta?view=summary" "/api/tft/meta?view=decks" "/api/tft/meta" "/meta"; do
+            curl -sS -o /dev/null -D /tmp/h -w "warm $path %{http_code} %{time_total}s" "$SITE_URL$path" || true
+            echo " $(grep -i '^x-vercel-cache' /tmp/h | tr -d '\r' || true)"
           done
+          ids=$(curl -sS "$SITE_URL/api/tft/meta?view=decks" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log((JSON.parse(s).decks||[]).map(d=>d.id).filter(Boolean).join("\n"))}catch{}})') || true
+          n=0
+          for id in $ids; do
+            curl -sS -o /dev/null "$SITE_URL/deck/$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$id")" || true
+            n=$((n+1))
+          done
+          echo "warm /deck/* $n pages"

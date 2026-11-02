@@ -1,11 +1,12 @@
 import type { EntityFactError, MetaCoachFeedback, SlimMatchData } from './types'
 import { costOdds } from './shopOdds'
 import { BASIC_COMPONENT_NAMES, GAME_CHAMPIONS, GAME_ITEMS } from './gameData'
-import { validateItemRecipes } from './itemRecipes'
+import { validateComponentLists, validateItemRecipes } from './itemRecipes'
 import { boardCounts } from './boardStats'
 import { boardCarry, detectDeckType, isTankItem } from './deckType'
 import { TRAIT_NAMES, traitNameOf } from './gameFacts'
 import { buildBoardTable, removalLosses, unitHasTrait } from './boardTable'
+import { boardValue } from './boardValue'
 
 /**
  * 의미(엔티티 사실) 검증 — 숫자·이름 접지(lib/grounding)가 잡지 못하는
@@ -269,7 +270,7 @@ export function validateEntityFacts(texts: string[], matches: SlimMatchData[]): 
 /**
  * 리포트 검증기 버전 — 검증 규칙을 바꾸면 올린다. 캐시된 리포트는 보여 줄 때 이 버전과 다르면 다시 검사한다 (lib/reportRevalidate).
  */
-export const REVALIDATOR_VERSION = '2026-10-30.2'
+export const REVALIDATOR_VERSION = '2026-11-02.1'
 
 /** "(핵심) 시너지와 무관" — 기물 뒤(세트처럼 핵심 시너지와 무관한) 또는 앞(시너지와 무관한 1성 기물 세트) */
 const UNRELATED_AFTER_RE = /^[^.!?\n]{0,12}?시너지(?:와|과|랑)\s*(?:무관|상관\s*없|관계\s*없|관련\s*없)/
@@ -447,6 +448,17 @@ export function validateAdviceAndCounts(
   const recipes = validateItemRecipes(all)
   // 잘못된 재료 구간을 데이터의 재료로 바꾼다 (예: '곡궁+주문력' → '연습용 장갑 + 쓸데없이 큰 지팡이')
   for (const r of recipes.errors) errors.push({ type: 'item_recipe', text: r.text, expected: r.right, actual: r.wrong })
+  // 아이템 이름 없이 나열한 재료("상징 재료(연습용 장갑·쓸데없이 큰 지팡이)")·상점 규칙 오류 (2026-11-02 지시문 3-1~3-3)
+  // 상징 조합식은 문장에 상징 이름이 없으면 이 보드의 주력 시너지(단계 높은 다인원 시너지) 상징과 대조한다
+  const mainTraits =
+    matches.length === 1
+      ? buildBoardTable(matches[0])
+          .traits.filter((t) => t.stage > 0 && (t.breakpoints[0] ?? 1) > 1)
+          .map((t) => t.name)
+      : []
+  const lists = validateComponentLists(all, mainTraits)
+  for (const r of lists.errors) errors.push({ type: r.kind === 'recipe' ? 'item_recipe' : 'advice_conflict', text: r.text, expected: r.expected, actual: r.actual })
+  recipes.checked += lists.checked
   if (!matches.length) return { errors, checkedRecipes: recipes.checked }
 
   // 기물별 아이템 수 — 여러 판이면 모든 판에서 3개 이상일 때만 '가득 참'
@@ -805,6 +817,14 @@ export function fixDrillTarget(drill: string, m: SlimMatchData, bodyTexts: strin
  * - 리롤 판 핵심 기물이 3성이 아니면 그 기물 3성 · 시너지 축이면 단계 합 +2 · 템포 축(표준형)이면 최종 레벨 +1 · 그 밖은 2성 이상 기물 +1
  * 여러 판이면 판별 값의 중앙값 기준.
  */
+/**
+ * 다음 3판 목표에 잴 수 있는 숫자 기준이 있는가 — "다음 3판"의 3은 기준이 아니다 (2026-11-02 지시문 5-1:
+ * "다음 3판은 경제 운영 하나만 의식하세요"가 숫자 검사를 통과해 코드 목표로 바뀌지 않았다).
+ */
+export function hasMeasurableTarget(drill: string | undefined | null): boolean {
+  return /\d/.test((drill || '').replace(/(?:다음|최근|이번)?\s*\d+\s*(?:판|게임|경기)/g, ''))
+}
+
 export function numericDrill(matches: SlimMatchData[], focus?: string): string {
   const ms = matches.filter((m) => m?.units?.length)
   if (!ms.length) return '다음 3판은 최종 보드 2성 이상 기물 5개 이상으로 마무리하기'
@@ -819,6 +839,13 @@ export function numericDrill(matches: SlimMatchData[], focus?: string): string {
   if (focus === 'synergy') {
     const sum = median(ms.map((m) => buildBoardTable(m).traits.reduce((s, t) => s + t.stage, 0)))
     return `다음 3판은 최종 보드 시너지 단계 합 ${sum + 2} 이상으로 마무리하기 (${scope} ${sum})`
+  }
+  // 경제 운영: 최종 레벨 9 도달, 이미 9 이상이면 보드 가치 (2026-11-02 지시문 5-1)
+  if (focus === 'economy' && ms.every((m) => detectDeckType(m).type !== 'reroll')) {
+    const lv = median(ms.map((m) => m.level))
+    if (lv < 9) return `다음 3판은 최종 레벨 9 도달하기 (${scope} Lv.${lv})`
+    const value = median(ms.map((m) => boardValue(m.units)))
+    return `다음 3판은 최종 보드 가치 ${Math.max(100, Math.ceil((value + 10) / 10) * 10)}G 이상으로 마무리하기 (${scope} ${value}G)`
   }
   if (focus === 'tempo' && ms.every((m) => detectDeckType(m).type !== 'reroll')) {
     const lv = median(ms.map((m) => m.level))

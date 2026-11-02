@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { after } from 'next/server'
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './supabase/config'
 import { getChampionCost, translateChampion, translateItem, translateTrait } from './constants'
 import { buildMetaPayload, toMetaDeck } from './metaPayload'
@@ -504,19 +505,65 @@ function snapshotMatchesOf(rows: CompRow[] | null | undefined): number | undefin
 const SNAPSHOT_KEY = 'meta-deck-snapshot:v2'
 const SNAPSHOT_TTL_MS = 5 * 60_000
 const SNAPSHOT_FALLBACK_TTL_MS = 60_000
+/**
+ * 마지막으로 만든 DB 스냅샷 사본 (2026-11-02 지시문 4) — 5분 캐시가 만료돼도 이 사본을 바로 주고 새 스냅샷은 뒤에서 만든다.
+ * 캐시 만료 뒤 첫 방문자가 필터 RPC·덱 집계 조회·덱 가공(합쳐 3초 남짓)을 기다리던 지연을 없앤다. 덱 스냅샷은 수집 때만 바뀐다.
+ */
+const SNAPSHOT_STALE_KEY = 'meta-deck-snapshot:v2:last'
+const SNAPSHOT_STALE_TTL_MS = 3 * 24 * 60 * 60_000
+
+let snapshotRefresh: Promise<DecksResponse> | null = null
+
+/** 스냅샷을 새로 만들어 두 캐시(5분 · 사본)에 넣는다. 같은 인스턴스의 동시 갱신은 하나로 합친다 */
+export function refreshMetaDeckSnapshot(): Promise<DecksResponse> {
+  if (snapshotRefresh) return snapshotRefresh
+  snapshotRefresh = (async () => {
+    const startedAt = Date.now()
+    const filters = await getMetaFilters()
+    const res = await getDecks({ patch: filters.source === 'db' ? filters.defaults.patch : null, tier: filters.defaults?.tier ?? DEFAULT_TIER })
+    if (res.decks?.length) {
+      await cacheSet(SNAPSHOT_KEY, res, res.source === 'db' ? SNAPSHOT_TTL_MS : SNAPSHOT_FALLBACK_TTL_MS)
+      if (res.source === 'db') await cacheSet(SNAPSHOT_STALE_KEY, res, SNAPSHOT_STALE_TTL_MS)
+    }
+    logEvent('info', 'meta_snapshot_refreshed', { ms: elapsedMs(startedAt), source: res.source, decks: res.decks?.length ?? 0 })
+    return res
+  })().finally(() => {
+    snapshotRefresh = null
+  })
+  return snapshotRefresh
+}
+
+/** 응답을 보낸 뒤 갱신 (Next 요청 안이면 after, 아니면 그냥 띄운다) */
+function refreshInBackground() {
+  const run = () =>
+    refreshMetaDeckSnapshot().catch((err) => {
+      logEvent('warn', 'meta_snapshot_refresh_failed', errorFields(err))
+    })
+  try {
+    after(run)
+    return
+  } catch {
+    /* 요청 밖(스크립트·테스트) — 그냥 띄운다 */
+  }
+  void run()
+}
 
 /**
  * 메타 랭킹 덱 탭 첫 화면(app/meta)과 내 덱 성적표(lib/deckReport)가 같이 쓰는 스냅샷 — 기본 필터(최신 패치 · 기본 티어).
  * 2026-10-28: 성적표는 DB 집계(10.27), 메타 페이지는 래더 JSON(10.28 09:29)을 보여 같은 덱 평균이 달랐다.
  * 두 화면 모두 이 함수만 부르고, 결과는 인스턴스 간 공유 캐시에 두어 갱신 시 같이 바뀐다.
+ * 5분 캐시가 비면 마지막 DB 스냅샷 사본을 바로 주고 뒤에서 갱신한다 (stale-while-revalidate · 2026-11-02 지시문 4).
  */
 export async function getMetaDeckSnapshot(): Promise<DecksResponse> {
   const cached = await cacheGet<DecksResponse>(SNAPSHOT_KEY)
   if (cached?.decks?.length) return cached
-  const filters = await getMetaFilters()
-  const res = await getDecks({ patch: filters.source === 'db' ? filters.defaults.patch : null, tier: filters.defaults?.tier ?? DEFAULT_TIER })
-  if (res.decks?.length) await cacheSet(SNAPSHOT_KEY, res, res.source === 'db' ? SNAPSHOT_TTL_MS : SNAPSHOT_FALLBACK_TTL_MS)
-  return res
+  const last = await cacheGet<DecksResponse>(SNAPSHOT_STALE_KEY)
+  if (last?.decks?.length) {
+    incrMetric('meta_snapshot.stale_served')
+    refreshInBackground()
+    return last
+  }
+  return refreshMetaDeckSnapshot()
 }
 
 /* ------------------------------------------------------------------ */

@@ -690,6 +690,15 @@ function bisLine(units: SlimMatchUnit[], bis: Map<string, string[]>, scope: stri
   return `- 채용 상위 아이템 일치: ${carry}${scope} ${res.matched}/${res.slots} (${pct}%) — 기물별 채용 상위 3개(표본 ${BIS_MIN_SAMPLE}판 이상, 상징 제외) 기준 · BIS 세트 아님`
 }
 
+/**
+ * BIS 일치 표기 하나 — 요약·개선 포인트·비교 섹션이 모두 이 문구를 쓴다 (2026-11-02 지시문 5-2).
+ * "상징 1칸 제외 · BIS 2/2 일치" — 상징 칸을 빼고 남은 칸끼리 센다 (요약이 "BIS 3개 중 2개"로 상징 칸까지 세어 모순이었다).
+ */
+export function bisMatchLabel(b: Pick<DeckBisCheck, 'emblems' | 'label' | 'matched' | 'slots'>): string {
+  const name = b.label === 'BIS 세트' ? 'BIS' : b.label
+  return `${b.emblems.length ? `상징 ${b.emblems.length}칸 제외 · ` : ''}${name} ${b.matched}/${b.slots} 일치`
+}
+
 /** 덱 플레이북 BIS 세트 대조 줄 — 비교 섹션(deckComparison.bis)과 같은 값 (요약·개선 포인트가 다른 일치 수를 쓰지 않게) */
 function bisSetLine(b: DeckBisCheck): string {
   const emblem = b.emblems.length ? ` · ${b.emblems.join('·')}은 대조에서 제외(켜진 시너지를 받치는 칸)` : ''
@@ -697,7 +706,9 @@ function bisSetLine(b: DeckBisCheck): string {
   const rule = b.recommend
     ? ''
     : ` — 이 조합은 덱 평균보다 뚜렷이 좋지 않다(표본 50판 미만이거나 차이가 표준오차 이내): 아이템 변경을 개선 포인트로 권하지 마라`
-  return `- BIS 일치: ${b.unit} ${b.matched}/${b.slots} — 이 덱 ${b.label}(${b.items.join('·')}) 기준${stat}${emblem}${rule}`
+  // 일치 칸이 모두 BIS 면 아이템은 약점이 아니다 (2026-11-02 지시문 5-2)
+  const allMatched = b.slots > 0 && b.matched === b.slots ? ' — 남은 칸이 모두 일치: 아이템을 약점으로 쓰지 마라' : ''
+  return `- BIS 일치: ${b.unit} ${bisMatchLabel(b)} (이 표기 그대로 써라) — 이 덱 ${b.label}(${b.items.join('·')}) 기준${stat}${emblem}${rule}${allMatched}`
 }
 
 function multiLines(matches: SlimMatchData[]): string[] {

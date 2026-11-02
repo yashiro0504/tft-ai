@@ -176,7 +176,8 @@ export default function TFTCoachPage() {
   const handleOverview = async () => {
     if (!search || isOverviewLoading) return
     setShowProNotice(true)
-    if (quota.exhausted) {
+    // 횟수가 0이면 새 버전 생성만 막는다 — 첫 열기는 저장된 리포트면 서버가 횟수와 상관없이 준다 (2026-11-02 지시문 1)
+    if (quota.exhausted && overviewFeedback && overviewOutdated) {
       setIsLimitOpen(true)
       return
     }
@@ -196,11 +197,16 @@ export default function TFTCoachPage() {
         }),
       })
       const data: TftOverviewResponse = await res.json()
+      if (res.status === 429) {
+        setIsLimitOpen(true)
+        return
+      }
       if (!res.ok || !data.success || !data.feedback) {
         throw new Error(data.error || '종합 분석 중 오류가 발생했습니다.')
       }
       setOverviewFeedback(data.feedback)
       setOverviewOutdated(Boolean(data.outdated))
+      if (data.regenerateFailed) setOverviewError('새 버전 분석을 만들지 못해 기존 분석을 그대로 보여 드립니다. 횟수는 차감되지 않았습니다.')
       // 서버가 이번 요청에서 실제로 차감했을 때만 센다 (캐시 적중·AI 미사용 폴백은 차감 없음)
       quota.settle(data)
       track('analysis_success', { scope: 'overview', matchCount: search.matches.length })
@@ -405,12 +411,19 @@ export default function TFTCoachPage() {
                 </div>
                 {/* 결과가 최신 버전이면 다시 분석 버튼을 숨긴다 (누르면 같은 캐시가 다시 열릴 뿐 — 2026-10-30 2차 지시문 5-2) */}
                 {overviewFeedback && !overviewOutdated && !isOverviewLoading ? null : (
-                <div className="flex shrink-0 items-center gap-3">
-                <span className="text-xs text-subtle whitespace-nowrap">{quota.unlimited ? '무제한' : `오늘 ${quota.remaining}/${quota.limit}회 남음`}</span>
+                <div className="flex shrink-0 flex-wrap items-center gap-3">
+                {overviewFeedback && overviewOutdated && <span className="text-xs text-ink">이전 버전 분석입니다. 새 버전은 덱 비교·검증이 개선됐습니다.</span>}
+                <span className="text-xs text-subtle whitespace-nowrap">
+                  {quota.unlimited
+                    ? '무제한'
+                    : overviewFeedback && overviewOutdated && quota.exhausted
+                      ? '오늘 무료 분석 횟수를 모두 써서 다시 분석할 수 없습니다'
+                      : `오늘 ${quota.remaining}/${quota.limit}회 남음`}
+                </span>
                 <button
                   type="button"
                   onClick={handleOverview}
-                  disabled={isOverviewLoading || !breakdown?.analyzed}
+                  disabled={isOverviewLoading || !breakdown?.analyzed || Boolean(overviewFeedback && overviewOutdated && quota.exhausted)}
                   className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-control bg-accent hover:opacity-90 disabled:opacity-60 text-on-accent font-bold text-sm transition cursor-pointer"
                 >
                   {isOverviewLoading ? (
@@ -421,7 +434,7 @@ export default function TFTCoachPage() {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>{overviewFeedback ? '새 버전으로 다시 분석 (1회 차감)' : '종합 AI 분석 실행'}</span>
+                      <span>{overviewFeedback ? '새 버전으로 다시 분석 (무료 1회 차감)' : '종합 AI 분석 실행'}</span>
                     </>
                   )}
                 </button>

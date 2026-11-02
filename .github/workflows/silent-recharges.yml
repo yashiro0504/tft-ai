@@ -1,0 +1,31 @@
+name: Silent Recharge Check
+
+# 리포트 캐시 만료로 같은 경기 리포트가 안내 없이 다시 생성·차감된 건 조회·환급 (2026-11-02 지시문 1-5).
+# 기본은 조회만. refund=true 면 오늘(KST) 차감분을 usage_daily 에서 되돌린다.
+on:
+  workflow_dispatch:
+    inputs:
+      refund:
+        description: '오늘(KST) 재차감분 환급'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Find (and refund) silent recharges
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/findSilentRecharges.js ${{ inputs.refund && '--refund' || '' }}
