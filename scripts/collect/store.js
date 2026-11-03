@@ -170,6 +170,20 @@ function createSupabaseStore({ url, serviceRoleKey }) {
       return must(await db.rpc('tft_prune_raw', { p_keep_patches: keepPatches }), '원본 정리')
     },
 
+    /** 원본에 들어온 가장 높은 세트 번호 (없으면 null) */
+    async maxSetNumber() {
+      const rows = must(await db.from('tft_matches').select('set_number').order('set_number', { ascending: false }).limit(1), '세트 조회')
+      return rows[0]?.set_number ?? null
+    },
+
+    /** 패치 patch 에서 setNumber 보다 낮은 세트 판을 지운다 (보드는 cascade). 반환: 지운 판의 { game_date, tier_bucket } */
+    async purgeOlderSet(patch, setNumber) {
+      return must(
+        await db.from('tft_matches').delete().eq('patch', patch).lt('set_number', setNumber).select('game_date, tier_bucket'),
+        '세트 경계 정리'
+      )
+    },
+
     async rawSizeMb() {
       return Number(must(await db.rpc('tft_raw_size_mb'), '용량 조회'))
     },
@@ -380,6 +394,21 @@ function createMemoryStore() {
         matches.delete(id)
         for (const k of [...boards.keys()]) if (k.startsWith(`${id}:`)) boards.delete(k)
         removed++
+      }
+      return removed
+    },
+    async maxSetNumber() {
+      let max = null
+      for (const m of matches.values()) if (max == null || m.set_number > max) max = m.set_number
+      return max
+    },
+    async purgeOlderSet(patch, setNumber) {
+      const removed = []
+      for (const [id, m] of matches) {
+        if (m.patch !== patch || !(m.set_number < setNumber)) continue
+        matches.delete(id)
+        for (const k of [...boards.keys()]) if (k.startsWith(`${id}:`)) boards.delete(k)
+        removed.push({ game_date: m.game_date, tier_bucket: m.tier_bucket })
       }
       return removed
     },

@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import { ImageResponse } from 'next/og'
 import { resolveDeckPage } from '@/lib/deckPage'
 import { loadKoreanFont } from '@/lib/ogFont'
@@ -57,7 +58,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const traits = deck.traits.slice(0, 4)
 
   const fontText = [
-    'TFT LAB', 'DECK GUIDE', 'SET 18', '패치', '평균', '등', 'TOP4', '순방', '표본', '판', '유닛', '코',
+    'TFT LAB', 'DECK GUIDE', `SET ${CURRENT_SET}`, '패치', '평균', '등', 'TOP4', '순방', '표본', '판', '유닛', '코',
     '#', '%', '/', '·', '-',
     deck.name, tier, avg, top4, deck.sampleSize.toLocaleString(), String(deck.unitCost),
     ...units.map((unit) => unit.name),
@@ -102,7 +103,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 28, fontWeight: 700 }}>TFT LAB</div>
-              <div style={{ fontSize: 16, color: '#8b949e' }}>SET 18 · DECK GUIDE</div>
+              <div style={{ fontSize: 16, color: '#8b949e' }}>SET {CURRENT_SET} · DECK GUIDE</div>
             </div>
           </div>
           <div

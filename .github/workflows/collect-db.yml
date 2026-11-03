@@ -57,6 +57,7 @@ jobs:
         run: |
           npm run test:collect
           npm run test:rollup
+          npm run test:season
 
       - name: Collect
         env:

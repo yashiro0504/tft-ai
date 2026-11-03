@@ -5,6 +5,8 @@
  * 지정하지 않으면 Vercel 프리뷰 URL → localhost 순으로 폴백한다.
  * → Riot 프로덕션 키 심사에는 고정 공개 URL이 필요하므로 커스텀 도메인을 권장.
  */
+import { CURRENT_SET } from './gameFacts'
+
 export const SITE_NAME = 'TFT LAB'
 
 const rawSiteUrl =
@@ -14,7 +16,7 @@ const rawSiteUrl =
 export const SITE_URL = rawSiteUrl.replace(/\/+$/, '')
 
 export const SITE_DESCRIPTION =
-  'TFT 시즌 18 실측 메타 랭킹(기물·시너지·아이템·BIS 조합)과 경기별 AI 전략 코칭을 제공하는 롤토체스 분석 사이트'
+  `TFT 시즌 ${CURRENT_SET} 실측 메타 랭킹(기물·시너지·아이템·BIS 조합)과 경기별 AI 전략 코칭을 제공하는 롤토체스 분석 사이트`
 
 /** 운영자 표기 (약관/개인정보처리방침) */
 export const OPERATOR_NAME = process.env.NEXT_PUBLIC_OPERATOR_NAME || 'TFT LAB 운영자'

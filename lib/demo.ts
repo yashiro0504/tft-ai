@@ -1,3 +1,4 @@
+import { CURRENT_SET } from './gameFacts'
 import { SlimMatchData, LobbyParticipant } from './types'
 import { DDRAGON_VERSION } from './constants'
 import { analyzeContest } from './contest'
@@ -68,7 +69,7 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
   const matches: SlimMatchData[] = [
     {
       matchId: 'KR_DEMO_001',
-      setNumber: 18,
+      setNumber: CURRENT_SET,
       gameDatetime: Date.now() - 1000 * 60 * 35,
       timeAgo: '35분 전',
       gameLengthStr: '28분 15초',
@@ -99,7 +100,7 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
     },
     {
       matchId: 'KR_DEMO_002',
-      setNumber: 18,
+      setNumber: CURRENT_SET,
       gameDatetime: Date.now() - 1000 * 60 * 95,
       timeAgo: '1시간 전',
       gameLengthStr: '34분 50초',
@@ -128,7 +129,7 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
     },
     {
       matchId: 'KR_DEMO_003',
-      setNumber: 18,
+      setNumber: CURRENT_SET,
       gameDatetime: Date.now() - 1000 * 60 * 155,
       timeAgo: '2시간 전',
       gameLengthStr: '24분 30초',
@@ -156,7 +157,7 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
     },
     {
       matchId: 'KR_DEMO_004',
-      setNumber: 18,
+      setNumber: CURRENT_SET,
       gameDatetime: Date.now() - 1000 * 60 * 215,
       timeAgo: '3시간 전',
       gameLengthStr: '36분 10초',
@@ -184,7 +185,7 @@ export function getDemoMatches(gameName: string): SlimMatchData[] {
     },
     {
       matchId: 'KR_DEMO_005',
-      setNumber: 18,
+      setNumber: CURRENT_SET,
       gameDatetime: Date.now() - 1000 * 60 * 275,
       timeAgo: '4시간 전',
       gameLengthStr: '30분 40초',

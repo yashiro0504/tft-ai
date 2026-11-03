@@ -146,4 +146,10 @@ jobs:
           fi
           git add lib/metaStats.json lib/decksData.json lib/unitBuilds.json lib/patchNotes.json lib/gameBaselines.json data/axesSnapshot.json
           git commit -m "chore(meta): 래더 표본·덱 자동 갱신 ($(date -u +%Y-%m-%d))"
-          git push
+          # 실행(최대 90분) 중에 Refresh Game Data 워크플로가 게임 데이터를 먼저 푸시했을 수 있다 — 파일이 겹치지 않아 rebase 로 이어 붙인다
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((i * 10))
+          done
+          echo "::error title=Push failed::main 에 푸시하지 못했습니다"
+          exit 1

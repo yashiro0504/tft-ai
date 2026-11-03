@@ -8,6 +8,8 @@
  *  4) 일별 집계: 이번 실행에 들어온(또는 티어가 바뀐) (game_date, patch, tier_bucket) 조합만 다시 계산
  *     하루 1회(DECK_REFRESH_HOURS)는 원본의 모든 조합을 다시 계산하고, 최신 패치 덱 클러스터(stat_comp)를 다시 만든다
  *  5) 원본 정리: 최근 KEEP_PATCHES 개 패치만 남김 (무료 플랜 500MB 대응, 집계는 영구)
+ * 세트 전환: 기준 세트(게임 데이터 · DB 최고 세트 중 큰 값) 이상의 판을 받는다. 새 세트 판이 들어온 패치에 섞인 이전 세트 판
+ *  (Data Dragon 이 서버 패치보다 먼저 올라가 새 패치 라벨이 붙은 판)은 지우고 그 조합을 다시 집계한다 — docs/SEASON-TRANSITION.md
  * 수집(2·3)은 MAX_MINUTES 보다 7분 일찍 멈춰 덱 클러스터 몫을 남긴다. MAX_MATCHES 를 채워도 멈춘다. 다음 실행이 커서부터 이어 간다.
  *
  * 사용법:
@@ -22,7 +24,7 @@
  *   MAX_MINUTES=50 · MAX_MATCHES=300(무료 플랜: 시간당 300판 ≈ 패치당 9.6만 판 ≈ 250MB, 실측 2.6KB/판 — 2026-10-28 상위 덱 300판+ 목표로 200→300) · SEED_TIERS=challenger,grandmaster,master · MASTER_LIMIT=1000
  *   SEED_REFRESH_HOURS=20 · IDS_PER_SEED=20 · NEW_SEED_LOOKBACK_DAYS=2 · KEEP_PATCHES=1
  *   MAX_RAW_MB=400(소프트: 넘으면 수집만 중단) · MAX_RAW_MB_HARD=480(하드: 넘으면 무조건 정리) · PRUNE_ON_LIMIT=0(1 이면 소프트에서도 정리)
- *   SET_NUMBER=18 · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=8(덱 클러스터를 하루 3번 — 메타 페이지·덱 성적표 갱신이 하루 늦던 문제) · COMP_MIN_GAMES=8
+ *   SET_NUMBER=(lib/gameData.lite.json 의 set — scripts/_season) · RANKED_QUEUE=1100 · DECK_REFRESH_HOURS=8(덱 클러스터를 하루 3번 — 메타 페이지·덱 성적표 갱신이 하루 늦던 문제) · COMP_MIN_GAMES=8
  */
 const crypto = require('crypto')
 const { loadEnv } = require('./_env')
@@ -34,6 +36,7 @@ const { createSupabaseStore, createMemoryStore } = require('./collect/store')
 const { createSeedCrypto } = require('./collect/seedCrypto')
 const { comboKey, parseComboKey } = require('./collect/rollup')
 const { rebuildComps } = require('./collect/decks')
+const { configuredSet, gameDataSet, createSetGate, annotateWarning } = require('./_season')
 
 const env = (name, def) => process.env[name] ?? def
 const num = (name, def) => {
@@ -64,7 +67,7 @@ const CFG = {
   maxRawMb: LIMITS.maxRawMb,
   maxRawMbHard: LIMITS.maxRawMbHard,
   pruneOnLimit: process.env.PRUNE_ON_LIMIT === '1',
-  setNumber: num('SET_NUMBER', 18),
+  setNumber: configuredSet(),
   rankedQueue: num('RANKED_QUEUE', 1100),
   deckRefreshHours: num('DECK_REFRESH_HOURS', 8),
 }
@@ -255,6 +258,13 @@ async function main({ log = console } = {}) {
 
   try {
     await store.loadDict()
+    // 세트 관문: 게임 데이터 기준 세트와 DB 에 이미 들어온 최고 세트 중 큰 값부터 (게임 데이터가 늦게 바뀌어도 이전 세트로 되돌아가지 않게)
+    const dbSet = await store.maxSetNumber().catch(() => null)
+    const gate = createSetGate(Math.max(CFG.setNumber, dbSet || 0), (set, prev) => {
+      log.log(`  새 세트 ${set} 판 발견 (기준 ${prev}) — 이후 세트 ${prev} 판은 받지 않습니다`)
+    })
+    /** 이번 실행에 판을 적재한 패치 (세트가 섞인 패치 정리용) */
+    const ingestedPatches = new Set()
     const calendar = await syncPatchCalendar(store, log)
     const patchAt = (gameAtMs) => patchForTime(calendar, gameAtMs)
     log.log(`  패치 달력: ${calendar.map((p) => p.patch).sort().join(', ') || '(비어 있음)'}`)
@@ -302,7 +312,7 @@ async function main({ log = console } = {}) {
       try {
         const raw = await getMatch(riot, CFG.region, matchId)
         const info = raw.info || {}
-        if (info.tft_set_number !== CFG.setNumber || info.queue_id !== CFG.rankedQueue) {
+        if (info.queue_id !== CFG.rankedQueue || !gate.accept(info.tft_set_number)) {
           skippedThisRun.add(matchId)
           return { result: 'skipped' }
         }
@@ -313,7 +323,10 @@ async function main({ log = console } = {}) {
           return { result: 'skipped' }
         }
         const inserted = await store.ingest(norm.match, norm.boards)
-        if (inserted) dirty.add(comboKey(norm.match.game_date, norm.match.patch, norm.match.tier_bucket))
+        if (inserted) {
+          dirty.add(comboKey(norm.match.game_date, norm.match.patch, norm.match.tier_bucket))
+          ingestedPatches.add(norm.match.patch)
+        }
         return { result: inserted ? 'added' : 'skipped', gameAt: info.game_datetime }
       } catch (e) {
         if (e instanceof KeyError) throw e
@@ -410,6 +423,28 @@ async function main({ log = console } = {}) {
       if (batch.length < 50) break
     }
     if (seedDecryptFailures) stats.note = [stats.note, `시드 복호화 실패 ${seedDecryptFailures}건`].filter(Boolean).join(' · ')
+
+    // 3-1) 세트 경계: 이번에 적재한 패치마다 그 패치의 최고 세트보다 낮은 세트 판을 지운다 (한 패치 = 한 세트)
+    //      평소에는 지울 판이 없어 조회 1번으로 끝난다. 지운 판의 조합은 다시 집계한다
+    for (const patch of ingestedPatches) {
+      const removed = await store.purgeOlderSet(patch, gate.current).catch((e) => {
+        log.warn(`  세트 경계 정리 실패 (다음 실행에서 재시도): ${e.message}`)
+        return []
+      })
+      if (!removed.length) continue
+      for (const m of removed) dirty.add(comboKey(m.game_date, patch, m.tier_bucket))
+      log.log(`  세트 경계 정리: 패치 ${patch} 의 이전 세트 판 ${removed.length}개 삭제 (세트 ${gate.current} 만 남김)`)
+    }
+    const dataSet = gameDataSet()
+    if (dataSet && gate.current > dataSet) {
+      const note = `새 세트 ${gate.current} 수집 중 — 게임 데이터는 세트 ${dataSet}`
+      stats.note = [stats.note, note].filter(Boolean).join(' · ')
+      annotateWarning(
+        'New TFT set',
+        `${note}. Refresh Game Data 워크플로(또는 npm run build:gamedata -- --set=${gate.current})로 lib/gameData.json 을 새 세트로 다시 만드세요.`,
+        log
+      )
+    }
 
     // 4) 일별 집계 (원본 정리 전에: 정리될 패치의 마지막 판까지 집계에 남긴다)
     aggregates = await refreshAggregates({ store, dirty, deadline, log })

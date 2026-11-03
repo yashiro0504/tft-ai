@@ -23,6 +23,25 @@ interface LiteTrait extends Named {
 /** 현재 세트 번호 (Riot tft_set_number) — 이전 시즌 판을 분석에서 뺀다 (lib/queue) */
 export const CURRENT_SET: number = (lite as unknown as { set: number }).set
 
+/**
+ * 현재 세트의 첫 패치 (예: '16.23'). scripts/buildGameData.js 가 세트가 바뀐 빌드에서 기록한다 — 모르면 null.
+ * 이보다 앞선 패치의 집계·플레이북은 이전 세트 것이라 현재 세트 덱에 붙이지 않는다 (lib/playbook · docs/SEASON-TRANSITION.md).
+ */
+export const SET_FIRST_PATCH: string | null = (lite as unknown as { setFirstPatch?: string | null }).setFirstPatch ?? null
+
+/** 패치 문자열을 비교 가능한 수로 ('16.21' → 16021, 형식이 다르면 -1) */
+export function patchOrdinal(p: string | null | undefined): number {
+  const m = /^(\d+)\.(\d+)$/.exec(String(p ?? ''))
+  return m ? Number(m[1]) * 1000 + Number(m[2]) : -1
+}
+
+/** 이 패치가 현재 세트 패치인가 (세트 첫 패치를 모르면 숫자 패치는 모두 현재 세트로 본다) */
+export function isCurrentSetPatch(p: string | null | undefined): boolean {
+  const n = patchOrdinal(p)
+  if (n < 0) return false
+  return SET_FIRST_PATCH ? n >= patchOrdinal(SET_FIRST_PATCH) : true
+}
+
 /** 게임 데이터 패치 (예: '16.21') */
 export const GAME_VERSION: string = (lite as unknown as { gameVersion: string }).gameVersion
 

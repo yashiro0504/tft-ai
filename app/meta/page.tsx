@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buildMetaPayload } from '@/lib/metaPayload'
@@ -16,19 +17,19 @@ import { SITE_URL } from '@/lib/site'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: '시즌 18 메타 랭킹 — 기물·시너지·아이템 티어표',
+  title: `시즌 ${CURRENT_SET} 메타 랭킹 — 기물·시너지·아이템 티어표`,
   description:
-    'KR 마스터+ 랭크 실측 표본 기반 TFT 시즌 18 메타 랭킹. 기물 티어, 시너지, 아이템, BIS 조합과 추천 덱을 평균 등수·순방률로 확인하세요.',
+    `KR 마스터+ 랭크 실측 표본 기반 TFT 시즌 ${CURRENT_SET} 메타 랭킹. 기물 티어, 시너지, 아이템, BIS 조합과 추천 덱을 평균 등수·순방률로 확인하세요.`,
   alternates: { canonical: `${SITE_URL}/meta` },
   openGraph: {
-    title: 'TFT LAB — 시즌 18 메타 랭킹',
+    title: `TFT LAB — 시즌 ${CURRENT_SET} 메타 랭킹`,
     description: '실측 매치 표본 기반 기물·시너지·아이템·BIS 조합 티어표',
     url: `${SITE_URL}/meta`,
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'TFT LAB — 시즌 18 메타 랭킹',
+    title: `TFT LAB — 시즌 ${CURRENT_SET} 메타 랭킹`,
     description: '실측 매치 표본 기반 기물·시너지·아이템·BIS 조합 티어표',
   },
 }
@@ -51,7 +52,7 @@ export default async function MetaPage() {
 
       <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6">
         <div className="mb-4">
-          <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 18 메타 랭킹</h1>
+          <h1 className="text-xl font-black tracking-tight md:text-2xl">시즌 {CURRENT_SET} 메타 랭킹</h1>
           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
             <span className="rounded-chip border border-line bg-sunken px-2 py-0.5 font-semibold text-ink" title="수집 랭크 구간">
               {scopeBadge}

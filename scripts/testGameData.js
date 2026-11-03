@@ -18,6 +18,9 @@ const { GAME_CHAMPIONS, GAME_TRAITS, GAME_ITEMS, GAME_DATA_INFO, ITEM_RECIPES, B
 )
 
 const ROOT = path.join(__dirname, '..')
+/** 아래 2·4절의 고정 사실(골든셋·기물 이름)은 이 세트 기준이다. 게임 데이터가 다른 세트면 건너뛴다 (세트 전환 · docs/SEASON-TRANSITION.md) */
+const FIXTURE_SET = 18
+const SAME_SET = GAME_DATA_INFO.set === FIXTURE_SET
 const failures = []
 const check = (label, ok, detail = '') => {
   if (!ok) failures.push(detail ? `${label} — ${detail}` : label)
@@ -47,6 +50,8 @@ const goldenUnits = new Map()
 const goldenItems = new Set()
 for (const c of golden.cases || []) {
   for (const m of c.matches || []) {
+    // 골든셋은 세트 고정 표본 — 게임 데이터와 같은 세트 판만 대조한다
+    if ((m.setNumber ?? FIXTURE_SET) !== GAME_DATA_INFO.set) continue
     for (const p of [m, ...(m.lobbyParticipants || [])]) {
       for (const u of p.units || []) {
         if (u.id) goldenUnits.set(u.id, u.rarity)
@@ -65,8 +70,10 @@ for (const name of goldenItems) check('골든셋 아이템 찾기', Boolean(find
 /* 3. 래더 보드 — Riot 판정과 단계표 교차 검증 (로컬 수집본이 있을 때만) */
 const ladderPath = path.join(ROOT, 'data', 'ladderBoards.json')
 let ladderNote = '래더 보드 없음 (건너뜀)'
-if (fs.existsSync(ladderPath)) {
-  const ladder = JSON.parse(fs.readFileSync(ladderPath, 'utf-8'))
+const ladderFile = fs.existsSync(ladderPath) ? JSON.parse(fs.readFileSync(ladderPath, 'utf-8')) : null
+if (ladderFile && (ladderFile.set ?? FIXTURE_SET) !== GAME_DATA_INFO.set) ladderNote = `래더 보드 세트 ${ladderFile.set} ≠ 게임 데이터 세트 ${GAME_DATA_INFO.set} (건너뜀)`
+else if (ladderFile) {
+  const ladder = ladderFile
   const miss = new Set()
   const tierBad = new Map()
   let traits = 0
@@ -101,18 +108,20 @@ if (fs.existsSync(ladderPath)) {
   ladderNote = `래더 시너지 ${traits}건 대조`
 }
 
-/* 4. 조회 별칭 · 알려진 사실 */
-eq('장로 드래곤 칸', findChampion('DA_18_ElderDragon')?.slots, 2)
-eq('나르 코스트 (통계 키)', findChampion('Gnar')?.cost, 5)
-eq('코그모 (통계 키)', findChampion('KogMaw18_AD')?.name, '코그모')
-eq('심술두꺼비 (슬러그)', findChampion('gromp18ap')?.name, '심술두꺼비')
-eq('베이가 시너지', findChampion('베이가')?.traits.map((t) => findTrait(t).name), ['검은 가시', '날렵이', '주문술사'])
-eq('옛 키 Eldritch', findTrait('Eldritch')?.name, '검은 가시')
-eq('영문명 Ravager', findTrait('Ravager')?.name, '약탈자')
-eq('나무정령 단계', findTrait('나무정령')?.breakpoints, [3, 5, 7, 9, 11])
-eq('일월식 단계 없음', findTrait('DA_18_Eclipse')?.breakpoints, [])
-eq('대천사의 지팡이 조합법', ITEM_RECIPES['대천사의 지팡이'], ['쓸데없이 큰 지팡이', '여신의 눈물'])
-eq('붉은 덩굴정령 (DA_RedBuff)', findItem('DA_RedBuff')?.name, '붉은 덩굴정령')
+/* 4. 조회 별칭 · 알려진 사실 (세트 18 고정 — 새 세트로 넘어가면 그 세트 사실로 바꿔 적는다) */
+if (SAME_SET) {
+  eq('장로 드래곤 칸', findChampion('DA_18_ElderDragon')?.slots, 2)
+  eq('나르 코스트 (통계 키)', findChampion('Gnar')?.cost, 5)
+  eq('코그모 (통계 키)', findChampion('KogMaw18_AD')?.name, '코그모')
+  eq('심술두꺼비 (슬러그)', findChampion('gromp18ap')?.name, '심술두꺼비')
+  eq('베이가 시너지', findChampion('베이가')?.traits.map((t) => findTrait(t).name), ['검은 가시', '날렵이', '주문술사'])
+  eq('옛 키 Eldritch', findTrait('Eldritch')?.name, '검은 가시')
+  eq('영문명 Ravager', findTrait('Ravager')?.name, '약탈자')
+  eq('나무정령 단계', findTrait('나무정령')?.breakpoints, [3, 5, 7, 9, 11])
+  eq('일월식 단계 없음', findTrait('DA_18_Eclipse')?.breakpoints, [])
+  eq('대천사의 지팡이 조합법', ITEM_RECIPES['대천사의 지팡이'], ['쓸데없이 큰 지팡이', '여신의 눈물'])
+  eq('붉은 덩굴정령 (DA_RedBuff)', findItem('DA_RedBuff')?.name, '붉은 덩굴정령')
+}
 
 /* 5. 클라이언트 요약본(lib/gameFacts)이 본 DB 와 같은 빌드 · 클라이언트 번들에 본 DB 가 들어가지 않음 */
 const lite = require('../lib/gameData.lite.json')
@@ -186,7 +195,8 @@ check('코스트 범위 밖은 0', costOdds(8, 6) === 0 && costOdds(8, 0) === 0)
 check('oddsWindow: 하한 이상인 레벨 구간', JSON.stringify(oddsWindow(1, 9)) === JSON.stringify({ from: 1, to: oddsWindow(1, 11).to }))
 const oddsNote = `상점 확률 ${SHOP_ODDS.length}레벨 (Lv.8 = ${SHOP_ODDS[7]?.join('/')})`
 
-const summary = `게임 기준 DB ${GAME_DATA_INFO.gameVersion} · 기물 ${GAME_CHAMPIONS.length} · 시너지 ${GAME_TRAITS.length} · 아이템 ${GAME_ITEMS.length} · 골든셋 기물 ${goldenUnits.size} · ${oddsNote} · ${ladderNote}`
+const fixtureNote = SAME_SET ? '' : ` · ⚠️ 세트 ${FIXTURE_SET} 고정 사실 검사 건너뜀 (세트 ${GAME_DATA_INFO.set})`
+const summary = `게임 기준 DB 세트 ${GAME_DATA_INFO.set} · ${GAME_DATA_INFO.gameVersion}${fixtureNote} · 기물 ${GAME_CHAMPIONS.length} · 시너지 ${GAME_TRAITS.length} · 아이템 ${GAME_ITEMS.length} · 골든셋 기물 ${goldenUnits.size} · ${oddsNote} · ${ladderNote}`
 if (failures.length) {
   console.error(`❌ 게임 기준 DB 검증 실패 ${failures.length}건\n` + failures.slice(0, 40).map((f) => `  - ${f}`).join('\n'))
   console.error(summary)

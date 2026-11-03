@@ -4,7 +4,8 @@
  * 챌린저·그랜드마스터·마스터 선수들의 최근 랭크 게임에서 8명의 "최종 보드"를 모은다.
  * 덱 랭킹은 이 보드를 묶어서 계산한다 (scripts/buildDecksFromBoards.js).
  *
- * - 세트18 랭크 큐(queue_id 1100)만 저장한다.
+ * - 현재 세트(lib/gameData.lite.json · scripts/_season) 이상의 랭크 큐(queue_id 1100)만 저장한다.
+ *   더 높은 세트 판이 보이면 그 세트로 올라가고, 저장할 때 이전 세트 판은 뺀다 (세트 전환 · docs/SEASON-TRANSITION.md).
  * - 개인정보(닉네임, PUUID)는 저장하지 않는다. 판 id, 등수, 레벨, 기물/아이템/시너지만 남긴다.
  * - data/ladderBoards.json 에 이어서 저장하고, 이미 받은 판은 건너뛴다 (중단 후 재실행 가능).
  *
@@ -24,6 +25,7 @@ loadEnv()
 if (!process.env.RIOT_MIN_INTERVAL_MS) process.env.RIOT_MIN_INTERVAL_MS = '1250'
 
 const { riotGet } = require('./buildMetaStats')
+const { configuredSet, createSetGate } = require('./_season')
 
 const KEY = process.env.RIOT_API_KEY || ''
 const REGION = process.env.RIOT_REGION || 'asia'
@@ -32,7 +34,7 @@ const MAX_MATCHES = Number(process.env.MAX_MATCHES || 1500)
 const PLAYERS = Number(process.env.PLAYERS || 160)
 const PER_PLAYER = Number(process.env.MATCHES_PER_PLAYER || 15)
 const MAX_MINUTES = Number(process.env.MAX_MINUTES || 0)
-const SET_NUMBER = 18
+const SET_NUMBER = configuredSet()
 const RANKED_QUEUE = 1100
 
 const OUT = path.join(__dirname, '..', 'data', 'ladderBoards.json')
@@ -45,6 +47,14 @@ function load() {
     /* 첫 실행 */
   }
   return { version: 1, source: 'riot-ladder-boards', set: SET_NUMBER, region: PLATFORM, matches: [] }
+}
+
+/** 한 세트 판만 남긴다 (set 이 없는 예전 저장분은 시작 기준 세트로 본다) */
+function keepSet(data, set) {
+  const before = data.matches.length
+  data.matches = data.matches.filter((m) => (m.set ?? data.set ?? SET_NUMBER) === set)
+  data.set = set
+  return before - data.matches.length
 }
 
 function save(data) {
@@ -77,6 +87,10 @@ async function main() {
   }
 
   const data = load()
+  // 이어 받는 저장분이 더 높은 세트였으면 그 세트부터
+  const gate = createSetGate(Math.max(SET_NUMBER, Number(data.set) || 0), (set, prev) => {
+    console.log(`  새 세트 ${set} 판 발견 (기준 ${prev}) — 세트 ${prev} 판은 저장에서 뺍니다`)
+  })
   const have = new Set(data.matches.map((m) => m.matchId))
   console.log(`기존 저장 ${have.size}판 · 이번 목표 +${MAX_MATCHES}판`)
 
@@ -129,12 +143,13 @@ async function main() {
       try {
         const match = await riotGet(`https://${REGION}.api.riotgames.com/tft/match/v1/matches/${id}`)
         const info = match.info || {}
-        if (info.tft_set_number !== SET_NUMBER || info.queue_id !== RANKED_QUEUE) {
+        if (info.queue_id !== RANKED_QUEUE || !gate.accept(info.tft_set_number)) {
           skipped++
           continue
         }
         data.matches.push({
           matchId: id,
+          set: info.tft_set_number,
           gameVersion: info.game_version,
           datetime: info.game_datetime,
           boards: toBoards(match),
@@ -155,6 +170,8 @@ async function main() {
     }
   }
 
+  const dropped = keepSet(data, gate.current)
+  if (dropped) console.log(`  이전 세트 판 ${dropped}개 제외 (세트 ${gate.current} 만 저장)`)
   save(data)
   if (timeUp()) console.log(`  시간 상한 ${MAX_MINUTES}분에 도달해 멈춤`)
   console.log(`\n✅ 저장 → ${OUT}`)

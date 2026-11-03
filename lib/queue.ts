@@ -28,9 +28,13 @@ export function isRankedMatch(m: Pick<SlimMatchData, 'queueId' | 'queueType'>): 
   return (m.queueType ?? '랭크 게임') === '랭크 게임'
 }
 
-/** 현재 세트 판인가. 세트 번호가 없는 판은 현재 세트로 본다 */
+/**
+ * 현재 세트 판인가. 세트 번호가 없는 판은 현재 세트로 본다.
+ * 게임 데이터(CURRENT_SET)보다 높은 세트 판도 현재 세트다 — 새 세트가 열린 뒤 게임 데이터가 갱신·배포되기 전까지
+ * 모든 판이 '이전 시즌'으로 빠져 분석할 판이 0이 되지 않게 (docs/SEASON-TRANSITION.md).
+ */
 export function isCurrentSetMatch(m: Pick<SlimMatchData, 'setNumber'>): boolean {
-  return m.setNumber == null || m.setNumber === CURRENT_SET
+  return m.setNumber == null || m.setNumber >= CURRENT_SET
 }
 
 type MatchKind = Pick<SlimMatchData, 'queueId' | 'queueType' | 'setNumber'>
