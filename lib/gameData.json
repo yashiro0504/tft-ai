@@ -2,9 +2,10 @@
  "_comment": "게임 기준 DB (Community Dragon 공식 추출 데이터). scripts/buildGameData.js 로 생성 — 손으로 고치지 말고 lib/gameData.overrides.json 에 적는다.",
  "source": "https://raw.communitydragon.org/16.21/cdragon/tft/ko_kr.json",
  "set": 18,
+ "setFirstPatch": null,
  "gameVersion": "16.21",
- "contentVersion": "16.21.8298620+branch.releases-16-21.content.release",
- "generatedAt": "2026-10-27T04:13:44.059Z",
+ "contentVersion": "16.21.8342754+branch.releases-16-21.content.release",
+ "generatedAt": "2026-11-03T08:37:18.210Z",
  "counts": {
   "champions": 74,
   "traits": 36,
