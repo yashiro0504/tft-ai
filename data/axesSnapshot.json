@@ -1,6 +1,6 @@
 {
   "scoringVersion": "v14",
-  "generatedAt": "2026-11-02T01:09:07.066Z",
+  "generatedAt": "2026-11-03T03:34:59.419Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -26,7 +26,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 87,
         "itemization": 96,
         "tempo": 91,
         "completion": 83,
@@ -46,7 +46,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 98,
+        "economy": 99,
         "itemization": 98,
         "tempo": 99,
         "completion": 90,
@@ -106,7 +106,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 99,
+        "economy": 100,
         "itemization": 100,
         "tempo": 100,
         "completion": 85,
@@ -166,7 +166,7 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 82,
+        "economy": 84,
         "itemization": 80,
         "tempo": 93,
         "completion": 85,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 82,
         "itemization": 100,
         "tempo": 73,
         "completion": 92,
@@ -206,7 +206,7 @@
       "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 80,
+        "economy": 74,
         "itemization": 70,
         "tempo": 68,
         "completion": 78,
@@ -226,7 +226,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 88,
         "itemization": 100,
         "tempo": 87,
         "completion": 80,
@@ -326,7 +326,7 @@
       "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 53,
+        "economy": 52,
         "itemization": 100,
         "tempo": 89,
         "completion": 89,
@@ -406,7 +406,7 @@
       "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 86,
         "itemization": 100,
         "tempo": 100,
         "completion": 87,
