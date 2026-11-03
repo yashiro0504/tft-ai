@@ -31,7 +31,13 @@ Riot 경기 데이터의 id(`DA_18_Azir`, `DA_RedBuff`, `DA_18_Defender`)는 Com
 
 ## 패치·세트가 바뀌면
 
+평소에는 손댈 것이 없다. **Refresh Game Data** 워크플로(`.github/workflows/refresh-game-data.yml`, 3시간마다)가
+`--set=auto` 로 다시 만들고, 내용이 바뀌었을 때만 main 에 커밋한다. 세트 전환 전체 절차는 [SEASON-TRANSITION.md](./SEASON-TRANSITION.md).
+
+수동으로 돌릴 때:
+
 ```bash
+npm run build:gamedata -- --set=auto   # 지금 세트와 수집 DB 최고 세트 중 큰 값 (SUPABASE_URL·SERVICE_ROLE_KEY 필요)
 npm run build:gamedata                 # 최신 패치 (Community Dragon content-metadata)
 npm run build:gamedata -- --version=16.22
 npm run build:gamedata -- --set=19     # 세트 변경

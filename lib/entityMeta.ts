@@ -1,3 +1,4 @@
+import { CURRENT_SET } from './gameFacts'
 import type { Metadata } from 'next'
 import type { EntityPageData } from './entityData'
 import { ENTITY_PATH } from './entitySlug'
@@ -17,7 +18,7 @@ export function entityMetadata(data: EntityPageData | null): Metadata {
   const relatedText =
     data.kind === 'champion' ? '추천 아이템(BIS)' : data.kind === 'item' ? '많이 드는 기물' : '소속 기물'
   const title = `${data.name} ${KIND_LABEL[data.kind]} 통계 — ${statText}`
-  const description = `TFT 시즌 18 ${data.name} ${KIND_LABEL[data.kind]}. ${statText} (${data.filterText}). ${relatedText}과 많이 쓰는 덱을 확인하세요.`
+  const description = `TFT 시즌 ${CURRENT_SET} ${data.name} ${KIND_LABEL[data.kind]}. ${statText} (${data.filterText}). ${relatedText}과 많이 쓰는 덱을 확인하세요.`
 
   return {
     title,

@@ -1,0 +1,92 @@
+name: Refresh Game Data
+
+# 기물·시너지·아이템·상점 확률 기준 데이터(lib/gameData.json · lib/gameData.lite.json · lib/gameNames.json)를
+# Community Dragon 최신 패치로 다시 만든다. 예전에는 사람이 npm run build:gamedata 를 돌려야 해서 패치·세트가 바뀌어도 그대로였다.
+#
+# - 세트는 --set=auto: 지금 세트와 수집 DB(tft_matches)에 들어온 최고 세트 중 큰 값.
+#   새 세트 판이 DB 에 들어오고(collect-db 가 새 세트 판을 받는다) Community Dragon 에 그 세트 데이터가 올라오면 자동으로 넘어간다.
+# - 내용이 바뀐 경우에만(generatedAt 제외) main 에 커밋한다 → Vercel 이 다시 배포한다.
+# - 세트 전환 절차: docs/SEASON-TRANSITION.md
+
+on:
+  schedule:
+    # 3시간마다 :40 (수집 :17 · 래더 21:00 UTC 와 겹치지 않게. Riot 키는 쓰지 않는다)
+    - cron: '40 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      set:
+        description: "세트 번호 (비우면 auto)"
+        default: ''
+        required: false
+      dry_run:
+        description: 'true 이면 커밋/푸시를 하지 않습니다'
+        default: 'false'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-game-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Community Dragon → lib/gameData.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build game data
+        id: build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          before=$(node -p "require('./lib/gameData.lite.json').set")
+          npm run build:gamedata -- --set=${{ github.event.inputs.set || 'auto' }}
+          after=$(node -p "require('./lib/gameData.lite.json').set")
+          echo "before=$before" >> "$GITHUB_OUTPUT"
+          echo "after=$after" >> "$GITHUB_OUTPUT"
+          if [ "$before" != "$after" ]; then
+            echo "::warning title=New TFT set::게임 데이터를 세트 $before → $after 로 바꿨습니다. docs/SEASON-TRANSITION.md 의 '세트 전환 당일 확인' 목록을 보세요 (overrides 칸 수·고정 사실 테스트 등)."
+          fi
+
+      - name: Validate game data
+        run: |
+          npm run test:gamedata
+          npm run test:season
+
+      - name: Commit updated game data
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/gameData.json lib/gameData.lite.json lib/gameNames.json data/gameData
+          if git diff --cached --quiet; then
+            echo "변경 사항이 없어 커밋하지 않습니다."
+            exit 0
+          fi
+          version=$(node -p "require('./lib/gameData.lite.json').gameVersion")
+          git commit -m "chore(gamedata): 게임 데이터 자동 갱신 (세트 ${{ steps.build.outputs.after }} · 패치 $version)"
+          # 래더 수집 워크플로가 먼저 푸시했을 수 있다 — 파일이 겹치지 않아 rebase 로 이어 붙인다
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((i * 10))
+          done
+          echo "::error title=Push failed::main 에 푸시하지 못했습니다"
+          exit 1

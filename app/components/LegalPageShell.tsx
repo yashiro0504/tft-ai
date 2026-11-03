@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { CONTACT_EMAIL, POLICY_EFFECTIVE_DATE, SITE_NAME } from '@/lib/site'
@@ -11,7 +12,7 @@ export function LegalPageShell({ title, children }: { title: string; children: R
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link href="/" className="text-[15px] font-black tracking-tight">
             TFT <span className="text-accent">LAB</span>
-            <span className="ml-2 hidden text-xs font-bold text-muted sm:inline">SET 18</span>
+            <span className="ml-2 hidden text-xs font-bold text-muted sm:inline">SET {CURRENT_SET}</span>
           </Link>
           <Link href="/" className="text-xs font-bold text-muted transition hover:text-ink">
             ← 홈으로

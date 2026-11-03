@@ -2,6 +2,7 @@ import { fixTermWording } from './grounding'
 import type { DeckBisCheck, DeckComparison, DeckComparisonRow, SlimMatchData, SlimMatchUnit } from './types'
 import { PLACEMENT_SD } from './statsShared'
 import { entitySlug } from './entitySlug'
+import { isCurrentSetPatch, patchOrdinal } from './gameFacts'
 import { bisMatchLabel, mostSimilarDeck, type DeckFact } from './comparisonFacts'
 
 export { bisMatchLabel }
@@ -82,15 +83,13 @@ export function snapshotIdOf(patch: string, tierMin: string, updatedAt: string |
 }
 
 /** 패치 내림차순 비교 ('16.21' > '16.9') */
-function patchNum(p: string): number {
-  const m = /^(\d+)\.(\d+)$/.exec(p)
-  return m ? Number(m[1]) * 1000 + Number(m[2]) : -1
-}
+const patchNum = patchOrdinal
 
 /**
  * 쓸 플레이북 고르기.
  * 1. 지금 메타 스냅샷과 같은 snapshot_id 행이 300판 이상이면 그것.
  * 2. 아니면(새 패치 표본 300판 미만) 더 이전 패치의 300판 이상 행 + "이전 패치(16.21) 기준" 라벨.
+ *    단 이전 세트 패치(lib/gameFacts SET_FIRST_PATCH 이전)는 쓰지 않는다 — 덱 id 가 같아도(같은 캐리 기물) 다른 세트 덱이다.
  * 3. 그것도 없으면 지금 스냅샷 행(100~299판, core_units·carry_bis 만).
  * 지금 스냅샷과 다른 같은 패치 행(갱신 사이 오래된 행)은 쓰지 않는다 — 메타 페이지와 수치가 어긋나지 않게.
  */
@@ -99,7 +98,7 @@ export function choosePlaybook(rows: DeckPlaybook[], current: { snapshotId: stri
   const now = rows.find((r) => r.snapshot_id === current.snapshotId)
   if (now && now.sample_n >= PLAYBOOK_FULL_MIN) return { playbook: now }
   const older = rows
-    .filter((r) => patchNum(r.patch) >= 0 && patchNum(r.patch) < patchNum(current.patch) && r.sample_n >= PLAYBOOK_FULL_MIN)
+    .filter((r) => isCurrentSetPatch(r.patch) && patchNum(r.patch) < patchNum(current.patch) && r.sample_n >= PLAYBOOK_FULL_MIN)
     .sort((a, b) => patchNum(b.patch) - patchNum(a.patch))[0]
   if (older) return { playbook: older, label: `이전 패치(${older.patch}) 기준` }
   if (now && now.sample_n >= PLAYBOOK_PARTIAL_MIN) return { playbook: now }

@@ -130,6 +130,8 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   }
   const idsByPuuid = { c1: ['KR_1', 'KR_2', 'KR_3'], g1: ['KR_2', 'KR_4'], m1: ['KR_5', 'KR_NORMAL'], m2: ['KR_6'] }
   let detailCalls = 0
+  /** 다음 세트(19) 판으로 내려 줄 매치 id (세트 전환 시나리오) */
+  const nextSetIds = new Set()
   global.fetch = async (url) => {
     const json = (body, status = 200) => ({ status, ok: status < 400, headers: new Map(), json: async () => body })
     let m
@@ -138,7 +140,9 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
     if ((m = /by-puuid\/([^/]+)\/ids/.exec(url))) return json(idsByPuuid[m[1]] || [])
     if ((m = /matches\/(KR_\w+)$/.exec(url))) {
       detailCalls++
-      return json(m[1] === 'KR_NORMAL' ? fakeMatch(m[1], { queue: 1090 }) : fakeMatch(m[1]))
+      if (m[1] === 'KR_NORMAL') return json(fakeMatch(m[1], { queue: 1090 }))
+      if (nextSetIds.has(m[1])) return json(fakeMatch(m[1], { set: 19, at: Date.UTC(2026, 9, 19, 17, 0) }))
+      return json(fakeMatch(m[1]))
     }
     return json({}, 404)
   }
@@ -289,6 +293,31 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   // c1 의 판(KR_1·KR_3)만 빠지고 나머지 시드의 판은 수집된다 (KR_2 는 g1 에도 있음)
   check('복호화 불가 시드 1건 → 나머지 시드 수집 계속', withBad.stats.matches_added === 4 && !wst.matches.has('KR_1') && wst.matches.has('KR_2') && wst.matches.has('KR_6'), `added=${withBad.stats.matches_added}`)
   check('실패 시드 수가 실행 기록에 남음', /시드 복호화 실패 1건/.test(wst.runs[0].note || ''), wst.runs[0].note)
+
+  console.log('세트 전환: 새 세트 판 수용 · 섞인 패치 정리')
+  {
+    const { createSetGate } = require('./_season')
+    const seen = []
+    const g = createSetGate(18, (n, prev) => seen.push(`${prev}->${n}`))
+    check(
+      'createSetGate: 이전 세트 거부 · 같은 세트 통과 · 새 세트로 올라간 뒤 이전 세트 거부',
+      !g.accept(17) && g.accept(18) && !g.changed && g.accept(19) && g.changed && g.current === 19 && !g.accept(18) && !g.accept(undefined) && seen.join() === '18->19',
+      seen.join()
+    )
+    // KR_1·KR_2(앞쪽)는 세트 18, KR_4·KR_5·KR_6 는 세트 19 — 같은 실행 안에서 세트가 바뀐다 (둘 다 16.20 패치 라벨)
+    for (const id of ['KR_4', 'KR_5', 'KR_6']) nextSetIds.add(id)
+    const warned = []
+    const sw = await main({ log: { ...quiet, log: (m) => (/::warning|새 세트/.test(m) ? warned.push(m) : null), warn: (m) => warned.push(m) } })
+    nextSetIds.clear()
+    const sst = sw.store._state
+    const sets = [...sst.matches.values()].map((m) => m.set_number)
+    check('세트 19 판을 버리지 않고 적재', sst.matches.has('KR_4') && sst.matches.has('KR_6'), [...sst.matches.keys()].join(','))
+    check('같은 패치에 섞인 세트 18 판은 정리 (한 패치 = 한 세트)', sets.length > 0 && sets.every((n) => n === 19), sets.join(','))
+    const rolledSw = [...sst.rollups.values()].reduce((s2, r) => s2 + r.totals.matches, 0)
+    check('정리 후 집계에도 세트 19 판만', rolledSw === sst.matches.size, `집계 ${rolledSw} · 원본 ${sst.matches.size}`)
+    check('게임 데이터보다 높은 세트면 경고 + 실행 기록 note', warned.some((w) => /새 세트 19/.test(w)) && /새 세트 19 수집 중/.test(sst.runs[0].note || ''), `${warned.join(' | ')} / ${sst.runs[0].note}`)
+    check('저장소 maxSetNumber', (await sw.store.maxSetNumber()) === 19)
+  }
 
   console.log('덱 클러스터 시간 확보 (REVIEW R3)')
   const MIN = 60 * 1000

@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import Link from 'next/link'
 
 /** 정책/메타/프로필 페이지용 경량 서버 헤더 */
@@ -15,7 +16,7 @@ export function SimpleHeader({ active }: { active?: 'meta' | 'profile' | 'pro' }
             TFT <span className="text-accent">LAB</span>
           </span>
           <span className="hidden rounded-chip border border-line px-1.5 py-0.5 text-xs font-bold text-muted sm:inline">
-            SET 18
+            SET {CURRENT_SET}
           </span>
         </Link>
         <nav className="flex items-center gap-1">

@@ -7,6 +7,7 @@ import { deckViewsFromRaw, getDeckViews, type DeckView } from './decks'
 import { JSON_BUILDS_INFO, jsonBuildRankings, toBuildRankings, type UnitBuildRow } from './unitBuilds'
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
 import { cacheGet, cacheSet } from './cache'
+import { CURRENT_SET } from './gameFacts'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
   DAYS_FILTER_OPTIONS,
@@ -502,14 +503,15 @@ function snapshotMatchesOf(rows: CompRow[] | null | undefined): number | undefin
 }
 
 /** 메타 덱 스냅샷 공유 캐시 (Redis L2) — 인스턴스마다 DB·폴백 결과가 달라 두 화면 값이 갈리지 않게 */
-const SNAPSHOT_KEY = 'meta-deck-snapshot:v2'
+// 키에 세트를 넣는다 — 새 세트 게임 데이터가 배포되면 이전 세트 스냅샷(사본은 3일 보관)을 더는 주지 않는다
+const SNAPSHOT_KEY = `meta-deck-snapshot:v2:s${CURRENT_SET}`
 const SNAPSHOT_TTL_MS = 5 * 60_000
 const SNAPSHOT_FALLBACK_TTL_MS = 60_000
 /**
  * 마지막으로 만든 DB 스냅샷 사본 (2026-11-02 지시문 4) — 5분 캐시가 만료돼도 이 사본을 바로 주고 새 스냅샷은 뒤에서 만든다.
  * 캐시 만료 뒤 첫 방문자가 필터 RPC·덱 집계 조회·덱 가공(합쳐 3초 남짓)을 기다리던 지연을 없앤다. 덱 스냅샷은 수집 때만 바뀐다.
  */
-const SNAPSHOT_STALE_KEY = 'meta-deck-snapshot:v2:last'
+const SNAPSHOT_STALE_KEY = `${SNAPSHOT_KEY}:last`
 const SNAPSHOT_STALE_TTL_MS = 3 * 24 * 60 * 60_000
 
 let snapshotRefresh: Promise<DecksResponse> | null = null

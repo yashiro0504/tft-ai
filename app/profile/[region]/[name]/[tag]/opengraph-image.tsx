@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import { ImageResponse } from 'next/og'
 import { calculateProfileStats } from '@/lib/profile'
 import { analyzableMatches } from '@/lib/queue'
@@ -51,7 +52,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
   const rankLp = formatRankLp(stats?.rank)
 
   const fontText = [
-    'TFT LAB', 'SET 18', 'AI COACH', '소환사 전적', '평균 등수', '순방률', 'TOP 4', '1등', '승률',
+    'TFT LAB', `SET ${CURRENT_SET}`, 'AI COACH', '소환사 전적', '평균 등수', '순방률', 'TOP 4', '1등', '승률',
     '최근', '경기', '기준', '전적을 불러오지 못했습니다', '등', '%', '#', '·', '—', '-',
     '아이언', '브론즈', '실버', '골드', '플래티넘', '에메랄드', '다이아몬드', '마스터', '그랜드마스터',
     '챌린저', '배치 중', 'LP', 'I', 'II', 'III', 'IV', rankLabel, rankLp,
@@ -102,7 +103,7 @@ export default async function Image({ params }: { params: Promise<{ region: stri
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: -0.5 }}>TFT LAB</div>
-              <div style={{ fontSize: 18, color: '#94a3b8' }}>SET 18 · AI COACH</div>
+              <div style={{ fontSize: 18, color: '#94a3b8' }}>SET {CURRENT_SET} · AI COACH</div>
             </div>
           </div>
           <div

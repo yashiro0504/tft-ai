@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { CURRENT_SET } from '@/lib/gameFacts'
 import Link from 'next/link'
 import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, RefreshCw, Search } from 'lucide-react'
@@ -514,7 +515,7 @@ export function MetaDashboard({
       <div className={`rk-shell ${tab === 'decks' ? '' : 'no-detail'}`}>
         <main className="rk-main">
           <header className="rk-head">
-            {showTitle ? <h1>시즌 18 메타 랭킹</h1> : null}
+            {showTitle ? <h1>시즌 {CURRENT_SET} 메타 랭킹</h1> : null}
             <div className="rk-evidence">
               {!data ? (
                 // 첫 응답 전: '패치 정보 없음 · 덱 0개' 대신 스켈레톤 (2026-10-29 지시문 5 — 빈 상태는 성공 응답이 0개일 때만)

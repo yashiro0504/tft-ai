@@ -21,13 +21,14 @@ loadEnv()
 if (!process.env.RIOT_MIN_INTERVAL_MS) process.env.RIOT_MIN_INTERVAL_MS = '1250'
 
 const { riotGet } = require('./buildMetaStats')
+const { configuredSet, createSetGate } = require('./_season')
 
 const KEY = process.env.RIOT_API_KEY || ''
 const REGION = process.env.RIOT_REGION || 'asia'
 const PLATFORM = process.env.RIOT_PLATFORM || 'kr'
 const PLAYERS = Number(process.env.TOP_PLAYERS || 30)
 const PER_PLAYER = Number(process.env.TOP_MATCHES_PER_PLAYER || 10)
-const SET_NUMBER = 18
+const SET_NUMBER = configuredSet()
 const RANKED_QUEUE = 1100
 const OUT = path.join(__dirname, '..', 'data', 'topPlayerBoards.json')
 
@@ -82,6 +83,9 @@ async function main() {
   console.log(`챌린저 ${league.entries?.length || 0}명 중 LP 상위 ${top.length}명 · 선수당 ${PER_PLAYER}판`)
 
   const data = load()
+  const gate = createSetGate(Math.max(SET_NUMBER, Number(data.set) || 0), (set, prev) => {
+    console.log(`  새 세트 ${set} 판 발견 (기준 ${prev}) — 세트 ${prev} 보드는 저장에서 뺍니다`)
+  })
   const have = new Set(data.boards.map((b) => `${b.matchId}:${b.player}`))
   // (판, 등수)는 선수 키와 무관하게 한 보드를 가리킨다 — TOP_PLAYER_SALT 없이 재실행해 선수 키가 바뀌어도 같은 보드를 두 번 넣지 않는다
   const haveSeat = new Set(data.boards.map((b) => `${b.matchId}:${b.placement}`))
@@ -103,7 +107,7 @@ async function main() {
       try {
         if (!matchCache.has(id)) matchCache.set(id, await riotGet(`https://${REGION}.api.riotgames.com/tft/match/v1/matches/${id}`))
         const info = matchCache.get(id).info || {}
-        if (info.tft_set_number !== SET_NUMBER || info.queue_id !== RANKED_QUEUE) {
+        if (info.queue_id !== RANKED_QUEUE || !gate.accept(info.tft_set_number)) {
           skipped++
           continue
         }
@@ -114,7 +118,7 @@ async function main() {
           skipped++
           continue
         }
-        data.boards.push({ matchId: id, datetime: info.game_datetime, ...toBoard(p, player) })
+        data.boards.push({ matchId: id, set: info.tft_set_number, datetime: info.game_datetime, ...toBoard(p, player) })
         haveSeat.add(`${id}:${p.placement}`)
         added++
       } catch (e) {
@@ -125,6 +129,11 @@ async function main() {
     save(data)
     console.log(`  ${player.rank}위 (LP ${player.lp}) · 누적 새 보드 ${added}`)
   }
+  // 한 세트 보드만 남긴다 (set 이 없는 예전 저장분은 시작 기준 세트로 본다)
+  const before = data.boards.length
+  data.boards = data.boards.filter((b) => (b.set ?? data.set ?? SET_NUMBER) === gate.current)
+  data.set = gate.current
+  if (before > data.boards.length) console.log(`  이전 세트 보드 ${before - data.boards.length}개 제외 (세트 ${gate.current} 만 저장)`)
   save(data)
   console.log(`\n✅ 저장 → ${OUT}`)
   console.log(`   새 보드 ${added} · 제외(다른 세트·큐·중복 보드) ${skipped} · 실패 ${failed} · 매치 요청 ${matchCache.size}회 · 누적 ${data.boards.length}`)

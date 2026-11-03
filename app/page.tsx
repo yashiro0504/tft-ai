@@ -1,5 +1,6 @@
 'use client'
 
+import { CURRENT_SET } from '@/lib/gameFacts'
 import { useEffect, useState } from 'react'
 import {
   RefreshCw, AlertCircle, Info, Sparkles, Lock,
@@ -241,7 +242,7 @@ export default function TFTCoachPage() {
         <>
         {/* 첫 화면: 검색이 주인공 */}
         <section className="mx-auto max-w-[1200px] px-4 pb-10 pt-12 sm:px-6 sm:pt-16">
-          <p className="mb-3 text-sm font-semibold text-accent">시즌 18 · AI 코치</p>
+          <p className="mb-3 text-sm font-semibold text-accent">시즌 {CURRENT_SET} · AI 코치</p>
           <h1 className="max-w-[720px] text-[30px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
             TFT 실전 전적 검색 &amp; 경기별 AI 코칭
           </h1>

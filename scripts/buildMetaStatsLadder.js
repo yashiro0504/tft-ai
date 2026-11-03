@@ -27,6 +27,9 @@ const {
   readPrevStats,
   archiveSnapshot,
 } = require('./buildMetaStats')
+const { configuredSet, createSetGate } = require('./_season')
+
+const RANKED_QUEUE = 1100
 
 const KEY = process.env.RIOT_API_KEY || ''
 const REGION = process.env.RIOT_REGION || 'asia'
@@ -73,6 +76,9 @@ async function main() {
   const state = createState()
   const seen = new Set()
   let fetched = 0
+  /** 받은 판 — 다 모은 뒤 가장 높은 세트 판만 집계한다 */
+  const kept = []
+  const gate = createSetGate(configuredSet(), (set, prev) => console.log(`  새 세트 ${set} 판 발견 (기준 ${prev}) — 세트 ${set} 판만 집계합니다`))
   let failed = 0
 
   for (let i = 0; i < players.length; i++) {
@@ -92,7 +98,9 @@ async function main() {
       if (fetched >= MAX_MATCHES) break
       try {
         const match = await riotGet(`https://${REGION}.api.riotgames.com/tft/match/v1/matches/${id}`)
-        aggregateMatch(match, state)
+        // 현재 세트 이상 랭크 판만 (예전엔 큐·세트 구분 없이 모두 집계했다 — 세트 전환 날 두 세트가 한 표에 섞인다)
+        if (match?.info?.queue_id !== RANKED_QUEUE || !gate.accept(match?.info?.tft_set_number)) continue
+        kept.push(match)
         fetched++
       } catch (e) {
         failed++
@@ -109,11 +117,16 @@ async function main() {
     return
   }
 
-  // 3) 집계 + 저장
+  // 3) 집계 + 저장 (실행 중 세트가 바뀌었으면 새 세트 판만)
+  const sameSet = kept.filter((m) => m.info.tft_set_number === gate.current)
+  for (const m of sameSet) aggregateMatch(m, state)
+  if (sameSet.length < kept.length) console.log(`  이전 세트 판 ${kept.length - sameSet.length}개 제외`)
+  fetched = sameSet.length
+
   const { augments, champions, traits, items, combos } = buildOutput(state)
   const result = {
     version: '2',
-    patch: state.patch && state.patch !== 'unknown' ? state.patch : 'set18',
+    patch: state.patch && state.patch !== 'unknown' ? state.patch : `set${gate.current}`,
     source: 'riot-ladder',
     sample: false,
     generatedAt: new Date().toISOString(),
@@ -128,7 +141,8 @@ async function main() {
   const outPath = path.join(__dirname, '..', 'lib', 'metaStats.json')
   // 이전 수집본 대비 순위 변동 + 스냅샷 보관
   const prevStats = readPrevStats(outPath)
-  attachDeltas(result, prevStats)
+  // 순위 변동은 같은 세트끼리만 (세트가 바뀌면 이전 표와 비교할 기물이 다르다)
+  attachDeltas(result, prevStats?.patch === result.patch ? prevStats : null)
   archiveSnapshot(prevStats)
   fs.writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf-8')
 

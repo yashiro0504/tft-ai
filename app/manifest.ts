@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import type { MetadataRoute } from 'next'
 import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/site'
 
@@ -8,7 +9,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/site'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: `${SITE_NAME} — 시즌 18 메타 랭킹 & AI 코치`,
+    name: `${SITE_NAME} — 시즌 ${CURRENT_SET} 메타 랭킹 & AI 코치`,
     short_name: SITE_NAME,
     description: SITE_DESCRIPTION,
     lang: 'ko',

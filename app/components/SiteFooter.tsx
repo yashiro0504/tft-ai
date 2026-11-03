@@ -1,3 +1,4 @@
+import { CURRENT_SET } from '@/lib/gameFacts'
 import Link from 'next/link'
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/site'
 
@@ -7,7 +8,7 @@ export function SiteFooter() {
     <footer className="relative border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-center sm:flex-row sm:text-left">
         <p className="text-[12px] text-muted">
-          <span className="font-black text-muted">{SITE_NAME}</span> · 시즌 18 메타 랭킹 &amp; AI 코치
+          <span className="font-black text-muted">{SITE_NAME}</span> · 시즌 {CURRENT_SET} 메타 랭킹 &amp; AI 코치
         </p>
         <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-subtle">
           <Link href="/pro" className="font-bold text-accent underline-offset-2 hover:underline">

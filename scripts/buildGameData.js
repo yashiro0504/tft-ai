@@ -19,9 +19,15 @@
  * 사용법
  *  node scripts/buildGameData.js                  # 최신 패치 (content-metadata 의 버전)
  *  node scripts/buildGameData.js --version=16.20  # 특정 패치
- *  node scripts/buildGameData.js --set=18         # 세트 지정 (기본 18)
+ *  node scripts/buildGameData.js --set=19         # 세트 지정 (기본: 지금 lib/gameData.lite.json 의 세트)
+ *  node scripts/buildGameData.js --set=auto       # 세트 자동: 지금 세트와 수집 DB(tft_matches)에 들어온 최고 세트 중 큰 값
+ *                                                 #   (SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY 가 있을 때. Refresh Game Data 워크플로가 쓴다)
  *  node scripts/buildGameData.js --check          # 생성 후 아이콘 URL 이 모두 열리는지 확인
  *  node scripts/buildGameData.js --lite-only      # 네트워크 없이 lib/gameData.json 에서 lite 만 다시 만든다
+ *
+ * 내용이 같으면(generatedAt 만 다르면) 파일을 다시 쓰지 않는다 — 자동 갱신 워크플로가 바뀐 패치에만 커밋하도록.
+ * 세트가 바뀌면 setFirstPatch(새 세트 첫 패치)를 기록한다 — 사이트가 이전 세트 패치의 플레이북을 새 세트 덱에 붙이지 않게 (lib/gameFacts).
+ * 세트 전환 절차: docs/SEASON-TRANSITION.md
  */
 require('./_ts')
 const fs = require('fs')
@@ -32,7 +38,10 @@ const { entitySlug } = require('../lib/entitySlug')
 const ROOT = path.join(__dirname, '..')
 const CDRAGON = 'https://raw.communitydragon.org'
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
-const SET = Number(arg('set') || 18)
+const { gameDataSet } = require('./_season')
+const SET_ARG = arg('set') || ''
+/** 실행할 세트 — main() 에서 정한다 (--set=auto 는 DB 조회가 필요해서) */
+let SET = Number(SET_ARG) || gameDataSet() || 0
 const CHECK = process.argv.includes('--check')
 const LITE_ONLY = process.argv.includes('--lite-only')
 
@@ -157,11 +166,42 @@ async function shopOddsOf(version) {
 
 /* ───────── 본체 ───────── */
 
+/** 수집 DB 에 들어온 최고 세트 (랭크 큐만 적재된다 — scripts/collectDb). 키가 없거나 실패하면 null */
+async function dbMaxSet() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  try {
+    const res = await fetch(`${url.replace(/\/+$/, '')}/rest/v1/tft_matches?select=set_number&order=set_number.desc&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const n = Number((await res.json())?.[0]?.set_number)
+    return Number.isInteger(n) && n > 0 ? n : null
+  } catch (e) {
+    console.warn(`⚠️  수집 DB 세트 조회 실패 (지금 세트 유지): ${e.message}`)
+    return null
+  }
+}
+
+/** --set=auto: 지금 세트와 DB 최고 세트 중 큰 값. Community Dragon 에 아직 그 세트가 없으면 지금 세트 그대로 */
+async function resolveAutoSet(availableSets) {
+  const current = gameDataSet() || 0
+  const fromDb = await dbMaxSet()
+  const want = Math.max(current, fromDb || 0)
+  if (want > current && !availableSets.includes(want)) {
+    console.warn(`⚠️  수집 DB 에 세트 ${want} 판이 있지만 Community Dragon 에 아직 TFTSet${want} 데이터가 없습니다 — 세트 ${current} 로 갱신하고 다음 실행에서 다시 확인합니다`)
+    return current
+  }
+  if (want > current) console.log(`🆕 세트 전환: ${current} → ${want} (수집 DB 최고 세트 ${fromDb})`)
+  return want
+}
+
 async function main() {
   const meta = await fetchJson(`${CDRAGON}/latest/content-metadata.json`)
   const latest = String(meta.version || '').split('.').slice(0, 2).join('.')
   const version = arg('version') || latest
-  console.log(`Community Dragon ${version} (최신 ${meta.version}) · 세트 ${SET}`)
+  console.log(`Community Dragon ${version} (최신 ${meta.version})`)
 
   const [ko, en] = await Promise.all([
     fetchJson(`${CDRAGON}/${version}/cdragon/tft/ko_kr.json`, `${version}-ko_kr.json`),
@@ -172,6 +212,10 @@ async function main() {
     for (const s of d.setData) for (const x of [...s.champions, ...s.traits]) x.name = (x.name || '').trim()
     for (const x of d.items) x.name = (x.name || '').trim()
   }
+  const availableSets = ko.setData.map((s) => /^TFTSet(\d+)$/.exec(s.mutator || '')?.[1]).filter(Boolean).map(Number)
+  if (SET_ARG === 'auto') SET = await resolveAutoSet(availableSets)
+  if (!SET) throw new Error('세트를 정할 수 없습니다 — --set=<번호> 를 주세요')
+  console.log(`세트 ${SET} 로 생성 (Community Dragon 세트: ${[...new Set(availableSets)].sort((a, b) => a - b).slice(-4).join(', ')})`)
   const pick = (d) => d.setData.find((s) => s.mutator === `TFTSet${SET}`)
   const setKo = pick(ko)
   const setEn = pick(en)
@@ -244,11 +288,14 @@ async function main() {
     const base = byName.get(c.name.match(/^(.+?)\s*\(.+\)$/)?.[1] ?? '')
     if (base && base !== c.apiName) c.variantOf = base
   }
-  for (const id of Object.keys(overrides.champions || {})) {
-    if (!champions[id]) throw new Error(`gameData.overrides.json 의 기물 ${id} 가 세트 ${SET} 에 없습니다`)
-  }
-  for (const id of Object.keys(overrides.traits || {})) {
-    if (!traits[id]) throw new Error(`gameData.overrides.json 의 시너지 ${id} 가 세트 ${SET} 에 없습니다`)
+  // overrides 는 세트별 id(DA_18_…)라 다른 세트 항목은 그냥 쓰이지 않는다. 이 세트 id 인데 없을 때만 오류 (오타·삭제된 기물)
+  for (const [kind, table] of [['기물', champions], ['시너지', traits]]) {
+    const ov = kind === '기물' ? overrides.champions : overrides.traits
+    for (const id of Object.keys(ov || {})) {
+      if (table[id]) continue
+      if (overrideSetOf(id) === SET) throw new Error(`gameData.overrides.json 의 ${kind} ${id} 가 세트 ${SET} 에 없습니다`)
+      console.warn(`⚠️  gameData.overrides.json 의 ${kind} ${id} 는 세트 ${SET} 에 없어 건너뜁니다 (이전 세트 항목이면 지워도 됩니다)`)
+    }
   }
 
   /* 아이템 (세트 아이템 목록 기준, 증강 제외) */
@@ -285,11 +332,15 @@ async function main() {
   const shopOdds = await shopOddsOf(version)
 
   const generatedAt = new Date().toISOString()
+  // 세트 첫 패치: 같은 세트면 이전 값 유지, 세트가 바뀌면 이번 패치. 모르면 null (사이트는 경계 없이 동작)
+  const prevLite = readJson('lib/gameData.lite.json')
+  const setFirstPatch = prevLite?.set === SET ? prevLite.setFirstPatch ?? null : version
   const gameData = {
     _comment:
       '게임 기준 DB (Community Dragon 공식 추출 데이터). scripts/buildGameData.js 로 생성 — 손으로 고치지 말고 lib/gameData.overrides.json 에 적는다.',
     source: `${CDRAGON}/${version}/cdragon/tft/ko_kr.json`,
     set: SET,
+    setFirstPatch,
     gameVersion: version,
     contentVersion: version === latest ? meta.version : version,
     generatedAt,
@@ -321,6 +372,11 @@ async function main() {
 
   const write = (rel, obj) => {
     const out = path.join(ROOT, rel)
+    const prev = readJson(rel)
+    if (prev && sameIgnoringTime(prev, obj)) {
+      console.log(`= ${rel} (변경 없음)`)
+      return
+    }
     fs.mkdirSync(path.dirname(out), { recursive: true })
     fs.writeFileSync(out, JSON.stringify(obj, null, 1) + '\n', 'utf-8')
     console.log(`✅ ${rel} (${Math.round(fs.statSync(out).size / 1024)}KB)`)
@@ -334,12 +390,33 @@ async function main() {
   if (CHECK) await checkIcons(gameData)
 }
 
+/** overrides 키의 세트 번호 (DA_18_Foo · TFT18_Foo → 18, 모르면 null) */
+function overrideSetOf(id) {
+  return Number(/(?:^|_)(?:DA_|TFT)?(\d{1,2})_/.exec(id)?.[1]) || null
+}
+
+function readJson(rel) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf-8'))
+  } catch {
+    return null
+  }
+}
+
+/** generatedAt 만 다른가 */
+function sameIgnoringTime(a, b) {
+  const strip = (o) => JSON.stringify({ ...o, generatedAt: null })
+  return strip(a) === strip(b)
+}
+
 /** 클라이언트 번들용 요약 — 설명·스탯·아이콘·아이템을 뺀다 (lib/gameFacts) */
 function liteOf(gameData) {
   return {
     _comment: 'lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.',
     // set: 전적의 이전 시즌 판을 분석에서 빼는 기준 (lib/queue)
     set: gameData.set,
+    // setFirstPatch: 이 세트의 첫 패치 (모르면 null) — 이전 세트 패치 데이터를 새 세트에 섞지 않는 경계 (lib/gameFacts)
+    setFirstPatch: gameData.setFirstPatch ?? null,
     gameVersion: gameData.gameVersion,
     // shopOdds: 레벨별 상점 확률 — 1성 캐리 장면(lib/keyMoments)·AI 프롬프트가 같은 표로 판단한다 (lib/shopOdds)
     shopOdds: gameData.shopOdds?.levels ?? [],
@@ -387,7 +464,11 @@ async function checkIcons(gameData) {
   }
 }
 
-if (LITE_ONLY) {
+module.exports = { resolveAutoSet, dbMaxSet, sameIgnoringTime, overrideSetOf }
+
+if (require.main !== module) {
+  /* 테스트에서 함수만 쓴다 (scripts/testGameData.js) */
+} else if (LITE_ONLY) {
   const out = path.join(ROOT, 'lib/gameData.lite.json')
   fs.writeFileSync(out, JSON.stringify(liteOf(JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/gameData.json'), 'utf-8'))), null, 1) + '\n', 'utf-8')
   console.log(`✅ lib/gameData.lite.json (${Math.round(fs.statSync(out).size / 1024)}KB)`)
