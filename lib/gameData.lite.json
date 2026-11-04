@@ -2,7 +2,7 @@
  "_comment": "lib/gameData.json 의 클라이언트용 요약. scripts/buildGameData.js 로 생성.",
  "set": 18,
  "setFirstPatch": null,
- "gameVersion": "16.21",
+ "gameVersion": "16.22",
  "shopOdds": [
   [
    100,
