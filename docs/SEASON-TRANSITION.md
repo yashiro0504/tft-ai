@@ -47,7 +47,7 @@
 
 | 데이터 | 처리 |
 | --- | --- |
-| Supabase 원본 `tft_matches`·`tft_boards` | 최근 `KEEP_PATCHES` 패치만 — 새 세트 패치가 최신이 되면 자동 삭제 |
+| Supabase 원본 `tft_matches`·`tft_boards` | 최근 `KEEP_PATCHES` 패치만 — 새 패치가 최신이 되면 200판씩 배치로 삭제(실행당 4분 상한, 남은 판은 다음 실행) |
 | 일별 집계 `stat_*_daily` · 덱 `stat_comp` · 빌드 `stat_unit_build` | 패치별 영구 보관 (패치 필터에서 선택 가능) |
 | `deck_playbook` | 패치별 보관. 새 세트 덱에는 이전 세트 행을 쓰지 않는다 (`setFirstPatch`) |
 | `analysis_reports` (AI 리포트) | 판 단위라 그대로 유효 — 지우지 않는다 |
@@ -55,7 +55,14 @@
 | `data/gameData/<패치>.json` | 패치별 보관본 (세트가 바뀌어도 그대로) |
 | Redis 메타 스냅샷 | 키에 세트가 들어가 자연 만료 |
 
+## 패치 전환 중 메타 스냅샷 · sitemap (2026-11-04)
+
+- 새 패치 표본이 500판 미만이거나 새 패치 덱 클러스터가 아직 없으면, 메타 스냅샷은 **같은 세트의 마지막 DB 스냅샷 사본**을 붙잡는다 (`lib/deckSnapshotPick`, `heldReason`). 래더 JSON 으로 내려가는 건 사본이 없을 때(새 세트 첫날 등)뿐이다.
+  - 16.22 첫날에는 스냅샷이 1분 간격으로 DB(16.21) ↔ 래더 JSON 을 오가, 1시간 캐시된 sitemap 덱 100개 중 53개가 404 였다.
+- sitemap 은 따로 생성하는 잡이 없다. 요청 시점에 덱 페이지와 같은 함수(`lib/deckPage` `listDeckPageIds`)로 같은 Redis 스냅샷을 읽는다 (`app/sitemap.ts`, `force-dynamic`). 스냅샷이 바뀌는 건 collect-db 가 `stat_comp` 를 다시 쓸 때뿐이라 sitemap 과 덱 페이지가 같이 바뀐다.
+- 감시: Meta Snapshot Check(2시간) · Ops Check(매일)가 sitemap 덱 URL **전수** 200 을 본다 (`node scripts/checkOps.js <URL> --sitemap-only --strict`). CI 스모크도 같은 검사.
+
 ## 알려진 공백
 
-- DB 새 세트 표본이 500판 미만인 몇 시간 동안 메타 화면은 래더 JSON 으로 폴백한다. 래더 수집을 수동으로 돌리기 전에는 이전 세트 JSON 이다.
+- DB 새 **세트** 표본이 500판 미만인 몇 시간 동안 메타 화면은 래더 JSON 으로 폴백한다 (같은 세트 사본이 없으므로). 래더 수집을 수동으로 돌리기 전에는 이전 세트 JSON 이다.
 - `tft_stat_filters` 는 패치별로만 묶어서 패치 드롭다운에 이전 세트 패치가 섞여 보인다 (선택하면 그 세트 집계가 정상적으로 나온다).

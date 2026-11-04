@@ -9,7 +9,8 @@
  *  - /api/health 200 및 Riot/LLM 연동
  *  - Redis(분산 캐시) 설정 여부
  *  - Turnstile 강제 여부 + 토큰 없이 검색이 403으로 막히는지
- *  - sitemap URL 수/덱 URL 존재 및 덱 페이지 200
+ *  - sitemap URL 수/덱 URL 존재 및 sitemap 의 덱 URL **전수** 200 (표본 아님 · 리다이렉트도 미충족 — 2026-11-04 지시문:
+ *    덱 100개 중 53개가 404 였는데 첫 덱 1개만 보던 점검은 그 1개가 404 일 때만 잡혔다)
  *  - (--db) 덱 클러스터(stat_comp) · 기물 세트(stat_unit_build) 신선도: **최신 패치**의 마지막 빌드가 24시간 넘으면 미충족,
  *    72시간 넘으면 수집 파이프라인 점검 안내 (이전 패치가 최근에 다시 빌드돼도 최신 패치가 늦으면 미충족)
  *    NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local 도 읽음) 필요 — 두 테이블 모두 anon 읽기 공개.
@@ -22,6 +23,7 @@
  *    마지막 갱신이 SNAPSHOT_MAX_AGE_H(덱 클러스터 주기 8시간 + 실패 허용 6시간 = 14시간)를 넘으면 미충족
  *
  * --strict: 하나라도 미충족이면 exit 1 (배포 전 게이트로 사용)
+ * --sitemap-only: sitemap 덱 URL 전수 점검만 한다 (meta-snapshot-check.yml 이 2시간마다 — 패치 전환 중 회귀 감시)
  * --snapshot-only: 메타 덱 스냅샷만 본다 (.github/workflows/meta-snapshot-check.yml 이 2시간마다 — 실패하면 GitHub 가 알림 메일)
  */
 const rawUrl =
@@ -30,6 +32,9 @@ const BASE = rawUrl.replace(/\/+$/, '')
 const STRICT = process.argv.includes('--strict')
 const DB = process.argv.includes('--db')
 const SNAPSHOT_ONLY = process.argv.includes('--snapshot-only')
+const SITEMAP_ONLY = process.argv.includes('--sitemap-only')
+/** 덱 페이지 전수 점검 동시 요청 수 (100개 기준 수 초 — 사이트에 부담 없는 수준) */
+const DECK_SWEEP_CONCURRENCY = 6
 /** 덱 클러스터(stat_comp)는 DECK_REFRESH_HOURS(8)마다 다시 만든다 — 그 주기 + 6시간 넘게 그대로면 생성이 실패하고 있는 것 */
 const DECK_REFRESH_HOURS = 8
 const SNAPSHOT_FAIL_GRACE_H = 6
@@ -86,6 +91,85 @@ async function checkMetaSnapshot() {
   }
 }
 
+/** sitemap XML → <loc> 목록 */
+function sitemapLocs(xml) {
+  return [...String(xml).matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1].replace(/&amp;/g, '&'))
+}
+
+/** sitemap loc → 점검 대상(BASE) 경로. sitemap 이 SITE_URL(www) 로 써도 OPS_URL(프리뷰 등)에서 같은 경로를 본다 */
+function locPath(loc) {
+  try {
+    const u = new URL(loc)
+    return `${u.pathname}${u.search}`
+  } catch {
+    return loc
+  }
+}
+
+/**
+ * URL 전부의 상태를 본다 (순수 — 요청 함수 주입 · testOps). 200 이 아닌 것(404·5xx·리다이렉트·요청 실패)을 모두 돌려준다.
+ * fetchStatus(path) → 숫자 상태 (throw 하면 0 으로 센다).
+ */
+async function sweepStatuses(paths, fetchStatus, concurrency = DECK_SWEEP_CONCURRENCY) {
+  const results = new Array(paths.length)
+  let next = 0
+  async function worker() {
+    while (next < paths.length) {
+      const i = next++
+      let status = 0
+      let error
+      try {
+        status = await fetchStatus(paths[i])
+      } catch (err) {
+        error = err?.message || String(err)
+      }
+      results[i] = { path: paths[i], status, error }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(concurrency, paths.length)) }, worker))
+  const bad = results.filter((r) => r.status !== 200)
+  return { total: paths.length, ok: paths.length - bad.length, bad }
+}
+
+/** 덱 페이지 상태 — 리다이렉트를 따라가지 않는다 (sitemap 에는 최종 200 URL 만 실려야 한다) */
+async function fetchStatus(path) {
+  const res = await fetch(`${BASE}${path}`, { cache: 'no-store', redirect: 'manual', headers: { 'User-Agent': 'tftlab-ops-check' } })
+  // 본문은 버린다 (연결 재사용)
+  await res.arrayBuffer().catch(() => null)
+  return res.status
+}
+
+/** sitemap 존재 + 덱 URL 전수 200 (하나라도 아니면 미충족 — 표본 검사로 줄이지 않는다) */
+async function checkSitemapDecks() {
+  try {
+    const res = await fetchText('/sitemap.xml')
+    if (res.status !== 200) throw new Error(`status ${res.status}`)
+    const locs = sitemapLocs(res.text)
+    const decks = locs.filter((loc) => locPath(loc).startsWith('/deck/'))
+    console.log(`sitemap: ${locs.length} URLs (decks=${decks.length})`)
+    locs.length > 0 ? pass('sitemap URL 존재') : fail('sitemap URL 없음')
+    decks.length > 0 ? pass('sitemap 덱 URL 존재') : fail('sitemap 덱 URL 없음')
+    if (!decks.length) return
+
+    const sweep = await sweepStatuses(decks.map(locPath), fetchStatus)
+    if (!sweep.bad.length) {
+      pass(`덱 페이지 전수 200 (${sweep.ok}/${sweep.total})`)
+      return
+    }
+    const byStatus = {}
+    for (const b of sweep.bad) byStatus[b.status || 'error'] = (byStatus[b.status || 'error'] || 0) + 1
+    const summary = Object.entries(byStatus)
+      .map(([st, n]) => `${st}×${n}`)
+      .join(' · ')
+    fail(`덱 페이지 200 아님 ${sweep.bad.length}/${sweep.total} (${summary})`)
+    sweep.bad.slice(0, 10).forEach((b) => console.error(`      ${b.status || 'error'} ${b.path}${b.error ? ` — ${b.error}` : ''}`))
+    if (sweep.bad.length > 10) console.error(`      … 외 ${sweep.bad.length - 10}개`)
+    notes.push('sitemap 과 덱 페이지가 다른 스냅샷을 보고 있음 — lib/deckPage listDeckPageIds · lib/deckSnapshotPick(패치 전환 중 스냅샷 붙잡기) 확인')
+  } catch (err) {
+    fail(`sitemap 확인 실패: ${err.message}`)
+  }
+}
+
 function finish() {
   if (notes.length > 0) {
     console.log('\n다음 조치:')
@@ -100,9 +184,14 @@ function finish() {
 }
 
 async function main() {
-  console.log(`\nTFT LAB 운영 점검 — ${BASE}${STRICT ? ' (strict)' : ''}${SNAPSHOT_ONLY ? ' · 메타 스냅샷만' : ''}\n`)
+  console.log(`\nTFT LAB 운영 점검 — ${BASE}${STRICT ? ' (strict)' : ''}${SNAPSHOT_ONLY ? ' · 메타 스냅샷만' : ''}${SITEMAP_ONLY ? ' · sitemap 덱 전수만' : ''}\n`)
   if (SNAPSHOT_ONLY) {
     await checkMetaSnapshot()
+    finish()
+    return
+  }
+  if (SITEMAP_ONLY) {
+    await checkSitemapDecks()
     finish()
     return
   }
@@ -163,23 +252,7 @@ async function main() {
     }
   }
 
-  // sitemap / deck 페이지
-  try {
-    const res = await fetchText('/sitemap.xml')
-    const locs = [...res.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
-    const decks = locs.filter((loc) => loc.includes('/deck/'))
-    console.log(`sitemap: ${locs.length} URLs (decks=${decks.length})`)
-    locs.length > 0 ? pass('sitemap URL 존재') : fail('sitemap URL 없음')
-    decks.length > 0 ? pass('sitemap 덱 URL 존재') : fail('sitemap 덱 URL 없음')
-
-    if (decks.length > 0) {
-      const deckPath = decks[0].replace(BASE, '')
-      const deck = await fetchText(deckPath)
-      deck.status === 200 ? pass(`덱 페이지 200 (${deckPath})`) : fail(`덱 페이지 ${deck.status}`)
-    }
-  } catch (err) {
-    fail(`sitemap 확인 실패: ${err.message}`)
-  }
+  await checkSitemapDecks()
 
   if (health.integrations?.lastLlmHttpError?.status === 402) {
     fail(`DeepSeek 잔액 부족(402) — AI 코칭이 폴백으로 응답 중 (${health.integrations.lastLlmHttpError.at})`)
@@ -349,4 +422,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { comparePatchDesc, latestPatchFreshness, freshnessLevel, snapshotHealth, SNAPSHOT_MAX_AGE_H }
+module.exports = { comparePatchDesc, latestPatchFreshness, freshnessLevel, snapshotHealth, SNAPSHOT_MAX_AGE_H, sitemapLocs, locPath, sweepStatuses }

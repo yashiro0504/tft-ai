@@ -10,6 +10,14 @@ const { rollupBoards, comboKey, parseComboKey } = require('./rollup')
 
 const chunk = (arr, n) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n))
 const dictKey = (kind, apiId) => `${kind}:${apiId}`
+/** 원본 정리 한 번에 지우는 판 수 (보드 8행씩 cascade — 한 문장이 statement_timeout 안에 끝나는 크기) */
+const PRUNE_BATCH = 200
+/** '16.22' > '16.21' > '16.9' (숫자 비교) */
+const comparePatchDesc = (a, b) => {
+  const pa = String(a).split('.').map(Number)
+  const pb = String(b).split('.').map(Number)
+  return (pb[0] || 0) - (pa[0] || 0) || (pb[1] || 0) - (pa[1] || 0) || String(b).localeCompare(String(a))
+}
 
 function createSupabaseStore({ url, serviceRoleKey }) {
   const { createClient } = require('@supabase/supabase-js')
@@ -166,8 +174,47 @@ function createSupabaseStore({ url, serviceRoleKey }) {
       )
     },
 
-    async prune(keepPatches) {
-      return must(await db.rpc('tft_prune_raw', { p_keep_patches: keepPatches }), '원본 정리')
+    /**
+     * 최근 keepPatches 개 패치(마지막 판 시각 기준)만 남기고 원본을 지운다 — 배치로 (2026-11-04).
+     * 예전 tft_prune_raw RPC 는 이전 패치 전체(16.21 원본 67MB · 보드 cascade)를 한 문장으로 지워
+     * 패치 전환 뒤 매시간 'canceling statement due to statement timeout' 으로 실패했다.
+     * 이제 PRUNE_BATCH 판씩 지우고(판당 보드 8행 cascade), deadlineMs 를 넘기면 멈춘다 — 남은 판은 다음 실행이 이어서 지운다.
+     * 반환: 이번에 지운 판 수.
+     */
+    async prune(keepPatches, opts = {}) {
+      const batch = opts.batchSize || PRUNE_BATCH
+      const deadline = opts.deadlineMs || Infinity
+      // 후보 패치 = 패치 달력(tft_patches · 작은 표) — 원본 전체 distinct 스캔을 피한다. 원본에 판이 없는 패치는 건너뛴다
+      const calendar = must(await db.from('tft_patches').select('patch'), '패치 달력 조회').map((r) => r.patch)
+      // tft_prune_raw 와 같은 기준: 패치별 마지막 판 시각(game_at) 내림차순 상위 keepPatches 개를 남긴다
+      const lastAt = []
+      for (const patch of new Set(calendar)) {
+        const rows = must(
+          await db.from('tft_matches').select('game_at').eq('patch', patch).order('game_at', { ascending: false }).limit(1),
+          '패치 마지막 판 조회'
+        )
+        if (rows[0]) lastAt.push({ patch, at: Date.parse(rows[0].game_at) })
+      }
+      if (lastAt.length <= Math.max(keepPatches, 1)) return 0
+      lastAt.sort((a, b) => b.at - a.at || comparePatchDesc(a.patch, b.patch))
+      const drop = lastAt.slice(Math.max(keepPatches, 1)).map((p) => p.patch)
+
+      let removed = 0
+      for (const patch of drop) {
+        while (Date.now() < deadline) {
+          const ids = must(await db.from('tft_matches').select('match_id').eq('patch', patch).limit(batch), '정리 대상 조회').map((r) => r.match_id)
+          if (!ids.length) break
+          must(await db.from('tft_matches').delete().in('match_id', ids), '원본 정리')
+          removed += ids.length
+          if (ids.length < batch) break
+        }
+      }
+      // tft_prune_raw 가 같이 하던 7일 지난 실패 기록 정리
+      must(
+        await db.from('tft_fetch_failures').delete().lt('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        '실패 기록 정리'
+      )
+      return removed
     },
 
     /** 원본에 들어온 가장 높은 세트 번호 (없으면 null) */

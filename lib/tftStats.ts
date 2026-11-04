@@ -8,6 +8,7 @@ import { JSON_BUILDS_INFO, jsonBuildRankings, toBuildRankings, type UnitBuildRow
 import { elapsedMs, errorFields, incrMetric, logEvent } from './observability'
 import { cacheGet, cacheSet } from './cache'
 import { CURRENT_SET } from './gameFacts'
+import { buildMetaDeckSnapshot } from './deckSnapshotPick'
 import type { MetaChampRanking, MetaComboRanking, MetaItemRanking, MetaTraitRanking } from './types'
 import {
   DAYS_FILTER_OPTIONS,
@@ -521,13 +522,27 @@ export function refreshMetaDeckSnapshot(): Promise<DecksResponse> {
   if (snapshotRefresh) return snapshotRefresh
   snapshotRefresh = (async () => {
     const startedAt = Date.now()
-    const filters = await getMetaFilters()
-    const res = await getDecks({ patch: filters.source === 'db' ? filters.defaults.patch : null, tier: filters.defaults?.tier ?? DEFAULT_TIER })
+    const res = await buildMetaDeckSnapshot({
+      getMetaFilters,
+      getDecks: (f) => getDecks(f),
+      lastDbSnapshot: async () => {
+        const last = await cacheGet<DecksResponse>(SNAPSHOT_STALE_KEY)
+        return last?.source === 'db' && last.decks?.length ? last : null
+      },
+    })
     if (res.decks?.length) {
-      await cacheSet(SNAPSHOT_KEY, res, res.source === 'db' ? SNAPSHOT_TTL_MS : SNAPSHOT_FALLBACK_TTL_MS)
-      if (res.source === 'db') await cacheSet(SNAPSHOT_STALE_KEY, res, SNAPSHOT_STALE_TTL_MS)
+      // 붙잡은 이전 DB 스냅샷(heldReason)·래더 폴백은 짧게만 두고 곧 다시 만든다. 사본(3일)은 새로 만든 DB 스냅샷으로만 덮는다
+      const fresh = res.source === 'db' && !res.heldReason
+      await cacheSet(SNAPSHOT_KEY, res, fresh ? SNAPSHOT_TTL_MS : SNAPSHOT_FALLBACK_TTL_MS)
+      if (fresh) await cacheSet(SNAPSHOT_STALE_KEY, res, SNAPSHOT_STALE_TTL_MS)
     }
-    logEvent('info', 'meta_snapshot_refreshed', { ms: elapsedMs(startedAt), source: res.source, decks: res.decks?.length ?? 0 })
+    logEvent('info', 'meta_snapshot_refreshed', {
+      ms: elapsedMs(startedAt),
+      source: res.source,
+      patch: res.filter?.patch ?? res.patch ?? null,
+      held: res.heldReason ?? null,
+      decks: res.decks?.length ?? 0,
+    })
     return res
   })().finally(() => {
     snapshotRefresh = null

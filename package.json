@@ -42,7 +42,7 @@
     "test:axes:update": "node scripts/testAxes.js --update",
     "test:collect": "node scripts/testCollect.js",
     "test:rollup": "node scripts/testRollup.js",
-    "test:ops": "node scripts/testOps.js",
+    "test:ops": "node scripts/testOps.js && node scripts/testSitemapDecks.js",
     "test:gate": "node scripts/testBotGate.js",
     "test:quota": "node scripts/testQuotaCharge.js",
     "test:ai": "node scripts/testMatchIntegrity.js && node scripts/testReportConsistency.js && node scripts/testSemanticGrounding.js && node scripts/testComparisonFacts.js && node scripts/testTraitAnchors.js && node scripts/testMatchBackfill.js && node scripts/testPlaybook.js && node scripts/testReportRepair.js && node scripts/testTraitRelations.js && node scripts/testDirective1030b.js && node scripts/testDirective1102.js",
