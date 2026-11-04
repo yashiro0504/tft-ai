@@ -60,6 +60,25 @@ export async function resolveDeckPage(id: string, q: { patch: string | null; tie
   }
 }
 
+/**
+ * sitemap 에 싣는 덱 — 덱 페이지 기본 경로(resolveDeckPage(id), 쿼리 없음)와 같은 스냅샷 · 같은 함수(deckFromSnapshot)로 고른다.
+ * 2026-11-04 지시문: sitemap 덱 100개 중 53개가 404 였다 (스냅샷이 DB ↔ 래더 JSON 을 오가고 sitemap 은 1시간 캐시).
+ * sitemap 은 요청마다 이 함수로 만들고(app/sitemap.ts · dynamic), 여기서 고른 id 는 같은 순간 덱 페이지에서 반드시 열린다.
+ */
+export async function listDeckPageIds(): Promise<{ ids: string[]; updatedAt?: string }> {
+  const snapshot = await getMetaDeckSnapshot()
+  return { ids: deckIdsOfSnapshot(snapshot), updatedAt: snapshot.updatedAt }
+}
+
+/** 스냅샷에서 덱 페이지가 200 으로 여는 id (중복 · 빈 id 제외) — 테스트도 이 함수로 sitemap ↔ 페이지를 대조한다 */
+export function deckIdsOfSnapshot(snapshot: DecksResponse): string[] {
+  const ids = new Set<string>()
+  for (const d of snapshot.decks ?? []) {
+    if (d.id && deckFromSnapshot(snapshot, d.id)) ids.add(d.id)
+  }
+  return [...ids]
+}
+
 /** 페이지 본문·<title>·설명·OG 가 같은 문자열을 쓰게 한 곳에서 만든다 */
 export function deckHeadline(deck: Pick<MetaDeckRanking, 'avgPlacement' | 'top4Rate'>): string {
   const avg = typeof deck.avgPlacement === 'number' ? deck.avgPlacement.toFixed(2) : '-'

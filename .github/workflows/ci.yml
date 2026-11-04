@@ -109,14 +109,8 @@ jobs:
             test "$code" = "200"
           done
 
-          deck=$(curl -s http://127.0.0.1:3100/sitemap.xml | grep -oE '/deck/[A-Za-z0-9_-]+' | head -1)
-          if [ -z "$deck" ]; then
-            echo "::error::sitemap 에 덱 URL 이 없습니다."
-            exit 1
-          fi
-          code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3100$deck")
-          echo "$deck -> $code"
-          test "$code" = "200"
+          # sitemap 덱 URL 전수(표본 아님) 200 — 하나라도 404·리다이렉트면 실패 (2026-11-04 지시문 · scripts/checkOps.js)
+          node scripts/checkOps.js http://127.0.0.1:3100 --sitemap-only --strict
 
           # 잘못된 퍼센트 인코딩 슬러그는 500 이 아니라 404
           for path in /champions/a%25b /items/a%25b /traits/a%25b; do

@@ -36,6 +36,8 @@ const { createSupabaseStore, createMemoryStore } = require('./collect/store')
 const { createSeedCrypto } = require('./collect/seedCrypto')
 const { comboKey, parseComboKey } = require('./collect/rollup')
 const { rebuildComps } = require('./collect/decks')
+/** 원본 정리 한 번에 쓰는 시간 (워크플로 58분 상한 안 · MAX_MINUTES 50분 수집 뒤) — 다 못 지우면 다음 실행이 이어서 */
+const PRUNE_BUDGET_MS = 4 * 60 * 1000
 const { configuredSet, gameDataSet, createSetGate, annotateWarning } = require('./_season')
 
 const env = (name, def) => process.env[name] ?? def
@@ -277,7 +279,7 @@ async function main({ log = console } = {}) {
     if (sizeMb > CFG.maxRawMb) {
       if (shouldPruneOnLimit(sizeMb)) {
         const hard = sizeMb > CFG.maxRawMbHard
-        const removed = await store.prune(CFG.keepPatches)
+        const removed = await store.prune(CFG.keepPatches, { deadlineMs: Date.now() + PRUNE_BUDGET_MS })
         const before = sizeMb
         sizeMb = await store.rawSizeMb()
         if (hard) {
@@ -451,7 +453,8 @@ async function main({ log = console } = {}) {
 
     // 5) 원본 정리 — 집계가 실패했으면 건너뛴다 (집계되지 않은 원본을 지우면 복구할 수 없다)
     if (shouldPrune(aggregates)) {
-      const removed = await store.prune(CFG.keepPatches)
+      // 배치로 지우고 PRUNE_BUDGET_MS 안에서 멈춘다 — 남은 판은 다음 실행이 이어서 (2026-11-04 statement timeout)
+      const removed = await store.prune(CFG.keepPatches, { deadlineMs: Date.now() + PRUNE_BUDGET_MS })
       if (removed) log.log(`  원본 정리: 이전 패치 ${removed}판 삭제 (최근 ${CFG.keepPatches}패치 보관)`)
     } else {
       stats.note = [stats.note, '집계 실패로 원본 정리를 건너뜀'].filter(Boolean).join(' · ')

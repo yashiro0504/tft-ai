@@ -3,6 +3,8 @@ name: Meta Snapshot Check
 # 메타 화면(/meta · 홈 메타 탭)과 덱 성적표가 같이 읽는 덱 스냅샷이 DB 집계이고 14시간(덱 클러스터 주기 8시간 + 6시간) 안에
 # 갱신됐는지 2시간마다 본다. 실패하면 이 워크플로가 빨간색이 되고 GitHub 가 알림 메일을 보낸다 (scripts/checkOps.js --snapshot-only).
 # 2026-10-28: 홈 메타 탭이 09:29 래더 JSON 에 멈춰 있는 걸 사용자가 먼저 발견했다.
+# 2026-11-04: 같은 2시간 주기로 sitemap 덱 URL 전수(표본 아님) 200 도 본다 — 16.22 전환 첫날 덱 100개 중 53개가 404 였다.
+#             스냅샷이 바뀌는 구간(패치 전환 · 하루 3번 덱 클러스터 갱신)을 하루 1회 Ops Check 보다 촘촘히 감시한다.
 
 on:
   schedule:
@@ -43,6 +45,14 @@ jobs:
           set -o pipefail
           node scripts/checkOps.js "$OPS_URL" --snapshot-only --strict 2>&1 | tee snapshot.log
 
+      - name: Sitemap deck URLs all 200 (strict)
+        if: always()
+        env:
+          OPS_URL: ${{ github.event.inputs.url || 'https://www.tftlab.kr' }}
+        run: |
+          set -o pipefail
+          node scripts/checkOps.js "$OPS_URL" --sitemap-only --strict 2>&1 | tee sitemap.log
+
       - name: Job summary
         if: always()
         run: |
@@ -51,5 +61,11 @@ jobs:
             echo
             echo '```'
             cat snapshot.log 2>/dev/null || echo "no output"
+            echo '```'
+            echo
+            echo "### Sitemap deck URLs"
+            echo
+            echo '```'
+            cat sitemap.log 2>/dev/null || echo "no output"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

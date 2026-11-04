@@ -189,6 +189,8 @@ export interface DecksResponse {
   minSample: number
   decks: (MetaDeckRanking & SampleFields)[]
   fallbackReason?: string
+  /** 최신 패치 DB 덱이 아직 없어 이전 DB 스냅샷을 붙잡고 있는 사유 (lib/deckSnapshotPick) — 짧게만 캐시한다 */
+  heldReason?: string
   error?: string
 }
 
