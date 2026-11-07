@@ -1,6 +1,6 @@
 {
   "scoringVersion": "v14",
-  "generatedAt": "2026-11-06T02:11:03.872Z",
+  "generatedAt": "2026-11-07T01:23:52.399Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
@@ -83,10 +83,10 @@
       }
     },
     "Seed04 최근 5경기": {
-      "focus": "economy",
+      "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 83,
+        "economy": 86,
         "itemization": 100,
         "tempo": 96,
         "completion": 91,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 79,
+        "economy": 81,
         "itemization": 100,
         "tempo": 73,
         "completion": 92,
@@ -206,7 +206,7 @@
       "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 82,
+        "economy": 78,
         "itemization": 70,
         "tempo": 68,
         "completion": 78,
@@ -326,7 +326,7 @@
       "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 57,
+        "economy": 55,
         "itemization": 100,
         "tempo": 89,
         "completion": 89,
@@ -403,10 +403,10 @@
       }
     },
     "Rift01 win 협곡야수7 장로1성": {
-      "focus": "economy",
+      "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 89,
         "itemization": 100,
         "tempo": 100,
         "completion": 87,
