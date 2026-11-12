@@ -3,36 +3,36 @@
   "source": "supabase-tft_boards",
   "patch": "16.22",
   "tierMin": "MASTER",
-  "generatedAt": "2026-11-09T00:48:12.704Z",
+  "generatedAt": "2026-11-12T02:09:00.954Z",
   "matches": 6000,
-  "boards": 47979,
+  "boards": 47964,
   "minSample": {
     "stage": 100,
     "carryStage": 40
   },
   "byStage": {
     "3": {
-      "n": 125,
+      "n": 145,
       "level": 5,
       "boardValue": 17
     },
     "4": {
-      "n": 3046,
+      "n": 3065,
       "level": 8,
       "boardValue": 46
     },
     "5": {
-      "n": 22524,
+      "n": 22429,
       "level": 8,
       "boardValue": 63
     },
     "6": {
-      "n": 21001,
+      "n": 21171,
       "level": 9,
       "boardValue": 83
     },
     "7": {
-      "n": 1277,
+      "n": 1151,
       "level": 9,
       "boardValue": 96
     }
@@ -40,411 +40,428 @@
   "byCarry": {
     "draven": {
       "name": "드레이븐",
-      "n": 3855,
+      "n": 3630,
       "byStage": {
         "4": {
-          "n": 211,
+          "n": 209,
           "level": 9,
-          "boardValue": 47
+          "boardValue": 46
         },
         "5": {
-          "n": 1674,
+          "n": 1582,
           "level": 9,
           "boardValue": 66
         },
         "6": {
-          "n": 1842,
+          "n": 1741,
           "level": 9,
-          "boardValue": 100
+          "boardValue": 99
         },
         "7": {
-          "n": 128,
+          "n": 98,
           "level": 10,
-          "boardValue": 110
+          "boardValue": 105
+        }
+      }
+    },
+    "brambleback": {
+      "name": "덩굴정령",
+      "n": 3170,
+      "byStage": {
+        "4": {
+          "n": 151,
+          "level": 8,
+          "boardValue": 42
+        },
+        "5": {
+          "n": 1763,
+          "level": 8,
+          "boardValue": 56
+        },
+        "6": {
+          "n": 1221,
+          "level": 9,
+          "boardValue": 70
         }
       }
     },
     "aphelios": {
       "name": "아펠리오스",
-      "n": 3003,
+      "n": 2832,
       "byStage": {
         "4": {
-          "n": 170,
+          "n": 150,
           "level": 8,
           "boardValue": 43
         },
         "5": {
-          "n": 1555,
+          "n": 1463,
           "level": 8,
-          "boardValue": 58
+          "boardValue": 59
         },
         "6": {
-          "n": 1218,
+          "n": 1176,
           "level": 9,
-          "boardValue": 72
+          "boardValue": 69
         },
         "7": {
-          "n": 60,
+          "n": 43,
           "level": 9,
-          "boardValue": 76
+          "boardValue": 78
         }
       }
     },
     "elderdragon": {
       "name": "장로 드래곤",
-      "n": 2603,
+      "n": 2813,
       "byStage": {
         "4": {
-          "n": 150,
+          "n": 131,
           "level": 9,
-          "boardValue": 45
+          "boardValue": 43
         },
         "5": {
-          "n": 983,
+          "n": 1036,
           "level": 9,
-          "boardValue": 64
+          "boardValue": 62
         },
         "6": {
-          "n": 1368,
+          "n": 1519,
           "level": 9,
-          "boardValue": 87
+          "boardValue": 86
         },
         "7": {
-          "n": 102,
-          "level": 10,
-          "boardValue": 97
+          "n": 127,
+          "level": 9,
+          "boardValue": 92
         }
       }
     },
     "yunara": {
       "name": "유나라",
-      "n": 2586,
+      "n": 2727,
       "byStage": {
         "4": {
-          "n": 122,
+          "n": 135,
           "level": 6,
           "boardValue": 53
         },
         "5": {
-          "n": 962,
+          "n": 1009,
           "level": 7,
           "boardValue": 72
         },
         "6": {
-          "n": 1402,
+          "n": 1494,
           "level": 8,
           "boardValue": 90
         },
         "7": {
-          "n": 92,
-          "level": 8.5,
+          "n": 82,
+          "level": 9,
           "boardValue": 96
         }
       }
     },
     "alune": {
       "name": "알룬",
-      "n": 2561,
+      "n": 2616,
       "byStage": {
         "4": {
-          "n": 140,
+          "n": 151,
           "level": 9,
-          "boardValue": 50
+          "boardValue": 46
         },
         "5": {
-          "n": 967,
+          "n": 945,
           "level": 9,
-          "boardValue": 66
+          "boardValue": 67
         },
         "6": {
-          "n": 1368,
+          "n": 1439,
           "level": 9,
           "boardValue": 92
         },
         "7": {
-          "n": 86,
+          "n": 81,
           "level": 10,
-          "boardValue": 100
-        }
-      }
-    },
-    "brambleback": {
-      "name": "덩굴정령",
-      "n": 2534,
-      "byStage": {
-        "4": {
-          "n": 103,
-          "level": 8,
-          "boardValue": 43
-        },
-        "5": {
-          "n": 1379,
-          "level": 8,
-          "boardValue": 56
-        },
-        "6": {
-          "n": 1015,
-          "level": 9,
-          "boardValue": 72
+          "boardValue": 99
         }
       }
     },
     "ahri": {
       "name": "아리",
-      "n": 2514,
+      "n": 2532,
       "byStage": {
         "4": {
-          "n": 193,
+          "n": 211,
           "level": 8,
-          "boardValue": 46
+          "boardValue": 45
         },
         "5": {
-          "n": 1331,
+          "n": 1370,
           "level": 8,
           "boardValue": 61
         },
         "6": {
-          "n": 947,
+          "n": 922,
           "level": 9,
           "boardValue": 72
-        },
-        "7": {
-          "n": 41,
-          "level": 9,
-          "boardValue": 82
         }
       }
     },
     "sivir": {
       "name": "시비르",
-      "n": 2476,
+      "n": 2376,
       "byStage": {
         "4": {
-          "n": 152,
+          "n": 164,
           "level": 8,
           "boardValue": 45
         },
         "5": {
-          "n": 1430,
+          "n": 1350,
           "level": 8,
-          "boardValue": 60
+          "boardValue": 62
         },
         "6": {
-          "n": 861,
+          "n": 835,
           "level": 9,
-          "boardValue": 74
+          "boardValue": 75
         }
       }
     },
     "ezreal": {
       "name": "이즈리얼",
-      "n": 2403,
+      "n": 2361,
       "byStage": {
         "4": {
-          "n": 154,
+          "n": 139,
           "level": 8,
-          "boardValue": 44
+          "boardValue": 43
         },
         "5": {
-          "n": 1300,
+          "n": 1289,
           "level": 8,
           "boardValue": 56
         },
         "6": {
-          "n": 909,
+          "n": 897,
           "level": 9,
-          "boardValue": 64
-        },
-        "7": {
-          "n": 40,
-          "level": 9,
-          "boardValue": 72
+          "boardValue": 65
         }
       }
     },
     "zyra": {
       "name": "자이라",
-      "n": 2200,
+      "n": 2198,
       "byStage": {
         "4": {
-          "n": 120,
+          "n": 118,
           "level": 8,
-          "boardValue": 46
+          "boardValue": 47
         },
         "5": {
-          "n": 1064,
+          "n": 1121,
           "level": 8,
           "boardValue": 61
         },
         "6": {
-          "n": 968,
+          "n": 920,
           "level": 9,
-          "boardValue": 74
-        },
-        "7": {
-          "n": 47,
-          "level": 9,
-          "boardValue": 87
+          "boardValue": 75
         }
       }
     },
     "morgana": {
       "name": "모르가나",
-      "n": 2172,
+      "n": 1956,
       "byStage": {
         "4": {
-          "n": 196,
+          "n": 186,
           "level": 8,
-          "boardValue": 49
+          "boardValue": 48
         },
         "5": {
-          "n": 1244,
+          "n": 1104,
           "level": 8,
           "boardValue": 63
         },
         "6": {
-          "n": 712,
+          "n": 650,
           "level": 9,
-          "boardValue": 78
+          "boardValue": 79
         }
       }
     },
     "veigar": {
       "name": "베이가",
-      "n": 1681,
+      "n": 1612,
       "byStage": {
         "4": {
-          "n": 92,
+          "n": 81,
           "level": 6,
-          "boardValue": 48
+          "boardValue": 45
         },
         "5": {
-          "n": 778,
+          "n": 753,
           "level": 7,
           "boardValue": 63
         },
         "6": {
-          "n": 745,
+          "n": 717,
           "level": 8,
           "boardValue": 81
         },
         "7": {
-          "n": 57,
+          "n": 50,
           "level": 9,
           "boardValue": 90
         }
       }
     },
-    "soraka": {
-      "name": "소라카",
-      "n": 1521,
+    "masteryiad": {
+      "name": "마스터 이",
+      "n": 1519,
       "byStage": {
         "4": {
-          "n": 107,
-          "level": 8,
-          "boardValue": 46
+          "n": 69,
+          "level": 7,
+          "boardValue": 53
         },
         "5": {
-          "n": 825,
-          "level": 8,
-          "boardValue": 63
+          "n": 669,
+          "level": 7,
+          "boardValue": 82
         },
         "6": {
-          "n": 576,
+          "n": 726,
+          "level": 8,
+          "boardValue": 117
+        },
+        "7": {
+          "n": 48,
+          "level": 8,
+          "boardValue": 126
+        }
+      }
+    },
+    "soraka": {
+      "name": "소라카",
+      "n": 1355,
+      "byStage": {
+        "4": {
+          "n": 70,
+          "level": 8,
+          "boardValue": 47
+        },
+        "5": {
+          "n": 744,
+          "level": 8,
+          "boardValue": 62
+        },
+        "6": {
+          "n": 523,
           "level": 9,
           "boardValue": 74
         }
       }
     },
-    "masteryiad": {
-      "name": "마스터 이",
-      "n": 1445,
-      "byStage": {
-        "4": {
-          "n": 49,
-          "level": 7,
-          "boardValue": 50
-        },
-        "5": {
-          "n": 648,
-          "level": 7,
-          "boardValue": 82
-        },
-        "6": {
-          "n": 693,
-          "level": 8,
-          "boardValue": 112
-        },
-        "7": {
-          "n": 53,
-          "level": 9,
-          "boardValue": 128
-        }
-      }
-    },
     "lux": {
       "name": "럭스",
-      "n": 1323,
+      "n": 1339,
       "byStage": {
         "4": {
-          "n": 61,
+          "n": 70,
           "level": 8,
-          "boardValue": 49
+          "boardValue": 47
         },
         "5": {
-          "n": 432,
+          "n": 411,
           "level": 9,
-          "boardValue": 64
+          "boardValue": 63
         },
         "6": {
-          "n": 754,
+          "n": 792,
           "level": 9,
           "boardValue": 87
         },
         "7": {
-          "n": 76,
+          "n": 66,
           "level": 10,
-          "boardValue": 94
+          "boardValue": 99
         }
       }
     },
     "ashe": {
       "name": "애쉬",
-      "n": 1113,
+      "n": 1105,
       "byStage": {
         "4": {
-          "n": 59,
+          "n": 41,
           "level": 9,
-          "boardValue": 46
+          "boardValue": 44
         },
         "5": {
-          "n": 400,
+          "n": 398,
           "level": 9,
-          "boardValue": 65
+          "boardValue": 63
         },
         "6": {
-          "n": 597,
+          "n": 613,
           "level": 9,
-          "boardValue": 87
+          "boardValue": 86
         },
         "7": {
-          "n": 57,
+          "n": 52,
           "level": 9,
-          "boardValue": 96
+          "boardValue": 99
         }
       }
     },
     "teemo": {
       "name": "티모",
-      "n": 982,
+      "n": 983,
       "byStage": {
         "5": {
-          "n": 449,
+          "n": 440,
+          "level": 7,
+          "boardValue": 73
+        },
+        "6": {
+          "n": 489,
+          "level": 8,
+          "boardValue": 87
+        }
+      }
+    },
+    "kayle": {
+      "name": "케일",
+      "n": 969,
+      "byStage": {
+        "5": {
+          "n": 434,
+          "level": 7,
+          "boardValue": 67
+        },
+        "6": {
+          "n": 468,
+          "level": 8,
+          "boardValue": 84
+        }
+      }
+    },
+    "leblanc": {
+      "name": "르블랑",
+      "n": 944,
+      "byStage": {
+        "5": {
+          "n": 345,
           "level": 7,
           "boardValue": 72
         },
         "6": {
-          "n": 470,
+          "n": 534,
           "level": 8,
           "boardValue": 87
         }
@@ -452,168 +469,168 @@
     },
     "nidalee18ap": {
       "name": "니달리",
-      "n": 976,
+      "n": 878,
       "byStage": {
         "4": {
-          "n": 58,
+          "n": 64,
           "level": 8,
-          "boardValue": 46
+          "boardValue": 44
         },
         "5": {
-          "n": 547,
+          "n": 468,
           "level": 8,
           "boardValue": 62
         },
         "6": {
-          "n": 353,
+          "n": 330,
           "level": 9,
-          "boardValue": 76
-        }
-      }
-    },
-    "leblanc": {
-      "name": "르블랑",
-      "n": 964,
-      "byStage": {
-        "5": {
-          "n": 361,
-          "level": 7,
-          "boardValue": 73
-        },
-        "6": {
-          "n": 534,
-          "level": 8,
-          "boardValue": 88
+          "boardValue": 75
         }
       }
     },
     "cassiopeia": {
       "name": "카시오페아",
-      "n": 815,
+      "n": 820,
       "byStage": {
         "4": {
-          "n": 108,
+          "n": 90,
           "level": 8,
-          "boardValue": 43
+          "boardValue": 46
         },
         "5": {
-          "n": 395,
+          "n": 430,
           "level": 7,
-          "boardValue": 70
+          "boardValue": 73
         },
         "6": {
-          "n": 284,
+          "n": 280,
           "level": 8,
-          "boardValue": 104
-        }
-      }
-    },
-    "rengar": {
-      "name": "렝가",
-      "n": 780,
-      "byStage": {
-        "4": {
-          "n": 44,
-          "level": 7,
-          "boardValue": 54
-        },
-        "5": {
-          "n": 357,
-          "level": 7,
-          "boardValue": 83
-        },
-        "6": {
-          "n": 350,
-          "level": 8,
-          "boardValue": 118
-        }
-      }
-    },
-    "kayle": {
-      "name": "케일",
-      "n": 730,
-      "byStage": {
-        "5": {
-          "n": 312,
-          "level": 7,
-          "boardValue": 69
-        },
-        "6": {
-          "n": 354,
-          "level": 8,
-          "boardValue": 81
-        }
-      }
-    },
-    "azir": {
-      "name": "아지르",
-      "n": 697,
-      "byStage": {
-        "4": {
-          "n": 43,
-          "level": 7,
-          "boardValue": 44
-        },
-        "5": {
-          "n": 324,
-          "level": 7,
-          "boardValue": 77
-        },
-        "6": {
-          "n": 307,
-          "level": 8,
-          "boardValue": 101
+          "boardValue": 109
         }
       }
     },
     "karma": {
       "name": "카르마",
-      "n": 689,
+      "n": 741,
       "byStage": {
         "4": {
-          "n": 181,
+          "n": 178,
           "level": 6,
           "boardValue": 51
         },
         "5": {
-          "n": 401,
+          "n": 441,
           "level": 7,
           "boardValue": 65
         },
         "6": {
-          "n": 89,
+          "n": 110,
           "level": 8,
-          "boardValue": 90
+          "boardValue": 86
+        }
+      }
+    },
+    "rengar": {
+      "name": "렝가",
+      "n": 728,
+      "byStage": {
+        "4": {
+          "n": 54,
+          "level": 7,
+          "boardValue": 52
+        },
+        "5": {
+          "n": 333,
+          "level": 7,
+          "boardValue": 83
+        },
+        "6": {
+          "n": 318,
+          "level": 8,
+          "boardValue": 119
+        }
+      }
+    },
+    "azir": {
+      "name": "아지르",
+      "n": 599,
+      "byStage": {
+        "5": {
+          "n": 256,
+          "level": 7,
+          "boardValue": 76
+        },
+        "6": {
+          "n": 284,
+          "level": 8,
+          "boardValue": 105
         }
       }
     },
     "kennen": {
       "name": "케넨",
-      "n": 669,
+      "n": 589,
       "byStage": {
         "5": {
-          "n": 217,
+          "n": 201,
           "level": 9,
-          "boardValue": 67
+          "boardValue": 68
         },
         "6": {
-          "n": 382,
+          "n": 332,
           "level": 9,
-          "boardValue": 89
+          "boardValue": 86
+        }
+      }
+    },
+    "xayah": {
+      "name": "자야",
+      "n": 570,
+      "byStage": {
+        "4": {
+          "n": 106,
+          "level": 6,
+          "boardValue": 43
+        },
+        "5": {
+          "n": 320,
+          "level": 7,
+          "boardValue": 58
+        },
+        "6": {
+          "n": 135,
+          "level": 8,
+          "boardValue": 76
+        }
+      }
+    },
+    "crimsonraptor": {
+      "name": "어미 부리",
+      "n": 527,
+      "byStage": {
+        "5": {
+          "n": 259,
+          "level": 7,
+          "boardValue": 71
+        },
+        "6": {
+          "n": 210,
+          "level": 8,
+          "boardValue": 97
         }
       }
     },
     "akaliad": {
       "name": "아칼리",
-      "n": 576,
+      "n": 485,
       "byStage": {
         "5": {
-          "n": 276,
+          "n": 235,
           "level": 7,
           "boardValue": 53
         },
         "6": {
-          "n": 256,
+          "n": 203,
           "level": 8,
           "boardValue": 61
         }
@@ -621,177 +638,124 @@
     },
     "tristana": {
       "name": "트리스타나",
-      "n": 537,
+      "n": 436,
       "byStage": {
         "4": {
-          "n": 60,
+          "n": 49,
           "level": 7,
-          "boardValue": 46
+          "boardValue": 44
         },
         "5": {
-          "n": 262,
+          "n": 241,
           "level": 7,
-          "boardValue": 69
+          "boardValue": 67
         },
         "6": {
-          "n": 199,
+          "n": 138,
           "level": 8,
-          "boardValue": 102
-        }
-      }
-    },
-    "crimsonraptor": {
-      "name": "어미 부리",
-      "n": 507,
-      "byStage": {
-        "5": {
-          "n": 285,
-          "level": 7,
-          "boardValue": 74
-        },
-        "6": {
-          "n": 190,
-          "level": 8,
-          "boardValue": 95
+          "boardValue": 101
         }
       }
     },
     "ivern": {
       "name": "아이번",
-      "n": 426,
+      "n": 413,
       "byStage": {
         "5": {
-          "n": 138,
+          "n": 144,
           "level": 9,
-          "boardValue": 66
+          "boardValue": 64
         },
         "6": {
-          "n": 243,
+          "n": 235,
           "level": 9,
-          "boardValue": 88
+          "boardValue": 90
         }
       }
     },
     "sentry": {
       "name": "조약돌",
-      "n": 394,
+      "n": 343,
       "byStage": {
         "5": {
-          "n": 178,
+          "n": 125,
           "level": 8,
-          "boardValue": 61
+          "boardValue": 59
         },
         "6": {
-          "n": 185,
+          "n": 188,
           "level": 9,
-          "boardValue": 78
-        }
-      }
-    },
-    "xayah": {
-      "name": "자야",
-      "n": 287,
-      "byStage": {
-        "4": {
-          "n": 61,
-          "level": 6,
-          "boardValue": 44
-        },
-        "5": {
-          "n": 156,
-          "level": 7,
-          "boardValue": 60
-        },
-        "6": {
-          "n": 59,
-          "level": 8,
-          "boardValue": 72
-        }
-      }
-    },
-    "khazix": {
-      "name": "카직스",
-      "n": 281,
-      "byStage": {
-        "5": {
-          "n": 153,
-          "level": 7,
           "boardValue": 79
-        },
-        "6": {
-          "n": 104,
-          "level": 8,
-          "boardValue": 110
         }
       }
     },
     "kogmaw18ad": {
       "name": "코그모",
-      "n": 259,
-      "byStage": {
-        "5": {
-          "n": 126,
-          "level": 7,
-          "boardValue": 81
-        },
-        "6": {
-          "n": 108,
-          "level": 8,
-          "boardValue": 115
-        }
-      }
-    },
-    "varus": {
-      "name": "바루스",
-      "n": 245,
+      "n": 276,
       "byStage": {
         "5": {
           "n": 111,
           "level": 7,
-          "boardValue": 54
+          "boardValue": 81
         },
         "6": {
-          "n": 108,
+          "n": 147,
           "level": 8,
-          "boardValue": 62
+          "boardValue": 111
         }
       }
     },
-    "caitlyn": {
-      "name": "케이틀린",
-      "n": 199,
+    "khazix": {
+      "name": "카직스",
+      "n": 214,
       "byStage": {
         "5": {
-          "n": 90,
-          "level": 8,
-          "boardValue": 71
+          "n": 98,
+          "level": 7,
+          "boardValue": 89
         },
         "6": {
-          "n": 79,
+          "n": 90,
           "level": 8,
-          "boardValue": 83
+          "boardValue": 108
         }
       }
     },
     "murkwolf": {
       "name": "어스름늑대",
-      "n": 193,
+      "n": 207,
       "byStage": {
         "5": {
-          "n": 85,
+          "n": 88,
           "level": 8,
-          "boardValue": 63
+          "boardValue": 61
         },
         "6": {
-          "n": 87,
+          "n": 86,
           "level": 8,
           "boardValue": 85
         }
       }
     },
-    "camille": {
-      "name": "카밀",
-      "n": 189,
+    "caitlyn": {
+      "name": "케이틀린",
+      "n": 198,
+      "byStage": {
+        "5": {
+          "n": 85,
+          "level": 8,
+          "boardValue": 69
+        },
+        "6": {
+          "n": 78,
+          "level": 8,
+          "boardValue": 82
+        }
+      }
+    },
+    "varus": {
+      "name": "바루스",
+      "n": 195,
       "byStage": {
         "5": {
           "n": 82,
@@ -799,47 +763,52 @@
           "boardValue": 53
         },
         "6": {
-          "n": 78,
+          "n": 87,
           "level": 8,
           "boardValue": 62
         }
       }
     },
-    "warwick": {
-      "name": "워윅",
-      "n": 128,
+    "camille": {
+      "name": "카밀",
+      "n": 181,
       "byStage": {
         "5": {
-          "n": 54,
+          "n": 90,
           "level": 7,
-          "boardValue": 70
+          "boardValue": 53
         },
         "6": {
-          "n": 57,
+          "n": 64,
           "level": 8,
-          "boardValue": 84
+          "boardValue": 60
         }
       }
     },
-    "gromp18ap": {
-      "name": "심술두꺼비",
-      "n": 88,
+    "warwick": {
+      "name": "워윅",
+      "n": 113,
       "byStage": {
         "5": {
-          "n": 51,
+          "n": 44,
+          "level": 7,
+          "boardValue": 73
+        },
+        "6": {
+          "n": 48,
           "level": 8,
-          "boardValue": 68
+          "boardValue": 85
         }
       }
     },
     "cinderling": {
       "name": "불타는 묘목",
-      "n": 87,
+      "n": 77,
       "byStage": {
         "5": {
-          "n": 48,
+          "n": 44,
           "level": 8,
-          "boardValue": 65
+          "boardValue": 60
         }
       }
     }
