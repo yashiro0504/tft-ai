@@ -132,9 +132,14 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   let detailCalls = 0
   /** 다음 세트(19) 판으로 내려 줄 매치 id (세트 전환 시나리오) */
   const nextSetIds = new Set()
+  /** null 이 아니면 매치 상세를 이 횟수만큼 내려 준 뒤부터 401 (키 만료 시나리오) · 0 이면 처음부터 401 */
+  let keyExpireAfter = null
+  let detailServed = 0
   global.fetch = async (url) => {
     const json = (body, status = 200) => ({ status, ok: status < 400, headers: new Map(), json: async () => body })
     let m
+    if (keyExpireAfter === 0 && !url.includes('ddragon.leagueoflegends.com')) return json({}, 401)
+    if (keyExpireAfter !== null && /matches\/KR_\w+$/.test(url) && detailServed++ >= keyExpireAfter) return json({}, 401)
     if (url.includes('ddragon.leagueoflegends.com')) return json(['16.20.1', '16.19.1'])
     if ((m = /league\/v1\/(\w+)\?/.exec(url))) return json({ entries: leagues[m[1]] || [] })
     if ((m = /by-puuid\/([^/]+)\/ids/.exec(url))) return json(idsByPuuid[m[1]] || [])
@@ -224,6 +229,28 @@ function fakeMatch(id, { set = 18, queue = 1100, at = Date.UTC(2026, 9, 19, 16, 
   const bst = broken.store._state
   check('집계 실패 → 이전 패치 원본(KR_OLD) 보존', broken.aggregates.error === 'rollup boom' && bst.matches.has('KR_OLD'), `matches=${[...bst.matches.keys()].join(',')}`)
   check('실행 기록 note 에 건너뜀 사유', /원본 정리를 건너뜀/.test(bst.runs[0].note || ''), bst.runs[0].note)
+
+  console.log('수집 도중 키 만료(401)는 정상 종료 (2026-11-12)')
+  {
+    const savedExit = process.exitCode
+    process.exitCode = undefined
+    keyExpireAfter = 3
+    detailServed = 0
+    const expired = await main({ log: quiet })
+    const est = expired.store._state
+    const expiredExit = process.exitCode
+    process.exitCode = undefined
+    check('키 만료 전 적재분 유지 · 종료 코드 0', expired.stats.matches_added > 0 && !expiredExit, `added=${expired.stats.matches_added} exit=${expiredExit}`)
+    check('키 만료: 적재분은 집계됨', [...est.rollups.values()].reduce((n, r) => n + r.totals.matches, 0) === expired.stats.matches_added)
+    check('키 만료: 실행 기록 note 에 중단 사유', /판 적재 후 중단\(키 만료\)/.test(est.runs[0].note || ''), est.runs[0].note)
+
+    keyExpireAfter = 0
+    const dead = await main({ log: { ...quiet, error() {} } })
+    const deadExit = process.exitCode
+    keyExpireAfter = null
+    process.exitCode = savedExit
+    check('처음부터 무효 키(0판): 종료 코드 1', dead.stats.matches_added === 0 && deadExit === 1, `added=${dead.stats.matches_added} exit=${deadExit}`)
+  }
 
   console.log('용량 가드: 소프트/하드 한도 분리 (FOLLOWUP F1)')
   const lim = { maxRawMb: 400, maxRawMbHard: 480, pruneOnLimit: false }
