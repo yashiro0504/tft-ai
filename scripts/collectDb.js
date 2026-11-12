@@ -462,9 +462,19 @@ async function main({ log = console } = {}) {
     }
   } catch (e) {
     stats.note = e.message
-    if (e instanceof KeyError) log.error(`❌ ${e.message} — GitHub secret RIOT_API_KEY 를 확인하세요`)
-    else log.error(e)
-    process.exitCode = 1
+    if (e instanceof KeyError && stats.matches_added > 0) {
+      // 키가 수집 도중 만료된 경우: 이미 적재한 판은 살리고 정상 종료한다.
+      // (하루 1회 재발급 시각이 수집 런과 겹칠 때마다 워크플로가 실패 메일을 보내던 문제)
+      const note = `${e.message} — ${stats.matches_added}판 적재 후 중단(키 만료). 다음 회차에서 재개`
+      stats.note = note
+      log.warn(`⚠️  ${note}`)
+    } else if (e instanceof KeyError) {
+      log.error(`❌ ${e.message} — GitHub secret RIOT_API_KEY 를 확인하세요`)
+      process.exitCode = 1
+    } else {
+      log.error(e)
+      process.exitCode = 1
+    }
   } finally {
     // 수집이 중간에 멈췄어도(키 만료 등) 이미 적재한 판은 집계에 넣는다
     if (!aggregates && dirty.size) aggregates = await refreshAggregates({ store, dirty, deadline: 0, log })
