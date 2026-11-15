@@ -1,12 +1,12 @@
 {
   "scoringVersion": "v14",
-  "generatedAt": "2026-11-12T02:56:04.918Z",
+  "generatedAt": "2026-11-15T01:37:49.808Z",
   "cases": {
     "백승민#agent 3경기": {
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 84,
+        "economy": 85,
         "itemization": 100,
         "tempo": 82,
         "completion": 80,
@@ -46,7 +46,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 99,
+        "economy": 98,
         "itemization": 98,
         "tempo": 99,
         "completion": 90,
@@ -166,7 +166,7 @@
       "focus": "contest",
       "lowSample": false,
       "axes": {
-        "economy": 85,
+        "economy": 82,
         "itemization": 80,
         "tempo": 93,
         "completion": 85,
@@ -186,7 +186,7 @@
       "focus": "synergy",
       "lowSample": false,
       "axes": {
-        "economy": 86,
+        "economy": 84,
         "itemization": 100,
         "tempo": 73,
         "completion": 92,
@@ -206,7 +206,7 @@
       "focus": "tempo",
       "lowSample": false,
       "axes": {
-        "economy": 76,
+        "economy": 78,
         "itemization": 70,
         "tempo": 68,
         "completion": 78,
@@ -226,7 +226,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 88,
+        "economy": 91,
         "itemization": 100,
         "tempo": 87,
         "completion": 80,
@@ -326,7 +326,7 @@
       "focus": "economy",
       "lowSample": false,
       "axes": {
-        "economy": 58,
+        "economy": 52,
         "itemization": 100,
         "tempo": 89,
         "completion": 89,
@@ -406,7 +406,7 @@
       "focus": "completion",
       "lowSample": false,
       "axes": {
-        "economy": 89,
+        "economy": 92,
         "itemization": 100,
         "tempo": 100,
         "completion": 87,
